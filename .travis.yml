@@ -10,8 +10,6 @@ addons:
             - ninja-build
             - gcc-8
             - g++-8
-            - clang-5.0
-            - clang++-5.0
 
 ## Compilations and tests
 matrix:
