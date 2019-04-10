@@ -141,7 +141,7 @@ function(make_tests root pattern)
         ## Attach to the main tests target
         add_dependencies(tests ${target})
         ## Add it to CTest
-        add_test(NAME ${target} COMMAND $<TARGET_FILE:target>)
+        add_test(NAME ${target} COMMAND $<TARGET_FILE:${target}>)
     endforeach()
 endfunction()
 
