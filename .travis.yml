@@ -1,3 +1,4 @@
+sudo: yes
 language: cpp
 
 ## Install ninja
@@ -43,6 +44,10 @@ matrix:
           env:
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
+
+## List all available compilers
+before_install:
+    - sudo apt-cache search clang
 
 ## Prepare build
 before_script:
