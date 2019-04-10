@@ -44,6 +44,9 @@ if (NOT PYTHONINTERP_FOUND OR PYTHON_VERSION_MAJOR LESS 3)
     message(FATAL_ERROR "Python3 is required and has not been found!")
 endif()
 
+## Tests dependencies
+find_package(MPFR)
+
 ## Benchmark dependencies
 if (ENABLE_BENCHMARK)
     ## Force it for benches
@@ -127,15 +130,35 @@ endfunction()
 function(make_tests root pattern)
     ## Get all files
     file(GLOB_RECURSE srcs ${root}/${pattern})
+    ## List of functions that requires MPFR (use | to chain them)
+    set(requires_mpfr_pattern "sqrt")
+    set(requires_mpfr_r "^.*\\.${requires_mpfr_pattern}\\..*$")
     ## Iterates over and create the target
     foreach(src ${srcs})
         ## Sanitize
         make_target_path(${root} ${src} test.target)
+        ## Create test target name
+        set(target tests.${test.target})
+        ## Check if requires MPFR
+        set(target.libs)
+        if (${test.target} MATCHES ${requires_mpfr_r})
+            ## If the test requires MPFR but no MPFR has been found, log it
+            if (NOT MPFR_FOUND)
+                message(STATUS "WARNING: Test ${test.target} requires MPFR, but MPFR is missing")
+                continue()
+            endif()
+            set(target.libs ${MPFR_LIBRARY})
+        endif()
+        ## Link with libmath on Linux
+        set(libm)
+        if (NOT WIN32)
+            set(libm -lm)
+        endif()
         ## Create test target
         set(target tests.${test.target})
         add_executable(${target} ${src})
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-        target_link_libraries(${target} ${libname})
+        target_link_libraries(${target} ${libname} ${libm} ${target.libs})
         set_target_properties(${libname} PROPERTIES COMPILE_FLAGS
             "${flag_cpp14} ${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
         ## Attach to the main tests target
