@@ -140,6 +140,8 @@ function(make_tests root pattern)
             "${flag_cpp14} ${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
         ## Attach to the main tests target
         add_dependencies(tests ${target})
+        ## Add it to CTest
+        add_test(NAME ${target} COMMAND $<TARGET_FILE:target>)
     endforeach()
 endfunction()
 
@@ -191,6 +193,9 @@ add_custom_command(TARGET gen
 
 ## Setup tests generation target
 ## ----------------------------------------------------------------------------
+
+## Enable CTest
+enable_testing()
 
 add_custom_target(gen.tests)
 add_custom_target(tests)
