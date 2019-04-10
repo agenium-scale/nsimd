@@ -32,7 +32,7 @@ function(compiler_flags in out)
 
     # Sanity check first
     set(known_flags CPU SSE2 SSE42 AVX AVX2 AVX512_KNL AVX512_SKYLAKE NEON128
-                    AARCH64 SVE C++14 O3 G)
+                    AARCH64 SVE FMA FP16 C++14 O3 G)
 
     list(FIND known_flags "${flag}" i)
     if (i EQUAL -1)
