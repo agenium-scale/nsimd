@@ -22,27 +22,27 @@ matrix:
         ## SSE2:
         - os: linux
           env:
-            - CXX=g++-8
+            - TOOLSET=g++-8
             - SIMD=SSE2
         ## SSE42:
         - os: linux
           env:
-            - CXX=g++-8
+            - TOOLSET=g++-8
             - SIMD=SSE42
         ## AVX:
         - os: linux
           env:
-            - CXX=g++-8
+            - TOOLSET=g++-8
             - SIMD=AVX
         ## AVX2:
         - os: linux
           env:
-            - CXX=g++-8
+            - TOOLSET=g++-8
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
           env:
-            - CXX=g++-8
+            - TOOLSET=g++-8
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
 
@@ -50,7 +50,7 @@ matrix:
 before_script:
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_CXX_COMPILER=$CXX -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - cmake .. -DCMAKE_CXX_COMPILER=$TOOLSET -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
 script:
