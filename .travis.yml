@@ -1,5 +1,12 @@
 language: cpp
 
+## Install ninja
+apt:
+    sources:
+        - ubuntu-toolchain-r-test
+    packages:
+        - ninja-build
+
 ## Compilations and tests
 matrix:
     include:
@@ -7,37 +14,27 @@ matrix:
         ## --------------------------------------------------------------------------------------------
         ## SSE2:
         - os: linux
-          compiler:
-            - gcc
-            - clang
+          compiler: gcc
           env:
             - SIMD=SSE2
         ## SSE42:
         - os: linux
-          compiler:
-            - gcc
-            - clang
+          compiler: gcc
           env:
             - SIMD=SSE42
         ## AVX:
         - os: linux
-          compiler:
-            - gcc
-            - clang
+          compiler: gcc
           env:
             - SIMD=AVX
         ## AVX2:
         - os: linux
-          compiler:
-            - gcc
-            - clang
+          compiler: gcc
           env:
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
-          compiler:
-            - gcc
-            - clang
+          compiler: gcc
           env:
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
