@@ -1,4 +1,3 @@
-sudo: yes
 language: cpp
 
 ## Install ninja
@@ -22,28 +21,28 @@ matrix:
         ## --------------------------------------------------------------------------------------------
         ## SSE2:
         - os: linux
-          compiler: gcc
           env:
+            - CXX=g++-8
             - SIMD=SSE2
         ## SSE42:
         - os: linux
-          compiler: gcc
           env:
+            - CXX=g++-8
             - SIMD=SSE42
         ## AVX:
         - os: linux
-          compiler: gcc
           env:
+            - CXX=g++-8
             - SIMD=AVX
         ## AVX2:
         - os: linux
-          compiler: gcc
           env:
+            - CXX=g++-8
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
-          compiler: gcc
           env:
+            - CXX=g++-8
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
 
@@ -52,7 +51,6 @@ before_script:
     - mkdir build
     - cd build
     - cmake .. -DCMAKE_CXX_COMPILER=$CXX -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
-    - find ../include/nsimd # Print generated files
 
 ## Build
 script:
