@@ -1,11 +1,12 @@
 language: cpp
 
 ## Install ninja
-apt:
-    sources:
-        - ubuntu-toolchain-r-test
-    packages:
-        - ninja-build
+addons:
+    apt:
+        sources:
+            - ubuntu-toolchain-r-test
+        packages:
+            - ninja-build
 
 ## Compilations and tests
 matrix:
