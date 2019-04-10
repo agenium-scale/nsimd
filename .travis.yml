@@ -1,0 +1,53 @@
+language: cpp
+
+## Compilations and tests
+matrix:
+    include:
+        ## Linux-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: linux
+          compiler:
+            - gcc
+            - clang
+          env:
+            - SIMD=SSE2
+        ## SSE42:
+        - os: linux
+          compiler:
+            - gcc
+            - clang
+          env:
+            - SIMD=SSE42
+        ## AVX:
+        - os: linux
+          compiler:
+            - gcc
+            - clang
+          env:
+            - SIMD=AVX
+        ## AVX2:
+        - os: linux
+          compiler:
+            - gcc
+            - clang
+          env:
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: linux
+          compiler:
+            - gcc
+            - clang
+          env:
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+
+## Prepare build
+before_script:
+    - mkdir build
+    - cd build
+    - cmake .. -DCMAKE_CXX_COMPILER=$CXX -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+
+## Build
+script:
+    - ninja
