@@ -138,7 +138,7 @@ matrix:
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then (
-        powershell -ExecutionPolicy Bypass -noexit "& .\\scripts\\travis-windows.ps1"
+        "& .\\scripts\\travis-windows.bat"
       ) fi
 
 
