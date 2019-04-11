@@ -5,6 +5,7 @@ addons:
     homebrew:
         packages:
             - ninja
+            - clang-format
     apt:
         sources:
             - ubuntu-toolchain-r-test
