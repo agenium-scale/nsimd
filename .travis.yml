@@ -138,8 +138,7 @@ matrix:
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
     - if [[ $TRAVIS_OS_NAME == 'windows' ]]; then (
-        choco install ninja
-        choco install llvm
+        choco install -y ninja llvm
       ) fi
 
 ## Prepare build
