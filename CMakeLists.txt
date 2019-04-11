@@ -38,8 +38,7 @@ endif()
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 ## Python 3 is required
-set(Python_ADDITIONAL_VERSIONS 3)
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 3 REQUIRED)
 if (NOT PYTHONINTERP_FOUND OR PYTHON_VERSION_MAJOR LESS 3)
     message(FATAL_ERROR "Python3 is required and has not been found!")
 endif()
