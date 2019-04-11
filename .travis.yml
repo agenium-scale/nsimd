@@ -137,10 +137,7 @@ matrix:
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-        choco install visualstudio2017-workload-vctools ninja -y;
-        call "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat" x64
-      fi
+    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then ./scripts/travis-windows.ps1 fi
 
 
 ## Prepare build
