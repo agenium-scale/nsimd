@@ -121,11 +121,12 @@ install:
 before_script:
     - mkdir build
     - cd build
-    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then (
-        cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -G"Visual Studio 14 2015 Win64" -DPYTHON_EXECUTABLE=python3
-      ) else (
-        cmake .. -DCMAKE_CXX_COMPILER=$TOOLSET -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
-      ) fi
+    - cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -G"Visual Studio 14 2015 Win64" -DPYTHON_EXECUTABLE=python3
+    #- if [[ "$TRAVIS_OS_NAME" == "window" ]]; then (
+    #    cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -G"Visual Studio 14 2015 Win64" -DPYTHON_EXECUTABLE=python3
+    #  ) else (
+    #    cmake .. -DCMAKE_CXX_COMPILER=$TOOLSET -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    #  ) fi
 
 ## Build
 script:
