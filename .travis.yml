@@ -137,7 +137,9 @@ matrix:
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then ./scripts/travis-windows.ps1 fi
+    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then (
+        powershell -noexit "& .\\scripts\\travis-windows.ps1"
+      ) fi
 
 
 ## Prepare build
