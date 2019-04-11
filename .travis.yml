@@ -119,6 +119,7 @@ install:
 
 ## Prepare build
 before_script:
+    - python3 C:\Users\travis\build\agenium-scale\nsimd\egg\hatch.py --simd=sse2 -Ccsa
     - mkdir build
     - cd build
     - cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -DPYTHON_EXECUTABLE=python3 -G"Visual Studio 15 2017 Win64"
