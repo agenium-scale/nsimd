@@ -1,7 +1,11 @@
 language: cpp
 
-## Install ninja
+## Install deps
 addons:
+    chocolatey:
+        packages:
+            - ninja
+            - llvm
     homebrew:
         packages:
             - ninja
@@ -22,88 +26,116 @@ addons:
 ## Compilations and tests
 matrix:
     include:
-        ## Linux-gcc-x86
+        ### Linux-gcc-x86
+        ### --------------------------------------------------------------------------------------------
+        ### SSE2:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=g++-8
+        #    - SIMD=SSE2
+        ### SSE42:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=g++-8
+        #    - SIMD=SSE42
+        ### AVX:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=g++-8
+        #    - SIMD=AVX
+        ### AVX2:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=g++-8
+        #    - SIMD=AVX2
+        ### AVX2+FMA:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=g++-8
+        #    - SIMD=AVX2
+        #    - SIMD_OPTIONALS=FMA
+        ### Linux-clang-x86
+        ### --------------------------------------------------------------------------------------------
+        ### SSE2:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=clang++-6.0
+        #    - SIMD=SSE2
+        ### SSE42:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=clang++-6.0
+        #    - SIMD=SSE42
+        ### AVX:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=clang++-6.0
+        #    - SIMD=AVX
+        ### AVX2:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=clang++-6.0
+        #    - SIMD=AVX2
+        ### AVX2+FMA:
+        #- os: linux
+        #  env:
+        #    - TOOLSET=clang++-6.0
+        #    - SIMD=AVX2
+        #    - SIMD_OPTIONALS=FMA
+        ### OSX-clang-x86
+        ### --------------------------------------------------------------------------------------------
+        ### SSE2:
+        #- os: osx
+        #  env:
+        #    - TOOLSET=clang++
+        #    - SIMD=SSE2
+        ### SSE42:
+        #- os: osx
+        #  env:
+        #    - TOOLSET=clang++
+        #    - SIMD=SSE42
+        ### AVX:
+        #- os: osx
+        #  env:
+        #    - TOOLSET=clang++
+        #    - SIMD=AVX
+        ### AVX2:
+        #- os: osx
+        #  env:
+        #    - TOOLSET=clang++
+        #    - SIMD=AVX2
+        ### AVX2+FMA:
+        #- os: osx
+        #  env:
+        #    - TOOLSET=clang++
+        #    - SIMD=AVX2
+        #    - SIMD_OPTIONALS=FMA
+        ## Windows-MSVC-x86
         ## --------------------------------------------------------------------------------------------
         ## SSE2:
-        - os: linux
+        - os: windows
           env:
-            - TOOLSET=g++-8
+            - TOOLSET=cl
             - SIMD=SSE2
         ## SSE42:
-        - os: linux
+        - os: windows
           env:
-            - TOOLSET=g++-8
+            - TOOLSET=cl
             - SIMD=SSE42
         ## AVX:
-        - os: linux
+        - os: windows
           env:
-            - TOOLSET=g++-8
+            - TOOLSET=cl
             - SIMD=AVX
         ## AVX2:
-        - os: linux
+        - os: windows
           env:
-            - TOOLSET=g++-8
+            - TOOLSET=cl
             - SIMD=AVX2
         ## AVX2+FMA:
-        - os: linux
+        - os: windows
           env:
-            - TOOLSET=g++-8
-            - SIMD=AVX2
-            - SIMD_OPTIONALS=FMA
-        ## Linux-clang-x86
-        ## --------------------------------------------------------------------------------------------
-        ## SSE2:
-        - os: linux
-          env:
-            - TOOLSET=clang++-6.0
-            - SIMD=SSE2
-        ## SSE42:
-        - os: linux
-          env:
-            - TOOLSET=clang++-6.0
-            - SIMD=SSE42
-        ## AVX:
-        - os: linux
-          env:
-            - TOOLSET=clang++-6.0
-            - SIMD=AVX
-        ## AVX2:
-        - os: linux
-          env:
-            - TOOLSET=clang++-6.0
-            - SIMD=AVX2
-        ## AVX2+FMA:
-        - os: linux
-          env:
-            - TOOLSET=clang++-6.0
-            - SIMD=AVX2
-            - SIMD_OPTIONALS=FMA
-        ## OSX-clang-x86
-        ## --------------------------------------------------------------------------------------------
-        ## SSE2:
-        - os: osx
-          env:
-            - TOOLSET=clang++
-            - SIMD=SSE2
-        ## SSE42:
-        - os: osx
-          env:
-            - TOOLSET=clang++
-            - SIMD=SSE42
-        ## AVX:
-        - os: osx
-          env:
-            - TOOLSET=clang++
-            - SIMD=AVX
-        ## AVX2:
-        - os: osx
-          env:
-            - TOOLSET=clang++
-            - SIMD=AVX2
-        ## AVX2+FMA:
-        - os: osx
-          env:
-            - TOOLSET=clang++
+            - TOOLSET=cl
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
 
