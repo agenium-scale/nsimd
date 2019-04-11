@@ -121,7 +121,7 @@ install:
 before_script:
     - mkdir build
     - cd build
-    - cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -DPYTHON_EXECUTABLE=C:\Python37\python -G"Visual Studio 15 2017 Win64"
+    - cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -DPYTHON_EXECUTABLE=C:\\Python37\\python -G"Visual Studio 15 2017 Win64"
     #- if [[ "$TRAVIS_OS_NAME" == "window" ]]; then (
     #    cmake .. -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -G"Visual Studio 14 2015 Win64" -DPYTHON_EXECUTABLE=python3
     #  ) else (
