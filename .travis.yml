@@ -46,6 +46,62 @@ matrix:
             - TOOLSET=g++-8
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
+        ## Linux-clang-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6
+            - SIMD=SSE2
+        ## SSE42:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6
+            - SIMD=SSE42
+        ## AVX:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6
+            - SIMD=AVX
+        ## AVX2:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+        ## OSX-clang-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=SSE2
+        ## SSE42:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=SSE42
+        ## AVX:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=AVX
+        ## AVX2:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
 
 ## Prepare build
 before_script:
