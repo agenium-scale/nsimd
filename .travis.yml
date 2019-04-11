@@ -137,10 +137,7 @@ matrix:
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then (
-        cmd /C "\\scripts\\travis-windows.bat"
-      ) fi
-
+    - scripts\travis-windows.bat
 
 ## Prepare build
 before_script:
