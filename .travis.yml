@@ -2,10 +2,6 @@ language: cpp
 
 ## Install deps
 addons:
-    choco:
-        packages:
-            - ninja
-            - llvm
     homebrew:
         packages:
             - ninja
@@ -138,6 +134,13 @@ matrix:
             - TOOLSET=cl
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
+
+## It seems that travis ignore addons "chocolatey" so do it manually
+install:
+    - if [[ $TRAVIS_OS_NAME == 'windows' ]]; then
+        choco install ninja
+        choco install llvm
+      fi
 
 ## Prepare build
 before_script:
