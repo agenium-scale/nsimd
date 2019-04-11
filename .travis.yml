@@ -111,29 +111,8 @@ matrix:
         ## SSE2:
         - os: windows
           env:
-            - TOOLSET=cl
+            - TOOLSET=cl.exe
             - SIMD=SSE2
-        ## SSE42:
-        - os: windows
-          env:
-            - TOOLSET=cl
-            - SIMD=SSE42
-        ## AVX:
-        - os: windows
-          env:
-            - TOOLSET=cl
-            - SIMD=AVX
-        ## AVX2:
-        - os: windows
-          env:
-            - TOOLSET=cl
-            - SIMD=AVX2
-        ## AVX2+FMA:
-        - os: windows
-          env:
-            - TOOLSET=cl
-            - SIMD=AVX2
-            - SIMD_OPTIONALS=FMA
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
