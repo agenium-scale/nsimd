@@ -2,7 +2,7 @@ language: cpp
 
 ## Install deps
 addons:
-    chocolatey:
+    choco:
         packages:
             - ninja
             - llvm
