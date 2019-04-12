@@ -175,12 +175,12 @@ def get_additional_include(func, platform, simd_ext):
     if simd_ext == 'neon128' and func == 'notl':
         ret += '''#include <nsimd/arm/neon128/notb.h>
                   '''
-    if simd_ext in neon and func == 'neq':
+    if simd_ext in neon and func == 'ne':
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
                   #include <nsimd/arm/{simd_ext}/notl.h>
                   '''.format(**fmtspec)
     if simd_ext in neon and func in ['fms', 'fnms']:
-        ret += '''#include <nsimd/arm/{simd_ext}/neq.h>
+        ret += '''#include <nsimd/arm/{simd_ext}/ne.h>
                   '''.format(**fmtspec)
     if func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
@@ -736,8 +736,8 @@ def set1(simd_ext, typ):
 ## Comparison operators: ==, <, <=, >, >=
 
 def cmp2(op, simd_ext, typ):
-    binop = {'eq': '==', 'lt': '<', 'leq': '<=', 'gt': '>', 'geq': '>='}
-    armop = {'eq': 'eq', 'lt': 'lt', 'leq': 'le', 'gt': 'gt', 'geq': 'ge'}
+    binop = {'eq': '==', 'lt': '<', 'le': '<=', 'gt': '>', 'ge': '>='}
+    armop = {'eq': 'eq', 'lt': 'lt', 'le': 'le', 'gt': 'gt', 'ge': 'ge'}
     if simd_ext in neon:
         emul_f16 = '''nsimd_{simd_ext}_vlf16 ret;
                       ret.v1 = nsimd_{op}_{simd_ext}_f32({in0}.v1, {in1}.v1);
@@ -1489,9 +1489,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'set1': 'set1(simd_ext, from_typ)',
         'eq': 'cmp2("eq", simd_ext, from_typ)',
         'lt': 'cmp2("lt", simd_ext, from_typ)',
-        'le': 'cmp2("leq", simd_ext, from_typ)',
+        'le': 'cmp2("le", simd_ext, from_typ)',
         'gt': 'cmp2("gt", simd_ext, from_typ)',
-        'ge': 'cmp2("geq", simd_ext, from_typ)',
+        'ge': 'cmp2("ge", simd_ext, from_typ)',
         'ne': 'neq2(simd_ext, from_typ)',
         'if_else1': 'if_else3(simd_ext, from_typ)',
         'min': 'minmax2("min", simd_ext, from_typ)',
