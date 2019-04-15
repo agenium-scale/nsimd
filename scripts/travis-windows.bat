@@ -1,4 +1,3 @@
 choco install -y ninja
 choco install -y python3
-vs_buildtools.exe -add Microsoft.VisualStudio.Component.VC
-refreshenv
+choco install -y visualstudio2017buildtools --force --package-parameters "--allWorkloads --includeRecommended --includeOptional --quiet"
