@@ -17,10 +17,10 @@ echo INCLUDE=
 echo %INCLUDE%
 echo ---
 
-setx INCLUDE %INCLUDE%
-setx LIB %LIB%
-setx LIBPATH %LIBPATH%
-setx PATH %PATH%
+setx INCLUDE "%INCLUDE%"
+setx LIB "%LIB%"
+setx LIBPATH "%LIBPATH%"
+setx PATH "%PATH%"
 
 
 REM
