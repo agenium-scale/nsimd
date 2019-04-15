@@ -13,3 +13,4 @@ REM set "PATH=C:\Python37\python;%PATH%"
 
 REM Now we can call cmake now that cl.exe can be found
 cmake -DPYTHON_EXECUTABLE=C:\\Python37\\python %*
+cmake --build .
