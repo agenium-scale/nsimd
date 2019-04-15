@@ -4,10 +4,13 @@ REM Make sure to load MSVC compiler env
 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
 
 echo ---
-type "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\vcvars64.bat"
+
+echo VCINSTALLDIR=
+echo %VCINSTALLDIR%
+
 echo ---
 
-dir %VCINSTALLDIR%INCLUDE
+dir %VCINSTALLDIR%
 
 echo ---
 echo INCLUDE=
