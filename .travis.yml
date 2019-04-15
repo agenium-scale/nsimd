@@ -117,9 +117,8 @@ matrix:
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then
-        choco install -y python3 ninja;
-      fi
+    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then choco install -y python3; fi
+    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then choco install -y ninja; fi
 
 ## Prepare build
 before_script:
