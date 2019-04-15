@@ -1,4 +1,4 @@
 choco install -y ninja
 choco install -y python3
-choco install -y vcredist-all
+vs_buildtools.exe -quiet -add Microsoft.VisualStudio.Workload.VCTools
 refreshenv
