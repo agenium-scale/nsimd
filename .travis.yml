@@ -123,7 +123,8 @@ install:
 before_script:
     - mkdir build
     - cd build
-    - cmd.exe /C "\"C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\vcvarsall.bat\" amd64"; $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - cmd.exe /C '"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat amd64'
+    #; $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
 script:
