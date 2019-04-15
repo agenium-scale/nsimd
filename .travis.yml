@@ -114,7 +114,7 @@ matrix:
             - TOOLSET_CC=cl.exe
             - TOOLSET_CXX=cl.exe
             - SIMD=SSE2
-            - PREFIX="cmd /C 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat amd64'"
+            - PREFIX="cmd.exe /C 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat amd64'"
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
