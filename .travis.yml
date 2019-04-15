@@ -114,17 +114,22 @@ matrix:
             - TOOLSET_CC=cl.exe
             - TOOLSET_CXX=cl.exe
             - SIMD=SSE2
-            - PREFIX="cmd /C 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat amd64'"
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install -y python3 ninja; fi
+    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
+        choco install -y python3 ninja;
+      fi
 
 ## Prepare build
 before_script:
+    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
+        scripts/windows-env.bat;
+        source _env.sh;
+      fi
     - mkdir build
     - cd build
-    - $PREFIX && $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - cmake .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
 script:
