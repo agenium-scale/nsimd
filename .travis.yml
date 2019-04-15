@@ -125,7 +125,7 @@ before_script:
     - cd build
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CMAKE_COMMAND="../scripts/travis-windows-cmake.bat"; fi
     - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then export CMAKE_COMMAND="cmake"; fi
-    - $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
 script:
