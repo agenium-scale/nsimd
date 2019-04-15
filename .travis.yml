@@ -126,7 +126,7 @@ before_script:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
         scripts/windows-env.bat;
         source _env.sh;
-        export CMAKE_ARGS="-DPYTHON_EXECUTABLE=C:\\Python37\\python"
+        export CMAKE_ARGS="-DPYTHON_EXECUTABLE=C:\\Python37\\python";
       fi
     - mkdir build
     - cd build
