@@ -117,15 +117,14 @@ matrix:
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then choco install -y python3; fi
-    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then choco install -y ninja; fi
+    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install -y python3 ninja; fi
 
 ## Prepare build
 before_script:
     - mkdir build
     - cd build
-    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then export CMAKE_COMMAND="travis-windows-cmake.bat"; fi
-    - if [[ "$TRAVIS_OS_NAME" != "window" ]]; then export CMAKE_COMMAND="cmake"; fi
+    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CMAKE_COMMAND="travis-windows-cmake.bat"; fi
+    - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then export CMAKE_COMMAND="cmake"; fi
     - $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
