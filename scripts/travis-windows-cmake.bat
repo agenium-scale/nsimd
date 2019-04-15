@@ -1,5 +1,5 @@
+REM Make sure to load MSVC compiler env
 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
-echo "Scanning dirs: BEGIN"
-dir /S "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7"
-echo "Scanning dirs: END"
-cmake .. -DPYTHON_EXECUTABLE=C:\\Python37\\python -GNinja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" %*
+
+REM Now we can call cmake now that cl.exe can be found
+cmake -DPYTHON_EXECUTABLE=C:\\Python37\\python -DCMAKE_CXX_FLAGS="/IC:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Tools\\MSVC\\14.16.27023\\include" %*
