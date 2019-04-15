@@ -114,6 +114,7 @@ matrix:
             - TOOLSET_CC=cl.exe
             - TOOLSET_CXX=cl.exe
             - SIMD=SSE2
+            - PREFIX=cmd /C '"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64'
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
@@ -123,10 +124,7 @@ install:
 before_script:
     - mkdir build
     - cd build
-    - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export CMAKE_COMMAND="../scripts/travis-windows-cmake.bat"; fi
-    - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then export CMAKE_COMMAND="cmake"; fi
-    - echo INCLUDE=$INCLUDE
-    - $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - $PREFIX && $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
 script:
