@@ -125,12 +125,9 @@ install:
 before_script:
     - mkdir build
     - cd build
-    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then
-        export CMAKE_COMMAND="travis-windows-cmake.bat";
-      else
-        export CMAKE_COMMAND="cmake";
-      fi
-      $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - if [[ "$TRAVIS_OS_NAME" == "window" ]]; then export CMAKE_COMMAND="travis-windows-cmake.bat"; fi
+    - if [[ "$TRAVIS_OS_NAME" != "window" ]]; then export CMAKE_COMMAND="cmake"; fi
+    - $CMAKE_COMMAND .. -DCMAKE_CXX_COMPILER=$TOOLSET -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
 
 ## Build
 script:
