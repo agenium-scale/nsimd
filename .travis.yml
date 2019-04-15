@@ -115,6 +115,7 @@ matrix:
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
+    - wget https://aka.ms/vs/15/release/vs_buildtools.exe
     - scripts/travis-windows.bat
 
 ## Prepare build
