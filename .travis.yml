@@ -125,6 +125,7 @@ install:
 before_script:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
         scripts/windows-env.bat;
+        cat _env.sh;
         source _env.sh;
       fi
     - mkdir build
