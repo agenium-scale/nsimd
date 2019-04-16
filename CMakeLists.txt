@@ -71,7 +71,7 @@ compiler_flags(C++14 flag_cpp14)
 compiler_flags(O3    flag_O3)
 compiler_flags(G     flag_g)
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_definitions(-D_SCL_SECURE_NO_WARNINGS)
+    add_definitions(-D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS)
 endif()
 
 ## SIMD setup
