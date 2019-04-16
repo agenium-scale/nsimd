@@ -8,6 +8,7 @@ addons:
             - clang-format
     apt:
         sources:
+            - binutils-arm-linux-gnueabihf
             - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-6.0
             - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main'
