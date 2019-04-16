@@ -130,7 +130,10 @@ before_script:
       fi
     - mkdir build
     - cd build
-    - cmake .. $CMAKE_ARGS -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS -GNinja
+    - cmake .. $CMAKE_ARGS
+        -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC
+        -DSIMD=$SIMD -DSIMD_OPTIONALS=$SIMD_OPTIONALS
+        -GNinja
 
 ## Build
 script:
