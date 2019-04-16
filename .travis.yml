@@ -106,14 +106,46 @@ matrix:
         #    - TOOLSET=clang++
         #    - SIMD=AVX2
         #    - SIMD_OPTIONALS=FMA
-        ## Windows-MSVC-x86
+        ## Linux-clang-armv7
         ## --------------------------------------------------------------------------------------------
-        ## SSE2:
-        - os: windows
+        ## NEON128:
+        - os: linux
           env:
-            - TOOLSET_CC=cl.exe
-            - TOOLSET_CXX=cl.exe
-            - SIMD=SSE2
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=arm-linux-gnueabihf
+            - SIMD=NEON128
+        ## AARCH64:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=arm-linux-gnueabihf
+            - SIMD=AARCH64
+        ## Linux-clang-aarch64
+        ## --------------------------------------------------------------------------------------------
+        ## NEON128:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=aarch64-linux-gnu
+            - SIMD=NEON128
+        ## AARCH64:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=aarch64-linux-gnu
+            - SIMD=AARCH64
+        ### Windows-MSVC-x86
+        ### --------------------------------------------------------------------------------------------
+        ### SSE2:
+        #- os: windows
+        #  env:
+        #    - TOOLSET_CC=cl.exe
+        #    - TOOLSET_CXX=cl.exe
+        #    - SIMD=SSE2
 
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
@@ -126,7 +158,11 @@ before_script:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
         scripts/windows-env.bat;
         source _env.sh;
-        export CMAKE_ARGS="-DPYTHON_EXECUTABLE=C:\\Python37\\python";
+        export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python37\\python";
+      fi
+    - if [[ ! -z "$TARGET" ]]; then
+        export CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER_TARGET=$TARGET";
+        export CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER_TARGET=$TARGET";
       fi
     - mkdir build
     - cd build
