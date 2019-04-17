@@ -38,7 +38,7 @@ Supported SIMD instruction sets
   + AVX-512 as found on Xeon Skylake CPUs
 - Arm
   + NEON 128 bits as found on ARMv7 CPUs
-  + NEON 128 bits as foudn on Aarch64 CPUs
+  + NEON 128 bits as found on Aarch64 CPUs
   + SVE
 
 Supported compilers
@@ -122,7 +122,7 @@ Make sure you are typing in a Visual Studio prompt. We give examples with
 use the latest versions of Visual Studio to build the library using its
 `CMakeLists.txt`.
 
-```bash
+```batch
 md build
 cd build
 cmake .. -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
@@ -132,8 +132,8 @@ ninja
 You can also set the SIMD instruction using the `-DSIMD=<simd>` option when
 generating with cmake like:
 
-```bash
-# Enable AVX2 support for nsimd
+```batch
+REM Enable AVX2 support for nsimd
 cmake .. -DSIMD=AVX2 -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
 ninja
 ```
@@ -141,11 +141,31 @@ ninja
 Some SIMD instructions are optional like for FMA (Fused Multiply-Add), you
 can enable them using the option `-DSIMD_OPTIONALS=<simd-optional>...`:
 
-```bash
-# Enable AVX2 with FMA support for nsimd
+```batch
+REM Enable AVX2 with FMA support for nsimd
 cmake .. -DSIMD=AVX2 -DSIMD_OPTIONALS=FMA -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
 ninja
 ```
+
+Build benches
+-------------
+
+Benches are not built by default when invoking CMake. To enable them define
+the CMake variable `ENABLE_BENCHMARK`.
+
+```bash
+cmake [...] -DENABLE_BENCHMARK=on
+```
+
+Note that third party libraries are required to perform benches as described
+above. If those cannot be found in standard system paths then you can tell
+CMake where they are located using the following CMake variables.
+
+| Dependency       | CMake variable                                        |
+|------------------|-------------------------------------------------------|
+| Sleef            | `cmake [...] -DSleef_ROOT_DIR=/path/to/sleef`         |
+| MIPP             | `cmake [...] -DMIPP_ROOT_DIR=/path/to/MIPP`           |
+| Google benchmark | `cmake [...] -Dbenchmark_ROOT_DIR=/path/to/benchmark` |
 
 Philosophy
 ==========
