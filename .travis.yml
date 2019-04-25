@@ -29,27 +29,32 @@ matrix:
         ## SSE2:
         - os: linux
           env:
-            - TOOLSET=g++-8
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
             - SIMD=SSE2
         ## SSE42:
         - os: linux
           env:
-            - TOOLSET=g++-8
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
             - SIMD=SSE42
         ## AVX:
         - os: linux
           env:
-            - TOOLSET=g++-8
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
             - SIMD=AVX
         ## AVX2:
         - os: linux
           env:
-            - TOOLSET=g++-8
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
           env:
-            - TOOLSET=g++-8
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
         ## Linux-clang-x86
@@ -57,27 +62,32 @@ matrix:
         ## SSE2:
         - os: linux
           env:
-            - TOOLSET=clang++-6.0
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
             - SIMD=SSE2
         ## SSE42:
         - os: linux
           env:
-            - TOOLSET=clang++-6.0
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
             - SIMD=SSE42
         ## AVX:
         - os: linux
           env:
-            - TOOLSET=clang++-6.0
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
             - SIMD=AVX
         ## AVX2:
         - os: linux
           env:
-            - TOOLSET=clang++-6.0
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
           env:
-            - TOOLSET=clang++-6.0
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
         ## OSX-clang-x86
@@ -85,27 +95,32 @@ matrix:
         ## SSE2:
         - os: osx
           env:
-            - TOOLSET=clang++
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=SSE2
         ## SSE42:
         - os: osx
           env:
-            - TOOLSET=clang++
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=SSE42
         ## AVX:
         - os: osx
           env:
-            - TOOLSET=clang++
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=AVX
         ## AVX2:
         - os: osx
           env:
-            - TOOLSET=clang++
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: osx
           env:
-            - TOOLSET=clang++
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
         # Linux-clang-armv7
