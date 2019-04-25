@@ -24,122 +24,122 @@ addons:
 ## Compilations and tests
 matrix:
     include:
-        ### Linux-gcc-x86
-        ### --------------------------------------------------------------------------------------------
-        ### SSE2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=g++-8
-        #    - SIMD=SSE2
-        ### SSE42:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=g++-8
-        #    - SIMD=SSE42
-        ### AVX:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=g++-8
-        #    - SIMD=AVX
-        ### AVX2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=g++-8
-        #    - SIMD=AVX2
-        ### AVX2+FMA:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=g++-8
-        #    - SIMD=AVX2
-        #    - SIMD_OPTIONALS=FMA
-        ### Linux-clang-x86
-        ### --------------------------------------------------------------------------------------------
-        ### SSE2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=clang++-6.0
-        #    - SIMD=SSE2
-        ### SSE42:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=clang++-6.0
-        #    - SIMD=SSE42
-        ### AVX:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=clang++-6.0
-        #    - SIMD=AVX
-        ### AVX2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=clang++-6.0
-        #    - SIMD=AVX2
-        ### AVX2+FMA:
-        #- os: linux
-        #  env:
-        #    - TOOLSET=clang++-6.0
-        #    - SIMD=AVX2
-        #    - SIMD_OPTIONALS=FMA
-        ### OSX-clang-x86
-        ### --------------------------------------------------------------------------------------------
-        ### SSE2:
-        #- os: osx
-        #  env:
-        #    - TOOLSET=clang++
-        #    - SIMD=SSE2
-        ### SSE42:
-        #- os: osx
-        #  env:
-        #    - TOOLSET=clang++
-        #    - SIMD=SSE42
-        ### AVX:
-        #- os: osx
-        #  env:
-        #    - TOOLSET=clang++
-        #    - SIMD=AVX
-        ### AVX2:
-        #- os: osx
-        #  env:
-        #    - TOOLSET=clang++
-        #    - SIMD=AVX2
-        ### AVX2+FMA:
-        #- os: osx
-        #  env:
-        #    - TOOLSET=clang++
-        #    - SIMD=AVX2
-        #    - SIMD_OPTIONALS=FMA
-        ## Linux-clang-armv7
+        ## Linux-gcc-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: linux
+          env:
+            - TOOLSET=g++-8
+            - SIMD=SSE2
+        ## SSE42:
+        - os: linux
+          env:
+            - TOOLSET=g++-8
+            - SIMD=SSE42
+        ## AVX:
+        - os: linux
+          env:
+            - TOOLSET=g++-8
+            - SIMD=AVX
+        ## AVX2:
+        - os: linux
+          env:
+            - TOOLSET=g++-8
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: linux
+          env:
+            - TOOLSET=g++-8
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+        ## Linux-clang-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6.0
+            - SIMD=SSE2
+        ## SSE42:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6.0
+            - SIMD=SSE42
+        ## AVX:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6.0
+            - SIMD=AVX
+        ## AVX2:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6.0
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: linux
+          env:
+            - TOOLSET=clang++-6.0
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+        ## OSX-clang-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=SSE2
+        ## SSE42:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=SSE42
+        ## AVX:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=AVX
+        ## AVX2:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: osx
+          env:
+            - TOOLSET=clang++
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+        # Linux-clang-armv7
+        # --------------------------------------------------------------------------------------------
+        # NEON128:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=arm-linux-gnueabihf
+            - SIMD=NEON128
+        ## AARCH64:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=arm-linux-gnueabihf
+            - SIMD=AARCH64
+        ## Linux-clang-aarch64
         ## --------------------------------------------------------------------------------------------
         ## NEON128:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - TARGET=arm-linux-gnueabihf
-        #    - SIMD=NEON128
-        ### AARCH64:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - TARGET=arm-linux-gnueabihf
-        #    - SIMD=AARCH64
-        ### Linux-clang-aarch64
-        ### --------------------------------------------------------------------------------------------
-        ### NEON128:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - TARGET=aarch64-linux-gnu
-        #    - SIMD=NEON128
-        ### AARCH64:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - TARGET=aarch64-linux-gnu
-        #    - SIMD=AARCH64
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=aarch64-linux-gnu
+            - SIMD=NEON128
+        ## AARCH64:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - TARGET=aarch64-linux-gnu
+            - SIMD=AARCH64
         ## Windows-MSVC-x86
         ## --------------------------------------------------------------------------------------------
         ## SSE2:
@@ -148,12 +148,6 @@ matrix:
             - TOOLSET_CC=cl.exe
             - TOOLSET_CXX=cl.exe
             - SIMD=SSE2
-        ## SSE42:
-        - os: windows
-          env:
-            - TOOLSET_CC=cl.exe
-            - TOOLSET_CXX=cl.exe
-            - SIMD=SSE42
         ## AVX:
         - os: windows
           env:
@@ -183,7 +177,7 @@ install:
 ## Prepare build
 before_script:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-        scripts/windows-env.bat;
+        scripts/travis-windows-env.bat;
         source _env.sh;
         export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python37\\python";
       fi
