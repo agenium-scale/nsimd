@@ -1,6 +1,8 @@
 NSIMD
 =====
 
+[![Build Status](https://travis-ci.org/agenium-scale/nsimd.svg?branch=master)](https://travis-ci.org/agenium-scale/nsimd)
+
 NSIMD is a vectorization library that abstracts [SIMD
 programming](<https://en.wikipedia.org/wiki/SIMD>). It was designed to exploit
 the maximum power of processors at a low development cost.
