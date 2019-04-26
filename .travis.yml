@@ -123,38 +123,6 @@ matrix:
             - TOOLSET_CXX=clang++
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
-        # Linux-clang-armv7
-        # --------------------------------------------------------------------------------------------
-        # NEON128:
-        - os: linux
-          env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
-            - TARGET=arm-linux-gnueabihf
-            - SIMD=NEON128
-        ## AARCH64:
-        - os: linux
-          env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
-            - TARGET=arm-linux-gnueabihf
-            - SIMD=AARCH64
-        ## Linux-clang-aarch64
-        ## --------------------------------------------------------------------------------------------
-        ## NEON128:
-        - os: linux
-          env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
-            - TARGET=aarch64-linux-gnu
-            - SIMD=NEON128
-        ## AARCH64:
-        - os: linux
-          env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
-            - TARGET=aarch64-linux-gnu
-            - SIMD=AARCH64
         ## Windows-MSVC-x86
         ## --------------------------------------------------------------------------------------------
         ## SSE2:
