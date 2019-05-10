@@ -85,6 +85,7 @@ Clang and MSVC will do. Note that the produced library and header files for the
 end-user are C89, C++98, C++11 compatible.
 
 ```bash
+python3 egg/hatch.py -Af
 mkdir build
 cd build
 cmake ..
