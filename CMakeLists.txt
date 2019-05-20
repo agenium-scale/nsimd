@@ -1,15 +1,15 @@
 # Copyright (c) 2019 Agenium Scale
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# 
+#
 # -----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.7)
@@ -131,7 +131,7 @@ function(make_target_path root src OUT)
 endfunction()
 
 ## Make pretty test targets
-function(make_tests root pattern)
+function(make_tests root pattern is_cpp)
     ## Get all files
     file(GLOB_RECURSE srcs ${root}/${pattern})
     ## List of functions that requires MPFR (use | to chain them)
@@ -164,7 +164,12 @@ function(make_tests root pattern)
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         target_link_libraries(${target} ${libname} ${libm} ${target.libs})
         set_target_properties(${target} PROPERTIES COMPILE_FLAGS
-            "${flag_cpp14} ${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
+            "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
+
+        if (is_cpp)
+          set_target_properties(${target} PROPERTIES COMPILE_FLAGS "${flag_cpp14}")
+        endif()
+
         ## Attach to the main tests target
         add_dependencies(tests ${target})
         ## Add it to CTest
@@ -184,7 +189,7 @@ function(make_benches root pattern)
         set(target benches.${bench.target})
         add_executable(${target} ${src})
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-        target_link_libraries(${target} ${libname} ${benchmark_LIBRARY} 
+        target_link_libraries(${target} ${libname} ${benchmark_LIBRARY}
                               ${PTHREAD_LIBRARY})
         set_target_properties(${target} PROPERTIES COMPILE_FLAGS
                               "${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS}")
@@ -232,8 +237,8 @@ add_custom_command(TARGET gen.tests
 )
 
 ## Create targets
-make_tests(${NSIMD_ROOT}/tests *.c)
-make_tests(${NSIMD_ROOT}/tests *.cpp)
+make_tests(${NSIMD_ROOT}/tests *.c FALSE)
+make_tests(${NSIMD_ROOT}/tests *.cpp TRUE)
 
 ## Setup benchmarks generation target
 ## ----------------------------------------------------------------------------
