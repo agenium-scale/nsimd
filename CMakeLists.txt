@@ -163,7 +163,7 @@ function(make_tests root pattern)
         add_executable(${target} ${src})
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         target_link_libraries(${target} ${libname} ${libm} ${target.libs})
-        set_target_properties(${libname} PROPERTIES COMPILE_FLAGS
+        set_target_properties(${target} PROPERTIES COMPILE_FLAGS
             "${flag_cpp14} ${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
         ## Attach to the main tests target
         add_dependencies(tests ${target})
@@ -186,7 +186,7 @@ function(make_benches root pattern)
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         target_link_libraries(${target} ${libname} ${benchmark_LIBRARY} 
                               ${PTHREAD_LIBRARY})
-        set_target_properties(${libname} PROPERTIES COMPILE_FLAGS
+        set_target_properties(${target} PROPERTIES COMPILE_FLAGS
                               "${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS}")
         ## Attach to the main benches target
         add_dependencies(benches ${target})
