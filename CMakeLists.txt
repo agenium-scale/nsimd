@@ -166,10 +166,10 @@ function(make_tests root pattern is_cpp)
 
         if (is_cpp)
             target_compile_options(${target} PRIVATE
-                "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS} ${flag_cpp14}")
+                ${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS} ${flag_cpp14})
         else()
             target_compile_options(${target} PRIVATE
-                "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
+                ${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS})
         endif()
 
         ## Attach to the main tests target
@@ -194,7 +194,7 @@ function(make_benches root pattern)
         target_link_libraries(${target} ${libname} ${benchmark_LIBRARY}
                               ${PTHREAD_LIBRARY})
         target_compile_options(${target} PRIVATE
-                              "${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS}")
+                              ${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS})
         ## Attach to the main benches target
         add_dependencies(benches ${target})
     endforeach()
@@ -214,7 +214,7 @@ foreach(simd_ext ${SIMD_INFO_LIST})
 endforeach()
 add_library(${libname} SHARED ${nsimd.src})
 target_compile_options(${libname} PRIVATE
-                      "${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS}")
+                      ${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS})
 
 ## Setup source generation target
 ## ----------------------------------------------------------------------------
