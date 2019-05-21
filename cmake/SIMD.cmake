@@ -76,7 +76,7 @@ function(get_simd_infos out simd simd_optional)
     set(${out}_LIST "${list_for_${hatch_flag}}" PARENT_SCOPE)
 
     # Return platform
-    if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(arm|ARM)")
+    if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(arm|ARM|aarch64)")
         if ("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
             set(${out}_PLATFORM "armv7" PARENT_SCOPE)
         else()
