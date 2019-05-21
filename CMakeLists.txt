@@ -73,7 +73,6 @@ compiler_flags(G     flag_g)
 if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_definitions(-D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS)
 endif()
-message(STATUS "CXXFLAGS: ${CMAKE_CXX_FLAGS}")
 
 ## SIMD setup
 ## ----------------------------------------------------------------------------
