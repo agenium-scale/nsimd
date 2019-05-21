@@ -163,11 +163,13 @@ function(make_tests root pattern is_cpp)
         add_executable(${target} ${src})
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         target_link_libraries(${target} ${libname} ${libm} ${target.libs})
-        set_target_properties(${target} PROPERTIES COMPILE_FLAGS
-            "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
 
         if (is_cpp)
-          set_target_properties(${target} PROPERTIES COMPILE_FLAGS "${flag_cpp14}")
+          set_target_properties(${target} PROPERTIES COMPILE_FLAGS
+              "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS} ${flag_cpp14}")
+        else()
+          set_target_properties(${target} PROPERTIES COMPILE_FLAGS
+              "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
         endif()
 
         ## Attach to the main tests target
