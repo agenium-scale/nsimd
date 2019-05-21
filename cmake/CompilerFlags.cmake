@@ -126,5 +126,7 @@ function(remove_some_msvc_flags)
             string(REPLACE "/Od" "" flags "${flags}")
             set(CMAKE_CXX_FLAGS_${mode} "${flags}" PARENT_SCOPE)
         endforeach()
+        # Also set the CMAKE_CXX_FLAGS with current build type
+        set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}_${CMAKE_BUILD_TYPE} PARENT_SCOPE)
     endif()
 endfunction()
