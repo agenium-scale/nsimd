@@ -24,92 +24,93 @@ addons:
 ## Compilations and tests
 matrix:
     include:
-        ### Linux-gcc-x86
-        ### --------------------------------------------------------------------------------------------
-        ### SSE2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=gcc-8
-        #    - TOOLSET_CXX=g++-8
-        #    - SIMD=SSE2
-        ### SSE42:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=gcc-8
-        #    - TOOLSET_CXX=g++-8
-        #    - SIMD=SSE42
-        ### AVX:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=gcc-8
-        #    - TOOLSET_CXX=g++-8
-        #    - SIMD=AVX
-        ### AVX2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=gcc-8
-        #    - TOOLSET_CXX=g++-8
-        #    - SIMD=AVX2
-        ### AVX2+FMA:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=gcc-8
-        #    - TOOLSET_CXX=g++-8
-        #    - SIMD=AVX2
-        #    - SIMD_OPTIONALS=FMA
-        ### Linux-clang-x86
-        ### --------------------------------------------------------------------------------------------
-        ### SSE2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - SIMD=SSE2
-        ### SSE42:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - SIMD=SSE42
-        ### AVX:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - SIMD=AVX
-        ### AVX2:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - SIMD=AVX2
-        ### AVX2+FMA:
-        #- os: linux
-        #  env:
-        #    - TOOLSET_CC=clang-6.0
-        #    - TOOLSET_CXX=clang++-6.0
-        #    - SIMD=AVX2
-        #    - SIMD_OPTIONALS=FMA
-        ### OSX-clang-x86
-        ### --------------------------------------------------------------------------------------------
-        ### SSE2:
-        #- os: osx
-        #  env:
-        #    - TOOLSET_CC=clang
-        #    - TOOLSET_CXX=clang++
-        #    - SIMD=SSE2
-        ### SSE42:
-        #- os: osx
-        #  env:
-        #    - TOOLSET_CC=clang
-        #    - TOOLSET_CXX=clang++
-        #    - SIMD=SSE42
-        ### AVX:
-        #- os: osx
-        #  env:
-        #    - TOOLSET_CC=clang
-        #    - TOOLSET_CXX=clang++
-        #    - SIMD=AVX
+        ## Linux-gcc-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: linux
+          env:
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
+            - SIMD=SSE2
+        ## SSE42:
+        - os: linux
+          env:
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
+            - SIMD=SSE42
+        ## AVX:
+        - os: linux
+          env:
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
+            - SIMD=AVX
+        ## AVX2:
+        - os: linux
+          env:
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: linux
+          env:
+            - TOOLSET_CC=gcc-8
+            - TOOLSET_CXX=g++-8
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+        ## Linux-clang-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - SIMD=SSE2
+        ## SSE42:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - SIMD=SSE42
+        ## AVX:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - SIMD=AVX
+        ## AVX2:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - SIMD=AVX2
+        ## AVX2+FMA:
+        - os: linux
+          env:
+            - TOOLSET_CC=clang-6.0
+            - TOOLSET_CXX=clang++-6.0
+            - SIMD=AVX2
+            - SIMD_OPTIONALS=FMA
+        ## OSX-clang-x86
+        ## --------------------------------------------------------------------------------------------
+        ## SSE2:
+        - os: osx
+          env:
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
+            - SIMD=SSE2
+        ## SSE42:
+        - os: osx
+          env:
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
+            - SIMD=SSE42
+        ## AVX:
+        - os: osx
+          env:
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
+            - SIMD=AVX
+        ## Travis OSX does not support AVX2 instruction set, do not use it:
         ### AVX2:
         #- os: osx
         #  env:
