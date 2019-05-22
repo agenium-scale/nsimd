@@ -110,19 +110,20 @@ matrix:
             - TOOLSET_CC=clang
             - TOOLSET_CXX=clang++
             - SIMD=AVX
-        ## AVX2:
-        - os: osx
-          env:
-            - TOOLSET_CC=clang
-            - TOOLSET_CXX=clang++
-            - SIMD=AVX2
-        ## AVX2+FMA:
-        - os: osx
-          env:
-            - TOOLSET_CC=clang
-            - TOOLSET_CXX=clang++
-            - SIMD=AVX2
-            - SIMD_OPTIONALS=FMA
+        ## Travis OSX does not support AVX2 instruction set, do not use it:
+        ### AVX2:
+        #- os: osx
+        #  env:
+        #    - TOOLSET_CC=clang
+        #    - TOOLSET_CXX=clang++
+        #    - SIMD=AVX2
+        ### AVX2+FMA:
+        #- os: osx
+        #  env:
+        #    - TOOLSET_CC=clang
+        #    - TOOLSET_CXX=clang++
+        #    - SIMD=AVX2
+        #    - SIMD_OPTIONALS=FMA
         ## Windows-MSVC-x86
         ## --------------------------------------------------------------------------------------------
         ## SSE2:
