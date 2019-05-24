@@ -63,6 +63,8 @@ SOFTWARE.
       defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) || \
       defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
   #define NSIMD_ARM
+#elif defined(__ppc__) || defined(__powerpc__) || defined (__PPC__)
+  #define NSIMD_POWERPC
 #else
   #define NSIMD_CPU
 #endif
@@ -214,12 +216,12 @@ SOFTWARE.
 
 /* PPC */
 
-#if (defined(VMX) || defined(ALTIVEC)) && !defined(NSIMD_VMX)
-  #define NSIMD_VMX
+#if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
+  #define NSIMD_POWER8
 #endif
 
-#if defined(VSX) && !defined(NSIMD_VSX)
-  #define NSIMD_VSX
+#if defined(POWER7) && !defined(NSIMD_POWER7)
+  #define NSIMD_POWER7
 #endif
 
 /* CUDA */
@@ -307,6 +309,21 @@ SOFTWARE.
   #define NSIMD_SIMD sve
   #include <arm_neon.h>
   #include <arm_sve.h>
+
+#elif defined(NSIMD_POWER7)
+
+  #define NSIMD_PLATFORM ppc
+  #define NSIMD_SIMD power7
+  #include <altivec.h>
+  #ifdef bool
+    #undef bool
+  #endif
+  #ifdef pixel
+    #undef pixel
+  #endif
+  #ifdef vector
+    #undef vector
+  #endif
 
 #else
 
@@ -561,6 +578,8 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
   #define NSIMD_MAX_ALIGNMENT 64
 #elif defined(NSIMD_ARM)
   #define NSIMD_MAX_ALIGNMENT 256
+#elif defined(NSIMD_POWERPC)
+  #define NSIMD_MAX_ALIGNMENT 64
 #else
   #define NSIMD_MAX_ALIGNMENT 16
 #endif

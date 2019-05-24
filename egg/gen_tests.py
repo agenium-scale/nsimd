@@ -255,7 +255,7 @@ def get_content(op, typ, lang):
 
     # For floatting points generate some non integer inputs
     if typ in common.iutypes:
-        rand = '(1 << (rand() % 4))'
+        rand = 'rand()'
     else:
         if op.src:
           rand = '({cast})2 * ({cast})rand() / ({cast})RAND_MAX'. \
@@ -641,7 +641,7 @@ def gen_addv(opts, op, typ, lang):
                                           get_2th_power(-{nbits})) {{
                     return EXIT_FAILURE;
                   }}'''.format(nbits=nbits[typ])
-    else:
+    elif typ[0] == 'f':
         init = '''{typ} ref = ({typ})0;
                   {typ} res = ({typ})0;''' .format(typ=typ)
         rand = '''({typ})(2 * (rand() % 2) - 1) *
@@ -653,6 +653,16 @@ def gen_addv(opts, op, typ, lang):
                       (double)res) > get_2th_power(-{nbits})) {{
                     return EXIT_FAILURE;
                   }}'''.format(nbits=nbits[typ])
+    else:
+        init = '''{typ} ref = ({typ}) 0;
+                  {typ} res = ({typ}) 0;'''.format(typ=typ)
+        rand = '({})(rand() % 4)'.format(typ)
+        init_statement = 'buf[i] = {rand};' .format(rand=rand)
+        ref_statement = 'ref += buf[i];'
+        test = '''if(ref != res) {{
+                      return EXIT_FAILURE;
+                  }}'''
+
     with common.open_utf8(filename) as out:
         out.write(
             ''' \

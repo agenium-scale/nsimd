@@ -135,7 +135,9 @@ simds = [
     'avx512_skylake',
     'neon128',
     'aarch64',
-    'sve'
+    'sve',
+    'power7',
+    'power8',
 ]
 
 x86_simds = [
@@ -155,6 +157,11 @@ arm_simds = [
     'sve'
 ]
 
+ppc_simds = [
+    'power7',
+    'power8',
+]
+
 simds_deps = {
     'cpu': ['cpu'],
     'sse2': ['cpu', 'sse2'],
@@ -167,6 +174,8 @@ simds_deps = {
     'neon128': ['cpu', 'neon128'],
     'aarch64': ['cpu', 'aarch64'],
     'sve': ['cpu', 'aarch64', 'sve'],
+    'power7': ['cpu', 'power7'],
+    'power8': ['cpu', 'power8'],
 }
 
 ftypes = ['f64', 'f32', 'f16']
@@ -943,6 +952,8 @@ def sleef_name(name, simd, typ, ulp=None):
         'neon128': types_128,
         'aarch64': types_128,
         'sve': types_unknown,
+        'power7': types_128,
+        'power8': types_128,
     })[simd][typ]
     ## 4. (We cannot really guess that...
     ##     Instead you have to add bench manually)

@@ -700,7 +700,6 @@ class Sub(Operator):
 class Addv(Operator):
     full_name = 'horizontal sum'
     signature = 's addv v'
-    types = common.ftypes
     domain = Domain('R')
     categories = [DocMisc]
     desc = 'Returns the sum of all the elements contained in v'
