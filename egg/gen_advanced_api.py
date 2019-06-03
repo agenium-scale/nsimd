@@ -76,9 +76,14 @@ def get_cxx_advanced_generic(operator):
     elif operator.params[0] in ['vx2', 'vx3', 'vx4']:
         num = operator.params[0][-1:]
         return_ret = 'return ret;'
-        ret_car = \
-            'typename simd_traits<T, SimdExt>::simd_vectorx{} car = '. \
-            format(num)
+        if operator.closed:
+            ret_car = \
+                'typename simd_traits<T, SimdExt>::simd_vectorx{} car = '. \
+                format(num)
+        else:
+            ret_car = \
+                '''typename simd_traits<typename ToPackType::value_type,
+                       SimdExt>::simd_vectorx{} car = '''.format(num)
         ret_cdr = 'packx{}<T, N - 1, SimdExt> cdr = '.format(num)
         post_car = '; ret.set_car({})'.format(', '.join( \
             ['car.v{}'.format(i) for i in range(0, int(num))]))

@@ -114,6 +114,14 @@ NOT_IMPLEMENTED = 'abort();'
 hbar = '/* ' + ('-' * 73) + ' */'
 
 # -----------------------------------------------------------------------------
+# Convert constants for operators
+
+OUTPUT_TO_SAME_TYPE       = 0
+OUTPUT_TO_SAME_SIZE_TYPES = 1
+OUTPUT_TO_UP_TYPES        = 2
+OUTPUT_TO_DOWN_TYPES      = 3
+
+# -----------------------------------------------------------------------------
 # SIMD type
 
 simds = [
@@ -234,12 +242,40 @@ def ilog2(x):
         if 2 ** (i + 1) > x:
             return i
 
-def get_same_size_types(typ):
-    nbits = typ[1:]
-    if typ in ['i8' ,'u8']:
-        return ['i8', 'u8']
+#def get_same_size_types(typ):
+#    nbits = typ[1:]
+#    if typ in ['i8' ,'u8']:
+#        return ['i8', 'u8']
+#    else:
+#        return ['i' + nbits, 'u' + nbits, 'f' + nbits]
+
+def get_output_types(from_typ, output_to):
+    if output_to == OUTPUT_TO_SAME_TYPE:
+        return [from_typ]
     else:
-        return ['i' + nbits, 'u' + nbits, 'f' + nbits]
+        nbits = from_typ[1:]
+        if output_to == OUTPUT_TO_SAME_SIZE_TYPES:
+            if from_typ in ['i8' ,'u8']:
+                return ['i8', 'u8']
+            else:
+                return ['i' + nbits, 'u' + nbits, 'f' + nbits]
+        elif output_to == OUTPUT_TO_UP_TYPES:
+            if nbits == '64':
+                raise ValueError('No uptype for ' + from_typ)
+            else:
+                n = str(int(nbits) * 2)
+                return ['i' + n, 'u' + n, 'f' + n]
+        elif output_to == OUTPUT_TO_DOWN_TYPES:
+            n = str(int(nbits) // 2)
+            if nbits == '8':
+                raise ValueError('No downtype for ' + from_typ)
+            elif nbits == '16':
+                return ['i' + n, 'u' + n]
+            else:
+                return ['i' + n, 'u' + n, 'f' + n]
+        else:
+            raise ValueError('Invalid argument for "output_to": {}'. \
+                             format(output_to))
 
 # -----------------------------------------------------------------------------
 # mkdir -p (avoid a dependency for just one function)

@@ -124,6 +124,14 @@ class MAddToOperators(type):
 
         # Some defaults, that are fixed by the implementation
         (dct['name'], dct['params']) = common.parse_signature(dct['signature'])
+        if 'output_to' in dct:
+            if dct['output_to'] == common.OUTPUT_TO_SAME_TYPE:
+                dct['closed'] = True
+            else:
+                dct['closed'] = False
+        else:
+            dct['closed'] = True
+            dct['output_to'] = common.OUTPUT_TO_SAME_TYPE
 
         # If the operator takes as inputs vectors and returns a scalar, then
         # by default we cannot autogenerate the C++ advanced API because we
@@ -169,7 +177,7 @@ class Operator(object, metaclass=MAddToOperators):
     domain = Domain('R')
     cxx_operator = None
     autogen_cxx_adv = True
-    closed = True
+    output_to = common.OUTPUT_TO_SAME_TYPE
     src = False
     load_store = False
     types = common.types
@@ -904,30 +912,45 @@ class Nbtrue(Operator):
 
 class Reinterpret(Operator):
     signature = 'v reinterpret v'
-    closed = False
+    output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     domain = Domain('R')
     categories = [DocConversion]
-    closed = False
     ## Disable bench
     do_bench = False
 
 class Reinterpretl(Operator):
     signature = 'l reinterpretl l'
-    closed = False
     domain = Domain('B')
     categories = [DocConversion]
-    closed = False
+    output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     ## Disable bench
     do_bench = False
 
 class Cvt(Operator):
     signature = 'v cvt v'
-    closed = False
+    output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     domain = Domain('R')
     categories = [DocConversion]
-    closed = False
     ## Disable bench
     do_bench = False
+
+#class Upcast(Operator):
+#    signature = 'vx2 upcast v'
+#    output_to = common.OUTPUT_TO_UP_TYPES
+#    domain = Domain('R')
+#    types = ['i8', 'u8', 'i16', 'u16', 'f16', 'i32', 'u32', 'f32']
+#    categories = [DocConversion]
+#    ## Disable bench
+#    do_bench = False
+
+#class Downcast(Operator):
+#    signature = 'v downcast v v'
+#    output_to = common.OUTPUT_TO_DOWN_TYPES
+#    domain = Domain('R')
+#    types = ['i16', 'u16', 'f16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    categories = [DocConversion]
+#    ## Disable bench
+#    do_bench = False
 
 class Rec(Operator):
     full_name = 'reciprocal'

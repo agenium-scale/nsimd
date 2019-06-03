@@ -955,25 +955,57 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
         return
     logical = 'l' if op.name == 'reinterpretl' else ''
     if lang == 'c_base':
-        comp = '''vstore{logical}a(out, v{op_name}(v{op_name}(
-                    vload{logical}a(in, {from_typ}), {from_typ}, {to_typ}),
-                      {to_typ}, {from_typ}), {from_typ});'''. \
-                      format(op_name=op.name, from_typ=from_typ,
-                             to_typ=to_typ, logical=logical)
+        if op.name == 'upcast':
+            comp = '''{{
+                        vecx2({to_typ}) tmp =
+                          vupcast(vload{logical}a(in, {from_typ}),
+                                                  {from_typ}, {to_typ});
+                        vstore{logical}a(out, vdowncast(
+                            tmp.v0, tmp.v1, {to_typ}, {from_typ}),
+                            {from_typ});
+                      }}'''.format(op_name=op.name, from_typ=from_typ,
+                                   to_typ=to_typ, logical=logical)
+        else:
+            comp = '''vstore{logical}a(out, v{op_name}(v{op_name}(
+                        vload{logical}a(in, {from_typ}), {from_typ}, {to_typ}),
+                          {to_typ}, {from_typ}), {from_typ});'''. \
+                          format(op_name=op.name, from_typ=from_typ,
+                                 to_typ=to_typ, logical=logical)
     elif lang == 'cxx_base':
-        comp = '''nsimd::store{logical}a(out, nsimd::{op_name}(
-                    nsimd::{op_name}(nsimd::load{logical}a(
-                      in, {from_typ}()), {from_typ}(), {to_typ}()),
-                        {to_typ}(), {from_typ}()), {from_typ}());'''. \
-                      format(op_name=op.name, from_typ=from_typ,
-                             to_typ=to_typ, logical=logical)
+        if op.name == 'upcast':
+            comp = '''vecx2({to_typ}) tmp =
+                        nsimd::upcast(nsimd::load{logical}a(
+                            in, {from_typ}()), {from_typ}(), {to_typ}());
+                        nsimd::store{logical}a(out, nsimd::downcast(
+                            tmp.v0, tmp.v1, {to_typ}(), {from_typ}()),
+                            {from_typ}());'''. \
+                            format(op_name=op.name, from_typ=from_typ,
+                            to_typ=to_typ, logical=logical)
+        else:
+            comp = '''nsimd::store{logical}a(out, nsimd::{op_name}(
+                        nsimd::{op_name}(nsimd::load{logical}a(
+                          in, {from_typ}()), {from_typ}(), {to_typ}()),
+                            {to_typ}(), {from_typ}()), {from_typ}());'''. \
+                          format(op_name=op.name, from_typ=from_typ,
+                                 to_typ=to_typ, logical=logical)
     else:
-        comp = '''nsimd::store{logical}a(out, nsimd::{op_name}<
-                    nsimd::pack{logical}<{from_typ}> >(nsimd::{op_name}<
-                      nsimd::pack{logical}<{to_typ}> >(nsimd::load{logical}a<
-                        nsimd::pack{logical}<{from_typ}> >(in))));'''. \
-                        format(op_name=op.name, from_typ=from_typ,
-                               to_typ=to_typ, logical=logical)
+        if op.name == 'upcast':
+            comp = \
+            '''nsimd::packx2<{to_typ}> tmp = nsimd::upcast<
+                 nsimd::pack{logical}x2<{to_typ}> >(nsimd::load{logical}a<
+                   nsimd::pack{logical}<{from_typ}> >(in));
+               nsimd::store{logical}a(out, nsimd::downcast<
+                 nsimd::pack{logical}<{from_typ}> >(tmp.v0, tmp.v1));'''. \
+                 format(op_name=op.name, from_typ=from_typ,
+                        to_typ=to_typ, logical=logical)
+        else:
+            comp = \
+            '''nsimd::store{logical}a(out, nsimd::{op_name}<
+                 nsimd::pack{logical}<{from_typ}> >(nsimd::{op_name}<
+                   nsimd::pack{logical}<{to_typ}> >(nsimd::load{logical}a<
+                     nsimd::pack{logical}<{from_typ}> >(in))));'''. \
+                     format(op_name=op.name, from_typ=from_typ,
+                            to_typ=to_typ, logical=logical)
     if logical == 'l':
         rand = '(rand() % 2)'
     else:
@@ -1134,7 +1166,7 @@ def doit(opts):
         if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
-                        'store4a', 'store4u']:
+                        'store4a', 'store4u', 'downcast']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
@@ -1152,8 +1184,9 @@ def doit(opts):
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'cxx_base')
                 gen_all_any(opts, operator, typ, 'cxx_adv')
-            elif operator.name in ['reinterpret', 'reinterpretl', 'cvt']:
-                for to_typ in common.get_same_size_types(typ):
+            elif operator.name in ['reinterpret', 'reinterpretl', 'cvt',
+                                   'upcast']:
+                for to_typ in common.get_output_types(typ, operator.output_to):
                     gen_reinterpret_convert(opts, operator, typ, to_typ,
                                             'c_base')
                     gen_reinterpret_convert(opts, operator, typ, to_typ,

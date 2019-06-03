@@ -30,10 +30,7 @@ import sys
 def get_simd_implementation(operator, mod, simd_ext):
     ret = ''
     for t in operator.types:
-        if not operator.closed:
-            return_typs = common.get_same_size_types(t)
-        else:
-            return_typs = [t]
+        return_typs = common.get_output_types(t, operator.output_to)
         for tt in return_typs:
             fmtspec = operator.get_fmtspec(t, tt, simd_ext)
             if operator.src:
