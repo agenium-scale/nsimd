@@ -691,18 +691,11 @@ def sqrt1(simd_ext, typ):
 def shl_shr(op, simd_ext, typ):
     if simd_ext in neon:
         if op == 'shl':
-            return '''return v{op}q_{suf}({in0}, vdupq_n_s{typnbits}(
-                             (i{typnbits}){in1}));'''.format(op=op, **fmtspec)
+            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
+                             (i{typnbits}){in1}));'''.format(**fmtspec)
         else:
-            return \
-            '''int i;
-                  {typ} buf[{le}];
-                  vst1q_{suf}(buf, {in0});
-                  for (i = 0; i < {le}; i++) {{
-                    buf[i] = ({typ})(buf[i] >> {in1});
-                  }}
-                  return vld1q_{suf}(buf);'''. \
-                  format(le=128 // int(typ[1:]), **fmtspec)
+            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
+                             (i{typnbits})(-{in1})));'''.format(**fmtspec)
     else:
         armop = 'lsl' if op == 'shl' else 'lsr'
         return '''return sv{armop}_{suf}_z({svtrue}, {in0},
