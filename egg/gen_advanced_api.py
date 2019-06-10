@@ -100,9 +100,19 @@ def get_cxx_advanced_generic(operator):
         pack1_ret = ''
         packN_ret = ''
     if '*' in operator.params[1:] or 'c*' in operator.params[1:]:
-        int_len = 'int len_ = len({}<T, 1, SimdExt>());'. \
-                  format(get_pack(inter[0]) if inter != [] \
-                  else need_tmpl_pack)
+        # store*[au] does not contain any packx* argument, therefore the offset
+        # cannot be correctly computed
+        if operator.name in ['store2u', 'store2a']:
+            multiplier = '2 * '
+        elif operator.name in ['store3u', 'store3a']:
+            multiplier = '3 * '
+        elif operator.name in ['store4u', 'store4a']:
+            multiplier = '4 * '
+        else:
+            multiplier = ''
+        int_len = 'int len_ = {}len({}<T, 1, SimdExt>());'. \
+                  format(multiplier, get_pack(inter[0]) if inter != [] \
+                                     else need_tmpl_pack)
     else:
         int_len = ''
 
