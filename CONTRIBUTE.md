@@ -25,7 +25,7 @@ NSIMD currently supports the following architectures:
 
 - Intel:
   + SSE2 called SSE2 in source code.
-  + SSE4.2 called SSE4.2 in source code.
+  + SSE4.2 called SSE42 in source code.
   + AVX called AVX in source code.
   + AVX2 called AVX2 in source code.
   + AVX-512 as found on KNLs called AVX512\_KNL in source code.
@@ -206,7 +206,7 @@ python3 egg/hatch.py -Af
 
 and the following files (among many other) should appear:
 
-- `include/nsimd/x86/cpu/foo.h`
+- `include/nsimd/cpu/cpu/foo.h`
 - `include/nsimd/x86/sse2/foo.h`
 - `include/nsimd/x86/sse42/foo.h`
 - `include/nsimd/x86/avx/foo.h`
