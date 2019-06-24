@@ -205,7 +205,8 @@ def emulate_op1(op, simd_ext, typ):
                   {typ} buf[{le}];
                   vst1q_{suf}(buf, {in0});
                   for (i = 0; i < {le}; i++) {{
-                    buf[i] = nsimd_{op}_cpu_{typ}(buf[i]);
+                    nsimd_storeu_cpu_{typ}(&buf[i], nsimd_{op}_cpu_{typ}(
+                      nsimd_loadu_cpu_{typ}(&buf[i])));
                   }}
                   return vld1q_{suf}(buf);'''. \
                   format(op=op, le=le, **fmtspec)
@@ -215,7 +216,8 @@ def emulate_op1(op, simd_ext, typ):
                   {typ} buf[{le}];
                   svst1_{suf}({svtrue}, buf, {in0});
                   for (i = 0; i < simd_len_{simd_ext}_{typ}(); i++) {{
-                    buf[i] = nsimd_{op}_cpu_{typ}(buf[i]);
+                    nsimd_storeu_cpu_{typ}(&buf[i], nsimd_{op}_cpu_{typ}(
+                      nsimd_loadu_cpu_{typ}(&buf[i])));
                   }}
                   return svld1_{suf}({svtrue}, buf);'''. \
                   format(op=op, le=le, **fmtspec)
@@ -266,9 +268,56 @@ def emulate_op3_neon(op, simd_ext, typ):
               vst1q_{suf}(buf1, {in1});
               vst1q_{suf}(buf2, {in2});
               for (i = 0; i < {le}; i++) {{
-                buf0[i] = nsimd_{op}_cpu_{typ}(buf0[i], buf1[i], buf2[i]);
+                nsimd_storeu_cpu_{typ}(&buf0[i], nsimd_{op}_cpu_{typ}(
+                  nsimd_loadu_cpu_{typ}(&buf0[i],
+                  nsimd_loadu_cpu_{typ}(&buf1[i],
+                  nsimd_loadu_cpu_{typ}(&buf2[i]))));
               }}
               return vld1q_{suf}(buf0);'''.format(op=op, le=le, **fmtspec)
+
+def emulate_f64_neon(simd_ext, op, params):
+    fmtspec2 = fmtspec.copy()
+    fmtspec2['op'] = op
+    fmtspec2['buf_ret_decl'] = 'nsimd_cpu_{}f64 buf_ret'. \
+                               format('v' if params[0] == 'v' else 'vl')
+    fmtspec2['buf_decl'] = '\n'.join(['nsimd_cpu_{}f64 buf{}'. \
+                           format('v' if p[0] == 'v' else 'vl', p[1]) \
+                           for p in common.enum(params[1:])])
+    fmtspec2['bufs'] = ','.join(['buf{}'.format(i) \
+                                 for i in range(0, len(params) - 1)])
+    fmtspec2['ret_decl'] = 'nsimd_{}_{}f64 ret;'. \
+                           format(simd_ext, 'v' if params[0] == 'v' else 'vl')
+    if common.CPU_NBITS == 64:
+        buf_set0 = '\n'.join('buf{i}.v0 = {ini}.v0;'. \
+                             format(i=i, ini=fmtspec['in{}'.format(i)]) \
+                             for i in range(0, len(params) - 1))
+        buf_set1 = '\n'.join('buf{i}.v0 = {ini}.v1;'. \
+                             format(i=i, ini=fmtspec['in{}'.format(i)]) \
+                             for i in range(0, len(params) - 1))
+        return '''{buf_ret_decl}
+                  {buf_decl}
+                  {ret_decl}
+                  {buf_set0}
+                  buf_ret = nsimd_{op}_cpu_f64({bufs});
+                  ret.v0 = buf_ret.v0;
+                  {buf_set1}
+                  buf_ret = nsimd_{op}_cpu_f64({bufs});
+                  ret.v1 = buf_ret.v0;
+                  return ret;'''. \
+                  format(buf_set0=buf_set0, buf_set1=buf_set1, **fmtspec2)
+    else:
+        buf_set = '\n'.join('''buf{i}.v0 = {ini}.v0;
+                               buf{i}.v1 = {ini}.v1;'''. \
+                               format(i=i, ini=fmtspec['in{}'.format(i)]) \
+                               for i in range(0, arity))
+        return '''{buf_ret_decl}
+                  {buf_decl}
+                  {ret_decl}
+                  {buf_set}
+                  buf_ret = nsimd_{op}_cpu_f64({bufs});
+                  ret.v0 = buf_ret.v0;
+                  ret.v1 = buf_ret.v1;
+                  return ret;'''.format(buf_set=buf_set, **fmtspec2)
 
 def f16f64(simd_ext, typ, op, armop, arity, forced_intrinsics = ''):
     fmtspec2 = fmtspec.copy()
@@ -294,10 +343,7 @@ def f16f64(simd_ext, typ, op, armop, arity, forced_intrinsics = ''):
                     return ret;
                   #endif'''.format(**fmtspec2)
     elif simd_ext == 'neon128' and typ == 'f64':
-        return '''nsimd_{simd_ext}_vf64 ret;
-                  ret.v1 = nsimd_{op}_cpu_f64({args1});
-                  ret.v2 = nsimd_{op}_cpu_f64({args2});
-                  return ret;'''.format(**fmtspec2)
+        return emulate_f64_neon(simd_ext, op, ['v'] * arity)
     return ''
 
 # -----------------------------------------------------------------------------
@@ -622,11 +668,7 @@ def lop2(op, simd_ext, typ):
                  return ret;
                #endif'''.format(armop=armop[op], **fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
-            return \
-            '''nsimd_neon128_vlf64 ret;
-               ret.v1 = nsimd_{op}_cpu_u64({in0}.v1, {in1}.v1);
-               ret.v2 = nsimd_{op}_cpu_u64({in0}.v2, {in1}.v2);
-               return ret;'''.format(op=op, **fmtspec)
+            return emulate_f64_neon('neon128', op, ['l'] * 3)
         else:
             return 'return v{armop}q_u{typnbits}({in0}, {in1});'. \
                    format(armop=armop[op], **fmtspec)
@@ -650,11 +692,7 @@ def lnot1(simd_ext, typ):
                  return ret;
                #endif'''.format(**fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
-            return \
-            '''nsimd_neon128_vlf64 ret;
-               ret.v1 = nsimd_notb_cpu_u64({in0}.v1);
-               ret.v2 = nsimd_notb_cpu_u64({in0}.v2);
-               return ret;'''.format(**fmtspec)
+            return emulate_f64_neon('neon128', 'notl', ['l'] * 2)
         elif typ in ['i64', 'u64', 'f64']:
             return '''return vreinterpretq_u{typnbits}_u32(vmvnq_u32(
                                vreinterpretq_u32_u{typnbits}({in0})));'''. \
@@ -798,11 +836,8 @@ def if_else3(simd_ext, typ):
                  return ret;
                #endif'''.format(intrinsic=intrinsic, **fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
-            return \
-            '''nsimd_neon128_vf64 ret;
-               ret.v1 = nsimd_if_else1_cpu_f64({in0}.v1, {in1}.v1, {in2}.v1);
-               ret.v2 = nsimd_if_else1_cpu_f64({in0}.v2, {in1}.v2, {in2}.v2);
-               return ret;'''.format(**fmtspec)
+            return emulate_f64_neon('neon128', 'if_else1',
+                                    ['v', 'l', 'v', 'v'])
         else:
             return intrinsic
     else:
@@ -899,11 +934,7 @@ def fmafnma3(op, simd_ext, typ):
             else:
                 return using_f32
         elif simd_ext == 'neon128' and typ == 'f64':
-            return \
-            '''nsimd_neon128_vf64 ret;
-               ret.v1 = nsimd_{op}_cpu_f64({in0}.v1, {in1}.v1, {in2}.v1);
-               ret.v2 = nsimd_{op}_cpu_f64({in0}.v2, {in1}.v2, {in2}.v2);
-               return ret;'''.format(op=op, **fmtspec)
+            return emulate_f64_neon('neon128', op, ['v'] * 4)
         elif simd_ext == 'aarch64' and typ == 'f64':
             return normal
         elif typ in ['i64', 'u64']:
@@ -1312,15 +1343,19 @@ def reinterpret1(simd_ext, from_typ, to_typ):
             return from_f16_with_f32
         elif to_typ == 'f64':
             return '''nsimd_neon128_vf64 ret;
-                      ret.v1 = nsimd_reinterpret_cpu_f64_{from_typ}(
-                                 vgetq_lane_{from_suf}({in0}, 0));
-                      ret.v2 = nsimd_reinterpret_cpu_f64_{from_typ}(
-                                 vgetq_lane_{from_suf}({in0}, 1));
+                      union { f64 to, {from_typ} from } buf;
+                      buf.from = vgetq_lane_{from_suf}({in0}, 0);
+                      ret.v1 = buf.to;
+                      buf.from = vgetq_lane_{from_suf}({in0}, 1);
+                      ret.v2 = buf.to;
                       return ret;'''.format(**fmtspec2)
         elif from_typ == 'f64':
-            return '''{to_typ} buf[2];
-                      buf[0] = nsimd_reinterpret_cpu_{to_typ}_f64({in0}.v1);
-                      buf[1] = nsimd_reinterpret_cpu_{to_typ}_f64({in0}.v2);
+            return '''union { f64 from, {to_typ} to } buf_;
+                      {to_typ} buf[2];
+                      buf_.from = {in0}.v1;
+                      buf[0] = buf_.to;
+                      buf_.from = {in0}.v2;
+                      buf[1] = buf_.to;
                       return vld1q_{to_suf}(buf);'''.format(**fmtspec2)
         else:
             return 'return vreinterpretq_{to_suf}_{from_suf}({in0});'. \

@@ -149,6 +149,9 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/x86/{simd_ext}/storeu.h>
                   #include <nsimd/x86/{simd_ext}/loadu.h>
                   '''.format(simd_ext=simd_ext)
+    if func == 'upcvt':
+        ret += '''#include <nsimd/x86/{simd_ext}/cvt.h>
+                  '''.format(simd_ext=simd_ext)
     if simd_ext in avx512 and func in ['loadlu', 'loadla']:
         ret += '''
                   #if NSIMD_CXX > 0
@@ -298,7 +301,7 @@ def setr(simd_ext, typ, var1, var2):
             return '''_mm256_insertf128_ps(_mm256_castps128_ps256(
                         {}), {}, 1)'''.format(var1, var2)
         elif typ == 'f64':
-            return '''_mm256_insertf128_pd(_mm256_castps128_pd256(
+            return '''_mm256_insertf128_pd(_mm256_castpd128_pd256(
                         {}), {}, 1)'''.format(var1, var2)
         else:
             return '''_mm256_insertf128_si256(_mm256_castsi128_si256(
@@ -306,7 +309,8 @@ def setr(simd_ext, typ, var1, var2):
     elif simd_ext in avx512:
         if typ == 'f32':
             return '''_mm512_castpd_ps(_mm512_insertf64x4(_mm512_castps_pd(
-                        _mm512_castps256_ps512({}), {}, 1)))'''. \
+                        _mm512_castps256_ps512({})), _mm256_castps_pd(
+                          {}), 1))'''. \
                       format(var1, var2)
         elif typ == 'f64':
             return '''_mm512_insertf64x4(_mm512_castpd256_pd512(
@@ -351,7 +355,7 @@ def split_op2(func, simd_ext, typ):
 def emulate_op2(op, simd_ext, typ):
     return '''int i;
               {typ} buf0[{le}], buf1[{le}];
-          {pre}storeu{sufsi}(({intrin_typ}*)buf0, {in0});
+              {pre}storeu{sufsi}(({intrin_typ}*)buf0, {in0});
               {pre}storeu{sufsi}(({intrin_typ}*)buf1, {in1});
               for (i = 0; i < {le}; i++) {{
                 buf0[i] = ({typ})(buf0[i] {op} buf1[i]);
@@ -367,8 +371,9 @@ def emulate_op1(func, simd_ext, typ):
     return '''int i;
               {typ} buf0[{le}];
               {pre}storeu{sufsi}({cast}buf0, {in0});
-              for (i = 0; i < {le}; i++) {{
-                buf0[i] = nsimd_{func}_cpu_{typ}(buf0[i]);
+              for (i = 0; i < {le}; i += nsimd_len_cpu_{typ}()) {{
+                nsimd_storeu_cpu_{typ}(&buf0[i], nsimd_{func}_cpu_{typ}(
+                  nsimd_loadu_cpu_{typ}(&buf0[i])));
               }}
               return {pre}loadu{sufsi}({cast}buf0);'''. \
               format(cast=cast, func=func, **fmtspec)
@@ -2172,9 +2177,9 @@ def addv(simd_ext, typ):
                         format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## upcast
+## upconvert
 
-def upcast1(simd_ext, from_typ, to_typ):
+def upcvt1(simd_ext, from_typ, to_typ):
     # From f16 is easy
     if from_typ == 'f16':
         if to_typ == 'f32':
@@ -2190,33 +2195,26 @@ def upcast1(simd_ext, from_typ, to_typ):
                ret.v1 = nsimd_cvt_{simd_ext}_{to_typ}_f32({in0}.v2);
                return ret;'''.format(**fmtspec)
 
-    # emulation
-    emulation = \
-    '''nsimd_{simd_ext}_v{to_typ}x2 ret;
-       {to_typ2} dst[{le}];
-       {from_typ} src[{le}];
-       int i;
-       nsimd_storeu_{simd_ext}_{from_typ}(src, {in0});
-       for (i = 0; i < {le}; i++) {{
-         dst[i] = {src};
-       }}
-       ret.v0 = nsimd_loadu_{simd_ext}_{to_typ}({cast}dst);
-       ret.v1 = nsimd_loadu_{simd_ext}_{to_typ}({cast}dst + ({le} / 2));
-       return ret;'''. \
-       format(src='nsimd_f32_to_u16((f32)src[i])' if to_typ == 'f16' \
-              else '({to_typ})src[i]'.format(**fmtspec),
-              cast='(f16 const*)' if to_typ == 'f16' else '',
-              to_typ2='u16' if to_typ == 'f16' else to_typ, **fmtspec)
+    # To f16 is easy
+    if to_typ == 'f16':
+        return \
+        '''nsimd_{simd_ext}_vf16x2 ret;
+           nsimd_{simd_ext}_v{iu}16x2 buf;
+           buf = nsimd_upcvt_{simd_ext}_{iu}16_{iu}8({in0});
+           ret.v0 = nsimd_cvt_{simd_ext}_f16_{iu}16(buf.v0);
+           ret.v1 = nsimd_cvt_{simd_ext}_f16_{iu}16(buf.v1);
+           return ret;'''.format(iu=from_typ[0], **fmtspec)
 
     # For integer upcast, due to 2's complement representation
     # epi_epi : signed   -> bigger signed
     # epi_epi : signed   -> bigger unsigned
-    # epu_epu : unsigned -> bigger signed
-    # epu_epu : unsigned -> bigger unsigned
+    # epu_epi : unsigned -> bigger signed
+    # epu_epi : unsigned -> bigger unsigned
     if from_typ in common.iutypes:
-        suf_epep = '{ui}{nbits}_{ui}{nbits2}'. \
+        suf_epep = 'ep{ui}{typnbits}_epi{typnbits2}'. \
                    format(ui='u' if from_typ in common.utypes else 'i',
-                          nbits2=str(int(fmtspec['nbits']) * 2), **fmtspec)
+                          typnbits2=str(int(fmtspec['typnbits']) * 2),
+                          **fmtspec)
     else:
         suf_epep = 'ps_pd'
 
@@ -2230,11 +2228,14 @@ def upcast1(simd_ext, from_typ, to_typ):
     if simd_ext in sse:
         if from_typ in common.iutypes:
             upper_half = \
-            '''{pre}castpd_si{nbits}({pre}shufle_pd({pre}castsi{nbits}_pd(
-                 {in0}), 1))'''.format(**fmtspec)
-        elif from_typ == 'f32':
-            upper_half = '''{pre}castpd_ps({pre}shufle_pd({pre}castps_pd(
-                              {in0}), 1))'''.format(**fmtspec)
+            '''{pre}castpd_si{nbits}({pre}shuffle_pd(
+                   {pre}castsi{nbits}_pd({in0}),
+                   {pre}castsi{nbits}_pd({in0}), 1))'''. \
+                   format(**fmtspec)
+        else:
+            upper_half = '''{pre}castpd_ps({pre}shuffle_pd(
+                                {pre}castps_pd({in0}),
+                                {pre}castps_pd({in0}), 1))'''.format(**fmtspec)
     else:
         upper_half = extract(simd_ext, from_typ, HI, fmtspec['in0'])
 
@@ -2257,18 +2258,8 @@ def upcast1(simd_ext, from_typ, to_typ):
            return ret;'''.format(upper_half=upper_half, lower_half=lower_half,
                                  suf_epep=suf_epep, **fmtspec)
     else:
-        if from_typ in common.iutypes:
-            from_typ2 = from_typ[0] + str(int(nbits) * 2)
-            with_intrinsic = \
-            '''nsimd_{simd_ext}_v{to_typ}x2 ret;
-               ret.v0 = nsimd_cvt_{simd_ext}_{to_typ}_{from_typ2}(
-                          {pre}cvt{suf_epep}({lower_half}));
-               ret.v1 = nsimd_cvt_{simd_ext}_{to_typ}_{from_typ2}(
-                          {pre}cvt{suf_epep}({upper_half}));
-               return ret;'''. \
-               format(upper_half=upper_half, lower_half=lower_half,
-                      from_typ2=from_typ2, suf_epep=suf_epep, **fmtspec)
-        else:
+        from_typ2 = from_typ[0] + str(int(fmtspec['typnbits']) * 2)
+        if from_typ not in common.iutypes:
             # getting here means that from_typ=f32 and to_typ=f64
             with_intrinsic = \
             '''nsimd_{simd_ext}_vf64x2 ret;
@@ -2280,15 +2271,63 @@ def upcast1(simd_ext, from_typ, to_typ):
                format(upper_half=upper_half, lower_half=lower_half,
                       from_typ2=from_typ2, suf_epep=suf_epep, **fmtspec)
 
-    # When no intrinsic is given we use the trick of falling back to
+    # When no intrinsic is given for going from integers to floating or
+    # from floating to integer we can go through a cvt
+    if to_typ in common.ftypes:
+        int_float = \
+        '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+           nsimd_{simd_ext}_v{int_typ}x2 tmp;
+           tmp = nsimd_upcvt_{simd_ext}_{int_typ}_{from_typ}({in0});
+           ret.v0 = nsimd_cvt_{simd_ext}_{to_typ}_{int_typ}(tmp.v0);
+           ret.v1 = nsimd_cvt_{simd_ext}_{to_typ}_{int_typ}(tmp.v1);
+           return ret;'''. \
+           format(int_typ=from_typ[0] + to_typ[1:], lower_half=lower_half,
+                  upper_half=upper_half, **fmtspec)
+    else:
+        int_float = \
+        '''return nsimd_upcvt_{simd_ext}_{to_typ}_{int_typ}(
+                      nsimd_cvt_{simd_ext}_{int_typ}_{from_typ}({in0}));'''. \
+                      format(int_typ=to_typ[0] + from_typ[1:],
+                             lower_half=lower_half, upper_half=upper_half,
+                             **fmtspec)
+
+    # When no intrinsic is given we can use the trick of falling back to
     # the lower SIMD extension
     split_trick = \
-    '''
-       '''.format(**fmtspec)
+    '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+       nsimd_{simd_ext2}_v{to_typ}x2 ret2;
+       ret2 = nsimd_upcvt_{simd_ext2}_{to_typ}_{from_typ}({lo});
+       ret.v0 = {merge};
+       ret2 = nsimd_upcvt_{simd_ext2}_{to_typ}_{from_typ}({hi});
+       ret.v1 = {merge};
+       return ret;'''. \
+       format(simd_ext2='sse42' if simd_ext == 'avx' else 'avx2',
+              lo=extract(simd_ext, from_typ, LO, common.in0),
+              hi=extract(simd_ext, from_typ, HI, common.in0),
+              merge=setr(simd_ext, to_typ, 'ret2.v0', 'ret2.v1'), **fmtspec)
 
     # return C code
+    if from_typ == 'i32' and to_typ == 'f64':
+        return with_intrinsic
+    if (from_typ in common.ftypes and to_typ in common.iutypes) or \
+       (from_typ in common.iutypes and to_typ in common.ftypes):
+        return int_float
     if simd_ext == 'sse2':
-        return emulation
+        if from_typ in common.itypes and to_typ in common.iutypes:
+            return \
+            '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+               __m128i mask = _mm_cmpgt{suf}(_mm_setzero_si128(), {in0});
+               ret.v0 = _mm_unpacklo{suf}({in0}, mask);
+               ret.v1 = _mm_unpackhi{suf}({in0}, mask);
+               return ret;'''.format(**fmtspec)
+        elif from_typ in common.utypes and to_typ in common.iutypes:
+            return \
+            '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+               ret.v0 = _mm_unpacklo{suf}({in0}, _mm_setzero_si128());
+               ret.v1 = _mm_unpackhi{suf}({in0}, _mm_setzero_si128());
+               return ret;'''.format(**fmtspec)
+        else:
+            return with_intrinsic
     elif simd_ext == 'sse42':
         return with_intrinsic
     elif simd_ext == 'avx':
@@ -2299,11 +2338,98 @@ def upcast1(simd_ext, from_typ, to_typ):
     elif simd_ext == 'avx2':
         return with_intrinsic
     elif simd_ext == 'avx512_knl':
-        if from_typ == 'i32' and to_typ == 'f64':
+        if from_typ in ['i16', 'u16', 'i32', 'u32', 'f32']:
             return with_intrinsic
         else:
             return split_trick
-    return 'abort();'
+    else:
+        return with_intrinsic
+
+# -----------------------------------------------------------------------------
+## downconvert
+
+def downcvt1(simd_ext, from_typ, to_typ):
+    # From f16 is easy
+    if from_typ == 'f16':
+        le_to_typ = int(fmtspec['le']) * 2
+        le_1f32 = le_to_typ // 4
+        le_2f32 = 2 * le_to_typ // 4
+        le_3f32 = 3 * le_to_typ // 4
+        return \
+        '''{to_typ} dst[{le_to_typ}];
+           f32 src[{le_to_typ}];
+           int i;
+           {pre}storeu_ps(src, {in0}.v1);
+           {pre}storeu_ps(src + {le_1f32}, {in0}.v2);
+           {pre}storeu_ps(src + {le_2f32}, {in1}.v1);
+           {pre}storeu_ps(src + {le_3f32}, {in1}.v2);
+           for (i = 0; i < {le_to_typ}; i++) {{
+             dst[i] = ({to_typ})src[i];
+           }}
+           return {pre}loadu_si{nbits}(({nat_typ}*)dst);'''. \
+           format(le_to_typ=le_to_typ, le_1f32=le_1f32, le_2f32=le_2f32,
+                  le_3f32=le_3f32, nat_typ=get_type(simd_ext, to_typ),
+                  **fmtspec)
+
+    # To f16 is easy
+    if to_typ == 'f16':
+        if from_typ == 'f32':
+            return \
+            '''nsimd_{simd_ext}_vf16 ret;
+               ret.v1 = {in0};
+               ret.v2 = {in1};
+               return ret;'''.format(**fmtspec)
+        else:
+            return \
+            '''nsimd_{simd_ext}_vf16 ret;
+               ret.v1 = nsimd_cvt_{simd_ext}_f32_{from_typ}({in0});
+               ret.v2 = nsimd_cvt_{simd_ext}_f32_{from_typ}({in1});
+               return ret;'''.format(**fmtspec)
+
+    # f64 --> f32 have intrinsics
+    if from_typ == 'f64' and to_typ == 'f32':
+        if simd_ext in sse:
+            return '''return _mm_movelh_ps(_mm_cvtpd_ps({in0}),
+                                           _mm_cvtpd_ps({in1}));'''. \
+                                           format(**fmtspec)
+        else:
+            return 'return {};'.format(setr(simd_ext, 'f32',
+                                '{pre}cvtpd_ps({in0})'.format(**fmtspec),
+                                '{pre}cvtpd_ps({in1})'.format(**fmtspec)))
+
+    # integer conversions intrinsics are only available with AVX-512
+    if simd_ext in avx512:
+        if (from_typ in ['i32', 'i64'] and to_typ in common.itypes) or \
+           (simd_ext == 'avx512_skylake' and from_typ == 'i16' and \
+            to_typ == 'i8'):
+            return 'return {};'.format(setr(simd_ext, to_typ,
+                   '{pre}cvtep{from_typ}_ep{to_typ}({in0})'.format(**fmtspec),
+                   '{pre}cvtep{from_typ}_ep{to_typ}({in1})'.format(**fmtspec)))
+        elif from_typ == 'i64' and to_typ == 'f32':
+            return 'return nsimd_cvt_{simd_ext}_f32_i32({});'. \
+                   format(setr(simd_ext, from_typ,
+                          '{pre}cvtepi64_epi32({in0})'.format(**fmtspec),
+                          '{pre}cvtepi64_epi32({in1})'.format(**fmtspec)),
+                          **fmtspec)
+
+    # and then emulation
+    le_to_typ = 2 * int(fmtspec['le'])
+    return \
+    '''{to_typ} dst[{le_to_typ}];
+       {from_typ} src[{le_to_typ}];
+       int i;
+       {pre}storeu{sufsi}({cast_src}src, {in0});
+       {pre}storeu{sufsi}({cast_src}(src + {le}), {in1});
+       for (i = 0; i < {le_to_typ}; i++) {{
+         dst[i] = ({to_typ})src[i];
+       }}
+       return {pre}loadu{sufsi_to_typ}({cast_dst}dst);'''. \
+       format(cast_src='({}*)'.format(get_type(simd_ext, from_typ)) \
+              if from_typ in common.iutypes else '',
+              cast_dst='({}*)'.format(get_type(simd_ext, to_typ)) \
+              if to_typ in common.iutypes else '',
+              le_to_typ=le_to_typ, sufsi_to_typ=suf_si(simd_ext, to_typ),
+              **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## get_impl function
@@ -2401,7 +2527,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'nbtrue': nbtrue1(simd_ext, from_typ),
         'reverse': reverse1(simd_ext, from_typ),
         'addv': addv(simd_ext, from_typ),
-        #'upcast': upcast1(simd_ext, from_typ, to_typ)
+        'upcvt': upcvt1(simd_ext, from_typ, to_typ),
+        'downcvt': downcvt1(simd_ext, from_typ, to_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

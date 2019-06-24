@@ -214,6 +214,11 @@ in3 = 'a3'
 in4 = 'a4'
 in5 = 'a5'
 
+CPU_NBITS = 64
+
+if CPU_NBITS != 64 and CPU_NBITS != 128:
+    raise ValueError('CPU_NBITS must be 64 or 128')
+
 def get_args(n):
     fmtspec = { 'in0': in0, 'in1': in1, 'in2': in2, 'in3': in3, 'in4': in4,
                 'in5': in5 }
