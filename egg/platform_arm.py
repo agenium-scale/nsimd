@@ -1447,9 +1447,9 @@ def addv(simd_ext, typ):
                  return vget_lane_{suf}(tmp, 0);
                #else
                  float32x2_t tmp0 = vadd_f32(vget_low_f32({in0}.v0),
-                                             vget_high_f32({in0}.v1));
+                                             vget_high_f32({in0}.v0));
                  tmp0 = vadd_f32(tmp0, vext_f32(tmp0, tmp0, 1));
-                 float32x2_t tmp1 = vadd_f32(vget_low_f32({in0}.v0),
+                 float32x2_t tmp1 = vadd_f32(vget_low_f32({in0}.v1),
                                              vget_high_f32({in0}.v1));
                  tmp1 = vadd_f32(tmp1, vext_f32(tmp1, tmp1, 1));
                  return nsimd_f32_to_f16(vget_lane_f32(tmp0, 0) +
