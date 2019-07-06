@@ -199,16 +199,16 @@ def get_impl(operator, emulate_fp16, simd_ext):
                    {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      nsimd_{simd_ext}_v{logical}f16 ret;
                      auto buf = nsimd::impl::{name}({args1});
-                     ret.v1 = buf.car;
+                     ret.v0 = buf.car;
                      buf = nsimd::impl::{name}({args2});
-                     ret.v2 = buf.car;
+                     ret.v1 = buf.car;
                      return ret;
                    }}
 
                    }} // extern "C"
 
-                   '''.format(args1=args.format(lohi='1'),
-                              args2=args.format(lohi='2'),
+                   '''.format(args1=args.format(lohi='0'),
+                              args2=args.format(lohi='1'),
                               logical='l' if operator.params[0] == 'l' else '',
                               **fmtspec)
         else:

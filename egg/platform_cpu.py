@@ -526,7 +526,7 @@ def rec_rec11(typ):
 
 def rsqrt11(typ):
     if typ == 'f64':
-        return func_body('ret.v{{i}} = 1.0 / {in0}.v{{i}};'. \
+        return func_body('ret.v{{i}} = 1.0 / sqrt({in0}.v{{i}});'. \
                          format(**fmtspec), typ)
     else:
         return func_body(
