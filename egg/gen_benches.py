@@ -932,7 +932,7 @@ def doit(opts):
         # USUALLY DO NOT PROPOSE A GENERIC INTERFACE
         for simd in _opts.simd:
             ## FIXME
-            if simd == 'neon128':
+            if simd in ['neon128', 'cpu']:
                 continue
             for typ in f.types:
                 ## FIXME
