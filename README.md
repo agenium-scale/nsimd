@@ -72,15 +72,17 @@ Testing the library requires the Google Test library that can be found at
 <https://github.com/google/googletest> and the MPFR library that can be found at
 <https://www.mpfr.org/>.
 
-Benchmarking the library requires Google Benchmark that can be found at
-<https://github.com/google/benchmark> plus all the other SIMD libraries used
-for comparison:
+Benchmarking the library requires Google Benchmark version 1.3 that can be
+found at <https://github.com/google/benchmark> plus all the other SIMD
+libraries used for comparison:
 - MIPP (<https://github.com/aff3ct/MIPP>)
 - Sleef (<https://sleef.org/>)
 
 Compiling the library requires a C++14 compiler. Any recent version of GCC,
 Clang and MSVC will do. Note that the produced library and header files for the
-end-user are C89, C++98, C++11 compatible.
+end-user are C89, C++98, C++11 compatible. Note that C/C++ files are generated
+by a bunch of Python scripts and they must be executed first before running
+cmake.
 
 ```bash
 python3 egg/hatch.py -Af
@@ -124,6 +126,7 @@ use the latest versions of Visual Studio to build the library using its
 `CMakeLists.txt`.
 
 ```batch
+python egg\hatch.py -Af
 md build
 cd build
 cmake .. -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl

@@ -58,6 +58,7 @@ if (ENABLE_BENCHMARK)
     if (NOT MSVC)
         set(PTHREAD_LIBRARY pthread)
     endif()
+    message(STATUS "Benchmarks are enabled")
 else()
     message(STATUS "Benchmarks are disabled")
 endif()
@@ -91,30 +92,16 @@ else()
     set(libname "nsimd_${SIMD_INFO_PLATFORM}")
 endif()
 
-## egg/hatch.py
+## Check that egg/hatch.py has been run
 ## ----------------------------------------------------------------------------
 
-file(TO_NATIVE_PATH "${NSIMD_ROOT}/egg/hatch.py" HATCH_PY)
-file(TO_NATIVE_PATH "${PYTHON_EXECUTABLE}" PYTHON_EXECUTABLE)
-
-## First generate sources
-## ----------------------------------------------------------------------------
-
-if (NOT EXISTS ${NSIMD_ROOT}/src/api_cpu.cpp)
-    message(STATUS "Hatch command is: ${PYTHON_EXECUTABLE} ${HATCH_PY}")
-    message(STATUS
-            "${PYTHON_EXECUTABLE} ${HATCH_PY} --simd=${SIMD_INFO_HATCH} -Ccsa")
-    execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} ${HATCH_PY} --simd=${SIMD_INFO_HATCH} -Ccsa
-        RESULT_VARIABLE error
-    )
-    if (NOT ${error} EQUAL 0)
-        message(STATUS
-                "Something went wrong while running hatch.py, please see above")
-        message(FATAL_ERROR ${error.output})
-    endif()
-    ## Make sure to tell cmake to regenerate itself
-    execute_process(COMMAND cmake -E touch "${CMAKE_CURRENT_LIST_FILE}")
+file(TO_NATIVE_PATH "${NSIMD_ROOT}/include/nsimd/functions.h"
+     TEST_FILE)
+if(NOT EXISTS "${TEST_FILE}")
+    message(FATAL_ERROR
+            "\nIt seems that you did not generate C/C++ files,\n"
+            "Run 'python3 egg/hatch.py -Af' for full generation\n"
+            "and then rerun CMake.")
 endif()
 
 ## CMake helpers
@@ -148,7 +135,8 @@ function(make_tests root pattern is_cpp)
         if (${test.target} MATCHES ${requires_mpfr_r})
             ## If the test requires MPFR but no MPFR has been found, log it
             if (NOT MPFR_FOUND)
-                message(STATUS "WARNING: Test ${test.target} requires MPFR, but MPFR is missing")
+                message(STATUS "WARNING: Test ${test.target} requires MPFR, "
+                               "but MPFR is missing")
                 continue()
             endif()
             set(target.libs ${MPFR_LIBRARY})
@@ -182,7 +170,7 @@ endfunction()
 ## Make pretty bench targets
 function(make_benches root pattern)
     ## Get all files
-    file(GLOB_RECURSE srcs ${root}/${pattern})
+    file(GLOB_RECURSE srcs "${root}/${pattern}")
     ## Iterates over and create the target
     foreach(src ${srcs})
         ## Sanitize
@@ -192,7 +180,9 @@ function(make_benches root pattern)
         add_executable(${target} ${src})
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         target_link_libraries(${target} ${libname} ${benchmark_LIBRARY}
-                              ${PTHREAD_LIBRARY})
+                              ${PTHREAD_LIBRARY} ${Sleef_LIBRARIES})
+        target_include_directories(${target} PRIVATE ${benchmark_INCLUDE_DIRS}
+                                   ${Sleef_INCLUDE_DIRS} ${MIPP_INCLUDE_DIRS})
         set_target_properties(${target} PROPERTIES COMPILE_FLAGS
                               "${flag_cpp14} ${flag_O3} ${SIMD_INFO_FLAGS}")
         ## Attach to the main benches target
@@ -256,7 +246,7 @@ if (ENABLE_BENCHMARK)
     )
 
     ## Create targets
-    make_benches(${NSIMD_ROOT}/benches *.cpp)
+    make_benches(${NSIMD_ROOT}/benches "*.${SIMD_INFO_HATCH}.*.cpp")
 endif()
 
 ## Setup doc generation target
