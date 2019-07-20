@@ -23,6 +23,10 @@ Introduction
 
 NSIMD currently supports the following architectures:
 
+- CPU:
+  + CPU called CPU in source code. This "extension" is not really one as it
+    is only present so that code written with NSIMD can compile and run on
+    targets not supported by NSIMD or with no SIMD.
 - Intel:
   + SSE2 called SSE2 in source code.
   + SSE4.2 called SSE42 in source code.
@@ -70,6 +74,7 @@ of the vector and compute `1 / (1 - x) + 1 / (1 - x)^2`. Moreover suppose that
 hardware vendors all propose this intrisic only for floatting point numbers as
 follows:
 
+- CPU (no intrinsics is given of course in standard C/C++)
 - Intel (no intrinsics is given for float16)
   + SSE2: no intrinsics is provided.
   + SSE42: `_mm_foo_ps` for floats and `_mm_foo_pd` for doubles.
@@ -172,8 +177,16 @@ Default values are given in square brakets:
 - `cxx_operator [= None]` in case the operator has a corresponding C++ operator.
 - `autogen_cxx_adv [= True]` in case the C++ advanced API signatures for this
   operator must not be auto-generated.
-- `closed [= True]` in case the operator output type differs from its input
-  type.
+- `output_to [= common.OUTPUT_TO_SAME_TYPE]` in case the operator output type
+  differs from its input type. Possible values are:
+  + `OUTPUT_TO_SAME_TYPE`: output is of same type as input.
+  + `OUTPUT_TO_SAME_SIZE_TYPES`: output can be any type of same bit size.
+  + `OUTPUT_TO_UP_TYPES`: output can be any type of bit size twice the bit
+    bit size of the input. In this case the input type will never be a 64-bits
+    type.
+  + `OUTPUT_TO_DOWN_TYPES`: output can be any type of bit size half the bit
+    bit size of the input. In this case the input type will never be a 8-bits
+    type.
 - `src [= False]` in case the code must be compiled in the library.
 - `load_store [= False]` in case the operator loads/store data from/to
   memory.
@@ -277,14 +290,11 @@ the C implementation of operator `foo`:
 
 ```python
 def foo1(typ):
-    if typ == 'f16':
-        return '''return nsimd_f32_to_f16(
-                             1 / (1 - {in0}.f) +
-                             1 / ((1 - {in0}.f) * (1 - {in0}.f))
-                         );'''.format(**fmtspec)
-    else:
-        return 'return 1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}));'. \
-               format(**fmtspec)
+    return func_body(
+           '''ret.v{{i}} = ({typ})1 / (({typ})1 - {in0}.v{{i}}) +
+                           ({typ})1 / ((({typ})1 - {in0}.v{{i}}) *
+                                       (({typ})1 - {in0}.v{{i}}));'''. \
+                                       format(**fmtspec), typ)
 ```
 
 First note that the arguments names passed to the operator in its C
@@ -303,12 +313,24 @@ to the `fmtspec` Python dict that hold some of these values:
 - `utyp`: bitfield type of the same size of `typ`.
 - `typnbits`: number of bits in `typ`.
 
+The CPU extension can emulate 64-bits or 128-bits wide SIMD vectors. Each type
+is a struct containing as much members as necessary so that `sizeof(T) *
+(number of members) == 64 or 128`. In order to avoid the developper to write
+two cases (64-bits wide and 128-bits wide) the `func_body` function is provided
+as a helper. Note that the index `{{i}}` is in double curly brackets to go
+through two Python string formats:
+
+1. The first pass is done within the `foo1` Python function and replaces
+   `{typ}` and `{in0}`. In this pass `{{i}}` is formatted into `{i}`.
+2. The second pass is done by the `func_body` function which unrolls the
+   string to the necessary number and replace `{i}` by the corresponding
+   number. The produced C code will look like one would written the same
+   statement for each members of the input struct.
+
 Then note that as plain C (and C++) does not support native 16-bits wide
-floating point types NSIMD emulates it with a C struct containing a single
-float whose name is `f`. So when `typ == 'f16'` our Python `foo1` function
-returns C code that does the computation with `{in0}.f` where `{in0}` is still
-the argument name, which is a struct, exposing its `.f` member which contains
-the actual value.
+floating point types NSIMD emulates it with a C struct containing 4 floats
+(32-bits swide floatting point numbers). In some cases extra care has to be
+taken to handle this type.
 
 For each SIMD extension one can find a `types.h` file (for `cpu` the files can
 be found in `include/nsimd/cpu/cpu/types.h`) that declares all SIMD types. If
