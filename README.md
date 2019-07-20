@@ -204,11 +204,11 @@ scalars and SIMD vectors are not provided by default. Those can be included
 explicitely to emphasize the fact that using expressions like `scalar + vector`
 might incur an optimization penalty.
 
-The use of `nsimd::pack` may not be portable to ARM SVE and is therefore must be
+The use of `nsimd::pack` may not be portable to ARM SVE and therefore must be
 included manually. ARM SVE registers can only be stored in sizeless strucs
 (`__sizeless_struct`). This feature (as of 2019/04/05) is only supported by the
 ARM compiler. We do not know whether other compilers will use the same keyword
-to support SVE.
+or paradigm to support SVE intrinsics.
 
 Contributing
 ============
