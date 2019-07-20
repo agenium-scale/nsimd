@@ -1582,25 +1582,37 @@ def upcvt1(simd_ext, from_typ, to_typ):
     if (from_typ in common.itypes and to_typ in common.itypes) or \
        (from_typ in common.utypes and to_typ in common.utypes):
         return '''nsimd_{simd_ext}_v{to_typ}x2 ret;
-                  ret.v0 = svunpklo_{suf}({in0});
-                  ret.v1 = svunpkhi_{suf}({in0}));
-                  return ret;'''.format(**fmtspec)
+                  ret.v0 = svunpklo_{suf_to_typ}({in0});
+                  ret.v1 = svunpkhi_{suf_to_typ}({in0});
+                  return ret;'''.format(suf_to_typ=suf(to_typ), **fmtspec)
     elif (from_typ in common.itypes and to_typ in common.utypes) or \
          (from_typ in common.utypes and to_typ in common.itypes):
         return \
         '''nsimd_{simd_ext}_v{to_typ}x2 ret;
            ret.v0 = svreinterpret_{suf_to_typ}_{suf_int_typ}(
-                      svunpklo_{suf}({in0}));
+                      svunpklo_{suf_int_typ}({in0}));
            ret.v1 = svreinterpret_{suf_to_typ}_{suf_int_typ}(
-                      svunpkhi_{suf}({in0}));
+                      svunpkhi_{suf_int_typ}({in0}));
            return ret;'''. \
            format(suf_to_typ=suf(to_typ),
-                  suf_int_typ=suf(from_typ[0] + to_typ[1:]) **fmtspec)
+                  suf_int_typ=suf(from_typ[0] + to_typ[1:]), **fmtspec)
+    elif from_typ in common.iutypes and to_typ in common.ftypes:
+        return \
+        '''nsimd_sve_v{to_typ}x2 ret;
+           ret.v0 = svcvt_{suf_to_typ}_{suf_int_typ}_z(
+                      {svtrue}, svunpklo_{suf_int_typ}({in0}));
+           ret.v1 = svcvt_{suf_to_typ}_{suf_int_typ}_z(
+                      {svtrue}, svunpkhi_{suf_int_typ}({in0}));
+           return ret;'''. \
+           format(suf_to_typ=suf(to_typ),
+                  suf_int_typ=suf(from_typ[0] + to_typ[1:]), **fmtspec)
     else:
         return \
         '''nsimd_{simd_ext}_v{to_typ}x2 ret;
-           ret.v0 = svcvt_{suf_to_typ}_{suf}(svzip1_{suf}({in0}, {in0}));
-           ret.v1 = svcvt_{suf_to_typ}_{suf}(svzip2_{suf}({in0}, {in0}));
+           ret.v0 = svcvt_{suf_to_typ}_{suf}_z({svtrue}, svzip1_{suf}(
+                      {in0}, {in0}));
+           ret.v1 = svcvt_{suf_to_typ}_{suf}_z({svtrue}, svzip2_{suf}(
+                      {in0}, {in0}));
            return ret;'''.format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1654,11 +1666,21 @@ def downcvt1(simd_ext, from_typ, to_typ):
                            svreinterpret_{suf_to_typ}_{suf}({in0}),
                            svreinterpret_{suf_to_typ}_{suf}({in1}));'''. \
                            format(suf_to_typ=suf(to_typ), **fmtspec)
+    elif from_typ in common.ftypes and to_typ in common.iutypes:
+        return \
+        '''return svuzp1_{suf_to_typ}(svreinterpret_{suf_to_typ}_{suf_int_typ}(
+                    svcvt_{suf_int_typ}_{suf}_z({svtrue}, {in0})),
+                      svreinterpret_{suf_to_typ}_{suf_int_typ}(
+                        svcvt_{suf_int_typ}_{suf}_z({svtrue}, {in1})));'''. \
+                        format(suf_to_typ=suf(to_typ),
+                               suf_int_typ=suf(to_typ[0] + from_typ[1:]),
+                               **fmtspec)
     else:
         return \
-        '''return svuzp1_{suf_to_typ}(svcvt_{suf_to_typ}_{suf}({in0}),
-                                      svcvt_{suf_to_typ}_{suf}({in1}));'''. \
-                                      format(suf_to_typ=suf(to_typ), **fmtspec)
+        '''return svuzp1_{suf_to_typ}(svcvt_{suf_to_typ}_{suf}_z(
+                    {svtrue}, {in0}), svcvt_{suf_to_typ}_{suf}_z(
+                      {svtrue}, {in1}));'''. \
+                    format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## get_impl function

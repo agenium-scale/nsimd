@@ -480,8 +480,11 @@ def fma_fms(func, typ):
 
 def all_any(typ, func):
     op = '&&' if func == 'all' else '||'
-    cond = op.join('({in0}.v{i} == (u32)-1)'.format(i=i, **fmtspec) \
-                   for i in range(0, get_nb_el(typ)))
+    if get_nb_el(typ) == 1:
+        cond = '{in0}.v0 == (u32)-1'.format(**fmtspec)
+    else:
+        cond = op.join('({in0}.v{i} == (u32)-1)'.format(i=i, **fmtspec) \
+                       for i in range(0, get_nb_el(typ)))
     return '''if ({cond}) {{
                 return -1;
               }} else {{
