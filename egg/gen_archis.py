@@ -28,54 +28,75 @@ import sys
 # Generate code for output
 
 def get_simd_implementation(operator, mod, simd_ext):
-    ret = ''
+    typ_pairs = []
     for t in operator.types:
         return_typs = common.get_output_types(t, operator.output_to)
         for tt in return_typs:
-            fmtspec = operator.get_fmtspec(t, tt, simd_ext)
-            if operator.src:
-                ret += \
-                '''{hbar}
+            typ_pairs.append([t, tt])
 
-                   #if NSIMD_CXX > 0
-                   extern "C" {{
-                   #endif
+    if not operator.closed:
+        tmp = [p for p in typ_pairs if p[0] in common.ftypes and \
+                                       p[1] in common.ftypes]
+        tmp += [p for p in typ_pairs if p[0] in common.itypes and \
+                                        p[1] in common.itypes]
+        tmp += [p for p in typ_pairs if p[0] in common.utypes and \
+                                        p[1] in common.utypes]
+        tmp += [p for p in typ_pairs \
+                if (p[0] in common.utypes and p[1] in common.itypes) or \
+                   (p[0] in common.itypes and p[1] in common.utypes)]
+        tmp += [p for p in typ_pairs \
+                if (p[0] in common.iutypes and p[1] in common.ftypes) or \
+                   (p[0] in common.ftypes and p[1] in common.iutypes)]
+        typ_pairs = tmp
 
-                   NSIMD_DLLSPEC
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args});
+    ret = ''
+    for pair in typ_pairs:
+        from_typ = pair[0]
+        to_typ = pair[1]
+        fmtspec = operator.get_fmtspec(from_typ, to_typ, simd_ext)
+        if operator.src:
+            ret += \
+            '''{hbar}
 
-                   #if NSIMD_CXX > 0
-                   }} // extern "C"
-                   #endif
+               #if NSIMD_CXX > 0
+               extern "C" {{
+               #endif
 
-                   #if NSIMD_CXX > 0
-                   namespace nsimd {{
-                     NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
-                       {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
-                     }}
-                   }} // namespace nsimd
-                   #endif
+               NSIMD_DLLSPEC
+               {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args});
 
-                   '''.format(**fmtspec)
-            else:
-                ret += \
-                '''{hbar}
+               #if NSIMD_CXX > 0
+               }} // extern "C"
+               #endif
 
-                   NSIMD_INLINE
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
-                     {content}
-                   }}
+               #if NSIMD_CXX > 0
+               namespace nsimd {{
+                 NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
+                   {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
+                 }}
+               }} // namespace nsimd
+               #endif
 
-                   #if NSIMD_CXX > 0
-                   namespace nsimd {{
-                     NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
-                       {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
-                     }}
-                   }} // namespace nsimd
-                   #endif
+               '''.format(**fmtspec)
+        else:
+            ret += \
+            '''{hbar}
 
-                   '''.format(content=mod.get_impl(operator.name,
-                              simd_ext, t, tt), **fmtspec)
+               NSIMD_INLINE
+               {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                 {content}
+               }}
+
+               #if NSIMD_CXX > 0
+               namespace nsimd {{
+                 NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
+                   {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
+                 }}
+               }} // namespace nsimd
+               #endif
+
+               '''.format(content=mod.get_impl(operator.name,
+                          simd_ext, from_typ, to_typ), **fmtspec)
     return ret[0:-2]
 
 

@@ -44,7 +44,7 @@ void test_native_register() {
   }
 
   if (nsimd_any_cpu_f32(nsimd_ne_cpu_f32(nsimd::native_register(a),
-                                          nsimd::native_register(p1)))) {
+                                         nsimd::native_register(p1)))) {
     exit(EXIT_FAILURE);
   }
 

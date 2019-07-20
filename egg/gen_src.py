@@ -120,12 +120,20 @@ def get_impl(operator, emulate_fp16, simd_ext):
         fmtspec = operator.get_fmtspec(t, t, simd_ext)
         args_list = common.enum(operator.params[1:])
         args = []
+        args1 = []
+        args2 = []
         for a in args_list:
             if a[1] == 'v':
                 if emulate_fp16 and t == 'f16':
                     # cpu is the only exception
                     if simd_ext == 'cpu':
-                        args += ['nsimd::pack<f32>(a{}.f)'.format(a[0])]
+                        n = common.CPU_NBITS // 16 // 2
+                        args1 += ['nsimd::pack<f32>(nsimd_cpu_vf32{' + \
+                                  ','.join('a{}.v{}'.format(a[0], i) \
+                                  for i in range(0, n)) + '})']
+                        args2 += ['nsimd::pack<f32>(nsimd_cpu_vf32{' + \
+                                  ','.join('a{}.v{}'.format(a[0], i + n) \
+                                  for i in range(0, n)) + '})']
                     else:
                         args += ['nsimd::pack<f32>(a{}.v{{lohi}})'. \
                                  format(a[0])]
@@ -134,7 +142,13 @@ def get_impl(operator, emulate_fp16, simd_ext):
             elif a[1] == 'l':
                 if emulate_fp16 and t == 'f16':
                     if simd_ext == 'cpu':
-                        args += ['nsimd::packl<f32>(a{}.u)'.format(a[0])]
+                        n = common.CPU_NBITS // 16 // 2
+                        args1 += ['nsimd::packl<f32>(nsimd_cpu_vlf32{' + \
+                                  ','.join('a{}.v{}'.format(a[0], i) \
+                                  for i in range(0, n)) + '})']
+                        args2 += ['nsimd::packl<f32>(nsimd_cpu_vlf32{' + \
+                                  ','.join('a{}.v{}'.format(a[0], i + n) \
+                                  for i in range(0, n)) + '})']
                     else:
                         args += ['nsimd::packl<f32>(a{}.v{{lohi}})'. \
                                  format(a[0])]
@@ -143,8 +157,16 @@ def get_impl(operator, emulate_fp16, simd_ext):
             else:
                 args += ['a{}'.format(a[0])]
         args = ', '.join(args)
+        args1 = ', '.join(args1)
+        args2 = ', '.join(args2)
         if emulate_fp16 and t == 'f16':
             if simd_ext == 'cpu':
+                n = common.CPU_NBITS // 16
+                lo = '\n'.join(['ret.v{} = tmp.car.v{};'.format(i, i) \
+                                for i in range(0, n // 2)])
+                hi = '\n'.join(['ret.v{} = tmp.car.v{};'. \
+                                format(i + n // 2, i) \
+                                for i in range(0, n // 2)])
                 ret += \
                 '''{hbar}
 
@@ -153,15 +175,18 @@ def get_impl(operator, emulate_fp16, simd_ext):
                    NSIMD_DLLEXPORT
                    {return_typ} nsimd_{name}_cpu_{suf}({c_args}) {{
                      nsimd_cpu_v{logical}f16 ret;
-                     auto buf = nsimd::impl::{name}({args});
-                     ret{member} = buf.car;
+                     nsimd::pack{logical}<f32> tmp;
+                     tmp = nsimd::impl::{name}({args1});
+                     {lo}
+                     tmp = nsimd::impl::{name}({args2});
+                     {hi}
                      return ret;
                    }}
 
                    }} // extern "C"
 
-                   '''.format(args=args, logical='l' \
-                              if operator.params[0] == 'l' else '',
+                   '''.format(args1=args1, args2=args2, lo=lo, hi=hi,
+                              logical='l' if operator.params[0] == 'l' else '',
                               member='.f' if operator.params[0] == 'v' \
                               else '.u', **fmtspec)
             else:
@@ -174,16 +199,16 @@ def get_impl(operator, emulate_fp16, simd_ext):
                    {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      nsimd_{simd_ext}_v{logical}f16 ret;
                      auto buf = nsimd::impl::{name}({args1});
-                     ret.v1 = buf.car;
+                     ret.v0 = buf.car;
                      buf = nsimd::impl::{name}({args2});
-                     ret.v2 = buf.car;
+                     ret.v1 = buf.car;
                      return ret;
                    }}
 
                    }} // extern "C"
 
-                   '''.format(args1=args.format(lohi='1'),
-                              args2=args.format(lohi='2'),
+                   '''.format(args1=args.format(lohi='0'),
+                              args2=args.format(lohi='1'),
                               logical='l' if operator.params[0] == 'l' else '',
                               **fmtspec)
         else:

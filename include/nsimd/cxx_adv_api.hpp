@@ -549,34 +549,12 @@ SimdVector store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
 }
 
 // ----------------------------------------------------------------------------
-// Complex numbers are simply pairs of packs
-
-template <typename P>
-NSIMD_STRUCT complex {
-  P real;
-  P imag;
-
-  complex() {}
-  complex(P const &r) : real(r) {}
-  complex(P const &r, P const &i) : real(r), imag(i) {}
-};
-
-// ----------------------------------------------------------------------------
-// Operators overloads on complex
-
-template <typename P>
-complex<P> operator+(complex<P> const &a0, complex<P> const &a1) {
-  return complex<P>(a0.real + a1.real, a0.imag + a1.imag);
-}
-
-// ----------------------------------------------------------------------------
-// Operators overloads on complex
 
 template <typename T> T native_register(T a) { return a; }
 
 template <typename T, typename SimdExt>
-typename pack<T, 1, SimdExt>::value_type
-native_register(pack<T, 1, SimdExt> const& a) {
+typename pack<T, 1, SimdExt>::simd_vector
+native_register(pack<T, 1, SimdExt> const &a) {
   return a.car;
 }
 

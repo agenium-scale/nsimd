@@ -749,6 +749,7 @@ class Shr(Operator):
     full_name = 'right shift'
     signature = 'v shr v p'
     types = common.iutypes
+    cxx_operator = 'operator>>'
     domain = Domain('RxN')
     categories = [DocBitsOperators]
     bench_auto_against_mipp = True
@@ -760,6 +761,7 @@ class Shl(Operator):
     full_name = 'left shift'
     signature = 'v shl v p'
     types = common.iutypes
+    cxx_operator = 'operator<<'
     domain = Domain('RxN')
     categories = [DocBitsOperators]
     bench_auto_against_mipp = True
@@ -934,23 +936,23 @@ class Cvt(Operator):
     ## Disable bench
     do_bench = False
 
-#class Upcast(Operator):
-#    signature = 'vx2 upcast v'
-#    output_to = common.OUTPUT_TO_UP_TYPES
-#    domain = Domain('R')
-#    types = ['i8', 'u8', 'i16', 'u16', 'f16', 'i32', 'u32', 'f32']
-#    categories = [DocConversion]
-#    ## Disable bench
-#    do_bench = False
+class Upcvt(Operator):
+    signature = 'vx2 upcvt v'
+    output_to = common.OUTPUT_TO_UP_TYPES
+    domain = Domain('R')
+    types = ['i8', 'u8', 'i16', 'u16', 'f16', 'i32', 'u32', 'f32']
+    categories = [DocConversion]
+    ## Disable bench
+    do_bench = False
 
-#class Downcast(Operator):
-#    signature = 'v downcast v v'
-#    output_to = common.OUTPUT_TO_DOWN_TYPES
-#    domain = Domain('R')
-#    types = ['i16', 'u16', 'f16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-#    categories = [DocConversion]
-#    ## Disable bench
-#    do_bench = False
+class Downcvt(Operator):
+    signature = 'v downcvt v v'
+    output_to = common.OUTPUT_TO_DOWN_TYPES
+    domain = Domain('R')
+    types = ['i16', 'u16', 'f16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+    categories = [DocConversion]
+    ## Disable bench
+    do_bench = False
 
 class Rec(Operator):
     full_name = 'reciprocal'
