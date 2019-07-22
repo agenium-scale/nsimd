@@ -201,6 +201,17 @@ class TypeVector(TypeVectorBase):
 
 # -----------------------------------------------------------------------------
 
+class TypeCPUVector(TypeVector):
+    name = 'vcpu'
+
+    def code_load(self, simd, typ, ptr):
+        return 'nsimd::loada({}, {}(), nsimd::cpu())'.format(ptr, typ)
+
+    def code_store(self, simd, typ, ptr, expr):
+        return 'nsimd::storea({}, {}, {}(), nsimd::cpu())'.format(ptr, expr, typ)
+
+# -----------------------------------------------------------------------------
+
 class TypeUnrolledVectorBase(TypeVectorBase):
     def as_type(self, typ):
         raise NotImplemented()
@@ -287,6 +298,17 @@ class TypeLogical(TypeVectorBase):
 
     def code_store(self, simd, typ, ptr, expr):
         return 'nsimd::storela({}, {}, {}())'.format(ptr, expr, typ)
+
+# -----------------------------------------------------------------------------
+
+class TypeCPULogical(TypeLogical):
+    name = 'lcpu'
+
+    def code_load(self, simd, typ, ptr):
+        return 'nsimd::loadla({}, {}(), nsimd::cpu())'.format(ptr, typ)
+
+    def code_store(self, simd, typ, ptr, expr):
+        return 'nsimd::storela({}, {}, {}(), nsimd::cpu())'.format(ptr, expr, typ)
 
 # -----------------------------------------------------------------------------
 
@@ -464,8 +486,8 @@ class BenchOperator(object, metaclass=type):
             bench['*']['*'][common.nsimd_category('cpu')] = \
                     cpu_fun_from_sig(sig_translate(self.signature, {
                                      's': 'volatile-s',
-                                     'v': 'volatile-s',
-                                     'l': 'volatile-ls',
+                                     'v': 'vcpu',
+                                     'l': 'lcpu',
                                      }))
         return bench
 
@@ -673,8 +695,10 @@ def gen_bench_from_code(f, typ, code):
     #pragma GCC diagnostic ignored "-Wconversion"
     #pragma GCC diagnostic ignored "-Wsign-conversion"
     #pragma GCC diagnostic ignored "-Wdouble-promotion"
-    #pragma GCC diagnostic ignored "-Wzero-length-array"
     #pragma GCC diagnostic ignored "-Wunused-parameter"
+    #if defined(__clang__)
+    #pragma GCC diagnostic ignored "-Wzero-length-array"
+    #endif
     #include <mipp.h>
     #pragma GCC diagnostic pop
     '''
@@ -710,7 +734,7 @@ def gen_bench_from_code(f, typ, code):
 
     {code}
 
-    BENCHMARK_MAIN()
+    BENCHMARK_MAIN();
 
     '''.format(
             name=f.name,
@@ -825,12 +849,20 @@ def gen_code(f, simd, typ, category):
     code = None
     if f.returns_any_type:
         return TODO(f)
+    ## TODO: We have to refactor this, it's annoying to add every possible signatures...
     if f.match_sig('v * v v') or f.match_sig('v * v v v') \
         or f.match_sig('l * v v') or f.match_sig('l * l l') \
         or f.match_sig('l * l') or f.match_sig('v * v') \
         or f.match_sig('s * s') \
         or f.match_sig('s * s s') \
         or f.match_sig('s * s s s') \
+        or f.match_sig('vcpu * vcpu') \
+        or f.match_sig('vcpu * vcpu vcpu') \
+        or f.match_sig('vcpu * vcpu vcpu vcpu') \
+        or f.match_sig('lcpu * lcpu') \
+        or f.match_sig('lcpu * lcpu lcpu') \
+        or f.match_sig('lcpu * vcpu vcpu') \
+        or f.match_sig('vcpu * lcpu vcpu vcpu') \
         or f.match_sig('volatile-s * volatile-s') \
         or f.match_sig('volatile-s * volatile-s volatile-s') \
         or f.match_sig('volatile-s * volatile-s volatile-s volatile-s') \
