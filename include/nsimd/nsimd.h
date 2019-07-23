@@ -673,7 +673,7 @@ template <typename T> void aligned_free_for(void *ptr) {
 /* ------------------------------------------------------------------------- */
 /* C++ <11 allocator */
 
-#if NSIMD_CXX > 0 && NSIMD_CXX < 201103L
+#if NSIMD_CXX > 0 && NSIMD_CXX < 2011
 namespace nsimd {
 
 template <typename T> class allocator {
@@ -728,7 +728,7 @@ public:
 /* ------------------------------------------------------------------------- */
 /* C++ >=11 allocator */
 
-#if NSIMD_CXX >= 201103L
+#if NSIMD_CXX >= 2011
 namespace nsimd {
 
 template <typename T> struct allocator {
