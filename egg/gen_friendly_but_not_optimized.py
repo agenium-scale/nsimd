@@ -58,7 +58,8 @@ def get_impl(operator):
     if not operator.closed:
         args = ['ToType'] + args
         ret += '\n\n' + template.format(args=', '.join(args))
-    if operator.cxx_operator != '' and operator.params == ['v', 'v', 'v']:
+    if operator.cxx_operator != '' and operator.cxx_operator != None and \
+       operator.params == ['v', 'v', 'v']:
         ret += \
         '''
 
