@@ -171,6 +171,21 @@ CMake where they are located using the following CMake variables.
 | MIPP             | `cmake [...] -DMIPP_ROOT_DIR=/path/to/MIPP`           |
 | Google benchmark | `cmake [...] -Dbenchmark_ROOT_DIR=/path/to/benchmark` |
 
+You can also use a script that pulls out every required dependencies and build
+them at the top-level git directory:
+
+```
+./scripts/init-benches-deps.sh
+```
+
+Every dependencies will be installed in the `_install` directory.
+
+You can then use the following special command for cmake:
+```
+## Assume your building under a `build` directory
+cmake [...] -DCMAKE_LIBRARY_PATH="$(pwd)/../_install/lib" -DCMAKE_INCLUDE_PATH="$(pwd)/../_install/include" -DENABLE_BENCHMARK=on
+```
+
 Philosophy
 ==========
 

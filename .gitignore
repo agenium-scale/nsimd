@@ -17,6 +17,8 @@ tests/c_base
 tests/cxx_base
 tests/cxx_adv
 benches/cxx_adv
+_deps
+_install
 
 ## Doc
 DOC.md
