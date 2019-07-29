@@ -927,6 +927,10 @@ def sleef_name(name, simd, typ, ulp=None):
             'f32': 'f16',
             'f64': 'd8',
             }
+    types_unknown = {
+            'f32': 'fx',
+            'f64': 'dx',
+            }
     name += ({
         'cpu': types_cpu,
         'sse2': types_128,
@@ -938,7 +942,7 @@ def sleef_name(name, simd, typ, ulp=None):
         'avx512_skylake': types_512,
         'neon128': types_128,
         'aarch64': types_128,
-        'sve': types_128,
+        'sve': types_unknown,
     })[simd][typ]
     ## 4. (We cannot really guess that...
     ##     Instead you have to add bench manually)
