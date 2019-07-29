@@ -305,6 +305,7 @@ SOFTWARE.
 
   #define NSIMD_PLATFORM arm
   #define NSIMD_SIMD sve
+  #include <arm_neon.h>
   #include <arm_sve.h>
 
 #else

@@ -160,6 +160,9 @@ def has_compatible_SoA_types(simd_ext):
 def get_additional_include(func, platform, simd_ext):
     ret = '''#include <nsimd/cpu/cpu/{}.h>
              '''.format(func)
+    if simd_ext == 'sve':
+        ret += '''#include <nsimd/arm/aarch64/{}.h>
+                  '''.format(func)
     if func in ['load2u', 'load3u', 'load4u', 'load2a', 'load3a', 'load4a']:
         deg = func[4]
         ret += '''#if NSIMD_CXX > 0
