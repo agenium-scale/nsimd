@@ -774,8 +774,8 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
     elif from_typ[1:] == '64':
         return \
         '''nsimd_{simd_ext}_vl{to_typ} ret;
-           ret.v0 = ({to_typ})({in0}.v0);
-           ret.v1 = ({to_typ})({in0}.v1);
+           *((u64*)&ret.v0) = *((u64*)&{in0}.v0);
+           *((u64*)&ret.v1) = *((u64*)&{in0}.v1);
            return ret;'''.format(**fmtspec)
     elif from_typ == 'f16':
         return \
