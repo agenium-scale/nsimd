@@ -843,15 +843,12 @@ def convert1(simd_ext, from_typ, to_typ):
         if from_typ == 'u16':
             return \
             '''nsimd_{simd_ext}_vf16 ret;
-               nsimd_{simd_ext}_vi32x2 tmp;
-               tmp.v0=vec_unpackh((__vector short){in0});
-               tmp.v1=vec_unpackl((__vector short){in0});
-
                /* Unpack extends the sign, we need to remove the extra 1s */
-               nsimd_{simd_ext}_vi32 mask = {{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}};
-               ret.v0 = vec_ctf(vec_and(tmp.v0, mask), 0);
-               ret.v1 = vec_ctf(vec_and(tmp.v1, mask), 0);
-               
+               nsimd_power7_vi32 mask = {{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}};
+
+               ret.v0 = vec_ctf(vec_and(vec_unpackh((__vector short)a0), mask), 0);
+               ret.v1 = vec_ctf(vec_and(vec_unpackl((__vector short)a0), mask), 0);
+
                return ret;'''.format(**fmtspec)
         elif from_typ == 'i16':
             return \
