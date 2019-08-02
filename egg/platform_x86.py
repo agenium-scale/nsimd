@@ -2483,7 +2483,7 @@ def adds(simd_ext, from_typ):
             const nsimd_{simd_ext}_vi{num_bits} zeros = nsimd_set1_{simd_ext}_i{num_bits}(0);
             const nsimd_{simd_ext}_vlu{num_bits} gteq_to_zero = nsimd_reinterpretl_{simd_ext}_u{num_bits}_i{num_bits}(nsimd_ge_{simd_ext}_i{num_bits}(i_orb, zeros));
             return nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(nsimd_if_else1_{simd_ext}_u{num_bits}(gteq_to_zero, ux, res));'''. \
-            format(num_bits, max_c_macro, **fmtspec)
+            format(num_bits = num_bits, max_c_macro = max_c_macro, **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## get_impl function
