@@ -992,7 +992,7 @@ class Adds(Operator):
     full_name = 'addition using saturation'
     signature = 'v adds v v'
     types = common.types
-    domain = Domain('NxN')
+    domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated sum of the two vectors given as arguments'
     bench_auto_against_std = True
