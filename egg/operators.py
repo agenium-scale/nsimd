@@ -988,6 +988,17 @@ class Rsqrt11(Operator):
     categories = [DocBasicArithmetic]
     tests_ulps = True
 
+class Adds(Operator):
+    full_name = 'addition using saturation'
+    signature = 'v adds v v'
+    types = common.types
+    domain = Domain('NxN')
+    categories = [DocBasicArithmetic]
+    desc = 'Returns the saturated sum of the two vectors given as arguments'
+    bench_auto_against_std = True
+    bench_auto_against_mipp = True
+
+
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
 # opened for this

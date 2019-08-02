@@ -195,6 +195,8 @@ def get_additional_include(func, platform, simd_ext):
                   #include <nsimd/arm/{simd_ext}/set1.h>
                   #include <nsimd/arm/{simd_ext}/{store}.h>
                   '''.format(store='store' + func[6], **fmtspec)
+    if func in ['adds']:
+        ret += '''#include <nsimd/arm/{simd_ext}/add.h>'''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -1683,6 +1685,20 @@ def downcvt1(simd_ext, from_typ, to_typ):
                     format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
+## adds
+
+def adds(simd_ext, from_typ):
+    if from_typ in common.ftypes:
+        return 'return nsimd_{simd_ext}_v{from_typ} nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+
+    if simd_ext in neon:
+        return 'return vqaddq_{suf}({in0}, {in1});'. \
+               format(**fmtspec)
+    else:
+        return 'return svqadd_{suf}({in0}, {in1});'. \
+               format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -1776,7 +1792,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': 'reverse1(simd_ext, from_typ)',
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
-        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)'
+        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        'adds': 'adds(simd_ext, from_typ)'
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

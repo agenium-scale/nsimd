@@ -614,6 +614,25 @@ def len1(typ):
 
 # -----------------------------------------------------------------------------
 
+def adds(typ):
+    return repeat_stmt(
+      '''nsimd_cpu_v{typ} ret;
+          if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > INT_MAX - {in0}.v{{i}}))
+          {
+            ret.v{{i}} = INT_MAX
+          }
+          else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < INT_MIN - {in0}.v{{i}}))
+          {
+            ret.v{{i}} = INT_MIN
+          }
+          else
+          {
+            ret.v{{i}} = {in0}.v{{i}} + {in1}.v{{i}}
+          }
+      '''.format(typ, **fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
 def get_impl(func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -702,7 +721,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'reverse': reverse1(from_typ),
         'addv': addv1(from_typ),
         'upcvt': upcvt1(from_typ, to_typ),
-        'downcvt': downcvt2(from_typ, to_typ)
+        'downcvt': downcvt2(from_typ, to_typ),
+        'adds' : adds(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

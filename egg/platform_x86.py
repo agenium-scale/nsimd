@@ -39,6 +39,8 @@ avx512 = ['avx512_knl', 'avx512_skylake']
 
 def get_simd_exts():
     return ['sse2', 'sse42', 'avx', 'avx2', 'avx512_knl', 'avx512_skylake']
+    # why not:
+    # return (sse + avx + avx512)
 
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
@@ -201,6 +203,19 @@ def get_additional_include(func, platform, simd_ext):
                   }} // extern "C"
                   #endif
                   '''.format(func=func, deg=deg, args=args, **fmtspec)
+        if func in ['adds']:
+            ret += '''
+                      #include <nsimd/x86/{simd_ext}/reinterpret.h>
+                      #include <nsimd/x86/{simd_ext}/add.h>
+                      #include <nsimd/x86/{simd_ext}/set1.h>
+                      #include <nsimd/x86/{simd_ext}/shr.h>
+                      #include <nsimd/x86/{simd_ext}/orb.h>
+                      #include <nsimd/x86/{simd_ext}/xorb.h>
+                      #include <nsimd/x86/{simd_ext}/notb.h>
+                      #include <nsimd/x86/{simd_ext}/reinterpretl.h>
+                      #include <nsimd/x86/{simd_ext}/ge.h>
+                      #include <nsimd/x86/{simd_ext}/if_else1.h>
+                    '''.format(simd_ext=simd_ext)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -2435,6 +2450,42 @@ def downcvt1(simd_ext, from_typ, to_typ):
               **fmtspec)
 
 # -----------------------------------------------------------------------------
+## adds
+
+def adds(simd_ext, from_typ):
+
+    if from_typ in { 'i8', 'i16', 'u8', 'u16' }:
+            return 'return {pre}adds{suf}({in0}, {in1});'.format(**fmtspec)
+
+    if from_typ in common.ftypes:
+            return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+            
+    num_bits = from_typ[1:3]
+    max_c_macro_map = { 'i': 'INT_MAX', 'u': 'UINT_MAX' }
+    max_c_macro = max_c_macro_map[from_typ[0]]
+    
+    return '''
+            nsimd_{simd_ext}_vu{num_bits} ux = nsimd_reinterpret_{simd_ext}_u{num_bits}_i{num_bits}({in0});
+            const nsimd_{simd_ext}_vu{num_bits} uy = nsimd_reinterpret_{simd_ext}_u{num_bits}_i{num_bits}({in1});
+            const nsimd_{simd_ext}_vu{num_bits} res = nsimd_add_{simd_ext}_u{num_bits}(ux, uy);
+
+            const nsimd_{simd_ext}_vu{num_bits} vmax = nsimd_set1_{simd_ext}_u{num_bits}({max_c_macro});
+            const nsimd_{simd_ext}_vu{num_bits} shr = nsimd_shr_{simd_ext}_u{num_bits}(ux, sizeof(i{num_bits}) * CHAR_BIT - 1);
+            ux = nsimd_add_{simd_ext}_u{num_bits}(shr, vmax);
+
+            const nsimd_{simd_ext}_vu{num_bits} xor_ux_uy = nsimd_xorb_{simd_ext}_u{num_bits}(ux, uy);
+            const nsimd_{simd_ext}_vu{num_bits} xor_uy_res = nsimd_xorb_{simd_ext}_u{num_bits}(uy, res);
+            const nsimd_{simd_ext}_vu{num_bits} not_xor_uy_res = nsimd_notb_{simd_ext}_u{num_bits}(xor_uy_res)
+
+            const nsimd_{simd_ext}_vu{num_bits} u_orb = nsimd_orb_{simd_ext}_u{num_bits}(xor_ux_uy, not_xor_uy_res);
+            const nsimd_{simd_ext}_vi{num_bits} i_orb = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_orb);
+
+            const nsimd_{simd_ext}_vi{num_bits} zeros = nsimd_set1_{simd_ext}_i{num_bits}(0);
+            const nsimd_{simd_ext}_vlu{num_bits} gteq_to_zero = nsimd_reinterpretl_{simd_ext}_u{num_bits}_i{num_bits}(nsimd_ge_{simd_ext}_i{num_bits}(i_orb, zeros));
+            return nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(nsimd_if_else1_{simd_ext}_u{num_bits}(gteq_to_zero, ux, res));'''. \
+            format(num_bits, max_c_macro, **fmtspec)
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -2531,7 +2582,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': reverse1(simd_ext, from_typ),
         'addv': addv(simd_ext, from_typ),
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
-        'downcvt': downcvt1(simd_ext, from_typ, to_typ)
+        'downcvt': downcvt1(simd_ext, from_typ, to_typ),
+        'adds': adds(simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
