@@ -618,18 +618,18 @@ def adds(typ):
     return repeat_stmt(
       '''nsimd_cpu_v{typ} ret;
           if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > INT_MAX - {in0}.v{{i}}))
-          {
-            ret.v{{i}} = INT_MAX
-          }
+          {{{{
+            ret.v{{i}} = INT_MAX;
+          }}}}
           else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < INT_MIN - {in0}.v{{i}}))
-          {
-            ret.v{{i}} = INT_MIN
-          }
+          {{{{
+            ret.v{{i}} = INT_MIN;
+          }}}}
           else
-          {
-            ret.v{{i}} = {in0}.v{{i}} + {in1}.v{{i}}
-          }
-      '''.format(typ, **fmtspec), typ)
+          {{{{
+            ret.v{{i}} = {in0}.v{{i}} + {in1}.v{{i}};
+          }}}}
+      '''.format(**fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
