@@ -197,6 +197,11 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(store='store' + func[6], **fmtspec)
     if func in ['adds']:
         ret += '''#include <nsimd/arm/{simd_ext}/add.h>'''.format(**fmtspec)
+    if func in ['subs']:
+        ret += '''
+                  #include <nsimd/arm/{simd_ext}/adds.h>
+                  #include <nsimd/arm/{simd_ext}/neg.h>
+               '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -1699,6 +1704,13 @@ def adds(simd_ext, from_typ):
                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+## subs
+
+def subs():
+    return '''nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}))'''. \
+        format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -1793,7 +1805,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
-        'adds': 'adds(simd_ext, from_typ)'
+        'adds': 'adds(simd_ext, from_typ)',
+        'subs': 'subs()'
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

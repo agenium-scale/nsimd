@@ -86,13 +86,19 @@ def has_compatible_SoA_types(simd_ext):
     return False
 
 def get_additional_include(func, platform, simd_ext):
+    ret = ''
     if func in ['sqrt', 'ceil', 'floor', 'trunc']:
-        return '''#if NSIMD_CXX > 0
+        ret += '''#if NSIMD_CXX > 0
                     #include <cmath>
                   #else
                     #include <math.h>
                   #endif'''
-    return ''
+    elif func in ['subs']:
+      ret += '''
+              #include <nsimd/cpu/cpu/adds.h>
+              #include <nsimd/cpu/cpu/neg.h>
+             '''
+    return ret
 
 # -----------------------------------------------------------------------------
 # Returns C code for func
@@ -633,6 +639,12 @@ def adds(typ):
 
 # -----------------------------------------------------------------------------
 
+def subs():
+    return '''nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}))'''.format(**fmtspec)
+
+
+# -----------------------------------------------------------------------------
+
 def get_impl(func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -722,7 +734,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'addv': addv1(from_typ),
         'upcvt': upcvt1(from_typ, to_typ),
         'downcvt': downcvt2(from_typ, to_typ),
-        'adds' : adds(from_typ)
+        'adds' : adds(from_typ),
+        'subs' : subs()
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
