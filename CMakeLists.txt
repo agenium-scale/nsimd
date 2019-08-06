@@ -258,12 +258,13 @@ add_dependencies(doc gen.doc)
 ## Install
 ## ----------------------------------------------------------------------------
 
+include(GNUInstallDirs)
 if (WIN32)
-    install(TARGETS ${libname} RUNTIME DESTINATION lib)
+    install(TARGETS ${libname} RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
 else()
-    install(TARGETS ${libname} LIBRARY DESTINATION lib)
+    install(TARGETS ${libname} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
-install(DIRECTORY include DESTINATION include)
+install(DIRECTORY include/nsimd DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 ## Clean
 ## ----------------------------------------------------------------------------
