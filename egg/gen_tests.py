@@ -14,6 +14,7 @@
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
@@ -27,14 +28,18 @@ from datetime import date
 # -----------------------------------------------------------------------------
 # Get filename for test
 
-def get_filename(opts, op, typ, lang):
+def get_filename(opts, op, typ, lang, custom_name=''):
     pp_lang = { 'c_base': 'C (base API)',
                 'cxx_base' : 'C++ (base API)',
                 'cxx_adv' : 'C++ (advanced API)' }
     tests_dir = os.path.join(opts.tests_dir, lang)
     common.mkdir_p(tests_dir)
-    filename = os.path.join(tests_dir, '{}.{}.{}'.format(op.name, typ,
-                 'c' if lang == 'c_base' else 'cpp'));
+    if not custom_name:
+        filename = os.path.join(tests_dir, '{}.{}.{}'.format(op.name, typ,
+                     'c' if lang == 'c_base' else 'cpp'))
+    else:
+        filename = os.path.join(tests_dir, '{}_{}.{}.{}'.format(op.name, custom_name, typ,
+                     'c' if lang == 'c_base' else 'cpp'))
     if common.can_create_filename(opts, filename):
         return filename
     else:
@@ -806,10 +811,16 @@ def gen_load_store(opts, op, typ, lang):
            format(deg=deg, typ=typ, align=align, variables=variables)
     if typ == 'f16':
         rand = '*((u16*)vin + i) = nsimd_f32_to_u16((float)(rand() % 10));'
-        comp = '*((u16 *)vin + i) != *((u16 *)vout + i)'
+        comp = '*((u16*)vin + i) != *((u16 *)vout + i)'
     else:
         rand = 'vin[i] = ({})(rand() % 10);'.format(typ)
         comp = 'vin[i] != vout[i]'
+
+    if align=='u':
+        unalign = '+1'
+    else:
+        unalign = ''
+
     with common.open_utf8(filename) as out:
         out.write(
         '''{includes}
@@ -835,8 +846,8 @@ def gen_load_store(opts, op, typ, lang):
              int n = SIZE * {deg} * len;
 
              fprintf(stdout, "test of {op_name} over {typ}...\\n");
-             CHECK(vin = ({typ}*)nsimd_aligned_alloc(n * {sizeof}));
-             CHECK(vout = ({typ}*)nsimd_aligned_alloc(n * {sizeof}));
+             CHECK(vin = ({typ}*)nsimd_aligned_alloc(n * {sizeof} {unalign}) {unalign});
+             CHECK(vout = ({typ}*)nsimd_aligned_alloc(n * {sizeof} {unalign}) {unalign});
 
              /* Fill with random data */
              for (i = 0; i < n; i++) {{
@@ -864,7 +875,87 @@ def gen_load_store(opts, op, typ, lang):
            }}'''.format(includes=get_includes(lang), op_name=op.name,
                         typ=typ, rand=rand, year=date.today().year, deg=deg,
                         sizeof=common.sizeof(typ), load_store=load_store,
-                        comp=comp))
+                        comp=comp, unalign=unalign))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
+# Tests that load/store of degrees 2, 3 and 4 ravels vectors correctly
+
+def gen_load_store_ravel(opts, op, typ, lang):
+    # This test only the libs internal, not the API, so we only generate test
+    # for c
+    filename = get_filename(opts, op, typ, lang, 'ravel')
+    if filename == None:
+        return
+    if op.name.startswith('load'):
+        deg = op.name[4]
+        align = op.name[5]
+    elif op.name.startswith('store'):
+        deg = op.name[5]
+        align = op.name[6]
+
+
+    check = '\n'.join(['''
+      comp = vset1({i}+1, {typ});
+      err = err || vany(vne(v.v{i}, comp, {typ}), {typ});
+      '''.format(typ=typ, i=i) \
+      for i in range (0, int(deg))])
+
+    with common.open_utf8(filename) as out:
+        out.write(
+        '''{includes}
+
+           #define SIZE (2048 / {sizeof})
+
+           #define STATUS "test raveling of {op_name} over {typ}"
+
+           #define CHECK(a) {{ \\
+             errno = 0; \\
+             if (!(a)) {{ \\
+               fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                       __LINE__, strerror(errno)); \\
+               fflush(stderr); \\
+               exit(EXIT_FAILURE); \\
+             }} \\
+           }}
+
+           int main(void) {{
+             fprintf(stdout, "test raveling of {op_name} over {typ}...\\n");
+
+             {typ}* vin;
+             {typ}* vout;
+             int i,j;
+             int len = vlen({typ});
+             int n = {deg} * len;
+
+             CHECK(vin = ({typ}*)nsimd_aligned_alloc(n * {sizeof}));
+             CHECK(vout = ({typ}*)nsimd_aligned_alloc(n * {sizeof}));
+
+             /* Fill in the vectors */
+             for (i=0; i<n; ++i) {{
+                 vin[i] = (i%{deg}) + 1;
+
+             }}
+
+             /* Load data and check that each vector is correctly filled */
+             vecx{deg}({typ}) v = v{op_name}(vin, {typ});
+
+             int err=0;
+             vec({typ}) comp;
+
+             {check}
+
+             if (err) {{
+               fprintf(stdout, STATUS "... FAIL\\n");
+               fflush(stdout);
+               return -1;
+             }}
+
+             fprintf(stdout, "Raveling of {op_name} over {typ}... OK\\n");
+             return EXIT_SUCCESS;
+           }}'''.format(includes=get_includes(lang), op_name=op.name,
+                        typ=typ, year=date.today().year, deg=deg,
+                        sizeof=common.sizeof(typ), check=check))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
@@ -1197,6 +1288,8 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'c_base')
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
+                if not typ == 'f16':
+                    gen_load_store_ravel(opts, operator, typ, 'c_base')
             elif operator.name == 'reverse':
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');
