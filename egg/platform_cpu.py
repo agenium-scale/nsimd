@@ -621,9 +621,8 @@ def len1(typ):
 # -----------------------------------------------------------------------------
 
 def adds(typ):
-    return repeat_stmt(
-      '''nsimd_cpu_v{typ} ret;
-          if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > INT_MAX - {in0}.v{{i}}))
+    content = repeat_stmt(
+      '''if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > INT_MAX - {in0}.v{{i}}))
           {{{{
             ret.v{{i}} = INT_MAX;
           }}}}
@@ -634,8 +633,13 @@ def adds(typ):
           else
           {{{{
             ret.v{{i}} = {in0}.v{{i}} + {in1}.v{{i}};
-          }}}}
-      '''.format(**fmtspec), typ)
+          }}}}'''.format(**fmtspec), typ)
+
+    return '''nsimd_cpu_v{typ} ret;
+
+              {content}
+
+              return ret;'''.format(typ = typ, content = content)
 
 # -----------------------------------------------------------------------------
 
