@@ -632,7 +632,7 @@ def adds(typ):
       return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
     if not typ in fmtspec['limits'].keys():
-      raise ValueError('Type not implmemented in platform_cpu adds(typ)"{}"'.format(typ))
+      raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
 
     type_limits = fmtspec['limits'][typ]
 
