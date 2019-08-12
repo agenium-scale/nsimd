@@ -627,19 +627,28 @@ def len1(typ):
 # -----------------------------------------------------------------------------
 
 def adds(typ):
+
+    if typ in common.ftypes:
+      return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+
+    if not typ in fmtspec['limits'].keys():
+      raise ValueError('Type not implmemented in platform_cpu adds(typ)"{}"'.format(typ))
+
+    type_limits = fmtspec['limits'][typ]
+
     content = repeat_stmt(
-      '''if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > INT_MAX - {in0}.v{{i}}))
+      '''if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))
           {{{{
-            ret.v{{i}} = INT_MAX;
+            ret.v{{i}} = {max};
           }}}}
-          else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < INT_MIN - {in0}.v{{i}}))
+          else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))
           {{{{
-            ret.v{{i}} = INT_MIN;
+            ret.v{{i}} = {min};
           }}}}
           else
           {{{{
             ret.v{{i}} = {in0}.v{{i}} + {in1}.v{{i}};
-          }}}}'''.format(**fmtspec), typ)
+          }}}}'''.format(**type_limits, **fmtspec), typ)
 
     return '''nsimd_cpu_v{typ} ret;
 
@@ -650,12 +659,23 @@ def adds(typ):
 # -----------------------------------------------------------------------------
 
 def subs():
-    return '''nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}))'''.format(**fmtspec)
+    return '''return nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}));'''.format(**fmtspec)
 
 
 # -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
+
+    limits = {
+      'i8': {'min': 'SCHAR_MIN', 'max': 'SCHAR_MAX'}, 
+      'i16': {'min': 'SHRT_MIN', 'max': 'SHRT_MAX'},
+      'i32': {'min': 'INT_MIN', 'max': 'INT_MAX'},
+      'i64': {'min': 'LONG_MIN', 'max': 'LONG_MAX'},
+      'u8': {'min': '0', 'max': 'UCHAR_MAX'},
+      'u16': {'min': '0', 'max': 'USHRT_MAX'},
+      'u32': {'min': '0', 'max': 'UINT_MAX'},
+      'u64': {'min': '0', 'max': 'ULONG_MAX'}
+    }
 
     global fmtspec
     fmtspec = {
@@ -669,7 +689,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
       'in2': common.in2,
       'in3': common.in3,
       'in4': common.in4,
-      'typnbits': from_typ[1:]
+      'typnbits': from_typ[1:],
+      'limits': limits
     }
 
     impls = {
