@@ -61,7 +61,6 @@ def ppc_vec_typel(typ):
     else:
         raise ValueError('Unknown type "{}"'.format(typ))
 
-
 ## Whether or not the half float are emulated
 def emulate_fp16(simd_ext):
     return True
@@ -300,8 +299,20 @@ def load1234(simd_ext, typ, deg, aligned):
                  return ret;;
                '''.format(**fmtspec)
         else:
-            #TODO
-            return ''
+            ret = '''nsimd_{simd_ext}_vf16x{deg} ret;
+                     f32 buf[4];
+                  '''.format(deg=deg, **fmtspec)
+
+            for i in range(0, deg):
+                for k in range(0, 2):
+                    for j in range (0, 4):
+                        ret += 'buf[{j}] = nsimd_u16_to_f32(*((u16*){in0} + {shift}));\n'. \
+                                format(j=j, shift= i + k*4*deg + j*deg, **fmtspec)
+                    ret += 'ret.v{i}.v{k} = vec_ld(0, buf);\n\n'.\
+                            format(i=i, k=k, **fmtspec)
+
+            ret += 'return ret;'
+            return ret
 
     # Load 1 for every supported types
     if deg == 1:
@@ -544,8 +555,17 @@ def store1234(simd_ext, typ, deg, aligned):
                  *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
                '''.format(**fmtspec)
         else:
-            #TODO
-            return ''
+            ret = 'f32 buf[4];\n'
+
+            for i in range(0, deg):
+                for k in range(0, 2):
+                    ret += 'vec_st({{in{i}}}.v{k}, 0, buf);\n'.\
+                            format(i=i+1, k=k).format(**fmtspec)
+                    for j in range (0, 4):
+                        ret += '*((u16*){in0} + {shift}) = nsimd_f32_to_u16(buf[{j}]);\n'. \
+                                format(j=j, shift=i + k*4*deg + j*deg, **fmtspec)
+
+            return ret
 
     # store 1 for every supported types
     if deg == 1:

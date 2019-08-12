@@ -887,18 +887,19 @@ def gen_load_store_ravel(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang, 'ravel')
     if filename == None:
         return
-    if op.name.startswith('load'):
-        deg = op.name[4]
-        align = op.name[5]
-    elif op.name.startswith('store'):
-        deg = op.name[5]
-        align = op.name[6]
 
+    deg = op.name[4]
+    align = op.name[5]
+
+    if typ=='f16':
+        convert_to_f16='nsimd_f32_to_f16'
+    else:
+        convert_to_f16=''
 
     check = '\n'.join(['''
-      comp = vset1({i}+1, {typ});
+      comp = vset1({convert_to_f16}({i}+1), {typ});
       err = err || vany(vne(v.v{i}, comp, {typ}), {typ});
-      '''.format(typ=typ, i=i) \
+      '''.format(typ=typ, i=i, convert_to_f16=convert_to_f16) \
       for i in range (0, int(deg))])
 
     with common.open_utf8(filename) as out:
@@ -933,8 +934,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
 
              /* Fill in the vectors */
              for (i=0; i<n; ++i) {{
-                 vin[i] = (i%{deg}) + 1;
-
+                 vin[i] = {convert_to_f16}((i%{deg}) + 1);
              }}
 
              /* Load data and check that each vector is correctly filled */
@@ -955,6 +955,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
              return EXIT_SUCCESS;
            }}'''.format(includes=get_includes(lang), op_name=op.name,
                         typ=typ, year=date.today().year, deg=deg,
+                        convert_to_f16=convert_to_f16,
                         sizeof=common.sizeof(typ), check=check))
     common.clang_format(opts, filename)
 
@@ -1288,8 +1289,7 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'c_base')
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
-                if not typ == 'f16':
-                    gen_load_store_ravel(opts, operator, typ, 'c_base')
+                gen_load_store_ravel(opts, operator, typ, 'c_base')
             elif operator.name == 'reverse':
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');
