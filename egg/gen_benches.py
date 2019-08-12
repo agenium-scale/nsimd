@@ -780,7 +780,13 @@ def gen_bench_asm_function(f, simd, typ, category):
       __asm__ __volatile__("nop");
       // code:{{
       int n = {step};
-      #pragma clang loop unroll(disable)
+      #if defined(NSIMD_IS_GCC)
+        #pragma GCC unroll 1
+      #elif defined(NSIMD_IS_CLANG)
+        #pragma clang loop unroll(disable)
+      #elif defined(NSIMD_IS_ICC)
+        #pragma unroll(1)
+      #endif
       for (int i = 0; i < sz; i += n) {{
         {bench_call};
       }}
@@ -819,7 +825,13 @@ def gen_bench_from_basic_fun(f, simd, typ, category, unroll=None):
           // code: {bench_name}
           int n = {step};
 
-          #pragma clang loop unroll(disable)
+          #if defined(NSIMD_IS_GCC)
+            #pragma GCC unroll 1
+          #elif defined(NSIMD_IS_CLANG)
+            #pragma clang loop unroll(disable)
+          #elif defined(NSIMD_IS_ICC)
+            #pragma unroll(1)
+          #endif
           for (int i = 0; i < sz; i += n) {{
             {bench_call};
           }}
