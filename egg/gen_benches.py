@@ -421,7 +421,7 @@ class TypeMIPPMsk(TypeVectorBase):
         if simd in ['avx512_knl', 'avx512_skylake']:
             return '*({}) = {}'.format(ptr, expr)
         else:
-            return 'mipp::store({}, {})'.format(ptr, expr)
+            return 'mipp::store({}, reinterpret_cast<mipp::reg>({}))'.format(ptr, expr)
 
 # -----------------------------------------------------------------------------
 
