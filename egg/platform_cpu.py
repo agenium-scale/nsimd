@@ -93,11 +93,17 @@ def get_additional_include(func, platform, simd_ext):
                   #else
                     #include <math.h>
                   #endif'''
+    elif func in ['adds']:
+        ret += '''#if NSIMD_CXX > 0
+                    #include <climits>
+                  #else
+                    #include <limits.h>
+                  #endif'''
     elif func in ['subs']:
-      ret += '''
-              #include <nsimd/cpu/cpu/adds.h>
-              #include <nsimd/cpu/cpu/neg.h>
-             '''
+        ret += '''
+                #include <nsimd/cpu/cpu/adds.h>
+                #include <nsimd/cpu/cpu/neg.h>
+               '''
     return ret
 
 # -----------------------------------------------------------------------------
