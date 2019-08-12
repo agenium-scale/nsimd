@@ -26,14 +26,16 @@ SOFTWARE.
 #define NSIMD_H
 
 /* ------------------------------------------------------------------------- */
-/* Compiler detection */
+/* Compiler detection (order matters https://stackoverflow.com/a/28166605) */
 
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
-#elif defined(__GNUC__)
-  #define NSIMD_IS_GCC
+#elif defined(__INTEL_COMPILER)
+  #define NSIMD_IS_ICC
 #elif defined(__clang__)
   #define NSIMD_IS_CLANG
+#elif defined(__GNUC__) || defined(__GNUG__)
+  #define NSIMD_IS_GCC
 #elif defined(__NVCC__)
   #define NSIMD_IS_NVCC
 #endif
