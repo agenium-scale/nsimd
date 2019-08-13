@@ -27,14 +27,15 @@ from datetime import date
 # -----------------------------------------------------------------------------
 # Get filename for test
 
+
 def get_filename(opts, op, typ, lang):
-    pp_lang = { 'c_base': 'C (base API)',
-                'cxx_base' : 'C++ (base API)',
-                'cxx_adv' : 'C++ (advanced API)' }
+    pp_lang = {'c_base': 'C (base API)',
+               'cxx_base': 'C++ (base API)',
+               'cxx_adv': 'C++ (advanced API)'}
     tests_dir = os.path.join(opts.tests_dir, lang)
     common.mkdir_p(tests_dir)
     filename = os.path.join(tests_dir, '{}.{}.{}'.format(op.name, typ,
-                 'c' if lang == 'c_base' else 'cpp'));
+                                                         'c' if lang == 'c_base' else 'cpp'))
     if common.can_create_filename(opts, filename):
         return filename
     else:
@@ -42,6 +43,7 @@ def get_filename(opts, op, typ, lang):
 
 # -----------------------------------------------------------------------------
 # Get standard includes
+
 
 def get_includes(lang):
     ret = '#include <nsimd/nsimd.h>\n'
@@ -63,8 +65,9 @@ def get_includes(lang):
 # Function to compute number of common bits between two floatting points
 # numbers
 
+
 get_2th_power = \
-'''
+    '''
 /* One could use ldexp, but it is not available in C89. Plus we really
    don't care about performences here. */
 double get_2th_power(int a) {
@@ -93,7 +96,7 @@ double get_2th_power(int a) {
 '''
 
 relative_distance_cpp = \
-'''
+    '''
 double relative_distance(double a, double b) {
   double ma, mi;
 
@@ -129,7 +132,7 @@ double relative_distance(double a, double b) {
 ''' + get_2th_power
 
 relative_distance_c = \
-'''
+    '''
 double relative_distance(double a, double b) {
   double ma, mi;
 
@@ -172,7 +175,7 @@ double relative_distance(double a, double b) {
 # Template for a lot of tests
 
 template = \
-'''{includes}
+    '''{includes}
 
 #define SIZE (2048 / {sizeof})
 
@@ -246,6 +249,7 @@ int main(void) {{
 # -----------------------------------------------------------------------------
 # Common to most of the tests
 
+
 def get_content(op, typ, lang):
     cast = 'f32' if typ in ['f16', 'f32'] else 'f64'
 
@@ -258,11 +262,11 @@ def get_content(op, typ, lang):
         rand = '(1 << (rand() % 4))'
     else:
         if op.src:
-          rand = '({cast})2 * ({cast})rand() / ({cast})RAND_MAX'. \
-                 format(cast=cast)
+            rand = '({cast})2 * ({cast})rand() / ({cast})RAND_MAX'. \
+                   format(cast=cast)
         else:
-          rand = '({cast})(1 << (rand() % 4)) / ({cast})(1 << (rand() % 4))'. \
-                 format(cast=cast)
+            rand = '({cast})(1 << (rand() % 4)) / ({cast})(1 << (rand() % 4))'. \
+                   format(cast=cast)
 
     # For signed types, make some positive and negative inputs
     if op.name not in ['sqrt', 'rsqrt11'] and typ in common.itypes:
@@ -275,16 +279,16 @@ def get_content(op, typ, lang):
         logical = 'l' if op.params[0] == 'l' else ''
         if logical == 'l':
             rand = '(1 << (rand() % 2))' if typ != 'f16' \
-                                         else '(float)(1 << (rand() % 2))'
+                else '(float)(1 << (rand() % 2))'
         nargs = range(1, len(op.params))
 
         # Make vin_defi
         code = ['{} *vin{};'.format(typ, i) for i in nargs]
-        code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'. \
+        code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'.
                  format(i, typ, common.sizeof(typ)) for i in nargs]
         vin_defi = '\n'.join(code)
         if typ == 'f16':
-            code = ['vin{}[i] = nsimd_f32_to_f16({});'. \
+            code = ['vin{}[i] = nsimd_f32_to_f16({});'.
                     format(i, rand) for i in nargs]
         else:
             code = ['vin{}[i] = ({})({});'.format(i, typ, rand) for i in nargs]
@@ -298,8 +302,8 @@ def get_content(op, typ, lang):
         if op.tests_mpfr and sys.platform.startswith('linux'):
             cpu_step = '1'
             variables = ', '.join(['a{}'.format(i) for i in nargs])
-            mpfr_inits = '\n'.join(['mpfr_init2(a{}, 64);'.format(i) \
-                                   for i in nargs])
+            mpfr_inits = '\n'.join(['mpfr_init2(a{}, 64);'.format(i)
+                                    for i in nargs])
             if typ == 'f16':
                 mpfr_set = '''mpfr_set_flt(a{i}, nsimd_u16_to_f32(
                                 ((u16 *)vin{i})[i]), MPFR_RNDN);'''
@@ -312,10 +316,10 @@ def get_content(op, typ, lang):
                 mpfr_set = 'mpfr_set_d(a{i}, vin{i}[i], MPFR_RNDN);'
                 vout0_set = 'vout0[i] = mpfr_get_d(c, MPFR_RNDN);'
             mpfr_sets = '\n'.join([mpfr_set.format(i=j) for j in nargs])
-            mpfr_clears = '\n'.join(['mpfr_clear(a{});'.format(i) \
+            mpfr_clears = '\n'.join(['mpfr_clear(a{});'.format(i)
                                      for i in nargs])
             vout0_comp = \
-            '''mpfr_t c, {variables};
+                '''mpfr_t c, {variables};
                mpfr_init2(c, 64);
                {mpfr_inits}
                {mpfr_sets}
@@ -323,16 +327,16 @@ def get_content(op, typ, lang):
                {vout0_set}
                mpfr_clear(c);
                {mpfr_clears}'''. \
-               format(variables=variables, mpfr_sets=mpfr_sets,
-                      mpfr_clears=mpfr_clears, vout0_set=vout0_set,
-                      mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
+                format(variables=variables, mpfr_sets=mpfr_sets,
+                       mpfr_clears=mpfr_clears, vout0_set=vout0_set,
+                       mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
         else:
             args = ', '.join(['va{}'.format(i) for i in nargs])
             code = ['nsimd_cpu_v{}{} {}, vc;'.format(logical, typ, args)]
-            code += ['va{} = nsimd_load{}u_cpu_{}(&vin{}[i]);'. \
+            code += ['va{} = nsimd_load{}u_cpu_{}(&vin{}[i]);'.
                      format(i, logical, typ, i) for i in nargs]
             code += ['vc = nsimd_{}_cpu_{}({});'.format(op.name, typ, args)]
-            code += ['nsimd_store{}u_cpu_{}(&vout0[i], vc);'. \
+            code += ['nsimd_store{}u_cpu_{}(&vout0[i], vc);'.
                      format(logical, typ)]
             vout0_comp = '\n'.join(code)
 
@@ -340,31 +344,31 @@ def get_content(op, typ, lang):
         args = ', '.join(['va{}'.format(i) for i in nargs])
         if lang == 'c_base':
             code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]
-            code += ['va{} = vload{}u(&vin{}[i], {});'. \
+            code += ['va{} = vload{}u(&vin{}[i], {});'.
                      format(i, logical, i, typ) for i in nargs]
             code += ['vc = v{}({}, {});'.format(op.name, args, typ)]
             code += ['vstore{}u(&vout1[i], vc, {});'.format(logical, typ)]
             vout1_comp = '\n'.join(code)
         if lang == 'cxx_base':
             code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]
-            code += ['va{} = nsimd::load{}u(&vin{}[i], {}());'. \
+            code += ['va{} = nsimd::load{}u(&vin{}[i], {}());'.
                      format(i, logical, i, typ) for i in nargs]
             code += ['vc = nsimd::{}({}, {}());'.format(op.name, args, typ)]
-            code += ['nsimd::store{}u(&vout1[i], vc, {}());'. \
+            code += ['nsimd::store{}u(&vout1[i], vc, {}());'.
                      format(logical, typ)]
             vout1_comp = '\n'.join(code)
         if lang == 'cxx_adv':
             code = ['nsimd::pack{}<{}> {}, vc;'.format(logical, typ, args)]
             code += ['''va{i} = nsimd::load{logical}u<
                                   nsimd::pack{logical}<{typ}> >(
-                                      &vin{i}[i]);'''. \
+                                      &vin{i}[i]);'''.
                      format(i=i, logical=logical, typ=typ) for i in nargs]
             if op.cxx_operator:
                 if len(op.params[1:]) == 1:
-                    code += ['vc = {}va1;'. \
+                    code += ['vc = {}va1;'.
                              format(op.cxx_operator[8:])]
                 if len(op.params[1:]) == 2:
-                    code += ['vc = va1 {} va2;'. \
+                    code += ['vc = va1 {} va2;'.
                              format(op.cxx_operator[8:])]
             else:
                 code += ['vc = nsimd::{}({});'.format(op.name, args)]
@@ -372,10 +376,10 @@ def get_content(op, typ, lang):
             vout1_comp = '\n'.join(code)
     elif op.params == ['l', 'v', 'v']:
         vin_defi = \
-        '''{typ} *vin1, *vin2;
+            '''{typ} *vin1, *vin2;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
            CHECK(vin2 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
-           format(typ=typ, sizeof=common.sizeof(typ))
+            format(typ=typ, sizeof=common.sizeof(typ))
         if typ == 'f16':
             vin_rand = '''vin1[i] = nsimd_f32_to_f16((float)(rand() % 4));
                           vin2[i] = nsimd_f32_to_f16((float)(rand() % 4));'''
@@ -388,7 +392,7 @@ def get_content(op, typ, lang):
                         va2 = nsimd_loadu_cpu_{typ}(&vin2[i]);
                         vc = nsimd_{op_name}_cpu_{typ}(va1, va2);
                         nsimd_storelu_cpu_{typ}(&vout0[i], vc);'''. \
-                        format(typ=typ, op_name=op.name)
+            format(typ=typ, op_name=op.name)
         if lang == 'c_base':
             vout1_comp = '''vec({typ}) va1, va2;
                             vecl({typ}) vc;
@@ -396,7 +400,7 @@ def get_content(op, typ, lang):
                             va2 = vloadu(&vin2[i], {typ});
                             vc = v{op_name}(va1, va2, {typ});
                             vstorelu(&vout1[i], vc, {typ});'''. \
-                            format(typ=typ, op_name=op.name)
+                format(typ=typ, op_name=op.name)
         if lang == 'cxx_base':
             vout1_comp = '''vec({typ}) va1, va2;
                             vecl({typ}) vc;
@@ -404,7 +408,7 @@ def get_content(op, typ, lang):
                             va2 = nsimd::loadu(&vin2[i], {typ}());
                             vc = nsimd::{op_name}(va1, va2, {typ}());
                             nsimd::storelu(&vout1[i], vc, {typ}());'''. \
-                            format(typ=typ, op_name=op.name)
+                format(typ=typ, op_name=op.name)
         if lang == 'cxx_adv':
             if op.cxx_operator:
                 do_computation = 'vc = va1 {} va2;'. \
@@ -418,32 +422,32 @@ def get_content(op, typ, lang):
                             va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[i]);
                             {do_computation}
                             nsimd::storelu(&vout1[i], vc);'''. \
-                            format(typ=typ, op_name=op.name,
-                                   do_computation=do_computation)
+                format(typ=typ, op_name=op.name,
+                       do_computation=do_computation)
     elif op.params == ['v', 'v', 'p']:
         vin_defi = \
-        '''{typ} *vin1;
+            '''{typ} *vin1;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
-           format(typ=typ, sizeof=common.sizeof(typ))
+            format(typ=typ, sizeof=common.sizeof(typ))
         vin_rand = 'vin1[i] = ({typ})(rand() % 4);'.format(typ=typ)
         vout0_comp = '''nsimd_cpu_v{typ} va1, vc;
                         va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
                         vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % 7);
                         nsimd_storeu_cpu_{typ}(&vout0[i], vc);'''. \
-                        format(typ=typ, op_name=op.name)
+            format(typ=typ, op_name=op.name)
         if lang == 'c_base':
             vout1_comp = '''vec({typ}) va1, vc;
                             va1 = vloadu(&vin1[i], {typ});
                             vc = v{op_name}(va1, (i / step) % 7, {typ});
                             vstoreu(&vout1[i], vc, {typ});'''. \
-                            format(typ=typ, op_name=op.name)
+                format(typ=typ, op_name=op.name)
         if lang == 'cxx_base':
             vout1_comp = \
-            '''vec({typ}) va1, vc;
+                '''vec({typ}) va1, vc;
                va1 = nsimd::loadu(&vin1[i], {typ}());
                vc = nsimd::{op_name}(va1, (i / step) % 7, {typ}());
                nsimd::storeu(&vout1[i], vc, {typ}());'''. \
-               format(typ=typ, op_name=op.name)
+                format(typ=typ, op_name=op.name)
         if lang == 'cxx_adv':
             if op.cxx_operator:
                 do_computation = 'vc = va1 {} ((i / step) % 7);'. \
@@ -452,20 +456,21 @@ def get_content(op, typ, lang):
                 do_computation = 'vc = nsimd::{}(va1, (i / step) % 7);'. \
                                  format(op.name)
             vout1_comp = \
-            '''nsimd::pack<{typ}> va1, vc;
+                '''nsimd::pack<{typ}> va1, vc;
                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
                {do_computation}
                nsimd::storeu(&vout1[i], vc);'''. \
-               format(typ=typ, do_computation=do_computation)
+                format(typ=typ, do_computation=do_computation)
     else:
-        raise ValueError('No test available for operator "{}" on type "{}"'. \
+        raise ValueError('No test available for operator "{}" on type "{}"'.
                          format(op.name, typ))
-    return { 'vin_defi': vin_defi, 'vin_rand': vin_rand, 'cpu_step': cpu_step,
-             'vout0_comp': vout0_comp, 'vout1_comp': vout1_comp }
+    return {'vin_defi': vin_defi, 'vin_rand': vin_rand, 'cpu_step': cpu_step,
+            'vout0_comp': vout0_comp, 'vout1_comp': vout1_comp}
 
 # -----------------------------------------------------------------------------
 # Generate test in C, C++ (base API) and C++ (advanced API) for almost all
 # tests
+
 
 def gen_test(opts, op, typ, lang, ulps):
     filename = get_filename(opts, op, typ, lang)
@@ -488,7 +493,7 @@ def gen_test(opts, op, typ, lang, ulps):
             left = 'mpfr_out'
             right = 'nsimd_out'
         relative_distance = relative_distance_c if lang == 'c_base' \
-                            else relative_distance_cpp
+            else relative_distance_cpp
         if op.tests_ulps:
             comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
                    format(left, right, nbits='11' if typ != 'f16' else '9')
@@ -532,26 +537,26 @@ def gen_test(opts, op, typ, lang, ulps):
                 '''
 
                 if lang == 'c_base':
-                    comp = comp.format(left = left,
-                            right = right,
-                            nbits = nbits,
-                            nbits_dnz = nbits_dnz,
-                            isnormal = 'isnormal',
-                            isinf='isinf',
-                            isnan='isnan')
+                    comp = comp.format(left=left,
+                                       right=right,
+                                       nbits=nbits,
+                                       nbits_dnz=nbits_dnz,
+                                       isnormal='isnormal',
+                                       isinf='isinf',
+                                       isnan='isnan')
                 else:
-                    comp = comp.format(left = left,
-                            right = right,
-                            nbits = nbits,
-                            nbits_dnz = nbits_dnz,
-                            isnormal = 'std::isnormal',
-                            isinf='std::isinf',
-                            isnan='std::isnan')
+                    comp = comp.format(left=left,
+                                       right=right,
+                                       nbits=nbits,
+                                       nbits_dnz=nbits_dnz,
+                                       isnormal='std::isnormal',
+                                       isinf='std::isinf',
+                                       isnan='std::isnan')
 
             else:
                 nbits = {'f16': '10', 'f32': 21, 'f64': '48'}
                 comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
-                        format(left, right, nbits=nbits[typ])
+                    format(left, right, nbits=nbits[typ])
 
             extra_code = relative_distance
         else:
@@ -581,17 +586,18 @@ def gen_test(opts, op, typ, lang, ulps):
             '''
 
     with common.open_utf8(filename) as out:
-        out.write(template.format( \
+        out.write(template.format(
             includes=includes, sizeof=common.sizeof(typ), typ=typ,
             op_name=op.name, year=date.today().year, comp=comp,
             extra_code=extra_code, **content))
-            #vin_defi=content['vin_defi'],
-            #vin_rand=content['vin_rand'], vout0_comp=content['vout0_comp'],
-            #vout1_comp=content['vout1_comp']))
+        # vin_defi=content['vin_defi'],
+        #vin_rand=content['vin_rand'], vout0_comp=content['vout0_comp'],
+        # vout1_comp=content['vout1_comp']))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
 # Tests for addv
+
 
 def gen_addv(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
@@ -601,10 +607,12 @@ def gen_addv(opts, op, typ, lang):
         op_test = 'v{}(vloada(buf, {}), {})'.format(op.name, typ, typ)
         extra_code = relative_distance_c
     elif lang == 'cxx_base':
-        op_test = 'nsimd::{}(nsimd::loada(buf, {}()), {}())'.format(op.name, typ, typ)
+        op_test = 'nsimd::{}(nsimd::loada(buf, {}()), {}())'.format(
+            op.name, typ, typ)
         extra_code = relative_distance_cpp
     else:
-        op_test = 'nsimd::{}(nsimd::loada<nsimd::pack<{}>>(buf))'.format(op.name, typ)
+        op_test = 'nsimd::{}(nsimd::loada<nsimd::pack<{}>>(buf))'.format(
+            op.name, typ)
         extra_code = relative_distance_cpp
 
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
@@ -684,9 +692,242 @@ def gen_addv(opts, op, typ, lang):
             return EXIT_SUCCESS;
             }}
             '''.format(head=head, init=init, op_name=op.name, typ=typ,
-                       sizeof=common.sizeof(typ),init_statement=init_statement,
-                       ref_statement=ref_statement,op_test=op_test, test=test)
+                       sizeof=common.sizeof(typ), init_statement=init_statement,
+                       ref_statement=ref_statement, op_test=op_test, test=test)
         )
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
+# Tests for adds
+
+def gen_adds(opts, op, typ, lang, ulps):
+    if typ in common.ftypes:
+      # fallback to testing add
+      return gen_test(opts, op, typ, lang, ulps)
+
+    if not typ in common.limits.keys():
+      raise ValueError('{typ} limit not implemented in common.limits'.format(typ))
+  
+    filename = get_filename(opts, op, typ, lang)
+
+    if filename == None:
+        return
+
+    sizeof = common.sizeof(typ)
+
+    head = '''
+              {includes}
+              #include <limits.h>
+              #include <assert.h>
+              
+              #define SIZE (2048 / {sizeof})
+              
+              #define STATUS "test of adds over {typ}"
+              
+              #define CHECK(a) {{ \\
+                errno = 0; \\
+                if (!(a)) {{ \\
+                  fprintf(stderr, "ERROR: " #a ":%d: %s\\n", __LINE__, strerror(errno)); \\
+                  fflush(stderr); \\
+                  exit(EXIT_FAILURE); \\
+                }} \\
+              }}
+            '''.format(includes=get_includes(lang), typ = typ, sizeof = sizeof)
+
+    type_limits = common.limits[typ]
+
+    with common.open_utf8(filename) as out:
+        out.write(
+            ''' \
+            {head}
+            /* ------------------------------------------------------------------------- */
+            
+            int comp_function({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out != nsimd_out; }}
+            
+            int main(void) {{
+            
+              const int num_test_cases = 14;
+              const int step = vlen({typ});
+              const int mem_aligned_size = SIZE * {sizeof};
+            
+              int ii = 0;
+              
+              {typ} *vin1;
+              {typ} *vin2;
+            
+              {typ} *vout_expected;
+              {typ} *vout_computed;
+            
+              CHECK(vin1 = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+              CHECK(vin2 = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+            
+              CHECK(vout_expected = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+              CHECK(vout_computed = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+            
+              fprintf(stdout, STATUS "...\\n");
+              fflush(stdout);
+              
+              /* Fill first inputs with values testing overflow/underflow */
+              ii = 0;
+            
+              // No overflow expected
+              vin1[ii] = {max} - 1;
+              vin2[ii] = 1;
+              ++ ii;
+            
+              vin1[ii] = 1;
+              vin2[ii] = {max} - 1;
+              ++ ii;
+            
+              vin1[ii] = {max} - 1;
+              vin2[ii] = 0;
+              ++ ii;
+            
+              vin1[ii] = 0;
+              vin2[ii] = {max} - 1;
+              ++ ii;
+            
+              // Overflow expected
+              vin1[ii] = {max};
+              vin2[ii] = 1;
+              ++ ii;
+            
+              vin1[ii] = 1;
+              vin2[ii] = {max};
+              ++ ii;
+            
+              vin1[ii] = {max};
+              vin2[ii] = {max};
+              ++ ii;
+            
+              // No underflow expected
+              vin1[ii] = {min};
+              vin2[ii] = 0;
+              ++ ii;
+            
+              vin1[ii] = 0;
+              vin2[ii] = {min};
+              ++ ii;
+            
+              vin1[ii] = {min};
+              vin2[ii] = 1;
+              ++ ii;
+            
+              vin1[ii] = 1;
+              vin2[ii] = {min};
+              ++ ii;
+            
+              // Underflow expected
+              vin1[ii] = {min};
+              vin2[ii] = -1;
+              ++ ii;
+            
+              vin1[ii] = -1;
+              vin2[ii] = {min};
+              ++ ii;
+            
+              assert(num_test_cases == ii);
+            
+              /* Fill remaining input vectors with random */
+            
+              for (ii = num_test_cases; ii < SIZE; ++ ii) {{
+                vin1[ii] = ({typ})((2 * (rand() % 2) - 1) * (1 << (rand() % 4)));
+                vin2[ii] = ({typ})((2 * (rand() % 2) - 1) * (1 << (rand() % 4)));
+              }}
+            
+              /* Fill output expected vector with references values */
+            
+              ii = 0;
+            
+              // No overflow expected
+              vout_expected[ii] = {max};
+              ++ ii;
+            
+              vout_expected[ii] = {max};
+              ++ ii;
+            
+              vout_expected[ii] = {max} - 1;
+              ++ ii;
+            
+              vout_expected[ii] = {max} - 1;
+              ++ ii;
+            
+              // Overflow expected
+              vout_expected[ii] = {max};
+              ++ ii;
+            
+              vout_expected[ii] = {max};
+              ++ ii;
+            
+              vout_expected[ii] = {max};
+              ++ ii;
+            
+              // No underflow expected
+              vout_expected[ii] = {min};
+              ++ ii;
+            
+              vout_expected[ii] = {min};
+              ++ ii;
+            
+              vout_expected[ii] = {min} + 1;
+              ++ ii;
+            
+              vout_expected[ii] = {min} + 1;
+              ++ ii;
+            
+              // Underflow expected
+              vout_expected[ii] = {min};
+              ++ ii;
+            
+              vout_expected[ii] = {min};
+              ++ ii;
+              
+              assert(num_test_cases == ii);
+            
+              /* 
+              Fill the remainder of vout_expected with the sum 
+              of the random values stored in vin1 and vin2.
+              Call directly the cpu API of nsimd to ensure
+              that we call the scalar version of the function.
+              */
+            
+              for (ii = num_test_cases ; ii < SIZE; ii += nsimd_len_cpu_{typ}()) {{
+                nsimd_cpu_v{typ} va1, va2, vc;
+                va1 = nsimd_loadu_cpu_{typ}(&vin1[ii]);
+                va2 = nsimd_loadu_cpu_{typ}(&vin2[ii]);
+                vc = nsimd_adds_cpu_{typ}(va1, va2);
+                nsimd_storeu_cpu_{typ}(&vout_expected[ii], vc);
+              }}
+            
+              /* Fill vout_computed with computed values */
+            
+              for (ii = 0; ii < SIZE; ii += step) {{
+                vec({typ}) va1, va2, vc;
+                va1 = vloadu(&vin1[ii], {typ});
+                va2 = vloadu(&vin2[ii], {typ});
+                vc = vadds(va1, va2, {typ});
+                vstoreu(&vout_computed[ii], vc, {typ});
+              }}
+            
+              /* Compare results */
+            
+              for (int vi = 0; vi < SIZE; vi += step) {{
+                for (ii = vi; ii < vi + step; ii++) {{
+                  if (comp_function(vout_expected[ii], vout_computed[ii])) {{
+                    fprintf(stdout, STATUS "... FAIL\\n");
+                    fflush(stdout);
+                    return -1;
+                  }}
+                }}
+              }}
+            
+              fprintf(stdout, STATUS "... OK\\n");
+              fflush(stdout);
+              return 0;
+            }}
+        '''.format(head = head, op_name = op.name, typ = typ, sizeof = sizeof, **type_limits)
+        )
+
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
@@ -712,7 +953,7 @@ def gen_all_any(opts, op, typ, lang):
         scalar1 = '({})1'.format(typ)
     with common.open_utf8(filename) as out:
         out.write(
-        '''{includes}
+            '''{includes}
 
            #define CHECK(a) {{ \\
              errno = 0; \\
@@ -767,6 +1008,7 @@ def gen_all_any(opts, op, typ, lang):
 # -----------------------------------------------------------------------------
 # Tests for load/store of degrees 2, 3 and 4
 
+
 def gen_load_store(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
@@ -780,20 +1022,20 @@ def gen_load_store(opts, op, typ, lang):
     variables = ', '.join(['v.v{}'.format(i) for i in range(0, int(deg))])
     if lang == 'c_base':
         load_store = \
-        '''vecx{deg}({typ}) v = vload{deg}{align}(&vin[i], {typ});
+            '''vecx{deg}({typ}) v = vload{deg}{align}(&vin[i], {typ});
            vstore{deg}{align}(&vout[i], {variables}, {typ});'''. \
-           format(deg=deg, typ=typ, align=align, variables=variables)
+            format(deg=deg, typ=typ, align=align, variables=variables)
     elif lang == 'cxx_base':
         load_store = \
-        '''vecx{deg}({typ}) v = nsimd::load{deg}{align}(&vin[i], {typ}());
+            '''vecx{deg}({typ}) v = nsimd::load{deg}{align}(&vin[i], {typ}());
            nsimd::store{deg}{align}(&vout[i], {variables}, {typ}());'''. \
-           format(deg=deg, typ=typ, align=align, variables=variables)
+            format(deg=deg, typ=typ, align=align, variables=variables)
     else:
         load_store = \
-        '''nsimd::packx{deg}<{typ}> v = nsimd::load{deg}{align}<
+            '''nsimd::packx{deg}<{typ}> v = nsimd::load{deg}{align}<
                                           nsimd::packx{deg}<{typ}> >(&vin[i]);
            nsimd::store{deg}{align}(&vout[i], {variables});'''. \
-           format(deg=deg, typ=typ, align=align, variables=variables)
+            format(deg=deg, typ=typ, align=align, variables=variables)
     if typ == 'f16':
         rand = '*((u16*)vin + i) = nsimd_f32_to_u16((float)(rand() % 10));'
         comp = '*((u16 *)vin + i) != *((u16 *)vout + i)'
@@ -802,7 +1044,7 @@ def gen_load_store(opts, op, typ, lang):
         comp = 'vin[i] != vout[i]'
     with common.open_utf8(filename) as out:
         out.write(
-        '''{includes}
+            '''{includes}
 
            #define SIZE (2048 / {sizeof})
 
@@ -860,6 +1102,7 @@ def gen_load_store(opts, op, typ, lang):
 # -----------------------------------------------------------------------------
 # Tests for nbtrue
 
+
 def gen_nbtrue(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
@@ -881,7 +1124,7 @@ def gen_nbtrue(opts, op, typ, lang):
         scalar1 = '({})1'.format(typ)
     with common.open_utf8(filename) as out:
         out.write(
-        '''{includes}
+            '''{includes}
 
            #define CHECK(a) {{ \\
              errno = 0; \\
@@ -934,6 +1177,7 @@ def gen_nbtrue(opts, op, typ, lang):
 # -----------------------------------------------------------------------------
 # Tests for reinterprets and converts
 
+
 def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
     filename = get_filename(opts, op, '{}_to_{}'.format(from_typ, to_typ),
                             lang)
@@ -955,8 +1199,8 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
             comp = '''vstore{logical}a(out, v{op_name}(v{op_name}(
                         vload{logical}a(in, {from_typ}), {from_typ}, {to_typ}),
                           {to_typ}, {from_typ}), {from_typ});'''. \
-                          format(op_name=op.name, from_typ=from_typ,
-                                 to_typ=to_typ, logical=logical)
+                format(op_name=op.name, from_typ=from_typ,
+                       to_typ=to_typ, logical=logical)
     elif lang == 'cxx_base':
         if op.name == 'upcvt':
             comp = '''vecx2({to_typ}) tmp =
@@ -965,33 +1209,33 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                         nsimd::store{logical}a(out, nsimd::downcvt(
                             tmp.v0, tmp.v1, {to_typ}(), {from_typ}()),
                             {from_typ}());'''. \
-                            format(op_name=op.name, from_typ=from_typ,
-                            to_typ=to_typ, logical=logical)
+                format(op_name=op.name, from_typ=from_typ,
+                       to_typ=to_typ, logical=logical)
         else:
             comp = '''nsimd::store{logical}a(out, nsimd::{op_name}(
                         nsimd::{op_name}(nsimd::load{logical}a(
                           in, {from_typ}()), {from_typ}(), {to_typ}()),
                             {to_typ}(), {from_typ}()), {from_typ}());'''. \
-                          format(op_name=op.name, from_typ=from_typ,
-                                 to_typ=to_typ, logical=logical)
+                format(op_name=op.name, from_typ=from_typ,
+                       to_typ=to_typ, logical=logical)
     else:
         if op.name == 'upcvt':
             comp = \
-            '''nsimd::packx2<{to_typ}> tmp = nsimd::upcvt<
+                '''nsimd::packx2<{to_typ}> tmp = nsimd::upcvt<
                  nsimd::pack{logical}x2<{to_typ}> >(nsimd::load{logical}a<
                    nsimd::pack{logical}<{from_typ}> >(in));
                nsimd::store{logical}a(out, nsimd::downcvt<
                  nsimd::pack{logical}<{from_typ}> >(tmp.v0, tmp.v1));'''. \
-                 format(op_name=op.name, from_typ=from_typ,
-                        to_typ=to_typ, logical=logical)
+                format(op_name=op.name, from_typ=from_typ,
+                       to_typ=to_typ, logical=logical)
         else:
             comp = \
-            '''nsimd::store{logical}a(out, nsimd::{op_name}<
+                '''nsimd::store{logical}a(out, nsimd::{op_name}<
                  nsimd::pack{logical}<{from_typ}> >(nsimd::{op_name}<
                    nsimd::pack{logical}<{to_typ}> >(nsimd::load{logical}a<
                      nsimd::pack{logical}<{from_typ}> >(in))));'''. \
-                     format(op_name=op.name, from_typ=from_typ,
-                            to_typ=to_typ, logical=logical)
+                format(op_name=op.name, from_typ=from_typ,
+                       to_typ=to_typ, logical=logical)
     if logical == 'l':
         rand = '(rand() % 2)'
     else:
@@ -1011,7 +1255,7 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
         neq_test = 'in[j] != out[j]'
     with common.open_utf8(filename) as out:
         out.write(
-        '''{includes}
+            '''{includes}
 
            #define CHECK(a) {{ \\
              errno = 0; \\
@@ -1059,27 +1303,31 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
 # -----------------------------------------------------------------------------
 # Shuffle
 
+
 def gen_reverse(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
         return
     if lang == 'c_base':
-        test_code = 'vstorea( out, vreverse( vloada( in, {typ} ), {typ} ), {typ} );'.format( typ=typ )
+        test_code = 'vstorea( out, vreverse( vloada( in, {typ} ), {typ} ), {typ} );'.format(
+            typ=typ)
     elif lang == 'cxx_base':
-        test_code = 'nsimd::storea( out, nsimd::reverse( nsimd::loada( in, {typ}() ), {typ}() ), {typ}() );'.format( typ=typ )
+        test_code = 'nsimd::storea( out, nsimd::reverse( nsimd::loada( in, {typ}() ), {typ}() ), {typ}() );'.format(
+            typ=typ)
     elif lang == 'cxx_adv':
-        test_code = 'nsimd::storea( out, nsimd::reverse( nsimd::loada<nsimd::pack<{typ}>>( in ) ) );'.format( typ=typ )
+        test_code = 'nsimd::storea( out, nsimd::reverse( nsimd::loada<nsimd::pack<{typ}>>( in ) ) );'.format(
+            typ=typ)
 
     if typ == 'f16':
         init = 'in[ i ] = nsimd_f32_to_f16((float)(i + 1));'
         comp = 'ok &= nsimd_f16_to_f32( out[len - 1 - i] ) == nsimd_f16_to_f32( in[i] );'
     else:
-        init = 'in[ i ] = ({typ})(i + 1);'.format( typ=typ )
+        init = 'in[ i ] = ({typ})(i + 1);'.format(typ=typ)
         comp = 'ok &= out[len - 1 - i] == in[i];'
 
     with common.open_utf8(filename) as out:
         out.write(
-        '''{includes}
+            '''{includes}
 
            #define CHECK(a) {{ \\
              errno = 0; \\
@@ -1135,8 +1383,8 @@ def gen_reverse(opts, op, typ, lang):
              return EXIT_SUCCESS;
            }}
         '''.format(includes=get_includes(lang), op_name=op.name,
-                   typ=typ,test_code=test_code, year=date.today().year,sizeof=common.sizeof(typ),
-                  init=init,comp=comp))
+                   typ=typ, test_code=test_code, year=date.today().year, sizeof=common.sizeof(typ),
+                   init=init, comp=comp))
 
     common.clang_format(opts, filename)
 
@@ -1147,15 +1395,15 @@ def gen_reverse(opts, op, typ, lang):
 def doit(opts):
     ulps = common.load_ulps_informations(opts)
 
-    print ('-- Generating tests')
+    print('-- Generating tests')
     for op_name, operator in operators.operators.items():
-        ## Skip non-matching tests
+        # Skip non-matching tests
         if opts.match and not opts.match.match(op_name):
             continue
-        if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
-                        'len', 'loadlu', 'loadla', 'storelu', 'storela',
-                        'set1', 'store2a', 'store2u', 'store3a', 'store3u',
-                        'store4a', 'store4u', 'downcvt']:
+        if op_name in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
+                       'len', 'loadlu', 'loadla', 'storelu', 'storela',
+                       'set1', 'store2a', 'store2u', 'store3a', 'store3u',
+                       'store4a', 'store4u', 'downcvt']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
@@ -1169,6 +1417,8 @@ def doit(opts):
                 gen_addv(opts, operator, typ, 'c_base')
                 gen_addv(opts, operator, typ, 'cxx_base')
                 gen_addv(opts, operator, typ, 'cxx_adv')
+            elif operator.name == 'adds':
+                gen_adds(opts, operator, typ, 'c_base', ulps)
             elif operator.name in ['all', 'any']:
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'cxx_base')
@@ -1188,9 +1438,9 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'reverse':
-                gen_reverse(opts, operator, typ, 'c_base');
-                gen_reverse(opts, operator, typ, 'cxx_base');
-                gen_reverse(opts, operator, typ, 'cxx_adv');
+                gen_reverse(opts, operator, typ, 'c_base')
+                gen_reverse(opts, operator, typ, 'cxx_base')
+                gen_reverse(opts, operator, typ, 'cxx_adv')
             else:
                 gen_test(opts, operator, typ, 'c_base', ulps)
                 gen_test(opts, operator, typ, 'cxx_base', ulps)
