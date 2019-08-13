@@ -301,7 +301,7 @@ def enum(l):
     ret = []
     for i in range(0, len(l)):
         ret.append([i, l[i]])
-    return ret;
+    return ret
 
 # -----------------------------------------------------------------------------
 # List of supported SIMD operators/functions
