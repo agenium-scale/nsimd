@@ -959,6 +959,20 @@ def sleef_name(name, simd, typ, ulp=None):
     return name
 
 # -----------------------------------------------------------------------------
+# Integer limits per type using macros defined in <limits.h> or <climits>
+
+limits = {
+    'i8': {'min': 'SCHAR_MIN', 'max': 'SCHAR_MAX'}, 
+    'i16': {'min': 'SHRT_MIN', 'max': 'SHRT_MAX'},
+    'i32': {'min': 'INT_MIN', 'max': 'INT_MAX'},
+    'i64': {'min': 'LONG_MIN', 'max': 'LONG_MAX'},
+    'u8': {'min': '0', 'max': 'UCHAR_MAX'},
+    'u16': {'min': '0', 'max': 'USHRT_MAX'},
+    'u32': {'min': '0', 'max': 'UINT_MAX'},
+    'u64': {'min': '0', 'max': 'ULONG_MAX'}
+  }
+
+# -----------------------------------------------------------------------------
 # Misc
 
 def ext_from_lang(lang):

@@ -631,10 +631,10 @@ def adds(typ):
     if typ in common.ftypes:
       return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
-    if not typ in fmtspec['limits'].keys():
+    if not typ in common.limits.keys():
       raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
 
-    type_limits = fmtspec['limits'][typ]
+    type_limits = common.limits[typ]
 
     content = repeat_stmt(
       '''if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))
@@ -666,17 +666,6 @@ def subs():
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
 
-    limits = {
-      'i8': {'min': 'SCHAR_MIN', 'max': 'SCHAR_MAX'}, 
-      'i16': {'min': 'SHRT_MIN', 'max': 'SHRT_MAX'},
-      'i32': {'min': 'INT_MIN', 'max': 'INT_MAX'},
-      'i64': {'min': 'LONG_MIN', 'max': 'LONG_MAX'},
-      'u8': {'min': '0', 'max': 'UCHAR_MAX'},
-      'u16': {'min': '0', 'max': 'USHRT_MAX'},
-      'u32': {'min': '0', 'max': 'UINT_MAX'},
-      'u64': {'min': '0', 'max': 'ULONG_MAX'}
-    }
-
     global fmtspec
     fmtspec = {
       'simd_ext': simd_ext,
@@ -689,8 +678,7 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
       'in2': common.in2,
       'in3': common.in3,
       'in4': common.in4,
-      'typnbits': from_typ[1:],
-      'limits': limits
+      'typnbits': from_typ[1:]
     }
 
     impls = {
