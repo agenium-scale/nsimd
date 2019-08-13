@@ -699,21 +699,39 @@ def binop2(func, simd_ext, typ, logical=False):
                           format(func=func, typ2=suf_ep(typ)[1:], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Code for logical binary operators: land, lor, lxor
+## Code for logical binary operators: andl, orl, xorl
 
 def binlop2(func, simd_ext, typ):
     op = { 'orl': '|', 'xorl': '^', 'andl': '&' }
-    if typ == 'f16':
-        if simd_ext in avx512:
-            return '''nsimd_{simd_ext}_vlf16 ret;
-                      ret.v0 = {in0}.v0 {op} {in1}.v0;
-                      ret.v1 = {in0}.v1 {op} {in1}.v1;
-                      return ret;'''.format(op=op[func], **fmtspec)
-        return binop2(func, simd_ext, typ, True)
+    op_fct = { 'orl': 'kor', 'xorl': 'kxor', 'andl': 'kand' }
     if simd_ext not in avx512:
-        return binop2(func, simd_ext, typ)
-    return 'return (__mmask{le})({in0} {op} {in1});'. \
-           format(op=op[func], **fmtspec)
+        if typ == 'f16':
+            return binop2(func, simd_ext, typ, True)
+        else:
+            return binop2(func, simd_ext, typ)
+    else: # avx512
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_vlf16 ret;
+                      ret.v0 = (__mmask16)({in0}.v0 {op} {in1}.v0);
+                      ret.v1 = (__mmask16)({in0}.v1 {op} {in1}.v1);
+                      return ret;'''. \
+                      format(op=op[func], op_fct=op_fct[func], **fmtspec)
+        else:
+            # gcc:  error: inlining failed in call to always_inline
+            #              ‘__mmask8 _kor_mask8(__mmask8, __mmask8)’:
+            #              target specific option mismatch
+            # icc: tests fail with _{op_fct}_mask8 for f64, u64 and i64
+            r = ''
+            if fmtspec['le'] == 8:
+                r += '#if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_GCC) || defined(NSIMD_IS_ICC)'
+                r += '\n'
+            else:
+                r += '#if defined(NSIMD_IS_CLANG)' + '\n'
+            r += '  return (__mmask{le})({in0} {op} {in1});' + '\n'
+            r += '#else' + '\n'
+            r += '  return _{op_fct}_mask{le}({in0}, {in1});' + '\n'
+            r += '#endif' + '\n'
+            return r.format(op=op[func], op_fct=op_fct[func], **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## andnot
