@@ -209,10 +209,6 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/ppc/{simd_ext}/set1.h>
                   '''.format(**fmtspec)
 
-    if func == 'nbtrue':
-        ret +='''#include <nsimd/ppc/{simd_ext}/addv.h>
-            '''.format(simd_ext=simd_ext)
-
     if func[:4] == 'load':
         ret +='''
         #define NSIMD_PERMUTE_MASK_32(a, b, c, d)                        \
@@ -1052,14 +1048,16 @@ def nbtrue1(simd_ext, typ):
         return 'return -(int)((i64)({in0}.v0) + (i64)({in0}.v1));'. \
                format(**fmtspec)
     else:
-        # TODO: see if their is a faster way to do it
-        values = ', '.join(['0xFF' for i in range(0,16)])
         return \
-        '''return nsimd_addv_{simd_ext}_u{type_size}(({ppc_typ}){in0} / ({ppc_typ})({in0}));
-        '''.format(val=values,
-                type_size=typ[1:],
-                ppc_typ=ppc_vec_type('u'+typ[1:]),
-                **fmtspec)
+        '''nat i;
+           {typ} ret = ({typ}) 0;
+           {typ} buf[{size}];
+           nsimd_storelu_{simd_ext}_{typ}(buf, {in0});
+           for (i=0; i<{size}; ++i) {{
+               ret += buf[i] ? 1:0;
+           }}
+           return ret;''' \
+           .format(size=128//int(typ[1:]), **fmtspec)
 
 ## Reinterpret logical
 
@@ -1262,17 +1260,16 @@ def addv(simd_ext, typ):
     elif typ[1:] == '64':
         return 'return {in0}.v0 + {in0}.v1;'.format(**fmtspec)
     else:
-        return '''
-                /* Can't use vec_sums because it uses saturate sum */
-                nat i;
-                {typ} ret = ({typ}) 0;
-                {typ} buf[{size}];
-                vec_st({in0}, 0, buf);
-                for (i=0; i<{size}; ++i) {{
-                    ret += buf[i];
-                }}
-                return ret;
-                '''.format(size=128//int(typ[1:]), **fmtspec)
+        return \
+        '''nat i;
+           {typ} ret = ({typ}) 0;
+           {typ} buf[{size}];
+           vec_st({in0}, 0, buf);
+           for (i=0; i<{size}; ++i) {{
+               ret += buf[i];
+           }}
+           return ret;''' \
+           .format(size=128//int(typ[1:]), **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Up convert

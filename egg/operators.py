@@ -704,6 +704,7 @@ class Addv(Operator):
     categories = [DocMisc]
     desc = 'Returns the sum of all the elements contained in v'
     do_bench = False
+    types = common.ftypes
 
 class Mul(Operator):
     full_name = 'product'

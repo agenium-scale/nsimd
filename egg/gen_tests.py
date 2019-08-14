@@ -1268,9 +1268,10 @@ def doit(opts):
                 gen_nbtrue(opts, operator, typ, 'cxx_base')
                 gen_nbtrue(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'addv':
-                gen_addv(opts, operator, typ, 'c_base')
-                gen_addv(opts, operator, typ, 'cxx_base')
-                gen_addv(opts, operator, typ, 'cxx_adv')
+                if typ in common.ftypes:
+                    gen_addv(opts, operator, typ, 'c_base')
+                    gen_addv(opts, operator, typ, 'cxx_base')
+                    gen_addv(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['all', 'any']:
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'cxx_base')
