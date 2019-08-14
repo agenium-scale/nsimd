@@ -701,6 +701,13 @@ def gen_addv(opts, op, typ, lang):
 # Tests for adds
 
 def gen_adds(opts, op, typ, lang, ulps):
+
+    # TODO:
+    # - Create tests for floats (check for +/- inf)
+    # - For integers: split test cases between signed and unsigned
+    # - Add C++ tests
+    # - Refactor, make main string smaller
+
     if typ in common.ftypes:
       # fallback to testing add
       return gen_test(opts, op, typ, lang, ulps)
@@ -736,6 +743,18 @@ def gen_adds(opts, op, typ, lang, ulps):
 
     type_limits = common.limits[typ]
 
+    rand_val = '1 << (rand() % 4)'
+    rand_sign_switch = '2 * (rand() % 2) - 1'
+
+    if typ in common.utypes:
+      rand = '({typ})({rand_val})'.format(typ = typ, rand_val = rand_val)
+
+    elif typ in common.itypes:
+      rand = '({typ})(({rand_sign_switch}) * ({rand_val}))'. \
+        format(typ = typ,
+               rand_sign_switch = rand_sign_switch,
+               rand_val = rand_val)
+
     with common.open_utf8(filename) as out:
         out.write(
             ''' \
@@ -746,7 +765,7 @@ def gen_adds(opts, op, typ, lang, ulps):
             
             int main(void) {{
             
-              const int num_test_cases = 14;
+              const int num_test_cases = 9;
               const int step = vlen({typ});
               const int mem_aligned_size = SIZE * {sizeof};
             
@@ -770,15 +789,7 @@ def gen_adds(opts, op, typ, lang, ulps):
               /* Fill first inputs with values testing overflow/underflow */
               ii = 0;
             
-              // No overflow expected
-              vin1[ii] = {max} - 1;
-              vin2[ii] = 1;
-              ++ ii;
-            
-              vin1[ii] = 1;
-              vin2[ii] = {max} - 1;
-              ++ ii;
-            
+              // No overflow expected            
               vin1[ii] = {max} - 1;
               vin2[ii] = 0;
               ++ ii;
@@ -801,14 +812,6 @@ def gen_adds(opts, op, typ, lang, ulps):
               ++ ii;
             
               // No underflow expected
-              vin1[ii] = {min};
-              vin2[ii] = 0;
-              ++ ii;
-            
-              vin1[ii] = 0;
-              vin2[ii] = {min};
-              ++ ii;
-            
               vin1[ii] = {min};
               vin2[ii] = 1;
               ++ ii;
@@ -829,23 +832,17 @@ def gen_adds(opts, op, typ, lang, ulps):
               assert(num_test_cases == ii);
             
               /* Fill remaining input vectors with random */
-            
+
               for (ii = num_test_cases; ii < SIZE; ++ ii) {{
-                vin1[ii] = ({typ})((2 * (rand() % 2) - 1) * (1 << (rand() % 4)));
-                vin2[ii] = ({typ})((2 * (rand() % 2) - 1) * (1 << (rand() % 4)));
+                vin1[ii] = {rand};
+                vin2[ii] = {rand};
               }}
             
               /* Fill output expected vector with references values */
             
               ii = 0;
             
-              // No overflow expected
-              vout_expected[ii] = {max};
-              ++ ii;
-            
-              vout_expected[ii] = {max};
-              ++ ii;
-            
+              // No overflow expected            
               vout_expected[ii] = {max} - 1;
               ++ ii;
             
@@ -863,12 +860,6 @@ def gen_adds(opts, op, typ, lang, ulps):
               ++ ii;
             
               // No underflow expected
-              vout_expected[ii] = {min};
-              ++ ii;
-            
-              vout_expected[ii] = {min};
-              ++ ii;
-            
               vout_expected[ii] = {min} + 1;
               ++ ii;
             
@@ -925,7 +916,9 @@ def gen_adds(opts, op, typ, lang, ulps):
               fflush(stdout);
               return 0;
             }}
-        '''.format(head = head, op_name = op.name, typ = typ, sizeof = sizeof, **type_limits)
+        '''.format(head = head, op_name = op.name,
+                   typ = typ, sizeof = sizeof,
+                   rand = rand, **type_limits)
         )
 
     common.clang_format(opts, filename)
