@@ -22,62 +22,54 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_HPP
-#define NSIMD_MODULES_FIXED_POINT_HPP
+#ifndef NSIMD_MODULES_FUNCTION_SUB_HPP
+#define NSIMD_MODULES_FUNCTION_SUB_HPP
 
 #include "fixed_point/fixed.hpp"
-#include "fixed_point/fixed_math.hpp"
-#include "fixed_point/simd.hpp"
-#include "fixed_point/simd_math.hpp"
-
-#include <nsimd/nsimd.h>
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <uint8_t lf, uint8_t rt>
-struct pack
+template <unsigned char _lf, unsigned char _rt>
+inline fp_t<_lf, _rt> sub(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
-  fpsimd_t<lf, rt> val;
-};
+  fp_t<_lf, _rt> res;
+  res._raw = a._raw - b._raw;
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> add(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_add<lf, rt>(a0, a1);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *a)
+// Compatibility with base types
+template <unsigned char _lf, unsigned char _rt, typename T>
+inline fp_t<_lf, _rt> sub(const fp_t<_lf, _rt> &a, const T &b)
 {
-  pack<lf, rt> res;
-  res.val = simd_loadu<lf, rt>(a);
-  return res;
+  return sub(a, fp_t<_lf, _rt>(b));
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
+template <unsigned char _lf, unsigned char _rt, typename T>
+inline fp_t<_lf, _rt> sub(const T &b, const fp_t<_lf, _rt> &a)
 {
-  pack<lf, rt> res;
-  res.val = simd_mul<lf, rt>(a0, a1);
-  return res;
+  return sub(fp_t<_lf, _rt>(b), a);
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(nsimd::fixed_point::fp_t<lf, rt> *a, pack<lf, rt> &p)
+// Operator overload with base type compatibility
+template <unsigned char _lf, unsigned char _rt>
+inline fp_t<_lf, _rt> operator-(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
-  simd_storeu<lf, rt>(a, p.val);
+  return sub(a, b);
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> sub(pack<lf, rt> a0, pack<lf, rt> a1)
+template <unsigned char _lf, unsigned char _rt, typename T>
+inline fp_t<_lf, _rt> operator-(const fp_t<_lf, _rt> &a, const T &b)
 {
-  pack<lf, rt> res;
-  res.val = simd_sub<lf, rt>(a0, a1);
-  return res;
+  return sub(a, fp_t<_lf, _rt>(b));
+}
+
+template <unsigned char _lf, unsigned char _rt, typename T>
+inline fp_t<_lf, _rt> operator-(const T &b, const fp_t<_lf, _rt> &a)
+{
+  return sub(fp_t<_lf, _rt>(b), a);
 }
 
 } // namespace fixed_point

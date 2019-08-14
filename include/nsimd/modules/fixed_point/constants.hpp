@@ -22,64 +22,37 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_HPP
-#define NSIMD_MODULES_FIXED_POINT_HPP
+#ifndef NSIMD_MODULES_CONSTANTS_HPP
+#define NSIMD_MODULES_CONSTANTS_HPP
 
 #include "fixed_point/fixed.hpp"
-#include "fixed_point/fixed_math.hpp"
-#include "fixed_point/simd.hpp"
-#include "fixed_point/simd_math.hpp"
-
-#include <nsimd/nsimd.h>
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <uint8_t lf, uint8_t rt>
-struct pack
+namespace constants
 {
-  fpsimd_t<lf, rt> val;
-};
+#define DEFINE_CONSTANT(name, value)                                                     \
+  template <unsigned char lf, unsigned char rt>                                          \
+  constexpr inline fp_t<lf, rt> name()                                                   \
+  {                                                                                      \
+    return fp_t<lf, rt>(value);                                                          \
+  }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> add(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_add<lf, rt>(a0, a1);
-  return res;
-}
+DEFINE_CONSTANT(zero, 0);
+DEFINE_CONSTANT(one, 1);
+DEFINE_CONSTANT(two, 2);
+DEFINE_CONSTANT(neg, -1);
+DEFINE_CONSTANT(e, 2.718281828469045235360287471352662497757247093);
+DEFINE_CONSTANT(log2_e, 1.44269504089);
+DEFINE_CONSTANT(log2_10, 3.32192809489);
+DEFINE_CONSTANT(pi, 3.14159265359);
+DEFINE_CONSTANT(twopi, 2 * 3.14159265359);
+DEFINE_CONSTANT(halfpi, 3.14159265359 / 2);
+DEFINE_CONSTANT(pi_cvt, 0.01745329251); // pi / 180
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *a)
-{
-  pack<lf, rt> res;
-  res.val = simd_loadu<lf, rt>(a);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_mul<lf, rt>(a0, a1);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(nsimd::fixed_point::fp_t<lf, rt> *a, pack<lf, rt> &p)
-{
-  simd_storeu<lf, rt>(a, p.val);
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> sub(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_sub<lf, rt>(a0, a1);
-  return res;
-}
-
+} // namespace constants
 } // namespace fixed_point
 } // namespace nsimd
 

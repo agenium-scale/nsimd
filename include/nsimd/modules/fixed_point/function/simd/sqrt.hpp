@@ -22,62 +22,32 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_HPP
-#define NSIMD_MODULES_FIXED_POINT_HPP
+#ifndef NSIMD_MODULES_FUNCTION_SIMD_SQRT_HPP
+#define NSIMD_MODULES_FUNCTION_SIMD_SQRT_HPP
 
 #include "fixed_point/fixed.hpp"
-#include "fixed_point/fixed_math.hpp"
-#include "fixed_point/simd.hpp"
-#include "fixed_point/simd_math.hpp"
-
-#include <nsimd/nsimd.h>
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <uint8_t lf, uint8_t rt>
-struct pack
+template <unsigned char _lf, unsigned char _rt>
+inline fpsimd_t<_lf, _rt> simd_sqrt(const fpsimd_t<_lf, _rt> &a)
 {
-  fpsimd_t<lf, rt> val;
-};
+  using val_t = typename fp_t<_lf, _rt>::value_type;
+  fpsimd_t<_lf, _rt> x0, x1;
+  fpsimd_t<_lf, _rt> two;
+  two._raw = nsimd::set1(constants::two<_lf, _rt>()._raw, val_t());
+  x0 = a;
+  // For the few cases tested, 10 iterations is more than enough to converge
+  for(int i = 0; i < 10; ++i)
+  {
+    x1 = (x0 + (a / x0)) / two;
+    // if ( x0._raw == 0 || (x0._raw - x1._raw) == 0 ) break;
+    x0 = x1;
+  }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> add(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_add<lf, rt>(a0, a1);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *a)
-{
-  pack<lf, rt> res;
-  res.val = simd_loadu<lf, rt>(a);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_mul<lf, rt>(a0, a1);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(nsimd::fixed_point::fp_t<lf, rt> *a, pack<lf, rt> &p)
-{
-  simd_storeu<lf, rt>(a, p.val);
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> sub(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_sub<lf, rt>(a0, a1);
-  return res;
+  return x1;
 }
 
 } // namespace fixed_point

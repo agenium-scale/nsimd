@@ -22,8 +22,33 @@ SOFTWARE.
 
 */
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <nsimd/modules/fixed_point.hpp>
 
 int main() {
+  int32_t vals[8];
+  memset(vals, 0, 8 * sizeof(int32_t));
+  vals[0] = 1;
+  
+  fprintf(stdout, "Val : ");
+  for (size_t i = 0; i < 8; i++) {
+    fprintf(stdout, "%d ", vals[i]);
+  }
+  fprintf(stdout, "\n");
+  nsimd::fixed_point::pack<16, 16> v_test =
+      nsimd::fixed_point::loadu<16, 16>((nsimd::fixed_point::fp_t<16, 16> *)vals);
+
+  int32_t res[8];
+  nsimd::fixed_point::storeu<16, 16>((nsimd::fixed_point::fp_t<16, 16> *)res, v_test);
+
+  fprintf(stdout, "Res : ");
+  for (size_t i = 0; i < 8; i++) {
+    fprintf(stdout, "%d ", res[i]);
+  }
+  fprintf(stdout, "\n");
+
   return 0;
 }

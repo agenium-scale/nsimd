@@ -22,62 +22,30 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_HPP
-#define NSIMD_MODULES_FIXED_POINT_HPP
+#ifndef NSIMD_MODULES_FUNCTION_BIT_PRINTER_HPP
+#define NSIMD_MODULES_FUNCTION_BIT_PRINTER_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/fixed_math.hpp"
-#include "fixed_point/simd.hpp"
-#include "fixed_point/simd_math.hpp"
-
-#include <nsimd/nsimd.h>
+#include <iostream>
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <uint8_t lf, uint8_t rt>
-struct pack
+template <typename T>
+void print_bits(const T &in)
 {
-  fpsimd_t<lf, rt> val;
-};
+  uint64_t two = 1;
+  uint64_t ref = *((uint64_t *) (&in));
+  for(unsigned int i = 0; i < 8 * sizeof(T); ++i)
+  {
+    std::cout << int((two & ref) / two);
+    two *= 2;
+    if((i % 4) == 3)
+      std::cout << " ";
+  }
+  std::cout << "\n";
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> add(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_add<lf, rt>(a0, a1);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *a)
-{
-  pack<lf, rt> res;
-  res.val = simd_loadu<lf, rt>(a);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_mul<lf, rt>(a0, a1);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(nsimd::fixed_point::fp_t<lf, rt> *a, pack<lf, rt> &p)
-{
-  simd_storeu<lf, rt>(a, p.val);
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> sub(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_sub<lf, rt>(a0, a1);
-  return res;
+  return;
 }
 
 } // namespace fixed_point

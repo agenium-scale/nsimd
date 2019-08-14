@@ -22,62 +22,30 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_HPP
-#define NSIMD_MODULES_FIXED_POINT_HPP
+#ifndef NSIMD_MODULES_FUNCTION_SIMD_ADD_HPP
+#define NSIMD_MODULES_FUNCTION_SIMD_ADD_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/fixed_math.hpp"
 #include "fixed_point/simd.hpp"
-#include "fixed_point/simd_math.hpp"
-
-#include <nsimd/nsimd.h>
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <uint8_t lf, uint8_t rt>
-struct pack
+template <unsigned char _lf, unsigned char _rt>
+inline fpsimd_t<_lf, _rt>
+simd_add(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
-  fpsimd_t<lf, rt> val;
-};
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> add(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_add<lf, rt>(a0, a1);
-  return res;
+  fpsimd_t<_lf, _rt> c;
+  c._raw = a._raw + b._raw;
+  return c;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *a)
+// Operator overload with base type compatibility
+template <unsigned char _lf, unsigned char _rt>
+inline fpsimd_t<_lf, _rt>
+operator+(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
-  pack<lf, rt> res;
-  res.val = simd_loadu<lf, rt>(a);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_mul<lf, rt>(a0, a1);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(nsimd::fixed_point::fp_t<lf, rt> *a, pack<lf, rt> &p)
-{
-  simd_storeu<lf, rt>(a, p.val);
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> sub(pack<lf, rt> a0, pack<lf, rt> a1)
-{
-  pack<lf, rt> res;
-  res.val = simd_sub<lf, rt>(a0, a1);
-  return res;
+  return simd_add(a, b);
 }
 
 } // namespace fixed_point
