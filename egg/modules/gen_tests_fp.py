@@ -21,9 +21,82 @@
 import os
 import sys
 import common
-import operators
+# import operators
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
+def get_filename(opts, op, lf, rt):
+    tests_dir = os.path.join()
+
+licence = """\
+/*
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
+"""
+
+includes = """\
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <cmath>
+
+#include <nsimd/nsimd.h>
+#include <nsimd/cxx_adv_api.h>
+#include <nsimd/modules/fixed_point.hpp>
+"""
+
+# ------------------------------------------------------------------------------
+# Utility functions
+
+gen_random_val = """\
+// Generates a random encoded with lf + rt bits
+template <uint8_t lf, uint8_t rt>
+nsimd::fixed_point::fp_t<lf, rt> gen_random_val(){
+  typedef typename nsimd::fixed_point::fp_t<lf, rt>::value_type raw_t;
+  const uint8_t N = lf + rt;
+  const raw_t min_val = (raw_t) -powf(2.0f, (float) N - 1.0f);
+  const raw_t max_val = (raw_t) powf(2.0f, (float) N - 1.0f) - 1;
+  const raw_t range = max_val - min_val;
+  raw_t val = 
+    (raw_t) ((float)(range) * ((float) rand() / (float) RAND_MAX) + (float) min_val);
+  return val;
+}
+"""
+
+# ------------------------------------------------------------------------------
+
+arithmetic_ops = ["add", "sub", "mul", "rec", "div"]
+comparison_ops = ["eq", "ne", "le", "lt", "ge", "gt"]
+bitwise_ops = ["andb", "andnotb", "notb", "orb", "xorb"]
+bitwise_logical_ops = ["andl", "andnotl", "notl", "orl", "xorl"]
+
+# ------------------------------------------------------------------------------
+# Template tests for all cases
+
+
+# -------------------------------------------------------------------------------
 # Entry point
 
 def doit(opts):
