@@ -22,33 +22,36 @@ SOFTWARE.
 
 */
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <iostream>
 #include <nsimd/modules/fixed_point.hpp>
 
+namespace fp = nsimd::fixed_point;
+
 int main() {
-  int32_t vals[8];
-  memset(vals, 0, 8 * sizeof(int32_t));
-  vals[0] = 1;
-  
-  fprintf(stdout, "Val : ");
-  for (size_t i = 0; i < 8; i++) {
-    fprintf(stdout, "%d ", vals[i]);
+  using fp_t = nsimd::fixed_point::fp_t<8, 8>;
+  using vec_t = nsimd::fixed_point::pack<8, 8>;
+  using raw_t = nsimd::fixed_point::pack<8, 8>::value_type;
+
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
+
+  fp_t tab0[v_size];
+  fp_t tab1[v_size];
+  fp_t res[v_size];
+
+  for (size_t i = 0; i < v_size; i++) {
+    tab0[i] = (fp_t)i;
+    tab1[i] = (fp_t)i;
   }
-  fprintf(stdout, "\n");
-  nsimd::fixed_point::pack<16, 16> v_test =
-      nsimd::fixed_point::loadu<16, 16>((nsimd::fixed_point::fp_t<16, 16> *)vals);
 
-  int32_t res[8];
-  nsimd::fixed_point::storeu<16, 16>((nsimd::fixed_point::fp_t<16, 16> *)res, v_test);
+  vec_t v0 = nsimd::fixed_point::loadu<vec_t>(tab0);
+  vec_t v1 = nsimd::fixed_point::loadu<vec_t>(tab1);
+  vec_t sum = nsimd::fixed_point::add(v0, v1);
+  nsimd::fixed_point::storeu(res, sum);
 
-  fprintf(stdout, "Res : ");
-  for (size_t i = 0; i < 8; i++) {
-    fprintf(stdout, "%d ", res[i]);
+  std::cout << "Output vector : [";
+  for (size_t i = 0; i < v_size; i++) {
+    std::cout << " " << res[i];
   }
-  fprintf(stdout, "\n");
-
+  std::cout << "]" << std::endl;
   return 0;
 }
