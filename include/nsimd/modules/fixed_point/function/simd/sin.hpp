@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_SIN_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_SIN_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SIN_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SIN_HPP
 
 #include "fixed_point/constants.hpp"
 #include "fixed_point/fixed.hpp"
@@ -36,7 +36,7 @@ namespace fixed_point
 // Limits input to range[0,pi/2] for best precision
 // -- range reduction is not trivially vectorizable though...
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_safe_sin(const fpsimd_t<_lf, _rt> &b)
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_safe_sin(const fpsimd_t<_lf, _rt> &b)
 {
   fpsimd_t<_lf, _rt> b2 = b * b;
   fpsimd_t<_lf, _rt> one(constants::one<_lf, _rt>());
@@ -56,7 +56,7 @@ inline fpsimd_t<_lf, _rt> simd_safe_sin(const fpsimd_t<_lf, _rt> &b)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_sin(const fpsimd_t<_lf, _rt> &a)
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sin(const fpsimd_t<_lf, _rt> &a)
 {
   using val_t = typename fp_t<_lf, _rt>::value_type;
   using log_t = typename fp_t<_lf, _rt>::simd_logical;

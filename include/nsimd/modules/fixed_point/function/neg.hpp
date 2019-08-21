@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_NEG_HPP
-#define NSIMD_MODULES_FUNCTION_NEG_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_NEG_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_NEG_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -32,7 +32,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> neg(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> neg(const fp_t<_lf, _rt> &a)
 {
   fp_t<_lf, _rt> res = a;
   res._raw *= -1;
@@ -40,7 +40,7 @@ inline fp_t<_lf, _rt> neg(const fp_t<_lf, _rt> &a)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> operator-(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> operator-(const fp_t<_lf, _rt> &a)
 {
   return neg(a);
 }

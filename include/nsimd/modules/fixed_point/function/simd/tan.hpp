@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_TAN_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_TAN_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_TAN_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_TAN_HPP
 
 #include "fixed_point/constants.hpp"
 #include "fixed_point/fixed.hpp"
@@ -33,7 +33,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_tan(const fpsimd_t<_lf, _rt> &a)
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_tan(const fpsimd_t<_lf, _rt> &a)
 {
   using val_t = typename fp_t<_lf, _rt>::value_type;
   using log_t = typename fp_t<_lf, _rt>::simd_logical;

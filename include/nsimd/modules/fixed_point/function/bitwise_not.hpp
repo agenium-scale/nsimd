@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_BITWISE_NOT_HPP
-#define NSIMD_MODULES_FUNCTION_BITWISE_NOT_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_BITWISE_NOT_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_BITWISE_NOT_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -32,7 +32,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> bitwise_not(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> bitwise_not(const fp_t<_lf, _rt> &a)
 {
   fp_t<_lf, _rt> res;
   res._raw = ~(a._raw);
@@ -40,7 +40,7 @@ inline fp_t<_lf, _rt> bitwise_not(const fp_t<_lf, _rt> &a)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> operator~(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> operator~(const fp_t<_lf, _rt> &a)
 {
   return bitwise_not(a);
 }

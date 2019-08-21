@@ -22,30 +22,24 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_BIT_PRINTER_HPP
-#define NSIMD_MODULES_FIXED_POINT_FUNCTION_BIT_PRINTER_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_NOTL_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_NOTL_HPP
 
-#include <iostream>
+#include <nsimd/nsimd.h>
+#include "fixed_point/simd.hpp"
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <typename T>
-void print_bits(const T &in)
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimdl_t<_lf, _rt>
+simd_notl(const fpsimdl_t<_lf, _rt> &a0, const fpsimdl_t<_lf, _rt> &a1)
 {
-  uint64_t two = 1;
-  uint64_t ref = *((uint64_t *) (&in));
-  for(unsigned int i = 0; i < 8 * sizeof(T); ++i)
-  {
-    std::cout << int((two & ref) / two);
-    two *= 2;
-    if((i % 4) == 3)
-      std::cout << " ";
-  }
-  std::cout << "\n";
-
-  return;
+  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  fpsimdl_t<_lf, _rt> res;
+  res._raw = nsimd::notl(a0._raw, a1._rax, raw_t());
+  return res;
 }
 
 } // namespace fixed_point

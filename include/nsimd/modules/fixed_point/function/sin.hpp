@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIN_HPP
-#define NSIMD_MODULES_FUNCTION_SIN_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIN_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIN_HPP
 
 #include "fixed_point/constants.hpp"
 #include "fixed_point/fixed.hpp"
@@ -36,7 +36,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> safe_sin(const fp_t<_lf, _rt> &b)
+NSIMD_INLINE fp_t<_lf, _rt> safe_sin(const fp_t<_lf, _rt> &b)
 {
   fp_t<_lf, _rt> b2 = b * b;
   fp_t<_lf, _rt> one = constants::one<_lf, _rt>();
@@ -52,7 +52,7 @@ inline fp_t<_lf, _rt> safe_sin(const fp_t<_lf, _rt> &b)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> sin(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> sin(const fp_t<_lf, _rt> &a)
 {
   fp_t<_lf, _rt> b = a;
   // Reduce to range [0,inf]

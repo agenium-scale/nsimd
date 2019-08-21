@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_MUL_HPP
-#define NSIMD_MODULES_FUNCTION_MUL_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_MUL_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_MUL_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -32,7 +32,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
+NSIMD_INLINE fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
   using up_t = typename fp_t<_lf, _rt>::value_up;
   constexpr int half_size = 4 * sizeof(up_t);
@@ -49,32 +49,32 @@ inline fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 
 // Compatibility with base types
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a, const T &b)
+NSIMD_INLINE fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a, const T &b)
 {
   return mul(a, fp_t<_lf, _rt>(b));
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> mul(const T &b, const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> mul(const T &b, const fp_t<_lf, _rt> &a)
 {
   return mul(a, fp_t<_lf, _rt>(b));
 }
 
 // Operator overload with base type compatibility
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> operator*(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
+NSIMD_INLINE fp_t<_lf, _rt> operator*(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
   return mul(a, b);
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> operator*(const fp_t<_lf, _rt> &a, const T &b)
+NSIMD_INLINE fp_t<_lf, _rt> operator*(const fp_t<_lf, _rt> &a, const T &b)
 {
   return mul(a, fp_t<_lf, _rt>(b));
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> operator*(const T &b, const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> operator*(const T &b, const fp_t<_lf, _rt> &a)
 {
   return mul(a, fp_t<_lf, _rt>(b));
 }

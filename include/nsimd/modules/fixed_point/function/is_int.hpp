@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_IS_INT_HPP
-#define NSIMD_MODULES_FUNCTION_IS_INT_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_IS_INT_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_IS_INT_HPP
 
 #include "fixed_point/fixed.hpp"
 #include "fixed_point/function/bitwise_and.hpp"
@@ -33,7 +33,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <uint8_t _lf, uint8_t _rt>
-inline bool is_int(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE bool is_int(const fp_t<_lf, _rt> &a)
 {
   return (a == floor(a));
 }

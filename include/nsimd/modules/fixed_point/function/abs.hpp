@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_ABS_HPP
-#define NSIMD_MODULES_FUNCTION_ABS_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_ABS_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_ABS_HPP
 
 #include "fixed_point/fixed.hpp"
 #include "fixed_point/function/greater.hpp"
@@ -34,7 +34,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> abs(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> abs(const fp_t<_lf, _rt> &a)
 {
   if(a._raw > 0)
   {

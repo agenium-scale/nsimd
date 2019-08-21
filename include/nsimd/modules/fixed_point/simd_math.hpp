@@ -22,14 +22,16 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_SIMD_MATH_HPP
-#define NSIMD_MODULES_SIMD_MATH_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_SIMD_MATH_HPP
+#define NSIMD_MODULES_FIXED_POINT_SIMD_MATH_HPP
 
 #include "fixed_point/simd.hpp"
 
 // Load/Store
 #include "fixed_point/function/simd/loadu.hpp"
+#include "fixed_point/function/simd/loadlu.hpp"
 #include "fixed_point/function/simd/storeu.hpp"
+#include "fixed_point/function/simd/storelu.hpp"
 
 // Constants
 //#include "fixed_point/constants.hpp"
@@ -38,26 +40,32 @@ SOFTWARE.
 //#include "fixed_point/function/simd/is_int.hpp"
 
 // Bitwise operations
-//#include "fixed_point/function/simd/shift.hpp"
-//#include "fixed_point/function/simd/bitwise_and.hpp"
-//#include "fixed_point/function/simd/bitwise_not.hpp"
-//#include "fixed_point/function/simd/bitwise_or.hpp"
-//#include "fixed_point/function/simd/bitwise_nor.hpp"
-//#include "fixed_point/function/simd/bitwise_xor.hpp"
+#include "fixed_point/function/simd/andl.hpp"
+#include "fixed_point/function/simd/andb.hpp"
+#include "fixed_point/function/simd/andnotl.hpp"
+#include "fixed_point/function/simd/andnotb.hpp"
+#include "fixed_point/function/simd/notl.hpp"
+#include "fixed_point/function/simd/notb.hpp"
+#include "fixed_point/function/simd/orl.hpp"
+#include "fixed_point/function/simd/orb.hpp"
+#include "fixed_point/function/simd/xorl.hpp"
+#include "fixed_point/function/simd/xorb.hpp"
+#include "fixed_point/function/simd/if_else1.hpp"
 
 // Comparisons
-//#include "fixed_point/function/simd/eq.hpp"
-//#include "fixed_point/function/simd/neq.hpp"
-//#include "fixed_point/function/simd/less.hpp"
-//#include "fixed_point/function/simd/greater.hpp"
-//#include "fixed_point/function/simd/eq_ulp.hpp"
+#include "fixed_point/function/simd/eq.hpp"
+#include "fixed_point/function/simd/ne.hpp"
+#include "fixed_point/function/simd/le.hpp"
+#include "fixed_point/function/simd/lt.hpp"
+#include "fixed_point/function/simd/ge.hpp"
+#include "fixed_point/function/simd/gt.hpp"
 
 // Basic arithmetic
 #include "fixed_point/function/simd/add.hpp"
-// #include "fixed_point/function/simd/div.hpp"
-// #include "fixed_point/function/simd/inv.hpp"
-#include "fixed_point/function/simd/mul.hpp"
 #include "fixed_point/function/simd/sub.hpp"
+#include "fixed_point/function/simd/mul.hpp"
+#include "fixed_point/function/simd/rec.hpp"
+#include "fixed_point/function/simd/div.hpp"
 
 // More complex math functions
 //#include "fixed_point/function/simd/abs.hpp"

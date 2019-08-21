@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SEC_HPP
-#define NSIMD_MODULES_FUNCTION_SEC_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SEC_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SEC_HPP
 
 #include "fixed_point/fixed.hpp"
 #include "fixed_point/function/cos.hpp"
@@ -33,7 +33,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> sec(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> sec(const fp_t<_lf, _rt> &a)
 {
   return constants::one<_lf, _rt>() / cos(a);
 }

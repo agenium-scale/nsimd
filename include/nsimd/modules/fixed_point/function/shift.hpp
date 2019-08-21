@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SHIFT_HPP
-#define NSIMD_MODULES_FUNCTION_SHIFT_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SHIFT_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SHIFT_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -32,7 +32,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> shift_right(const fp_t<_lf, _rt> &a, const int &b)
+NSIMD_INLINE fp_t<_lf, _rt> shift_right(const fp_t<_lf, _rt> &a, const int &b)
 {
   fp_t<_lf, _rt> res;
   res._raw = a._raw >> b;
@@ -41,7 +41,7 @@ inline fp_t<_lf, _rt> shift_right(const fp_t<_lf, _rt> &a, const int &b)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> shift_left(const fp_t<_lf, _rt> &a, const int &b)
+NSIMD_INLINE fp_t<_lf, _rt> shift_left(const fp_t<_lf, _rt> &a, const int &b)
 {
   fp_t<_lf, _rt> res;
   res._raw = a._raw << b;
@@ -50,13 +50,13 @@ inline fp_t<_lf, _rt> shift_left(const fp_t<_lf, _rt> &a, const int &b)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> operator>>(const fp_t<_lf, _rt> &a, const int &b)
+NSIMD_INLINE fp_t<_lf, _rt> operator>>(const fp_t<_lf, _rt> &a, const int &b)
 {
   return shift_right(a, b);
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> operator<<(const fp_t<_lf, _rt> &a, const int &b)
+NSIMD_INLINE fp_t<_lf, _rt> operator<<(const fp_t<_lf, _rt> &a, const int &b)
 {
   return shift_left(a, b);
 }

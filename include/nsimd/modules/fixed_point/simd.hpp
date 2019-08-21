@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_SIMD_HPP
-#define NSIMD_MODULES_SIMD_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_SIMD_HPP
+#define NSIMD_MODULES_FIXED_POINT_SIMD_HPP
 
 #include "fixed_point/fixed.hpp"
 #include "fixed_point/fixed_vector.hpp"
@@ -55,12 +55,33 @@ public:
   }
 
   // Splats
-  // inline fpsimd_t( const float  &in ) { float2fixed<value_type,_lf,_rt>( _raw
-  // , in ); } inline fpsimd_t( const double &in ) {
+  // NSIMD_INLINE fpsimd_t( const float  &in ) { float2fixed<value_type,_lf,_rt>( _raw
+  // , in ); } NSIMD_INLINE fpsimd_t( const double &in ) {
   // float2fixed<value_type,_lf,_rt>( _raw , in ); } template<typename T>
   // fpsimd_t( const T &in ) { integer_convert<_lf,_rt>( _raw , in ); }
 
   fpsimd_t &operator=(const fpsimd_t<_lf, _rt> &cp)
+  {
+    _raw = cp._raw;
+    return *this;
+  }
+};
+
+template <uint8_t _lf, uint8_t _rt>
+class fpsimdl_t
+{
+public:
+  using base_type = typename fp_t<_lf, _rt>::value_type;
+  using value_type = typename fp_t<_lf, _rt>::simd_type;
+  using value_up = typename fp_t<_lf, _rt>::simd_up;
+  using logic = typename fp_t<_lf, _rt>::simd_logical;
+  logic _raw;
+
+  fpsimdl_t()
+  {
+  }
+
+  fpsimdl_t &operator=(const fpsimdl_t<_lf, _rt> &cp)
   {
     _raw = cp._raw;
     return *this;

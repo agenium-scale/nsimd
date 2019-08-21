@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_EXP_HPP
-#define NSIMD_MODULES_FUNCTION_EXP_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_EXP_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_EXP_HPP
 
 #include "fixed_point/constants.hpp"
 #include "fixed_point/fixed.hpp"
@@ -37,7 +37,7 @@ namespace fixed_point
 {
 // For integer exponents, use exponentiation by squaring
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b)
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b)
 {
   if(b == 0)
     return fp_t<_lf, _rt>(1);
@@ -69,7 +69,7 @@ inline fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b)
 
 // For floating point exponents, use Taylor series
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
   using raw_type = typename fp_t<_lf, _rt>::value_type;
 
@@ -105,13 +105,13 @@ inline fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const float &b)
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const float &b)
 {
   return exp(a, fp_t<_lf, _rt>(b));
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> exp(const T &b)
+NSIMD_INLINE fp_t<_lf, _rt> exp(const T &b)
 {
   return exp(constants::e<_lf, _rt>(), fp_t<_lf, _rt>(b));
 }

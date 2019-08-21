@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_CONSTANTS_HPP
-#define NSIMD_MODULES_CONSTANTS_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_CONSTANTS_HPP
+#define NSIMD_MODULES_FIXED_POINT_CONSTANTS_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -35,7 +35,7 @@ namespace constants
 {
 #define DEFINE_CONSTANT(name, value)                                                     \
   template <unsigned char lf, unsigned char rt>                                          \
-  constexpr inline fp_t<lf, rt> name()                                                   \
+  constexpr NSIMD_INLINE fp_t<lf, rt> name()                                                   \
   {                                                                                      \
     return fp_t<lf, rt>(value);                                                          \
   }

@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_TAN_HPP
-#define NSIMD_MODULES_FUNCTION_TAN_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_TAN_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_TAN_HPP
 
 #include "fixed_point/constants.hpp"
 #include "fixed_point/fixed.hpp"
@@ -38,13 +38,13 @@ namespace fixed_point
 // Limits input to range[0,pi/2] for best precision
 // -- range reduction is not trivially vectorizable though...
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> safe_tan(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> safe_tan(const fp_t<_lf, _rt> &a)
 {
   return safe_sin(a) / safe_cos(a);
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> tan(const fp_t<_lf, _rt> &a)
+NSIMD_INLINE fp_t<_lf, _rt> tan(const fp_t<_lf, _rt> &a)
 {
   fp_t<_lf, _rt> b = a;
   // Reduce to range [0,inf]

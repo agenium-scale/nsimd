@@ -22,50 +22,24 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_INV_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_INV_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_ANDB_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_ANDB_HPP
 
-#include "fixed_point/fixed.hpp"
-#include <immintrin.h>
+#include <nsimd/nsimd.h>
+#include "fixed_point/simd.hpp"
 
 namespace nsimd
 {
 namespace fixed_point
 {
-// Calculate 1/a via newton-raphson
-template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_inv(const fpsimd_t<_lf, _rt> &a)
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt>
+simd_andb(const fpsimd_t<_lf, _rt> &a0, const fpsimd_t<_lf, _rt> &a1)
 {
-  using val_t = typename fp_t<_lf, _rt>::value_type;
-  using log_t = typename fp_t<_lf, _rt>::simd_logical;
-
-  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-  fpsimd_t<_lf, _rt> guess(fp_t<_lf, _rt>(1));
-
-  log_t negative = (a._raw < fpsimd_t<_lf, _rt>(0)._raw);
-  fpsimd_t<_lf, _rt> abs = simd_abs(a);
-
-  fpsimd_t<_lf, _rt> z = nsimd::clz(abs._raw, val_t());
-  log_t gt1 = (a._raw > one);
-  // guess._raw = one << z - _lf
-
-  int iter = 10;
-  fpsimd_t<_lf, _rt> res0 = guess;
-  // fpsimd_t<_lf,_rt> res1 = guess;
-  // fpsimd_t<_lf,_rt> tmp0;
-  // fpsimd_t<_lf,_rt> tmp1;
-  // fpsimd_t<_lf,_rt> tmp2;
-  // fpsimd_t<_lf,_rt> tmp3;
-  for(int i = 0; i < iter; ++i)
-  {
-    // tmp0 = a * res0;
-    // tmp1 = one - tmp0;
-    // tmp2 = tmp1 * res0;
-    // res1 = tmp2 + res0;
-    // res0 = res1;
-    res0 = res0 * (one + (one - abs * res0));
-  }
-  return res0;
+  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  fpsimd_t<_lf, _rt> res;
+  res._raw = nsimd::andb(a0._raw, a1._raw, raw_t());
+  return res;
 }
 
 } // namespace fixed_point

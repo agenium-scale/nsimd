@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_FLOOR_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_FLOOR_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FLOOR_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FLOOR_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -32,7 +32,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_floor(const fpsimd_t<_lf, _rt> &a)
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_floor(const fpsimd_t<_lf, _rt> &a)
 {
   using val_t = typename fp_t<_lf, _rt>::value_type;
   const int shift_size = 8 * sizeof(val_t) - _lf;

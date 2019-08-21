@@ -1,5 +1,29 @@
-#ifndef ARCHR_INCLUDE_FIXED_HPP
-#define ARCHR_INCLUDE_FIXED_HPP
+/*
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
+#ifndef NSIMD_MODULES_FIXED_POINT_FIXED_HPP
+#define NSIMD_MODULES_FIXED_POINT_FIXED_HPP
 
 #include <cstdint>
 #include <iostream>
@@ -32,8 +56,7 @@ void int2fixed(Out_Type &out, const In_Type &in)
 // Convert generic float to fixed point decimal
 template <
     typename Out_Type, // Output - raw int_xx type
-    typename In_Type,  // Input  - float/double with associated format in
-                       // arguments
+    typename In_Type,  // Input  - float/double with associated format in  arguments
     typename Max_UInt, // Unsigned int with same size as In_Type
     uint8_t lf, uint8_t rt, uint8_t b_exp, // IEEE defined exponent
     uint16_t m_exp                         // IEEE defined exponent bias
@@ -141,26 +164,26 @@ public:
   using simd_up = typename fp_types<_lf, _rt>::simd_up;
   using simd_logical = typename fp_types<_lf, _rt>::simd_up;
   value_type _raw;
-  
+
   fp_t()
   {
   }
-  
+
   fp_t(const fp_t<_lf, _rt> &cp)
   {
     _raw = cp._raw;
   }
-  
+
   inline fp_t(const float &in)
   {
     float2fixed<value_type, _lf, _rt>(_raw, in);
   }
-  
+
   inline fp_t(const double &in)
   {
     float2fixed<value_type, _lf, _rt>(_raw, in);
   }
-  
+
   template <typename T>
   fp_t(const T &in)
   {
@@ -178,19 +201,19 @@ public:
     *this = *this + pl;
     return *this;
   }
-  
+
   fp_t &operator-=(const fp_t<_lf, _rt> &mi)
   {
     *this = *this - mi;
     return *this;
   }
-  
+
   fp_t &operator*=(const fp_t<_lf, _rt> &ti)
   {
     *this = *this * ti;
     return *this;
   }
-  
+
   fp_t &operator/=(const fp_t<_lf, _rt> &di)
   {
     *this = *this / di;

@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_MATH_HPP
-#define NSIMD_MODULES_MATH_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_MATH_HPP
+#define NSIMD_MODULES_FIXED_POINT_MATH_HPP
 
 #include "fixed_point/fixed.hpp"
 
@@ -34,12 +34,12 @@ SOFTWARE.
 // #include "fixed_point/function/is_int.hpp"
 
 // Bitwise operations
-// #include "fixed_point/function/bitwise_and.hpp"
-// #include "fixed_point/function/bitwise_nor.hpp"
-// #include "fixed_point/function/bitwise_not.hpp"
-// #include "fixed_point/function/bitwise_or.hpp"
-// #include "fixed_point/function/bitwise_xor.hpp"
-// #include "fixed_point/function/shift.hpp"
+#include "fixed_point/function/bitwise_and.hpp"
+#include "fixed_point/function/bitwise_nor.hpp"
+#include "fixed_point/function/bitwise_not.hpp"
+#include "fixed_point/function/bitwise_or.hpp"
+#include "fixed_point/function/bitwise_xor.hpp"
+#include "fixed_point/function/shift.hpp"
 
 // Comparisons
 #include "fixed_point/function/eq.hpp"
@@ -50,9 +50,9 @@ SOFTWARE.
 
 // Basic arithmetic
 #include "fixed_point/function/add.hpp"
-// #include "fixed_point/function/div.hpp"
+#include "fixed_point/function/div.hpp"
 #include "fixed_point/function/mul.hpp"
-// #include "fixed_point/function/neg.hpp"
+#include "fixed_point/function/neg.hpp"
 #include "fixed_point/function/sub.hpp"
 
 // More complex math functions

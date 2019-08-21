@@ -22,17 +22,18 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_LOAD_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_LOAD_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_LOADU_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_LOADU_HPP
 
+#include <nsimd/nsimd.h>
 #include "fixed_point/simd.hpp"
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_loadu(fp_t<_lf, _rt> *a)
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_loadu(fp_t<_lf, _rt> *a)
 {
   using raw_t = typename fp_t<_lf, _rt>::value_type;
   fpsimd_t<_lf, _rt> res;

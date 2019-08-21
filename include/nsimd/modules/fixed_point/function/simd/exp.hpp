@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_EXP_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_EXP_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_EXP_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_EXP_HPP
 
 #include "fixed_point/constants.hpp"
 #include "fixed_point/fixed.hpp"
@@ -37,7 +37,7 @@ namespace fixed_point
 {
 // For integer exponents, use exponentiation by squaring
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a, const int &b)
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a, const int &b)
 {
   if(b == 0)
     return fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1));
@@ -72,7 +72,7 @@ inline fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a, const int &b)
 // template< unsigned char _lf
 //        , unsigned char _rt
 //        >
-// inline
+// NSIMD_INLINE
 // fpsimd_t< _lf , _rt >
 // simd_exp( const fpsimd_t< _lf , _rt > &a
 //   , const fpsimd_t< _lf , _rt > &b
@@ -109,7 +109,7 @@ inline fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a, const int &b)
 // template< unsigned char _lf
 //        , unsigned char _rt
 //        >
-// inline
+// NSIMD_INLINE
 // fpsimd_t< _lf , _rt >
 // simd_exp( const fpsimd_t< _lf , _rt > &a
 //   , const float &b
@@ -120,7 +120,7 @@ inline fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a, const int &b)
 // template< unsigned char _lf
 //        , unsigned char _rt
 //        >
-// inline
+// NSIMD_INLINE
 // fpsimd_t< _lf , _rt >
 // simd_exp( const int &b ) {
 //  return exp( constants::e<_lf,_rt>() , b );

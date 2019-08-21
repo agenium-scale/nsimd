@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_MUL_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_MUL_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 
 #include "fixed_point/simd.hpp"
 // #include "helper/bit_printer.hpp"
@@ -34,7 +34,7 @@ namespace fixed_point
 {
 // For use in other functions where you may have repeated mul/div operations
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline T simd_mul_ungrouped(const T &a_half, const T &b_half, const fpsimd_t<_lf, _rt>)
+NSIMD_INLINE T simd_mul_ungrouped(const T &a_half, const T &b_half, const fpsimd_t<_lf, _rt>)
 {
   using up_t = typename fp_t<_lf, _rt>::value_up;
   constexpr int half_size = 4 * sizeof(up_t);
@@ -44,7 +44,7 @@ inline T simd_mul_ungrouped(const T &a_half, const T &b_half, const fpsimd_t<_lf
 }
 
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
   using up_t = typename fp_t<_lf, _rt>::value_up;
@@ -65,7 +65,7 @@ simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 
 // Operator overload with base type compatibility
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt>
 operator*(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
   return simd_mul(a, b);

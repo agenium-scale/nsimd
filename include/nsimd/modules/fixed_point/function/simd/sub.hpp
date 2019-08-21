@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_SUB_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_SUB_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SUB_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SUB_HPP
 
 #include "fixed_point/simd.hpp"
 
@@ -32,7 +32,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_sub(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
   fpsimd_t<_lf, _rt> c;
@@ -42,7 +42,7 @@ simd_sub(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 
 // Operator overload with base type compatibility
 template <unsigned char _lf, unsigned char _rt>
-inline fpsimd_t<_lf, _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt>
 operator-(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
   return simd_sub(a, b);

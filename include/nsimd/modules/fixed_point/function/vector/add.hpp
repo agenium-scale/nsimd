@@ -22,8 +22,8 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_VECTOR_ADD_HPP
-#define NSIMD_MODULES_FUNCTION_VECTOR_ADD_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_VECTOR_ADD_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_VECTOR_ADD_HPP
 
 #include "fixed_point/fixed_vector.hpp"
 #include "fixed_point/simd.hpp"
@@ -33,7 +33,7 @@ namespace nsimd
 namespace fixed_point
 {
 template <unsigned char _lf, unsigned char _rt>
-inline void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt> &b)
+NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt> &b)
 {
   if(c.size() < b.size())
   {
@@ -62,7 +62,7 @@ inline void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _
 
 // Compatibility with base types
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const T &b)
+NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const T &b)
 {
   if(c.size() < b.size())
   {
@@ -92,14 +92,14 @@ inline void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const T &b)
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline void add(fpv_t<_lf, _rt> &c, const T &b, const fpv_t<_lf, _rt> &a)
+NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const T &b, const fpv_t<_lf, _rt> &a)
 {
   add(c, a, b);
 }
 
 // Operator overload with base type compatibility
 template <unsigned char _lf, unsigned char _rt>
-inline fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt> &b)
+NSIMD_INLINE fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt> &b)
 {
   fpv_t<_lf, _rt> c(a.size());
   add(c, a, b);
@@ -107,7 +107,7 @@ inline fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt>
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const T &b)
+NSIMD_INLINE fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const T &b)
 {
   fpv_t<_lf, _rt> c(a.size());
   add(c, a, b);
@@ -115,7 +115,7 @@ inline fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const T &b)
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fpv_t<_lf, _rt> operator+(const T &b, const fpv_t<_lf, _rt> &a)
+NSIMD_INLINE fpv_t<_lf, _rt> operator+(const T &b, const fpv_t<_lf, _rt> &a)
 {
   return (a + b);
 }
