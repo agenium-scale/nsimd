@@ -25,6 +25,7 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 
+#include <nsimd/nsimd.h>
 #include "fixed_point/simd.hpp"
 // #include "helper/bit_printer.hpp"
 
@@ -34,7 +35,8 @@ namespace fixed_point
 {
 // For use in other functions where you may have repeated mul/div operations
 template <unsigned char _lf, unsigned char _rt, typename T>
-NSIMD_INLINE T simd_mul_ungrouped(const T &a_half, const T &b_half, const fpsimd_t<_lf, _rt>)
+NSIMD_INLINE T
+simd_mul_ungrouped(const T &a_half, const T &b_half, const fpsimd_t<_lf, _rt>)
 {
   using up_t = typename fp_t<_lf, _rt>::value_up;
   constexpr int half_size = 4 * sizeof(up_t);
@@ -53,12 +55,16 @@ simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
   constexpr int half_size = 4 * sizeof(up_t);
   constexpr int shift = half_size - _lf;
 
-  auto a_big = nsimd::upcvt(a);
-  auto b_big = nsimd::upcvt(b);
-  a_big = ((a_big * b_big) >> shift);
+  auto a_big = nsimd::upcvt(a._raw, val_t(), up_t());
+  auto b_big = nsimd::upcvt(b._raw, val_t(), up_t());
+  // a_big = ((a_big * b_big) >> shift);
+  a_big.v0 = nsimd::mul(a_big.v0, b_big.v0, up_t());
+  a_big.v0 = nsimd::shr(a_big.v0, shift, up_t());
+  a_big.v1 = nsimd::mul(a_big.v1, b_big.v1, up_t());
+  a_big.v1 = nsimd::shr(a_big.v1, shift, up_t());
 
   fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::downcvt(a_big);
+  res._raw = nsimd::downcvt(a_big.v0, a_big.v1, up_t(), val_t());
 
   return res;
 }
