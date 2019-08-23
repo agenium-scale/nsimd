@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_ABS_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_ABS_HPP
 
-#include <nsimd.nsimd.h>
+#include <nsimd/nsimd.h>
 #include "fixed_point/simd.hpp"
 
 namespace nsimd

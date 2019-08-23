@@ -111,9 +111,10 @@ class fp_types<
 public:
   using value_type = int8_t;
   using value_up = int16_t;
+  using logical_type = uint8_t;
   using simd_type = vi8;
   using simd_up = vi16;
-  using simd_logical = vli8;
+  using simd_logical = vlu8;
 };
 
 //  9-16 total bits = char
@@ -124,9 +125,10 @@ class fp_types<
 public:
   using value_type = int16_t;
   using value_up = int32_t;
+  using logical_type = uint16_t;
   using simd_type = vi16;
   using simd_up = vi32;
-  using simd_logical = vli16;
+  using simd_logical = vlu16;
 };
 
 //  17-32 total bits = char
@@ -137,9 +139,10 @@ class fp_types<
 public:
   using value_type = int32_t;
   using value_up = int64_t;
+  using logical_type = uint32_t;
   using simd_type = vi32;
   using simd_up = vi64;
-  using simd_logical = vli32;
+  using simd_logical = vlu32;
 };
 
 //------------------------------------------------------------------------------
@@ -159,6 +162,7 @@ class fp_t
 {
 public:
   using value_type = typename fp_types<_lf, _rt>::value_type;
+  using logical_type = typename fp_types<_lf, _rt>::logical_type;
   using value_up = typename fp_types<_lf, _rt>::value_up;
   using simd_type = typename fp_types<_lf, _rt>::simd_type;
   using simd_up = typename fp_types<_lf, _rt>::simd_up;

@@ -49,6 +49,7 @@ public:
   fpsimd_t()
   {
   }
+  
   fpsimd_t(const fp_t<_lf, _rt> &cp)
   {
     _raw = nsimd::set1(cp._raw, base_type());
@@ -71,7 +72,7 @@ template <uint8_t _lf, uint8_t _rt>
 class fpsimdl_t
 {
 public:
-  using base_type = typename fp_t<_lf, _rt>::value_type;
+  using base_type = typename fp_t<_lf, _rt>::logical_type;
   using value_type = typename fp_t<_lf, _rt>::simd_type;
   using value_up = typename fp_t<_lf, _rt>::simd_up;
   using logic = typename fp_t<_lf, _rt>::simd_logical;

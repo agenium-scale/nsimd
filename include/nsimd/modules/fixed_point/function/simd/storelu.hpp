@@ -32,12 +32,12 @@ namespace nsimd
 {
 namespace fixed_point
 {
-template <unsigned char _lf, unsigned char _rt>
+template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE void
-simd_storelu(typename fp_t<_lf, _rt>::value_type *a, fpsimd_t<_lf, _rt> &val)
+simd_storelu(typename fpsimdl_t<_lf, _rt>::base_type *a, fpsimdl_t<_lf, _rt> &val)
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
-  nsimd::storelu((raw_t *) a, val._raw, raw_t());
+  using raw_t = typename fpsimdl_t<_lf, _rt>::base_type;
+  nsimd::storelu(a, val._raw, raw_t());
 }
 
 } // namespace fixed_point

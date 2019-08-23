@@ -27,66 +27,42 @@ SOFTWARE.
 
 #include <nsimd/nsimd.h>
 #include "fixed_point/simd.hpp"
-#include "fixed_point/function/simd/rec.hpp"
 
 namespace nsimd
 {
 namespace fixed_point
 {
-
-// FIXME : Probably not the best way to do...
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
-simd_div(const fpsimd_t<_lf, _rt> &a0, const fpsimd_t<_lf, _rt> &a1)
+simd_div(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
-  const fpsimd_t<_lf, _rt> a1_rec = simd_rec<_lf, _rt>(a1);
-  return simd_mul<_lf, _rt>(a0, a1_rec);
+  using up_t = typename fp_t<_lf, _rt>::value_up;
+  using val_t = typename fp_t<_lf, _rt>::value_type;
+  using simd_up_t = typename fp_t<_lf, _rt>::simd_up;
+  constexpr int half_size = 4 * sizeof(up_t);
+  constexpr int shift = half_size - _lf;
+
+  auto a_big = nsimd::upcvt(a._raw, val_t(), up_t());
+  auto b_big = nsimd::upcvt(b._raw, val_t(), up_t());
+
+  a_big.v0 = nsimd::shl(a_big.v0, shift, up_t());
+  a_big.v0 = nsimd::div(a_big.v0, b_big.v0, up_t());
+  a_big.v1 = nsimd::shl(a_big.v1, shift, up_t());
+  a_big.v1 = nsimd::div(a_big.v1, b_big.v1, up_t());
+
+  fpsimd_t<_lf, _rt> res;
+  res._raw = nsimd::downcvt(a_big.v0, a_big.v1, up_t(), val_t());
+
+  return res;
 }
 
-// // For use in other functions where you may have repeated mul/div operations
-// template <unsigned char _lf, unsigned char _rt, typename T>
-// NSIMD_INLINE T
-// simd_div_ungrouped(const T &a_half, const T &b_half, const fpsimd_t<_lf, _rt>)
-// {
-//   using val_t = typename fp_t<_lf, _rt>::value_type;
-//   constexpr int extra = 8 * sizeof(val_t) - _lf - _rt;
-//   constexpr int shift = _rt + extra;
-
-//   T tmp = a_half << shift;
-//   return tmp / b_half; // nsimd does not have simd integer division...
-// }
-
-// template <unsigned char _lf, unsigned char _rt>
-// NSIMD_INLINE fpsimd_t<_lf, _rt>
-// simd_div(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-// {
-//   // Slower, but allows decimal output
-//   using up_t = typename fp_t<_lf, _rt>::value_up;
-//   using val_t = typename fp_t<_lf, _rt>::value_type;
-//   using simd_up_t = typename fp_t<_lf, _rt>::simd_up;
-//   constexpr int extra = 8 * sizeof(val_t) - _lf - _rt;
-//   constexpr int shift = _rt + extra;
-
-//   simd_up_t a_lo = nsimd::split_low(a._raw, val_t());
-//   simd_up_t b_lo = nsimd::split_low(b._raw, val_t());
-
-//   simd_up_t a_hi = nsimd::split_high(a._raw, val_t());
-//   simd_up_t b_hi = nsimd::split_high(b._raw, val_t());
-
-//   fpsimd_t<_lf, _rt> res;
-//   res._raw = nsimd::group(
-//       simd_div_ungrouped(a_lo, b_lo, res), simd_div_ungrouped(a_hi, b_hi, res), up_t());
-
-//   return res;
-// }
-
 // // Operator overload with base type compatibility
-// template <unsigned char _lf, unsigned char _rt>
-// NSIMD_INLINE fpsimd_t<_lf, _rt>
-// operator/(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-// {
-//   return simd_div(a, b);
-// }
+template <unsigned char _lf, unsigned char _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt>
+operator/(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
+{
+  return simd_div(a, b);
+}
 
 } // namespace fixed_point
 } // namespace nsimd
