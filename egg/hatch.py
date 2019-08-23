@@ -111,12 +111,13 @@ import gen_archis
 import gen_base_apis
 import gen_advanced_api
 import gen_tests
-import gen_tests_fp
 import gen_benches
 import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
 import gen_ulps
+
+import modules.hatch
 
 # Dir of this script
 script_dir = os.path.dirname(__file__)
@@ -203,6 +204,10 @@ def parse_args(args):
         action = 'store_true',
         default=None,
         help='Enable verbose mode')
+    parser.add_argument('--gen-tests-fp',
+        action='store_true',
+        default=None,
+        help='Generate test files for the fixed_point module')
     return parser.parse_args(args)
 
 # -----------------------------------------------------------------------------
@@ -236,6 +241,9 @@ def main():
         gen_friendly_but_not_optimized.doit(opts)
     if opts.doc == True or opts.all == True:
         gen_doc.doit(opts)
+
+    ## For modules
+    modules.hatch.doit(opts)
 
 if __name__ == '__main__':
     main()
