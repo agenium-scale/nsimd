@@ -34,4 +34,4 @@ bin/%: %.cpp
 	$(CC) $(IFLAGS) $^ -o $@ $(CFLAGS) $(LFLAGS)
 
 clean::
-	rm -f fixed_point
+	rm -f bin/*
