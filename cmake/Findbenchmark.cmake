@@ -36,13 +36,13 @@
 set(benchmark_ROOT_DIR "" CACHE PATH "Folder containing benchmark")
 
 find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h"
-  PATHS ${benchmark_ROOT_DIR}
+  PATHS ${benchmark_ROOT_DIR} ${CMAKE_INCLUDE_PATH}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH)
 find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h")
 
 find_library(benchmark_LIBRARY NAMES "benchmark"
-  PATHS ${benchmark_ROOT_DIR}
+  PATHS ${benchmark_ROOT_DIR} ${CMAKE_LIBRARY_PATH}
   PATH_SUFFIXES lib lib64
   NO_DEFAULT_PATH)
 find_library(benchmark_LIBRARY NAMES "benchmark")
