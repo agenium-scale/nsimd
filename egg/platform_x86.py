@@ -1043,7 +1043,7 @@ def neq2(simd_ext, typ):
     if simd_ext in sse and typ in ['f32', 'f64']:
         return how_it_should_be_op2('cmpneq', simd_ext, typ)
     if simd_ext in avx and typ in ['f32', 'f64']:
-        return 'return _mm256_cmp{suf}({in0}, {in1}, _CMP_NEQ_OQ);'. \
+        return 'return _mm256_cmp{suf}({in0}, {in1}, _CMP_NEQ_UQ);'. \
                format(**fmtspec)
     if simd_ext in avx512 and typ in ['f32', 'f64']:
         return 'return _mm512_cmp{suf}_mask({in0}, {in1}, _CMP_NEQ_OQ);'. \
@@ -1073,9 +1073,18 @@ def gt2(simd_ext, typ):
         if typ == 'i64':
             if simd_ext == 'sse42':
                 return how_it_should_be_op2('cmpgt', simd_ext, typ)
-            return '''return _mm_sub_epi64(_mm_setzero_si128(), _mm_srli_epi64(
-                               _mm_sub_epi64({in1}, {in0}), 63));'''. \
-                               format(**fmtspec)
+            #return '''return _mm_sub_epi64(_mm_setzero_si128(), _mm_srli_epi64(
+            #                   _mm_sub_epi64({in1}, {in0}), 63));'''. \
+            #                   format(**fmtspec)
+            return '''{typ} buf0[2], buf1[2];
+
+                      _mm_storeu_si128((__m128i*)buf0, {in0});
+                      _mm_storeu_si128((__m128i*)buf1, {in1});
+
+                      buf0[0] = -(buf0[0] > buf1[0]);
+                      buf0[1] = -(buf0[1] > buf1[1]);
+
+                      return _mm_loadu_si128((__m128i*)buf0);'''.format(**fmtspec)
         return cmp2_with_add('gt', simd_ext, typ)
     if simd_ext in avx:
         if typ in ['f32', 'f64']:
@@ -1825,8 +1834,12 @@ def rec11_rsqrt11(func, simd_ext, typ):
                    format(func=func, **fmtspec)
     if typ == 'f64':
         if simd_ext in sse + avx:
-            return \
-            'return {pre}cvtps_pd(_mm_{func}_ps({pre}cvtpd_ps({in0})));'. \
+            one = '{pre}set1_pd(1.0)'.format(**fmtspec)
+            if func == 'rcp':
+                return 'return {pre}div{suf}({one}, {in0});'.format(one=one, **fmtspec)
+            else:
+                return 'return {pre}div{suf}({one}, {pre}sqrt{suf}({in0}));'. \
+                        format(one=one, **fmtspec)
             format(func=func, **fmtspec)
         if simd_ext in avx512:
             return 'return _mm512_{func}14_pd({in0});'. \
