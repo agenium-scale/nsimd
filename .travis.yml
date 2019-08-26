@@ -176,6 +176,5 @@ before_script:
 ## Build
 script:
     - cmake --build .
-    - cmake --build . --target gen.tests
     - cmake --build . --target tests
     - ctest .
