@@ -34,13 +34,13 @@
 set(Sleef_ROOT_DIR "" CACHE PATH "Folder containing Sleef")
 
 find_path(Sleef_INCLUDE_DIR "sleef.h"
-  PATHS ${Sleef_ROOT_DIR}
+  PATHS ${Sleef_ROOT_DIR} ${CMAKE_INCLUDE_PATH}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH)
 find_path(Sleef_INCLUDE_DIR "sleef.h")
 
 find_library(Sleef_LIBRARY NAMES "sleef"
-  PATHS ${Sleef_ROOT_DIR}
+  PATHS ${Sleef_ROOT_DIR} ${CMAKE_LIBRARY_PATH}
   PATH_SUFFIXES lib lib64
   NO_DEFAULT_PATH)
 find_library(Sleef_LIBRARY NAMES "sleef")
