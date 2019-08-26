@@ -66,6 +66,16 @@ NSIMD_INLINE packl<lf, rt> {op_name}l(packl<lf, rt> a0, packl<lf, rt> a1)
 }}
 """
 
+math_func_template = """\
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE pack<lf, rt> {op_name}(pack<lf, rt> a0)
+{{
+  pack<lf, rt> res;
+  res.val = simd_{op_name}(a0.val);
+  return res;
+}}
+"""
+
 file_template = """\
 /*
 
@@ -112,7 +122,7 @@ template <uint8_t lf, uint8_t rt>
 struct pack
 {{
   using scalar_type =fp_t<lf, rt>; 
-  using value_type = typename fp_t<lf, rt>::value_type;
+  using base_type = fp_t<lf, rt>;
   fpsimd_t<lf, rt> val;
 }};
 
@@ -120,7 +130,7 @@ template <uint8_t lf, uint8_t rt>
 struct packl
 {{
   using scalar_type = fp_t<lf, rt>;
-  using value_type = typename fp_t<lf, rt>::value_type;
+  using base_type = typename fp_t<lf, rt>::logical_type;
   fpsimdl_t<lf, rt> val;
 }};
 
@@ -162,49 +172,55 @@ NSIMD_INLINE pack<lf, rt> if_else1(packl<lf, rt> a0, pack<lf, rt> a1,
 
 {bitwise_ops}
 // -----------------------------------------------------------------------------
+// ------------------- Math functions ------------------------------------------
+// -----------------------------------------------------------------------------
+
+
+{math_functions}
+// -----------------------------------------------------------------------------
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *p)
+NSIMD_INLINE pack<lf, rt> loadu(typename pack<lf, rt>::base_type *p)
 {{
   pack<lf, rt> res;
   res.val = simd_loadu<lf, rt>(p);
   return res;
 }}
 
-template <typename vec_t>
-NSIMD_INLINE vec_t loadu(typename vec_t::scalar_type *p)
-{{
-  return loadu(p);
-}}
+// template <typename vec_t>
+// NSIMD_INLINE vec_t loadu(typename vec_t::base_type *p)
+// {{
+//   return loadu(p);
+// }}
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> loadlu(typename pack<lf, rt>::value_type *p)
+NSIMD_INLINE packl<lf, rt> loadlu(typename packl<lf, rt>::base_type *p)
 {{
   packl<lf, rt> res;
   res.val = simd_loadlu<lf, rt>(p);
   return res;
 }}
 
-template <typename vecl_t>
-NSIMD_INLINE vecl_t loadlu(typename vecl_t::scalar_type *p)
-{{
-  return loadlu(p);
-}}
+// template <typename vecl_t>
+// NSIMD_INLINE vecl_t loadlu(typename vecl_t::base_type *p)
+// {{
+//   return loadlu(p);
+// }}
 
 // -----------------------------------------------------------------------------
 // -------------------- Store functions ----------------------------------------
 // -----------------------------------------------------------------------------
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(fp_t<lf, rt> *p, pack<lf, rt> &v)
+NSIMD_INLINE void storeu(typename pack<lf, rt>::base_type *p, pack<lf, rt> &v)
 {{
   simd_storeu<lf, rt>(p, v.val);
 }}
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storelu(typename packl<lf, rt>::value_type *p, fp_t<lf, rt> v)
+NSIMD_INLINE void storelu(typename packl<lf, rt>::base_type *p, packl<lf, rt> v)
 {{
   simd_storelu<lf, rt>(p, v.val);
 }}
@@ -217,9 +233,10 @@ NSIMD_INLINE void storelu(typename packl<lf, rt>::value_type *p, fp_t<lf, rt> v)
 
 ## -----------------------------------------------------------------------------
 
-arithmetic_ops = ["add", "sub", "mul", "rec", "div"]
+arithmetic_ops = ["add", "sub", "mul", "div"]
 comparison_ops = ["eq", "ne", "le", "lt", "ge", "gt"]
 bitwise_ops = ["and", "andnot", "not", "or", "xor"]
+math_funcs = ["rec"]
 
 def get_function_decl(template, ops):
     res = ""
@@ -233,7 +250,8 @@ if __name__ == "__main__":
     src = file_template.format(
         arithmetic_ops=get_function_decl(arithmetic_op_template, arithmetic_ops),
         comparison_ops=get_function_decl(comparison_op_template, comparison_ops),
-        bitwise_ops=get_function_decl(bitwise_op_template, bitwise_ops)
+        bitwise_ops=get_function_decl(bitwise_op_template, bitwise_ops),
+        math_functions=get_function_decl(math_func_template, math_funcs)
     )
     with open("fixed_point.hpp", "w") as fp:
         fp.write(src)

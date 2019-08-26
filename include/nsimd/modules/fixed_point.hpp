@@ -43,7 +43,7 @@ template <uint8_t lf, uint8_t rt>
 struct pack
 {
   using scalar_type = fp_t<lf, rt>;
-  using value_type = typename fp_t<lf, rt>::value_type;
+  using base_type = fp_t<lf, rt>;
   fpsimd_t<lf, rt> val;
 };
 
@@ -51,9 +51,8 @@ template <uint8_t lf, uint8_t rt>
 struct packl
 {
   using scalar_type = fp_t<lf, rt>;
-  using value_type = typename fp_t<lf, rt>::logical_type;
-  fpsimdl_t<lf, rt> val;
-};
+  using base_type = typename fp_t<lf, rt>::logical_type;
+  fpsimdl_t<lf, rt> val;};
 
 template <uint8_t lf, uint8_t rt>
 constexpr size_t len(const fp_t<lf, rt> &)
@@ -92,14 +91,6 @@ NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
 {
   pack<lf, rt> res;
   res.val = simd_mul<lf, rt>(a0.val, a1.val);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> rec(pack<lf, rt> a0)
-{
-  pack<lf, rt> res;
-  res.val = simd_rec<lf, rt>(a0.val);
   return res;
 }
 
@@ -256,49 +247,61 @@ NSIMD_INLINE packl<lf, rt> xorl(packl<lf, rt> a0, packl<lf, rt> a1)
 }
 
 // -----------------------------------------------------------------------------
+// ------------------- Math functions ------------------------------------------
+// -----------------------------------------------------------------------------
+
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE pack<lf, rt> rec(pack<lf, rt> a0)
+{
+  pack<lf, rt> res;
+  res.val = simd_rec(a0.val);
+  return res;
+}
+
+// -----------------------------------------------------------------------------
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(fp_t<lf, rt> *p)
+NSIMD_INLINE pack<lf, rt> loadu(typename pack<lf, rt>::base_type *p)
 {
   pack<lf, rt> res;
   res.val = simd_loadu<lf, rt>(p);
   return res;
 }
 
-template <typename vec_t>
-NSIMD_INLINE vec_t loadu(typename vec_t::scalar_type *p)
-{
-  return loadu(p);
-}
+// template <typename vec_t>
+// NSIMD_INLINE vec_t loadu(typename vec_t::base_type *p)
+// {
+//   return loadu(p);
+// }
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> loadlu(typename packl<lf, rt>::value_type *p)
+NSIMD_INLINE packl<lf, rt> loadlu(typename packl<lf, rt>::base_type *p)
 {
   packl<lf, rt> res;
   res.val = simd_loadlu<lf, rt>(p);
   return res;
 }
 
-template <typename vecl_t>
-NSIMD_INLINE vecl_t loadlu(typename vecl_t::scalar_type *p)
-{
-  return loadlu(p);
-}
+// template <typename vecl_t>
+// NSIMD_INLINE vecl_t loadlu(typename vecl_t::base_type *p)
+// {
+//   return loadlu(p);
+// }
 
 // -----------------------------------------------------------------------------
 // -------------------- Store functions ----------------------------------------
 // -----------------------------------------------------------------------------
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(fp_t<lf, rt> *p, pack<lf, rt> &v)
+NSIMD_INLINE void storeu(typename pack<lf, rt>::base_type *p, pack<lf, rt> &v)
 {
   simd_storeu<lf, rt>(p, v.val);
 }
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storelu(typename packl<lf, rt>::value_type *p, packl<lf, rt> &v)
+NSIMD_INLINE void storelu(typename packl<lf, rt>::base_type *p, packl<lf, rt> v)
 {
   simd_storelu<lf, rt>(p, v.val);
 }
