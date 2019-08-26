@@ -11,7 +11,6 @@ addons:
             - crossbuild-essential-armhf
             - crossbuild-essential-arm64
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
 
 ## Compilations and tests
 matrix:
