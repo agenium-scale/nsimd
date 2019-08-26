@@ -307,8 +307,44 @@ int main() {{
 
 # ------------------------------------------------------------------------------
 # Bitwise unary operators
-# Provide one wrapper
-# Make it parametric with logical or not X
+
+bitwise_unary_test_template = """\
+{includes}
+#include <limits>
+
+// -----------------------------------------------------------------------------
+
+{decls}
+// -----------------------------------------------------------------------------
+
+int main() {{
+  {aliases}
+  
+  srand(time(NULL));
+  
+  {typ} tab0[v_size];
+  {typ} res[v_size];
+
+  for(size_t i = 0; i < v_size; i++)
+  {{
+    tab0[i] = {rand_statement}
+  }}
+
+  vec{l}_t v0 = nsimd::fixed_point::load{l}u<{lf}, {rt}>(tab0);
+  vec{l}_t v_res = nsimd::fixed_point::{op_name}{term}(v0);
+  nsimd::fixed_point::store{l}u<{lf}, {rt}>(res, v_res);
+
+  for(size_t i = 0; i < v_size; i++)
+  {{
+    {typ} a = tab0[i];
+    {typ} b = res[i];
+    CHECK({test_statement});
+  }}  
+ 
+  fprintf(stdout, \"Test of {op_name}{term} for fp_t<{lf},{rt}>... OK\\n\");
+  return EXIT_SUCCESS;
+}}
+"""
 
 # ------------------------------------------------------------------------------
 
@@ -323,7 +359,7 @@ bitwise_binary_ops = [("and", "c._raw == (a._raw & b._raw)", "c == (a & b)"),
                       ("or", "c._raw == (a._raw | b._raw)", "c == (a | b)"),
                       ("xor","c._raw == (~a._raw & b._raw) | (a._raw & ~b._raw)",
                        "c == ((~a & b) | (a & ~b))")]
-
+bitwise_unary_ops = [("not", "b._raw == ~a._raw", "((b == 0) && (a == 1)) | ((b == 1) && (a == 0))")]
 lf_vals = ["4", "5", "6", "7", "8", "9", "12", "16"]
 rt_vals = ["1", "2", "3", "4", "6", "8", "12", "16"]
 
@@ -374,7 +410,7 @@ def doit(opts):
                     fp.write(content_src)
                 common.clang_format(opts, filename)
 
-    ## Boolean operators
+    ## Bitwise binary operators
     for op_name, s0, s1 in bitwise_binary_ops:
         decls = check + limits + gen_random_val
         for lf in lf_vals:
@@ -393,6 +429,35 @@ def doit(opts):
 
                 # {op}l
                 content_src = bitwise_binary_test_template.format(
+                    op_name=op_name, lf=lf, rt=rt,
+                    includes=includes, decls=decls,
+                    rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
+                    typ="log_t", test_statement=s1, l="l", term="l",
+                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+                filename = get_filename(opts, op_name + "l", lf, rt)
+                with common.open_utf8(filename) as fp:
+                    fp.write(content_src)
+                common.clang_format(opts, filename)
+
+    ## Bitwise unary operators
+    for op_name, s0, s1 in bitwise_unary_ops:
+        decls = check + limits + gen_random_val
+        for lf in lf_vals:
+            for rt in rt_vals:
+                # {op}b
+                content_src = bitwise_unary_test_template.format(
+                    op_name=op_name, lf=lf, rt=rt,
+                    includes=includes, decls=decls,
+                    rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
+                    typ="fp_t", test_statement=s0, l="", term="b",
+                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+                filename = get_filename(opts, op_name + "b", lf, rt)
+                with common.open_utf8(filename) as fp:
+                    fp.write(content_src)
+                common.clang_format(opts, filename)
+
+                # {op}l
+                content_src = bitwise_unary_test_template.format(
                     op_name=op_name, lf=lf, rt=rt,
                     includes=includes, decls=decls,
                     rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),

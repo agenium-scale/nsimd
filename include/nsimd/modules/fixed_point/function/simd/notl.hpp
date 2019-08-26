@@ -34,11 +34,11 @@ namespace fixed_point
 {
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimdl_t<_lf, _rt>
-simd_notl(const fpsimdl_t<_lf, _rt> &a0, const fpsimdl_t<_lf, _rt> &a1)
+simd_notl(const fpsimdl_t<_lf, _rt> &a0)
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  using raw_t = typename fp_t<_lf, _rt>::logical_type;
   fpsimdl_t<_lf, _rt> res;
-  res._raw = nsimd::notl(a0._raw, a1._raw, raw_t());
+  res._raw = nsimd::notl(a0._raw, raw_t());
   return res;
 }
 
