@@ -258,42 +258,23 @@ def get_content(op, typ, lang):
     # in which case increment is given by nsimd_cpu_len()
     cpu_step = 'nsimd_len_cpu_{}()'.format(typ)
 
-    # For floatting points generate some non integer inputs
-    if typ in common.iutypes:
-        rand = 'rand()'
-    else:
-        if op.src:
-          rand = '({cast})2 * ({cast})rand() / ({cast})RAND_MAX'. \
-                 format(cast=cast)
-        else:
-          rand = '({cast})(1 << (rand() % 4)) / ({cast})(1 << (rand() % 4))'. \
-                 format(cast=cast)
-
-    # For signed types, make some positive and negative inputs
-    if op.name not in ['sqrt', 'rsqrt11'] and typ in common.itypes:
-        rand = '(2 * (rand() % 2) - 1) * {}'.format(rand)
-    if op.name not in ['sqrt', 'rsqrt11'] and typ in common.ftypes:
-        rand = '({})(2 * (rand() % 2) - 1) * {}'.format(cast, rand)
+    nargs = range(1, len(op.params))
 
     # Depending on function parameters, generate specific input, ...
     if all(e == 'v' for e in op.params) or all(e == 'l' for e in op.params):
         logical = 'l' if op.params[0] == 'l' else ''
-        if logical == 'l':
-            rand = '(1 << (rand() % 2))' if typ != 'f16' \
-                                         else '(float)(1 << (rand() % 2))'
-        nargs = range(1, len(op.params))
 
         # Make vin_defi
         code = ['{} *vin{};'.format(typ, i) for i in nargs]
         code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'. \
                  format(i, typ, common.sizeof(typ)) for i in nargs]
         vin_defi = '\n'.join(code)
-        if typ == 'f16':
-            code = ['vin{}[i] = nsimd_f32_to_f16({});'. \
-                    format(i, rand) for i in nargs]
-        else:
-            code = ['vin{}[i] = ({})({});'.format(i, typ, rand) for i in nargs]
+        code = ['vin{}[i] = rand{}();'.format(i,i) for i in nargs]
         vin_rand = '\n'.join(code)
+
+        # lgamma doesn't work for negative input or for too big inputs.
+        if op.name == 'lgamma' and typ == 'f64':
+            vin_rand = 'vin1[i] = rand()%64;'
 
         # Make vout0_comp
         # We use MPFR on Linux to compare numerical results, but it is only on
@@ -341,6 +322,24 @@ def get_content(op, typ, lang):
                      format(logical, typ)]
             vout0_comp = '\n'.join(code)
 
+            if op.name[-2:] == '11':
+                vout0_comp += '''
+                    /* Intel 11 bit precision intrinsics normalize denormalized output. */
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wconversion"
+                    #pragma GCC diagnostic ignored "-Wdouble-promotion"
+                    for (vi = i; vi < i+nsimd_len_cpu_{typ}(); ++vi) {{
+                        if ({classify}({f32_conv}(vout0[vi])) == FP_SUBNORMAL) {{
+                            vout0[vi] = {f16_conv}(0.f);
+                        }}
+                    }}
+                    #pragma GCC diagnostic pop
+                    '''.format(typ=typ,
+                                 f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                                 f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                                 classify='fpclassify' if lang=='c_base' else 'std::fpclassify')
+
+
         # Make vout1_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
         if lang == 'c_base':
@@ -381,12 +380,9 @@ def get_content(op, typ, lang):
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
            CHECK(vin2 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        if typ == 'f16':
-            vin_rand = '''vin1[i] = nsimd_f32_to_f16((float)(rand() % 4));
-                          vin2[i] = nsimd_f32_to_f16((float)(rand() % 4));'''
-        else:
-            vin_rand = '''vin1[i] = ({typ})(rand() % 4);
-                          vin2[i] = ({typ})(rand() % 4);'''.format(typ=typ)
+        code = ['vin{}[i] = rand{}();'.format(i,i) for i in nargs]
+        vin_rand = '\n'.join(code)
+
         vout0_comp = '''nsimd_cpu_v{typ} va1, va2;
                         nsimd_cpu_vl{typ} vc;
                         va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
@@ -394,6 +390,7 @@ def get_content(op, typ, lang):
                         vc = nsimd_{op_name}_cpu_{typ}(va1, va2);
                         nsimd_storelu_cpu_{typ}(&vout0[i], vc);'''. \
                         format(typ=typ, op_name=op.name)
+
         if lang == 'c_base':
             vout1_comp = '''vec({typ}) va1, va2;
                             vecl({typ}) vc;
@@ -425,12 +422,32 @@ def get_content(op, typ, lang):
                             nsimd::storelu(&vout1[i], vc);'''. \
                             format(typ=typ, op_name=op.name,
                                    do_computation=do_computation)
+
+        if typ[0] == 'f' and op.name != 'ne':
+            vout1_comp += '''
+                /* Intel comparison intrinsics aren't IEEE754 compliant and
+                never returns false when comparing NaN with other floats. */
+                #pragma GCC diagnostic push
+                #pragma GCC diagnostic ignored "-Wconversion"
+                #pragma GCC diagnostic ignored "-Wdouble-promotion"
+                for (vi = i; vi < i+step; ++vi) {{
+                    if ({isnan}({f32_conv}(vin1[vi])) || {isnan}({f32_conv}(vin2[vi]))) {{
+                        vout1[vi] = {f16_conv}(0.f);
+                    }}
+                }}
+                #pragma GCC diagnostic pop
+                '''.format(f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                             f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                             isnan='isnan' if lang=='c_base' else 'std::isnan')
+
+
+
     elif op.params == ['v', 'v', 'p']:
         vin_defi = \
         '''{typ} *vin1;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        vin_rand = 'vin1[i] = ({typ})(rand() % 4);'.format(typ=typ)
+        vin_rand = 'vin1[i] = rand1();'.format(typ=typ)
         vout0_comp = '''nsimd_cpu_v{typ} va1, vc;
                         va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
                         vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % 7);
@@ -479,25 +496,27 @@ def gen_test(opts, op, typ, lang, ulps):
 
     content = get_content(op, typ, lang)
 
+    extra_code = op.domain.gen_rand(typ)
+
     if op.name in ['not', 'and', 'or', 'xor', 'andnot']:
         comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
                format(uT=common.bitfield_type[typ])
     else:
         if typ == 'f16':
-            left = '(double)nsimd_f16_to_f32(mpfr_out)'
-            right = '(double)nsimd_f16_to_f32(nsimd_out)'
+            left = 'nsimd_f16_to_f32(mpfr_out)'
+            right = 'nsimd_f16_to_f32(nsimd_out)'
         elif typ == 'f32':
-            left = '(double)mpfr_out'
-            right = '(double)nsimd_out'
+            left = 'mpfr_out'
+            right = 'nsimd_out'
         else:
             left = 'mpfr_out'
             right = 'nsimd_out'
         relative_distance = relative_distance_c if lang == 'c_base' \
                             else relative_distance_cpp
         if op.tests_ulps:
-            comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
+            comp = 'return relative_distance((double){}, (double){}) > get_2th_power(-{nbits})'. \
                    format(left, right, nbits='11' if typ != 'f16' else '9')
-            extra_code = relative_distance
+            extra_code += relative_distance
         elif op.src:
             if op.name in ulps:
                 nbits = ulps[op.name][typ]["ulps"]
@@ -511,27 +530,27 @@ def gen_test(opts, op, typ, lang, ulps):
                           '''
                 if nan_error:
                     # Ignore error with NaN output, we know we will encounter some
-                    comp += 'if ({isnan}((double){left})) return 0;\n'
+                    comp += 'if ({isnan}({left})) return 0;\n'
                 else:
                     # Return false if one is NaN and not the other
-                    comp += 'if ({isnan}((double){left}) ^ isnan({rigth})) return 1;\n'
+                    comp += 'if ({isnan}({left}) ^ isnan({rigth})) return 1;\n'
 
                 if inf_error:
                     # Ignore error with infinite output, we know we will encounter some
-                    comp += 'if ({isinf}((double){left})) return 0;\n'
+                    comp += 'if ({isinf}({left})) return 0;\n'
                 else:
                     # One is infinite and not the other
-                    comp += 'if ({isinf}((double){left}) ^ {isinf}((double){rigth})) return 1;\n'
+                    comp += 'if ({isinf}({left}) ^ {isinf}({rigth})) return 1;\n'
                     # Wrong sign for infinite
-                    comp += 'if ({isinf}((double){left}) && {isinf}((double){rigth}) \
+                    comp += 'if ({isinf}({left}) && {isinf}({rigth}) \
                                     && ({right}*{left} < 0)) \
                                         return 1;\n'
 
                 comp += '''
-                if ({isnormal}((double){left})) {{
-                    return relative_distance({left}, {right}) > get_2th_power(-({nbits}));
+                if ({isnormal}({left})) {{
+                    return relative_distance((double){left}, (double){right}) > get_2th_power(-({nbits}));
                 }} else {{
-                    return relative_distance({left}, {right}) > get_2th_power(-({nbits_dnz}));
+                    return relative_distance((double){left}, (double){right}) > get_2th_power(-({nbits_dnz}));
                 }}
                 #pragma GCC diagnostic pop
                 '''
@@ -555,13 +574,25 @@ def gen_test(opts, op, typ, lang, ulps):
 
             else:
                 nbits = {'f16': '10', 'f32': 21, 'f64': '48'}
-                comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
+                comp = 'return relative_distance((double){}, (double){}) > get_2th_power(-{nbits})'. \
                         format(left, right, nbits=nbits[typ])
 
-            extra_code = relative_distance
+            extra_code += relative_distance
         else:
-            comp = 'return {} != {}'.format(left, right)
-            extra_code = ''
+            if typ in common.ftypes:
+                comp = \
+                '''#pragma GCC diagnostic push
+                   #pragma GCC diagnostic ignored "-Wconversion"
+                   #pragma GCC diagnostic ignored "-Wdouble-promotion"
+                   return {left} != {right}
+                        && (!{isnan}({left}) || !{isnan}({right}));
+                   #pragma GCC diagnostic pop
+                 '''.format(left=left, right=right,
+                            isnan='isnan' if lang=='c_base' else 'std::isnan')
+            else:
+                comp = 'return {} != {};'.format(left, right)
+
+            extra_code += ''
 
     includes = get_includes(lang)
     if op.src or op.tests_ulps or op.tests_mpfr:
@@ -925,7 +956,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
 
              {typ}* vin;
              {typ}* vout;
-             int i,j;
+             int i;
              int len = vlen({typ});
              int n = {deg} * len;
 

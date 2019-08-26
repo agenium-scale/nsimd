@@ -262,8 +262,9 @@ def doit(opts):
     for op_name, operator in operators.operators.items():
         if not operator.tests_mpfr:
             continue
-        if op_name in ['gamma', 'gammaln', 'lgamma', 'pow']:
+        if op_name in ['gammaln', 'lgamma', 'pow']:
             continue
+
 
         mpfr_func = operator.tests_mpfr_name()
         mpfr_rnd = ", MPFR_RNDN"

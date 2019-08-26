@@ -881,6 +881,79 @@ class Domain(object):
             '''.format(type=typ, prefix=prefix_fun_name, n=i, code=nested_code)
         return code
 
+    def gen_rand(self, typ):
+        typlen = typ[1:]
+        ret = ''
+
+        if typ[0] in ('i', 'u'):
+            #TODO: check that random number is in the function domain
+            for u, union in enumerate(self.intervals):
+                ret += \
+                    '''{typ} rand{u}() {{
+                            nat i, r;
+                            u8 *alias;
+                            {typ} ret;
+                            (void)i;
+                            (void)alias;
+                            (void)r;
+                            '''.format(u=u+1, typ=typ)
+
+                for i, interval in enumerate(union):
+                    if interval.logical_:
+                        ret += 'ret = rand()%2;'
+                    else:
+                        if not interval.removed:
+                            test='0'
+                        else:
+                            test = '||\n'. \
+                                join(['ret == {}'.format(removed) \
+                                for removed in interval.removed])
+
+                        ret += \
+                         '''do {{
+                                alias = (u8*)(&ret);
+                                for(i=0, r=rand(); i<(r%{it})+1; ++i) {{
+                                    alias[i] = (u8)(rand() & 0xFF);
+                                }}
+                                for(;i<{it}; ++i) {{
+                                    alias[i] = 0u;
+                                }}
+                            }} while ({test});
+                            '''.format(test=test, it=int(typlen)//8)
+
+                ret += 'return ret;}'
+        elif typ in ftypes:
+            #TODO: check that random number is in the function domain
+            for u, union in enumerate(self.intervals):
+                ret += \
+                    '''{typ} rand{u}() {{
+                            nat i;
+                            u8 *alias;
+                            {typ_ret} ret;
+                            (void)i;
+                            (void)alias;
+                            '''.format(u=u+1, typ=typ,
+                                    typ_ret='f32' if typ=='f16' else typ)
+
+                for i, interval in enumerate(union):
+                    if interval.logical_:
+                        ret += 'ret = rand()%2;'
+                    else:
+                        ret += \
+                         '''alias = (u8*)(&ret);
+                            for(i=0; i<{it}; ++i) {{
+                                alias[i] = (u8)(rand() & 0xFF);
+                            }}
+                            '''.format(it=4 if typ=='f16' else int(typlen)//8)
+
+                if typ == 'f16':
+                    ret += 'return nsimd_f32_to_f16(ret);}'
+                else:
+                    ret += 'return ret;}'
+
+        return ret
+
+
 # -----------------------------------------------------------------------------
 # Sleef
 

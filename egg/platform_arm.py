@@ -1485,7 +1485,7 @@ def addv(simd_ext, typ):
                #endif''' .format(t=half_neon_typ(typ), **fmtspec)
         elif typ == 'f32':
             return \
-            '''{t} tmp = vadd_{suf}(vget_low_{suf}({in0}), 
+            '''{t} tmp = vadd_{suf}(vget_low_{suf}({in0}),
                                     vget_high_{suf}({in0}));
                tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 1));
                return vget_lane_{suf}(tmp, 0);'''. \

@@ -457,7 +457,7 @@ def load1234(simd_ext, typ, deg, aligned):
     # load 4 for every supported types
     else:
         if typ[1:] == '32':
-            return ''' 
+            return '''
                 {load}
 
                 nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in2);
@@ -911,7 +911,7 @@ def round1(op, simd_ext, typ):
         return 'return vec_{op}({in0});'.format(op=ppcop[op], **fmtspec)
     elif typ == 'f64':
         return emulate_64(op, simd_ext, 2 * ['v'])
-    else: 
+    else:
         raise ValueError('Unknown round: "{}" for type : "{}"'. \
                 format(op, typ))
 
@@ -1327,7 +1327,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
            ret.v1 = vec_and(ret.v1, mask);
 
            return ret;'''. \
-           format(ppc_typ=ppc_vec_type(to_typ), 
+           format(ppc_typ=ppc_vec_type(to_typ),
                   signed_ppc_type=ppc_vec_type('i'+from_typ[1:]),
                   mask=mask,
                   **fmtspec)
@@ -1345,7 +1345,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
            ret.v1 = vec_ctf(vec_and(tmp.v1, mask), 0);
 
            return ret;'''. \
-           format(ppc_typ=ppc_vec_type(to_typ), 
+           format(ppc_typ=ppc_vec_type(to_typ),
                   signed_ppc_typ=ppc_vec_type('i'+from_typ[1:]),
                   **fmtspec)
     elif from_typ == 'i16' and to_typ == 'f32':
