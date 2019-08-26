@@ -2,15 +2,14 @@ language: cpp
 
 ## Install deps
 addons:
-    homebrew:
-        packages:
-            - ninja
-            - clang-format
     apt:
         sources:
             - crossbuild-essential-armhf
             - crossbuild-essential-arm64
             - ubuntu-toolchain-r-test
+
+## For some reason, default osx image is not working with homebrew
+osx_image: xcode10.2
 
 ## Compilations and tests
 matrix:
@@ -148,6 +147,9 @@ install:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
         choco install -y python3 ninja;
       fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install ninja clang-format;
+      fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         sudo apt update;
         sudo apt install gcc-8 g++-8 clang-6.0 libmpfr-dev ninja-build -y;
@@ -159,6 +161,9 @@ before_script:
         scripts/travis-windows-env.bat;
         source _env.sh;
         export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python37\\python";
+        export PYTHON="C:\\Python37\\python";
+      else
+        export PYTHON="python3";
       fi
     - if [[ ! -z "$TARGET" ]]; then
         export CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER_TARGET=$TARGET";
@@ -166,7 +171,7 @@ before_script:
       fi
     - mkdir build
     - export HATCH_SIMD=$( echo "$SIMD" | tr '[:upper:]' '[:lower:]' )
-    - python3 egg/hatch.py -Af --simd $HATCH_SIMD
+    - $PYTHON egg/hatch.py -Af --simd $HATCH_SIMD
     - cd build
     - cmake .. $CMAKE_ARGS
         -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC
