@@ -165,7 +165,8 @@ before_script:
         export CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER_TARGET=$TARGET";
       fi
     - mkdir build
-    - python3 egg/hatch.py -Af
+    - export HATCH_SIMD=$( echo "$SIMD" | tr '[:upper:]' '[:lower:]' )
+    - python3 egg/hatch.py -Af --simd $HATCH_SIMD
     - cd build
     - cmake .. $CMAKE_ARGS
         -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC
