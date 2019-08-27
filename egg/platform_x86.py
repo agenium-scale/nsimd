@@ -1165,7 +1165,7 @@ def leq2(simd_ext, typ):
                         nsimd_gt_{simd_ext}_{typ}({in0}, {in1}));'''. \
                         format(**fmtspec)
     if simd_ext in sse and typ in ['f32', 'f64']:
-        return 'return _mm_cmpngt{suf}({in0}, {in1});'.format(**fmtspec)
+        return 'return _mm_cmple{suf}({in0}, {in1});'.format(**fmtspec)
     if simd_ext in avx and typ in ['f32', 'f64']:
             return 'return _mm256_cmp{suf}({in0}, {in1}, _CMP_LE_OQ);'. \
                    format(**fmtspec)
