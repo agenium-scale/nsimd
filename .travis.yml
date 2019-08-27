@@ -182,4 +182,4 @@ before_script:
 script:
     - cmake --build .
     - cmake --build . --target tests
-    - ctest .
+    - ctest . -V
