@@ -32,17 +32,18 @@ namespace nsimd
 {
 namespace fixed_point
 {
-template <unsigned char _lf, unsigned char _rt>
+template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_add(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
+  using raw_t = typename fp_t<_lf, _rt>::value_type;
   fpsimd_t<_lf, _rt> c;
-  c._raw = a._raw + b._raw;
+  c._raw = nsimd::add(a._raw, b._raw, raw_t());
   return c;
 }
 
 // Operator overload with base type compatibility
-template <unsigned char _lf, unsigned char _rt>
+template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
 operator+(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {

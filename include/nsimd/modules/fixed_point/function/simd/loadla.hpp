@@ -22,31 +22,24 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SUB_HPP
-#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SUB_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_LOADLA_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_LOADLA_HPP
 
+#include <nsimd/nsimd.h>
 #include "fixed_point/simd.hpp"
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-simd_sub(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimdl_t<_lf, _rt> simd_loadla(typename fp_t<_lf, _rt>::logical_type *a)
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
-  fpsimd_t<_lf, _rt> c;
-  c._raw = nsimd::sub(a._raw, b._raw, raw_t());
-  return c;
-}
+  using raw_t = typename fpsimdl_t<_lf, _rt>::base_type;
+  fpsimdl_t<_lf, _rt> res;
+  res._raw = nsimd::loadla(a, raw_t());
 
-// Operator overload with base type compatibility
-template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-operator-(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-{
-  return simd_sub(a, b);
+  return res;
 }
 
 } // namespace fixed_point

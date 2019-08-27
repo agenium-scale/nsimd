@@ -29,15 +29,16 @@ SOFTWARE.
 
 // Load/Store
 #include "fixed_point/function/simd/loadu.hpp"
+#include "fixed_point/function/simd/loada.hpp"
 #include "fixed_point/function/simd/loadlu.hpp"
+#include "fixed_point/function/simd/loadla.hpp"
 #include "fixed_point/function/simd/storeu.hpp"
+#include "fixed_point/function/simd/storea.hpp"
 #include "fixed_point/function/simd/storelu.hpp"
+#include "fixed_point/function/simd/storela.hpp"
 
 // Constants
-//#include "fixed_point/constants.hpp"
-
-// Helper functions
-//#include "fixed_point/function/simd/is_int.hpp"
+#include "fixed_point/constants.hpp"
 
 // Bitwise operations
 #include "fixed_point/function/simd/andl.hpp"
@@ -64,10 +65,11 @@ SOFTWARE.
 #include "fixed_point/function/simd/add.hpp"
 #include "fixed_point/function/simd/sub.hpp"
 #include "fixed_point/function/simd/mul.hpp"
-#include "fixed_point/function/simd/rec.hpp"
 #include "fixed_point/function/simd/div.hpp"
+#include "fixed_point/function/simd/fma.hpp"
 
-// More complex math functions
+// Math functions
+#include "fixed_point/function/simd/rec.hpp"
 //#include "fixed_point/function/simd/abs.hpp"
 //#include "fixed_point/function/simd/sqrt.hpp"
 //#include "fixed_point/function/simd/log.hpp"

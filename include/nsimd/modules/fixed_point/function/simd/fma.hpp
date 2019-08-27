@@ -22,31 +22,27 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SUB_HPP
-#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SUB_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FMA_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FMA_HPP
 
+#include <nsimd/nsimd.h>
 #include "fixed_point/simd.hpp"
+#include "fixed_point/function/simd/add.hpp"
+#include "fixed_point/function/simd/mul.hpp"
 
 namespace nsimd
 {
 namespace fixed_point
 {
-template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-simd_sub(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
+// FMA emulation for FP type
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_fma(
+    const fpsimd_t<_lf, _rt> &a0, const fpsimd_t<_lf, _rt> &a1,
+    const fpsimd_t<_lf, _rt> &a2)
 {
   using raw_t = typename fp_t<_lf, _rt>::value_type;
-  fpsimd_t<_lf, _rt> c;
-  c._raw = nsimd::sub(a._raw, b._raw, raw_t());
-  return c;
-}
-
-// Operator overload with base type compatibility
-template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-operator-(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-{
-  return simd_sub(a, b);
+  fpsimd_t<_lf, _rt> res;
+  return simd_add(a0, simd_mul(a1, a2));
 }
 
 } // namespace fixed_point

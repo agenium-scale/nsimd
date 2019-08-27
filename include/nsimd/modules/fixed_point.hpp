@@ -42,6 +42,8 @@ namespace fixed_point
 template <uint8_t lf, uint8_t rt>
 struct pack
 {
+  static constexpr uint8_t _lf = lf;
+  static constexpr uint8_t _rt = rt;
   using scalar_type = fp_t<lf, rt>;
   using base_type = fp_t<lf, rt>;
   fpsimd_t<lf, rt> val;
@@ -50,9 +52,12 @@ struct pack
 template <uint8_t lf, uint8_t rt>
 struct packl
 {
+  static constexpr uint8_t _lf = lf;
+  static constexpr uint8_t _rt = rt;
   using scalar_type = fp_t<lf, rt>;
   using base_type = typename fp_t<lf, rt>::logical_type;
-  fpsimdl_t<lf, rt> val;};
+  fpsimdl_t<lf, rt> val;
+};
 
 template <uint8_t lf, uint8_t rt>
 constexpr size_t len(const fp_t<lf, rt> &)
@@ -99,6 +104,14 @@ NSIMD_INLINE pack<lf, rt> div(pack<lf, rt> a0, pack<lf, rt> a1)
 {
   pack<lf, rt> res;
   res.val = simd_div<lf, rt>(a0.val, a1.val);
+  return res;
+}
+
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE pack<lf, rt> fma(pack<lf, rt> a0, pack<lf, rt> a1, pack<lf, rt> a2)
+{
+  pack<lf, rt> res;
+  res.val = simd_fma<lf, rt>(a0.val, a1.val, a2.val);
   return res;
 }
 
@@ -199,18 +212,18 @@ NSIMD_INLINE packl<lf, rt> andnotl(packl<lf, rt> a0, packl<lf, rt> a1)
 }
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> notb(pack<lf, rt> a0, pack<lf, rt> a1)
+NSIMD_INLINE pack<lf, rt> notb(pack<lf, rt> a0)
 {
   pack<lf, rt> res;
-  res.val = simd_notb(a0.val, a1.val);
+  res.val = simd_notb(a0.val);
   return res;
 }
 
 template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> notl(packl<lf, rt> a0, packl<lf, rt> a1)
+NSIMD_INLINE packl<lf, rt> notl(packl<lf, rt> a0)
 {
   packl<lf, rt> res;
-  res.val = simd_notl(a0.val, a1.val);
+  res.val = simd_notl(a0.val);
   return res;
 }
 
@@ -270,11 +283,13 @@ NSIMD_INLINE pack<lf, rt> loadu(typename pack<lf, rt>::base_type *p)
   return res;
 }
 
-// template <typename vec_t>
-// NSIMD_INLINE vec_t loadu(typename vec_t::base_type *p)
-// {
-//   return loadu(p);
-// }
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE pack<lf, rt> loada(typename pack<lf, rt>::base_type *p)
+{
+  pack<lf, rt> res;
+  res.val = simd_loada<lf, rt>(p);
+  return res;
+}
 
 template <uint8_t lf, uint8_t rt>
 NSIMD_INLINE packl<lf, rt> loadlu(typename packl<lf, rt>::base_type *p)
@@ -284,11 +299,13 @@ NSIMD_INLINE packl<lf, rt> loadlu(typename packl<lf, rt>::base_type *p)
   return res;
 }
 
-// template <typename vecl_t>
-// NSIMD_INLINE vecl_t loadlu(typename vecl_t::base_type *p)
-// {
-//   return loadlu(p);
-// }
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE packl<lf, rt> loadla(typename packl<lf, rt>::base_type *p)
+{
+  packl<lf, rt> res;
+  res.val = simd_loadla<lf, rt>(p);
+  return res;
+}
 
 // -----------------------------------------------------------------------------
 // -------------------- Store functions ----------------------------------------
@@ -301,9 +318,21 @@ NSIMD_INLINE void storeu(typename pack<lf, rt>::base_type *p, pack<lf, rt> &v)
 }
 
 template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE void storea(typename pack<lf, rt>::base_type *p, pack<lf, rt> &v)
+{
+  simd_storea<lf, rt>(p, v.val);
+}
+
+template <uint8_t lf, uint8_t rt>
 NSIMD_INLINE void storelu(typename packl<lf, rt>::base_type *p, packl<lf, rt> v)
 {
   simd_storelu<lf, rt>(p, v.val);
+}
+
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE void storela(typename packl<lf, rt>::base_type *p, packl<lf, rt> v)
+{
+  simd_storela<lf, rt>(p, v.val);
 }
 
 } // namespace fixed_point

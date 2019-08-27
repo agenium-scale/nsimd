@@ -106,14 +106,18 @@ template <uint8_t lf, uint8_t rt>
 nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {
   constexpr float max_val = ldexp(1.0f, (lf - 1) / 2) - 1;
   constexpr float min_val = -ldexp(1.0f, (lf - 1) / 2);
-  constexpr int n_vals = (int)ldexp(1.0f, rt);
-
-  const float integral =
-      roundf(((float)rand() / (float)RAND_MAX) * (max_val - min_val) + min_val);
-  const float decimal =
-      (float)(rand() % n_vals) * __get_numeric_precision<lf, rt>();
-
-  return nsimd::fixed_point::fp_t<lf, rt>(integral + decimal);
+  constexpr int n_vals = (int)ldexp(1.0f, (rt - 1) / 2);
+  
+  nsimd::fixed_point::fp_t<lf, rt> res = 0;
+  while(res._raw == 0) {{
+    const float integral =
+        roundf(((float)rand() / (float)RAND_MAX) * (max_val - min_val) + min_val);
+    const float decimal =
+        ((float)(rand() % n_vals) + ldexp(1.0f, rt / 2))
+        * __get_numeric_precision<lf, rt>();
+    res = nsimd::fixed_point::fp_t<lf, rt>(integral + decimal);
+  }}
+  return res;
 }
 
 """
@@ -168,6 +172,91 @@ int main() {{
 }}
 """
 
+arithmetic_ops = [("add", "+"), ("sub", "-"), ("mul", "*"), ("div","/")]
+def gen_arithmetic_ops_tests(lf, rt, opts):
+    for op_name, op_val in arithmetic_ops:
+        decls = check + limits + comparison_fp + gen_random_val
+        content_src = arithmetic_test_template.format(
+            op_name=op_name, op_val=op_val, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name, lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+
+# ------------------------------------------------------------------------------
+# Ternary ops (FMA and co)
+
+ternary_ops_template = """\
+{includes}
+// -----------------------------------------------------------------------------
+
+{decls}
+// -----------------------------------------------------------------------------
+
+int main() {{
+  {aliases}
+
+  srand(time(NULL));
+
+  // FP vectors
+  fp_t tab0_fp[v_size];
+  fp_t tab1_fp[v_size];
+  fp_t tab2_fp[v_size];
+  fp_t res_fp[v_size];
+
+  // Floating point equivalent
+  float tab0_f[v_size];
+  float tab1_f[v_size];
+  float tab2_f[v_size];
+  float res_f[v_size];
+
+  for (size_t i = 0; i < v_size; i++) {{
+    tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
+    tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
+    tab2_fp[i] = __gen_random_val<{lf}, {rt}>();
+    tab0_f[i] = nsimd::fixed_point::fixed2float(tab0_fp[i]);
+    tab1_f[i] = nsimd::fixed_point::fixed2float(tab1_fp[i]);
+    tab2_f[i] = nsimd::fixed_point::fixed2float(tab2_fp[i]);
+  }}
+
+  vec_t v0_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
+  vec_t v1_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab1_fp);
+  vec_t v2_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab2_fp);
+  vec_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp, v1_fp, v2_fp);
+  nsimd::fixed_point::storeu<{lf}, {rt}>(res_fp, vres_fp);
+
+  for(size_t i = 0; i < v_size; i++) {{
+    const fp_t a = tab0_f[i];
+    const fp_t b = tab1_f[i];
+    const fp_t c = tab2_f[i];     
+    
+    {check_statement}
+  }}
+
+  for(size_t i = 0; i < v_size; i++) {{
+    CHECK(__compare_values(res_fp[i], res_f[i]));
+  }}
+ 
+  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  return EXIT_SUCCESS;
+}}
+"""
+
+ternary_ops = [("fma", "res_f[i] = a + (b * c);")]
+def gen_ternary_ops_tests(lf, rt, opts):
+    for op_name, op_val in arithmetic_ops:
+        decls = check + limits + comparison_fp + gen_random_val
+        content_src = arithmetic_test_template.format(
+            op_name=op_name, op_val=op_val, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name, lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+
 # ------------------------------------------------------------------------------
 # Template for math operators
 
@@ -216,6 +305,19 @@ int main() {{
 }}
 """
 
+math_ops = ["rec"]
+def gen_math_functions_tests(lf, rt, opts):
+    for op_name in math_ops:
+        decls = check + limits + comparison_fp + gen_random_val
+        content_src = math_test_template.format(
+            op_name=op_name, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name, lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+
 # ------------------------------------------------------------------------------
 # Comparison operators
 
@@ -257,6 +359,21 @@ int main(){{
   return EXIT_SUCCESS;
 }}
 """
+
+comparison_ops = [("eq","=="), ("ne","!="), ("le","<="), ("lt","<"),
+                  ("ge",">="), ("gt",">")]
+
+def gen_comparison_tests(lf, rt, opts):
+    for op_name, op_val in comparison_ops:
+        decls = check + limits + comparison_log.format(op_val=op_val) + gen_random_val  
+        content_src = comparison_test_template.format(
+            op_name=op_name, op_val=op_val, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name, lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
 
 # ------------------------------------------------------------------------------
 # Bitwise binary operators
@@ -305,6 +422,38 @@ int main() {{
 }}
 """
 
+bitwise_binary_ops = [("and", "c._raw == (a._raw & b._raw)", "c == (a & b)"),
+                      ("andnot", "c._raw == (a._raw & ~b._raw)", "c == (a & ~b)"),
+                      ("or", "c._raw == (a._raw | b._raw)", "c == (a | b)"),
+                      ("xor","c._raw == (~a._raw & b._raw) | (a._raw & ~b._raw)",
+                       "c == ((~a & b) | (a & ~b))")]
+def gen_bitwise_ops_tests(lf, rt, opts):
+    for op_name, s0, s1 in bitwise_binary_ops:
+        # {op}b
+        decls = check + limits + gen_random_val
+        content_src = bitwise_binary_test_template.format(
+            op_name=op_name, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
+            typ="fp_t", test_statement=s0, l="", term="b",
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name + "b", lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+        
+        # {op}l
+        content_src = bitwise_binary_test_template.format(
+            op_name=op_name, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
+            typ="log_t", test_statement=s1, l="l", term="l",
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name + "l", lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+
 # ------------------------------------------------------------------------------
 # Bitwise unary operators
 
@@ -346,124 +495,63 @@ int main() {{
 }}
 """
 
+bitwise_unary_ops = [("not", "b._raw == ~a._raw",
+                      "((b == 0) && (a == 1)) | ((b == 1) && (a == 0))")]
+def gen_unary_ops_tests(lf, rt, opts):
+    for op_name, s0, s1 in bitwise_unary_ops:
+        decls = check + limits + gen_random_val  
+        # {op}b
+        content_src = bitwise_unary_test_template.format(
+            op_name=op_name, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
+            typ="fp_t", test_statement=s0, l="", term="b",
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name + "b", lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+
+        # {op}l
+        content_src = bitwise_unary_test_template.format(
+            op_name=op_name, lf=lf, rt=rt,
+            includes=includes, decls=decls,
+            rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
+            typ="log_t", test_statement=s1, l="l", term="l",
+            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        filename = get_filename(opts, op_name + "l", lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+        
 # ------------------------------------------------------------------------------
 
 load_ops = ["loadu", "loadlu", "loada", "loadla"]
 store_ops = ["storeu", "storelu", "storea", "storela"]
-arithmetic_ops = [("add", "+"), ("sub", "-"), ("mul", "*"), ("div","/")]
-math_ops = ["rec"]
-comparison_ops = [("eq","=="), ("ne","!="), ("le","<="), ("lt","<"),
-                  ("ge",">="), ("gt",">")]
-bitwise_binary_ops = [("and", "c._raw == (a._raw & b._raw)", "c == (a & b)"),
-                      ("andnot", "c._raw == (a._raw & ~b._raw)", "c == (a & ~b)"),
-                      ("or", "c._raw == (a._raw | b._raw)", "c == (a | b)"),
-                      ("xor","c._raw == (~a._raw & b._raw) | (a._raw & ~b._raw)",
-                       "c == ((~a & b) | (a & ~b))")]
-bitwise_unary_ops = [("not", "b._raw == ~a._raw", "((b == 0) && (a == 1)) | ((b == 1) && (a == 0))")]
-lf_vals = ["4", "5", "6", "7", "8", "9", "12", "16"]
-rt_vals = ["1", "2", "3", "4", "6", "8", "12", "16"]
 
 # -------------------------------------------------------------------------------
 # Entry point
-
+        
+lf_vals = ["4", "5", "6", "7", "8", "9", "12", "16"]
+rt_vals = ["3", "4", "6", "8", "12", "16"]
 def doit(opts):
     print ('-- Generating tests for module fixed_point')
-    ## Arithmetic operators
-    for op_name, op_val in arithmetic_ops:
-        decls = check + limits + comparison_fp + gen_random_val
-        for lf in lf_vals:
-            for rt in rt_vals:
-                content_src = arithmetic_test_template.format(
-                    op_name=op_name, op_val=op_val, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name, lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
+    for lf in lf_vals:
+        for rt in rt_vals:
+            ## Arithmetic operators
+            gen_arithmetic_ops_tests(lf, rt, opts)
 
-    ## Math functions
-    for op_name in math_ops:
-        decls = check + limits + comparison_fp + gen_random_val
-        for lf in lf_vals:
-            for rt in rt_vals:
-                content_src = math_test_template.format(
-                    op_name=op_name, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name, lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
+            ## Ternary_operators
+            gen_ternary_ops_tests(lf, rt, opts)
+    
+            ## Math functions
+            gen_math_functions_tests(lf, rt, opts)
+            
+            ## Comparison operators
+            gen_comparison_tests(lf, rt, opts)
 
-    ## Comparison operators
-    for op_name, op_val in comparison_ops:
-        decls = check + limits + comparison_log.format(op_val=op_val) + gen_random_val
-        for lf in lf_vals:
-            for rt in rt_vals:
-                content_src = comparison_test_template.format(
-                    op_name=op_name, op_val=op_val, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name, lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
-
-    ## Bitwise binary operators
-    for op_name, s0, s1 in bitwise_binary_ops:
-        decls = check + limits + gen_random_val
-        for lf in lf_vals:
-            for rt in rt_vals:
-                # {op}b
-                content_src = bitwise_binary_test_template.format(
-                    op_name=op_name, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
-                    typ="fp_t", test_statement=s0, l="", term="b",
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name + "b", lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
-
-                # {op}l
-                content_src = bitwise_binary_test_template.format(
-                    op_name=op_name, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
-                    typ="log_t", test_statement=s1, l="l", term="l",
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name + "l", lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
-
-    ## Bitwise unary operators
-    for op_name, s0, s1 in bitwise_unary_ops:
-        decls = check + limits + gen_random_val
-        for lf in lf_vals:
-            for rt in rt_vals:
-                # {op}b
-                content_src = bitwise_unary_test_template.format(
-                    op_name=op_name, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
-                    typ="fp_t", test_statement=s0, l="", term="b",
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name + "b", lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
-
-                # {op}l
-                content_src = bitwise_unary_test_template.format(
-                    op_name=op_name, lf=lf, rt=rt,
-                    includes=includes, decls=decls,
-                    rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
-                    typ="log_t", test_statement=s1, l="l", term="l",
-                    aliases=arithmetic_aliases.format(lf=lf, rt=rt))
-                filename = get_filename(opts, op_name + "l", lf, rt)
-                with common.open_utf8(filename) as fp:
-                    fp.write(content_src)
-                common.clang_format(opts, filename)
+            ## Bitwise binary operators
+            gen_bitwise_ops_tests(lf, rt, opts)
+            
+            ## Bitwise unary operators
+            gen_unary_ops_tests(lf, rt, opts)
