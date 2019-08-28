@@ -74,15 +74,15 @@ check = """\
 
 limits = """\
 template <uint8_t lf, uint8_t rt>
-static constexpr float __get_numeric_precision() {
-  return ldexpf(1.0f, -(int)rt);
+static constexpr double __get_numeric_precision() {
+  return ldexpf(1.0d, -(int)rt);
 }
 
 """
 
 comparison_fp = """\
 template <uint8_t lf, uint8_t rt>
-bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, float ref)
+bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref)
 {
   return abs(nsimd::fixed_point::fixed2float<lf, rt>(val) - ref) 
     <= __get_numeric_precision<lf, rt>();
@@ -103,22 +103,26 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 
 gen_random_val = """\
 template <uint8_t lf, uint8_t rt>
-nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {
-  constexpr float max_val = ldexp(1.0f, (lf - 1) / 2) - 1;
-  constexpr float min_val = -ldexp(1.0f, (lf - 1) / 2);
-  constexpr int n_vals = (int)ldexp(1.0f, (rt - 1) / 2);
+nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
+  constexpr double max_val = ldexp(1.0d, (lf - 1) / 2) - 1;
+  constexpr double min_val = -ldexp(1.0d, (lf - 1) / 2);
+  constexpr int n_vals = (int)ldexp(1.0d, (rt - 1) / 2);
   
   nsimd::fixed_point::fp_t<lf, rt> res = 0;
-  while(res._raw == 0) {{
-    const float integral =
-        roundf(((float)rand() / (float)RAND_MAX) * (max_val - min_val) + min_val);
-    const float decimal =
-        ((float)(rand() % n_vals) + ldexp(1.0f, rt / 2))
-        * __get_numeric_precision<lf, rt>();
-    res = nsimd::fixed_point::fp_t<lf, rt>(integral + decimal);
+  const double integral =
+      roundf(((double)rand() / (double)RAND_MAX) * (max_val - min_val) + min_val);
+  const double decimal =
+      ((double)(rand() % n_vals) + ldexp(1.0d, rt / 2))
+      * __get_numeric_precision<lf, rt>();
+  // Ensure abs(val) > 1
+  double val = integral + decimal;
+  if(abs(val) < 1.0d)
+  {{
+    val += val > 0.0d ? 1.0d : -1.0d;
   }}
+  res = nsimd::fixed_point::fp_t<lf, rt>(val);
   return res;
-}
+}}
 
 """
 
@@ -143,9 +147,9 @@ int main() {{
   fp_t res_fp[v_size];
 
   // Floating point equivalent
-  float tab0_f[v_size];
-  float tab1_f[v_size];
-  float res_f[v_size];
+  double tab0_f[v_size];
+  double tab1_f[v_size];
+  double res_f[v_size];
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -206,11 +210,11 @@ int main() {{
   fp_t tab2_fp[v_size];
   fp_t res_fp[v_size];
 
-  // Floating point equivalent
-  float tab0_f[v_size];
-  float tab1_f[v_size];
-  float tab2_f[v_size];
-  float res_f[v_size];
+  // Doubleing point equivalent
+  double tab0_f[v_size];
+  double tab1_f[v_size];
+  double tab2_f[v_size];
+  double res_f[v_size];
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -266,8 +270,8 @@ math_test_template = """\
 
 {decls}
 
-// Rec operator on floating points (avoid to write a particular test for rec)
-static inline float rec(const float x){{return 1.0f / x;}}
+// Rec operator on doubleing points (avoid to write a particular test for rec)
+static inline double rec(const double x){{return 1.0d / x;}}
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -280,8 +284,8 @@ int main() {{
   fp_t res_fp[v_size];
 
   // Floating point equivalent
-  float tab0_f[v_size];
-  float res_f[v_size];
+  double tab0_f[v_size];
+  double res_f[v_size];
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -459,7 +463,6 @@ def gen_bitwise_ops_tests(lf, rt, opts):
 
 bitwise_unary_test_template = """\
 {includes}
-#include <limits>
 
 // -----------------------------------------------------------------------------
 
@@ -524,16 +527,69 @@ def gen_unary_ops_tests(lf, rt, opts):
             fp.write(content_src)
         common.clang_format(opts, filename)
         
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# if_else
+
+if_else_test_template = """\
+{includes}
+
+// -----------------------------------------------------------------------------
+
+{decls}
+// -----------------------------------------------------------------------------
+
+int main() {{
+  {aliases}
+  
+  srand(time(NULL));
+  
+  fp_t tab0_fp[v_size];
+  fp_t tab1_fp[v_size];
+  log_t mask[v_size];
+  fp_t res_fp[v_size];
+
+  for(size_t i = 0; i < v_size; i++) {{
+    tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
+    tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
+    mask[i] = (log_t) (rand() % 2);
+  }}
+
+  vec_t v0 = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
+  vec_t v1 = nsimd::fixed_point::loadu<{lf}, {rt}>(tab1_fp);
+  vecl_t vl = nsimd::fixed_point::loadlu<{lf}, {rt}>(mask);
+  vec_t v_res = nsimd::fixed_point::if_else1(vl, v0, v1);
+  nsimd::fixed_point::storeu(res_fp, v_res);
+
+  for(size_t i = 0; i < v_size; i++)
+  {{
+    fp_t ref = mask[i] ? tab0_fp[i] : tab1_fp[i];
+    CHECK(ref._raw == res_fp[i]._raw);
+  }}
+ 
+  fprintf(stdout, \"Test of if_else1 for fp_t<{lf},{rt}>... OK\\n\");
+  return EXIT_SUCCESS;
+}}
+"""
+
+def gen_if_else_tests(lf, rt, opts):
+    decls = check + limits + comparison_fp + gen_random_val
+    content_src = if_else_test_template.format(
+        lf=lf, rt=rt, includes=includes, decls=decls,
+        aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+    filename = get_filename(opts, "if_else", lf, rt)
+    with common.open_utf8(filename) as fp:
+        fp.write(content_src)
+    common.clang_format(opts, filename)
+# -------------------------------------------------------------------------------
 
 load_ops = ["loadu", "loadlu", "loada", "loadla"]
 store_ops = ["storeu", "storelu", "storea", "storela"]
 
 # -------------------------------------------------------------------------------
 # Entry point
-        
-lf_vals = ["4", "5", "6", "7", "8", "9", "12", "16"]
-rt_vals = ["3", "4", "6", "8", "12", "16"]
+
+lf_vals = ["4", "8", "16"]
+rt_vals = ["1", "2", "3", "4", "5", "6", "7", "8"]
 def doit(opts):
     print ('-- Generating tests for module fixed_point')
     for lf in lf_vals:
@@ -545,7 +601,7 @@ def doit(opts):
             gen_ternary_ops_tests(lf, rt, opts)
     
             ## Math functions
-            gen_math_functions_tests(lf, rt, opts)
+            gen_math_functions_tests(lf, rt, opts) 
             
             ## Comparison operators
             gen_comparison_tests(lf, rt, opts)
@@ -555,3 +611,6 @@ def doit(opts):
             
             ## Bitwise unary operators
             gen_unary_ops_tests(lf, rt, opts)
+
+            ## If_else
+            gen_if_else_tests(lf, rt, opts)
