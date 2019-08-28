@@ -26,8 +26,8 @@ SOFTWARE.
 #define NSIMD_MODULES_FUNCTION_SIMD_REC_HPP
 
 #include <nsimd/nsimd.h>
-#include "fixed_point/simd.hpp"
-#include "fixed_point/function/simd/div.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/function/simd/div.hpp"
 
 namespace nsimd
 {

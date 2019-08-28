@@ -271,9 +271,13 @@ float fixed2float(const fp_t<_lf, _rt> &in)
   // Divide by correct power of 2
   exp = 1;
   for(int i = 0; i < _rt; ++i)
+  {
     exp *= 2;
+  }
   for(int i = 0; i < extra; ++i)
+  {
     exp *= 2;
+  }
   float val = float(trunc_in) / exp;
 
   return val;
@@ -289,7 +293,5 @@ std::ostream &operator<<(std::ostream &stream, const fp_t<_lf, _rt> &in)
 
 } // namespace fixed_point
 } // namespace nsimd
-
-#include "fixed_point/fixed_math.hpp"
 
 #endif

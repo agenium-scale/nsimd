@@ -25,61 +25,61 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_MATH_HPP
 #define NSIMD_MODULES_FIXED_POINT_MATH_HPP
 
-#include "fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
 
 // Constants
-#include "fixed_point/constants.hpp"
+#include "nsimd/modules/fixed_point/constants.hpp"
 
 // Helper functions
 // #include "fixed_point/function/is_int.hpp"
 
 // Bitwise operations
-#include "fixed_point/function/bitwise_and.hpp"
-#include "fixed_point/function/bitwise_nor.hpp"
-#include "fixed_point/function/bitwise_not.hpp"
-#include "fixed_point/function/bitwise_or.hpp"
-#include "fixed_point/function/bitwise_xor.hpp"
-#include "fixed_point/function/shift.hpp"
+#include "nsimd/modules/fixed_point/function/bitwise_and.hpp"
+#include "nsimd/modules/fixed_point/function/bitwise_nor.hpp"
+#include "nsimd/modules/fixed_point/function/bitwise_not.hpp"
+#include "nsimd/modules/fixed_point/function/bitwise_or.hpp"
+#include "nsimd/modules/fixed_point/function/bitwise_xor.hpp"
+#include "nsimd/modules/fixed_point/function/shift.hpp"
 
 // Comparisons
-#include "fixed_point/function/eq.hpp"
-#include "fixed_point/function/eq_ulp.hpp"
-#include "fixed_point/function/greater.hpp"
-#include "fixed_point/function/less.hpp"
-#include "fixed_point/function/neq.hpp"
+#include "nsimd/modules/fixed_point/function/eq.hpp"
+#include "nsimd/modules/fixed_point/function/eq_ulp.hpp"
+#include "nsimd/modules/fixed_point/function/greater.hpp"
+#include "nsimd/modules/fixed_point/function/less.hpp"
+#include "nsimd/modules/fixed_point/function/neq.hpp"
 
 // Basic arithmetic
-#include "fixed_point/function/add.hpp"
-#include "fixed_point/function/div.hpp"
-#include "fixed_point/function/mul.hpp"
-#include "fixed_point/function/neg.hpp"
-#include "fixed_point/function/sub.hpp"
+#include "nsimd/modules/fixed_point/function/add.hpp"
+#include "nsimd/modules/fixed_point/function/div.hpp"
+#include "nsimd/modules/fixed_point/function/mul.hpp"
+#include "nsimd/modules/fixed_point/function/neg.hpp"
+#include "nsimd/modules/fixed_point/function/sub.hpp"
 
 // More complex math functions
-// #include "fixed_point/function/abs.hpp"
-// #include "fixed_point/function/sqrt.hpp"
-// #include "fixed_point/function/log.hpp"
-// #include "fixed_point/function/rsqrt.hpp"
-// #include "fixed_point/function/exp.hpp"
-// #include "fixed_point/function/ceil.hpp"
-// #include "fixed_point/function/floor.hpp"
-// #include "fixed_point/function/round.hpp"
+// #include "nsimd/modules/fixed_point/function/abs.hpp"
+// #include "nsimd/modules/fixed_point/function/sqrt.hpp"
+// #include "nsimd/modules/fixed_point/function/log.hpp"
+// #include "nsimd/modules/fixed_point/function/rsqrt.hpp"
+// #include "nsimd/modules/fixed_point/function/exp.hpp"
+// #include "nsimd/modules/fixed_point/function/ceil.hpp"
+// #include "nsimd/modules/fixed_point/function/floor.hpp"
+// #include "nsimd/modules/fixed_point/function/round.hpp"
 
 // Trigonometric functions
-// #include "fixed_point/function/sin.hpp"
-// #include "fixed_point/function/cos.hpp"
-// #include "fixed_point/function/tan.hpp"
-// #include "fixed_point/function/csc.hpp"
-// #include "fixed_point/function/sec.hpp"
-// #include "fixed_point/function/cot.hpp"
-// #include "fixed_point/function/asin.hpp"
-// #include "fixed_point/function/acos.hpp"
-// #include "fixed_point/function/atan.hpp"
-// #include "fixed_point/function/sinh.hpp"
-// #include "fixed_point/function/cosh.hpp"
-// #include "fixed_point/function/tanh.hpp"
-// #include "fixed_point/function/asinh.hpp"
-// #include "fixed_point/function/acosh.hpp"
-// #include "fixed_point/function/atanh.hpp"
+// #include "nsimd/modules/fixed_point/function/sin.hpp"
+// #include "nsimd/modules/fixed_point/function/cos.hpp"
+// #include "nsimd/modules/fixed_point/function/tan.hpp"
+// #include "nsimd/modules/fixed_point/function/csc.hpp"
+// #include "nsimd/modules/fixed_point/function/sec.hpp"
+// #include "nsimd/modules/fixed_point/function/cot.hpp"
+// #include "nsimd/modules/fixed_point/function/asin.hpp"
+// #include "nsimd/modules/fixed_point/function/acos.hpp"
+// #include "nsimd/modules/fixed_point/function/atan.hpp"
+// #include "nsimd/modules/fixed_point/function/sinh.hpp"
+// #include "nsimd/modules/fixed_point/function/cosh.hpp"
+// #include "nsimd/modules/fixed_point/function/tanh.hpp"
+// #include "nsimd/modules/fixed_point/function/asinh.hpp"
+// #include "nsimd/modules/fixed_point/function/acosh.hpp"
+// #include "nsimd/modules/fixed_point/function/atanh.hpp"
 
 #endif

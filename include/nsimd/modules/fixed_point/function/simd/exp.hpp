@@ -25,9 +25,9 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_EXP_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_EXP_HPP
 
-#include "fixed_point/constants.hpp"
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/simd/floor.hpp"
+#include "nsimd/modules/fixed_point/constants.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/simd/floor.hpp"
 
 #include <iostream>
 

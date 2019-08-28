@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SEC_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SEC_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/cos.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/cos.hpp"
 
 namespace nsimd
 {

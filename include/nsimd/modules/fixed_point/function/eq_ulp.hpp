@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_EQ_ULP_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_EQ_ULP_HPP
 
-#include "fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
 
 namespace nsimd
 {

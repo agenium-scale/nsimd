@@ -25,10 +25,11 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_SIMD_HPP
 #define NSIMD_MODULES_FIXED_POINT_SIMD_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/fixed_vector.hpp"
-
 #include <nsimd/nsimd.h>
+
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/fixed_math.hpp"
+#include "nsimd/modules/fixed_point/fixed_vector.hpp"
 
 namespace nsimd
 {
@@ -120,7 +121,5 @@ constexpr size_t fpsimd_n(const fpsimd_t<_lf, _rt> &)
 
 } // namespace fixed_point
 } // namespace nsimd
-
-#include "fixed_point/simd_math.hpp"
 
 #endif

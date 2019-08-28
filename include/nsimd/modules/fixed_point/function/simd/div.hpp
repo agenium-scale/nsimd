@@ -26,7 +26,7 @@ SOFTWARE.
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_DIV_HPP
 
 #include <nsimd/nsimd.h>
-#include "fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
 
 namespace nsimd
 {
@@ -36,12 +36,10 @@ template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_div(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
-  using up_t = typename fp_t<_lf, _rt>::value_up;
   using val_t = typename fp_t<_lf, _rt>::value_type;
+  using up_t = typename fp_t<_lf, _rt>::value_up;
   using simd_up_t = typename fp_t<_lf, _rt>::simd_up;
-  constexpr int half_size = 4 * sizeof(up_t);
   constexpr int n_bits = 8 * sizeof(val_t);
-  // constexpr int shift = half_size - _lf;
   constexpr int shift = n_bits - _lf;
   
   auto a_big = nsimd::upcvt(a._raw, val_t(), up_t());

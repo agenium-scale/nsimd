@@ -25,9 +25,9 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_ABS_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_ABS_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/greater.hpp"
-#include "fixed_point/function/mul.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/greater.hpp"
+#include "nsimd/modules/fixed_point/function/mul.hpp"
 
 namespace nsimd
 {

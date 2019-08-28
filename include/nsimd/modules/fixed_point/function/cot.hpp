@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_COT_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_COT_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/tan.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/tan.hpp"
 
 namespace nsimd
 {

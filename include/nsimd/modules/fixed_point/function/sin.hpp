@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIN_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIN_HPP
 
-#include "fixed_point/constants.hpp"
-#include "fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/constants.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
 
 // Calculate sin(x) using Taylor series up to x^9 (error is of the order x^11)
 // Limits input to range[0,pi/2] for best precision

@@ -26,7 +26,7 @@ SOFTWARE.
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_STOREU_HPP
 
 #include <nsimd/nsimd.h>
-#include "fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
 
 namespace nsimd
 {

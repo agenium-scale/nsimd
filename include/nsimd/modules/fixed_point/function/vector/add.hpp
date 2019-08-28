@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_VECTOR_ADD_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_VECTOR_ADD_HPP
 
-#include "fixed_point/fixed_vector.hpp"
-#include "fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/fixed_vector.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
 
 namespace nsimd
 {

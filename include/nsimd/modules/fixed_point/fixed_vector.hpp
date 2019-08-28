@@ -25,7 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FIXED_VECTOR_HPP
 #define NSIMD_MODULES_FIXED_POINT_FIXED_VECTOR_HPP
 
-#include "fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/fixed_vector.hpp"
 
 #include <vector>
 
@@ -42,7 +43,5 @@ using fpv_t = std::vector<fp_t<_lf, _rt>>;
 
 } // namespace fixed_point
 } // namespace nsimd
-
-#include "fixed_point/fixed_vector_math.hpp"
 
 #endif

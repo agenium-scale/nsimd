@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_VECTOR_MATH_HPP
 #define NSIMD_MODULES_FIXED_POINT_VECTOR_MATH_HPP
 
-#include "fixed_point/fixed_vector.hpp"
+#include "nsimd/modules/fixed_point/fixed_vector.hpp"
 
 // Constants
 //#include "fixed_point/constants.hpp"

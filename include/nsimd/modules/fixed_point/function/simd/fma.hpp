@@ -26,9 +26,9 @@ SOFTWARE.
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FMA_HPP
 
 #include <nsimd/nsimd.h>
-#include "fixed_point/simd.hpp"
-#include "fixed_point/function/simd/add.hpp"
-#include "fixed_point/function/simd/mul.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/function/simd/add.hpp"
+#include "nsimd/modules/fixed_point/function/simd/mul.hpp"
 
 namespace nsimd
 {

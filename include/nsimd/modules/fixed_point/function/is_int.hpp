@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_IS_INT_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_IS_INT_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/bitwise_and.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/bitwise_and.hpp"
 
 namespace nsimd
 {

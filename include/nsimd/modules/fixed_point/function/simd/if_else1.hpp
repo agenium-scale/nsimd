@@ -26,7 +26,7 @@ SOFTWARE.
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_IF_ELSE1_HPP
 
 #include <nsimd/nsimd.h>
-#include "fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
 
 namespace nsimd
 {
@@ -39,7 +39,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_if_else1(
 {
   using raw_t = typename fp_t<_lf, _rt>::value_type;
   fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::if_else1(a0._raw, a1._raw, a2._raw);
+  res._raw = nsimd::if_else1(a0._raw, a1._raw, a2._raw, raw_t());
   return res;
 }
 

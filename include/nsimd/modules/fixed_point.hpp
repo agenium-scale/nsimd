@@ -25,11 +25,12 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_HPP
 #define NSIMD_MODULES_FIXED_POINT_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/simd.hpp"
-#include "fixed_point/simd_math.hpp"
-
 #include <nsimd/nsimd.h>
+
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
+#include "nsimd/modules/fixed_point/simd_math.hpp"
+
 
 namespace nsimd
 {
@@ -171,7 +172,7 @@ template <uint8_t lf, uint8_t rt>
 NSIMD_INLINE pack<lf, rt> if_else1(packl<lf, rt> a0, pack<lf, rt> a1, pack<lf, rt> a2)
 {
   pack<lf, rt> res;
-  res.cal = simd_if_else1(a0.val, a1.val, a2.val);
+  res.val = simd_if_else1(a0.val, a1.val, a2.val);
   return res;
 }
 
@@ -283,12 +284,24 @@ NSIMD_INLINE pack<lf, rt> loadu(typename pack<lf, rt>::base_type *p)
   return res;
 }
 
+template <typename T>
+NSIMD_INLINE T loadu(typename T::base_type *p)
+{
+  return loadu<T::lf, T::rt>(p);
+}
+
 template <uint8_t lf, uint8_t rt>
 NSIMD_INLINE pack<lf, rt> loada(typename pack<lf, rt>::base_type *p)
 {
   pack<lf, rt> res;
   res.val = simd_loada<lf, rt>(p);
   return res;
+}
+
+template <typename T>
+NSIMD_INLINE T loada(typename T::base_type *p)
+{
+  return loadu<T::lf, T::rt>(p);
 }
 
 template <uint8_t lf, uint8_t rt>

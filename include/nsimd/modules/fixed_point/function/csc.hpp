@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_CSC_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_CSC_HPP
 
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/sin.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/sin.hpp"
 
 namespace nsimd
 {
