@@ -26,5 +26,5 @@ import modules.gen_tests_fp
 # Entry point
 
 def doit(opts):
-    if opts.gen_tests_fp == True or opts.all == True:
+    if opts.tests == True or opts.all == True:
         modules.gen_tests_fp.doit(opts)

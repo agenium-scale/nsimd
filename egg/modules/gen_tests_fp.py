@@ -232,9 +232,9 @@ int main() {{
   nsimd::fixed_point::storeu<{lf}, {rt}>(res_fp, vres_fp);
 
   for(size_t i = 0; i < v_size; i++) {{
-    const fp_t a = tab0_f[i];
-    const fp_t b = tab1_f[i];
-    const fp_t c = tab2_f[i];     
+    const double a = tab0_f[i];
+    const double b = tab1_f[i];
+    const double c = tab2_f[i];     
     
     {check_statement}
   }}
@@ -248,13 +248,13 @@ int main() {{
 }}
 """
 
-ternary_ops = [("fma", "res_f[i] = a + (b * c);")]
+ternary_ops = [("fma", "res_f[i] = a + b * c;")]
 def gen_ternary_ops_tests(lf, rt, opts):
-    for op_name, op_val in arithmetic_ops:
+    for op_name, statement in ternary_ops:
         decls = check + limits + comparison_fp + gen_random_val
-        content_src = arithmetic_test_template.format(
-            op_name=op_name, op_val=op_val, lf=lf, rt=rt,
-            includes=includes, decls=decls,
+        content_src = ternary_ops_template.format(
+            op_name=op_name, check_statement=statement.format(lf=lf, rt=rt),
+            lf=lf, rt=rt,includes=includes, decls=decls,
             aliases=arithmetic_aliases.format(lf=lf, rt=rt))
         filename = get_filename(opts, op_name, lf, rt)
         with common.open_utf8(filename) as fp:
