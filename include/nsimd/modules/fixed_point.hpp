@@ -39,79 +39,79 @@ namespace fixed_point
 // ------------------------ Types definitions and len --------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
+template <typename T>
 struct pack
 {
-  static constexpr uint8_t _lf = lf;
-  static constexpr uint8_t _rt = rt;
+  static constexpr uint8_t lf = T::lf;
+  static constexpr uint8_t rt = T::rt;
   using scalar_type = fp_t<lf, rt>;
   using base_type = fp_t<lf, rt>;
   fpsimd_t<lf, rt> val;
 };
 
-template <uint8_t lf, uint8_t rt>
+template <typename T>
 struct packl
 {
-  static constexpr uint8_t _lf = lf;
-  static constexpr uint8_t _rt = rt;
+  static constexpr uint8_t lf = T::lf;
+  static constexpr uint8_t rt = T::rt;
   using scalar_type = fp_t<lf, rt>;
   using base_type = typename fp_t<lf, rt>::logical_type;
   fpsimdl_t<lf, rt> val;
 };
 
-template <uint8_t lf, uint8_t rt>
-constexpr size_t len(const fp_t<lf, rt> &)
+template <typename T>
+constexpr size_t len(const T &)
 {
-  return fpsimd_n(fp_t<lf, rt>());
+  return fpsimd_n(T());
 }
 
-template <uint8_t lf, uint8_t rt>
-constexpr size_t len(const pack<lf, rt> &)
+template <typename T>
+constexpr size_t len(const pack<T> &)
 {
-  return fpsimd_n(fpsimd_t<lf, rt>());
+  return fpsimd_n(fpsimd_t<T::lf, T::rt>());
 }
 
 // -----------------------------------------------------------------------------
 // ------------------- Basic arithmetic operators ------------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> add(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> add(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
-  res.val = simd_add<lf, rt>(a0.val, a1.val);
+  pack<T> res;
+  res.val = simd_add<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> sub(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> sub(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
-  res.val = simd_sub<lf, rt>(a0.val, a1.val);
+  pack<T> res;
+  res.val = simd_sub<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> mul(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> mul(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
-  res.val = simd_mul<lf, rt>(a0.val, a1.val);
+  pack<T> res;
+  res.val = simd_mul<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> div(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> div(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
-  res.val = simd_div<lf, rt>(a0.val, a1.val);
+  pack<T> res;
+  res.val = simd_div<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> fma(pack<lf, rt> a0, pack<lf, rt> a1, pack<lf, rt> a2)
+template <typename T>
+NSIMD_INLINE pack<T> fma(pack<T> a0, pack<T> a1, pack<T> a2)
 {
-  pack<lf, rt> res;
-  res.val = simd_fma<lf, rt>(a0.val, a1.val, a2.val);
+  pack<T> res;
+  res.val = simd_fma<T::lf, T::rt>(a0.val, a1.val, a2.val);
   return res;
 }
 
@@ -119,58 +119,58 @@ NSIMD_INLINE pack<lf, rt> fma(pack<lf, rt> a0, pack<lf, rt> a1, pack<lf, rt> a2)
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> eq(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> eq(pack<T> a0, pack<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_eq(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> ne(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> ne(pack<T> a0, pack<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_ne(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> le(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> le(pack<T> a0, pack<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_le(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> lt(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> lt(pack<T> a0, pack<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_lt(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> ge(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> ge(pack<T> a0, pack<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_ge(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> gt(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> gt(pack<T> a0, pack<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_gt(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> if_else1(packl<lf, rt> a0, pack<lf, rt> a1, pack<lf, rt> a2)
+template <typename T>
+NSIMD_INLINE pack<T> if_else1(packl<T> a0, pack<T> a1, pack<T> a2)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_if_else1(a0.val, a1.val, a2.val);
   return res;
 }
@@ -179,82 +179,82 @@ NSIMD_INLINE pack<lf, rt> if_else1(packl<lf, rt> a0, pack<lf, rt> a1, pack<lf, r
 // ------------------- Bitwise operators  --------------------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> andb(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> andb(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_andb(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> andl(packl<lf, rt> a0, packl<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> andl(packl<T> a0, packl<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_andl(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> andnotb(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> andnotb(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_andnotb(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> andnotl(packl<lf, rt> a0, packl<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> andnotl(packl<T> a0, packl<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_andnotl(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> notb(pack<lf, rt> a0)
+template <typename T>
+NSIMD_INLINE pack<T> notb(pack<T> a0)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_notb(a0.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> notl(packl<lf, rt> a0)
+template <typename T>
+NSIMD_INLINE packl<T> notl(packl<T> a0)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_notl(a0.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> orb(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> orb(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_orb(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> orl(packl<lf, rt> a0, packl<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> orl(packl<T> a0, packl<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_orl(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> xorb(pack<lf, rt> a0, pack<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE pack<T> xorb(pack<T> a0, pack<T> a1)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_xorb(a0.val, a1.val);
   return res;
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> xorl(packl<lf, rt> a0, packl<lf, rt> a1)
+template <typename T>
+NSIMD_INLINE packl<T> xorl(packl<T> a0, packl<T> a1)
 {
-  packl<lf, rt> res;
+  packl<T> res;
   res.val = simd_xorl(a0.val, a1.val);
   return res;
 }
@@ -263,10 +263,10 @@ NSIMD_INLINE packl<lf, rt> xorl(packl<lf, rt> a0, packl<lf, rt> a1)
 // ------------------- Math functions ------------------------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> rec(pack<lf, rt> a0)
+template <typename T>
+NSIMD_INLINE pack<T> rec(pack<T> a0)
 {
-  pack<lf, rt> res;
+  pack<T> res;
   res.val = simd_rec(a0.val);
   return res;
 }
@@ -275,62 +275,42 @@ NSIMD_INLINE pack<lf, rt> rec(pack<lf, rt> a0)
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> set1(typename pack<lf, rt>::base_type a0)
+template <typename T>
+NSIMD_INLINE pack<T> set1(typename pack<T>::base_type a0)
 {
-  pack<lf, rt> res;
-  res.val = simd_set1<lf, rt>(a0);
+  pack<T> res;
+  res.val = simd_set1<T::lf, T::rt>(a0);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE T set1(typename T::base_type a0)
+NSIMD_INLINE pack<T> loadu(typename pack<T>::base_type *p)
 {
-  return set1<T::lf, T::rt>(a0);
-}
-
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loadu(typename pack<lf, rt>::base_type *p)
-{
-  pack<lf, rt> res;
-  res.val = simd_loadu<lf, rt>(p);
+  pack<T> res;
+  res.val = simd_loadu<T::lf, T::rt>(p);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE T loadu(typename T::base_type *p)
+NSIMD_INLINE pack<T> loada(typename pack<T>::base_type *p)
 {
-  return loadu<T::lf, T::rt>(p);
+  pack<T> res;
+  res.val = simd_loada<T::lf, T::rt>(p);
+  return res;
 }
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE pack<lf, rt> loada(typename pack<lf, rt>::base_type *p)
+template <typename T>
+NSIMD_INLINE packl<T> loadlu(typename packl<T>::base_type *p)
 {
-  pack<lf, rt> res;
-  res.val = simd_loada<lf, rt>(p);
+  packl<T> res;
+  res.val = simd_loadlu<T::lf, T::rt>(p);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE T loada(typename T::base_type *p)
+NSIMD_INLINE packl<T> loadla(typename packl<T>::base_type *p)
 {
-  return loadu<T::lf, T::rt>(p);
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> loadlu(typename packl<lf, rt>::base_type *p)
-{
-  packl<lf, rt> res;
-  res.val = simd_loadlu<lf, rt>(p);
-  return res;
-}
-
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE packl<lf, rt> loadla(typename packl<lf, rt>::base_type *p)
-{
-  packl<lf, rt> res;
-  res.val = simd_loadla<lf, rt>(p);
+  packl<T> res;
+  res.val = simd_loadla<T::lf, T::rt>(p);
   return res;
 }
 
@@ -338,28 +318,28 @@ NSIMD_INLINE packl<lf, rt> loadla(typename packl<lf, rt>::base_type *p)
 // -------------------- Store functions ----------------------------------------
 // -----------------------------------------------------------------------------
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storeu(typename pack<lf, rt>::base_type *p, pack<lf, rt> &v)
+template <typename T>
+NSIMD_INLINE void storeu(typename pack<T>::base_type *p, pack<T> &v)
 {
-  simd_storeu<lf, rt>(p, v.val);
+  simd_storeu<T::lf, T::rt>(p, v.val);
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storea(typename pack<lf, rt>::base_type *p, pack<lf, rt> &v)
+template <typename T>
+NSIMD_INLINE void storea(typename pack<T>::base_type *p, pack<T> &v)
 {
-  simd_storea<lf, rt>(p, v.val);
+  simd_storea<T::lf, T::rt>(p, v.val);
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storelu(typename packl<lf, rt>::base_type *p, packl<lf, rt> v)
+template <typename T>
+NSIMD_INLINE void storelu(typename packl<T>::base_type *p, packl<T> v)
 {
-  simd_storelu<lf, rt>(p, v.val);
+  simd_storelu<T::lf, T::rt>(p, v.val);
 }
 
-template <uint8_t lf, uint8_t rt>
-NSIMD_INLINE void storela(typename packl<lf, rt>::base_type *p, packl<lf, rt> v)
+template <typename T>
+NSIMD_INLINE void storela(typename packl<T>::base_type *p, packl<T> v)
 {
-  simd_storela<lf, rt>(p, v.val);
+  simd_storela<T::lf, T::rt>(p, v.val);
 }
 
 } // namespace fixed_point

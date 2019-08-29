@@ -161,6 +161,8 @@ template <uint8_t _lf, uint8_t _rt>
 class fp_t
 {
 public:
+  static constexpr uint8_t lf = _lf;
+  static constexpr uint8_t rt = _rt;
   using value_type = typename fp_types<_lf, _rt>::value_type;
   using logical_type = typename fp_types<_lf, _rt>::logical_type;
   using value_up = typename fp_types<_lf, _rt>::value_up;

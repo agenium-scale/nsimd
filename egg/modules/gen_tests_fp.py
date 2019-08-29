@@ -50,10 +50,10 @@ includes = """\
 
 arithmetic_aliases = """\
 using fp_t = nsimd::fixed_point::fp_t<{lf}, {rt}>;
-using vec_t = nsimd::fixed_point::pack<{lf}, {rt}>;
-using vecl_t = nsimd::fixed_point::packl<{lf}, {rt}>;
-using raw_t = nsimd::fixed_point::pack<{lf}, {rt}>::base_type;
-using log_t = nsimd::fixed_point::packl<{lf}, {rt}>::base_type;
+using vec_t = nsimd::fixed_point::pack<fp_t>;
+using vecl_t = nsimd::fixed_point::packl<fp_t>;
+using raw_t = nsimd::fixed_point::pack<fp_t>::base_type;
+using log_t = nsimd::fixed_point::packl<fp_t>::base_type;
 const size_t v_size = nsimd::fixed_point::len(fp_t());
 """
 
@@ -158,10 +158,10 @@ int main() {{
     tab1_f[i] = nsimd::fixed_point::fixed2float(tab1_fp[i]);
   }}
 
-  vec_t v0_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
-  vec_t v1_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab1_fp);
+  vec_t v0_fp = nsimd::fixed_point::loadu<fp_t>(tab0_fp);
+  vec_t v1_fp = nsimd::fixed_point::loadu<fp_t>(tab1_fp);
   vec_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp, v1_fp);
-  nsimd::fixed_point::storeu<{lf}, {rt}>(res_fp, vres_fp);
+  nsimd::fixed_point::storeu(res_fp, vres_fp);
 
   for (size_t i = 0; i < v_size; i++) {{
     res_f[i] = tab0_f[i] {op_val} tab1_f[i];
@@ -225,11 +225,11 @@ int main() {{
     tab2_f[i] = nsimd::fixed_point::fixed2float(tab2_fp[i]);
   }}
 
-  vec_t v0_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
-  vec_t v1_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab1_fp);
-  vec_t v2_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab2_fp);
+  vec_t v0_fp = nsimd::fixed_point::loadu<fp_t>(tab0_fp);
+  vec_t v1_fp = nsimd::fixed_point::loadu<fp_t>(tab1_fp);
+  vec_t v2_fp = nsimd::fixed_point::loadu<fp_t>(tab2_fp);
   vec_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp, v1_fp, v2_fp);
-  nsimd::fixed_point::storeu<{lf}, {rt}>(res_fp, vres_fp);
+  nsimd::fixed_point::storeu(res_fp, vres_fp);
 
   for(size_t i = 0; i < v_size; i++) {{
     const double a = tab0_f[i];
@@ -292,9 +292,9 @@ int main() {{
     tab0_f[i] = nsimd::fixed_point::fixed2float(tab0_fp[i]);
   }}
 
-  vec_t v0_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
+  vec_t v0_fp = nsimd::fixed_point::loadu<fp_t>(tab0_fp);
   vec_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp);
-  nsimd::fixed_point::storeu<{lf}, {rt}>(res_fp, vres_fp);
+  nsimd::fixed_point::storeu(res_fp, vres_fp);
 
   for (size_t i = 0; i < v_size; i++) {{
     res_f[i] = {op_name}(tab0_f[i]);
@@ -349,10 +349,10 @@ int main(){{
   // Be sure there is at least one equality to test all the cases.
   tab0_fp[0] = tab1_fp[0];
   
-  vec_t v0_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
-  vec_t v1_fp = nsimd::fixed_point::loadu<{lf}, {rt}>(tab1_fp);
+  vec_t v0_fp = nsimd::fixed_point::loadu<fp_t>(tab0_fp);
+  vec_t v1_fp = nsimd::fixed_point::loadu<fp_t>(tab1_fp);
   vecl_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp, v1_fp);
-  nsimd::fixed_point::storelu<{lf}, {rt}>(resl_fp, vres_fp);
+  nsimd::fixed_point::storelu(resl_fp, vres_fp);
 
   for(size_t i = 0; i < v_size; i++) {{
     CHECK((__check_logical_val<log_t, {lf}, {rt}>(
@@ -408,10 +408,10 @@ int main() {{
   // Be sure there is at least one equality to test all the cases.
   tab0[0] = tab1[0];
 
-  vec{l}_t v0 = nsimd::fixed_point::load{l}u<{lf}, {rt}>(tab0);
-  vec{l}_t v1 = nsimd::fixed_point::load{l}u<{lf}, {rt}>(tab1);
+  vec{l}_t v0 = nsimd::fixed_point::load{l}u<fp_t>(tab0);
+  vec{l}_t v1 = nsimd::fixed_point::load{l}u<fp_t>(tab1);
   vec{l}_t v_res = nsimd::fixed_point::{op_name}{term}(v0, v1);
-  nsimd::fixed_point::store{l}u<{lf}, {rt}>(res, v_res);
+  nsimd::fixed_point::store{l}u(res, v_res);
 
   for(size_t i = 0; i < v_size; i++)
   {{
@@ -482,9 +482,9 @@ int main() {{
     tab0[i] = {rand_statement}
   }}
 
-  vec{l}_t v0 = nsimd::fixed_point::load{l}u<{lf}, {rt}>(tab0);
+  vec{l}_t v0 = nsimd::fixed_point::load{l}u<fp_t>(tab0);
   vec{l}_t v_res = nsimd::fixed_point::{op_name}{term}(v0);
-  nsimd::fixed_point::store{l}u<{lf}, {rt}>(res, v_res);
+  nsimd::fixed_point::store{l}u<fp_t>(res, v_res);
 
   for(size_t i = 0; i < v_size; i++)
   {{
@@ -554,9 +554,9 @@ int main() {{
     mask[i] = (log_t) (rand() % 2);
   }}
 
-  vec_t v0 = nsimd::fixed_point::loadu<{lf}, {rt}>(tab0_fp);
-  vec_t v1 = nsimd::fixed_point::loadu<{lf}, {rt}>(tab1_fp);
-  vecl_t vl = nsimd::fixed_point::loadlu<{lf}, {rt}>(mask);
+  vec_t v0 = nsimd::fixed_point::loadu<fp_t>(tab0_fp);
+  vec_t v1 = nsimd::fixed_point::loadu<fp_t>(tab1_fp);
+  vecl_t vl = nsimd::fixed_point::loadlu<fp_t>(mask);
   vec_t v_res = nsimd::fixed_point::if_else1(vl, v0, v1);
   nsimd::fixed_point::storeu(res_fp, v_res);
 
