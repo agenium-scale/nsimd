@@ -31,7 +31,6 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/simd.hpp"
 #include "nsimd/modules/fixed_point/simd_math.hpp"
 
-
 namespace nsimd
 {
 namespace fixed_point
@@ -275,6 +274,21 @@ NSIMD_INLINE pack<lf, rt> rec(pack<lf, rt> a0)
 // -----------------------------------------------------------------------------
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
+
+template <uint8_t lf, uint8_t rt>
+NSIMD_INLINE pack<lf, rt> set1(typename pack<lf, rt>::base_type a0)
+{
+  pack<lf, rt> res;
+  res.val = simd_set1<lf, rt>(a0);
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE T set1(typename T::base_type a0)
+{
+  return set1<T::lf, T::rt>(a0);
+}
+
 
 template <uint8_t lf, uint8_t rt>
 NSIMD_INLINE pack<lf, rt> loadu(typename pack<lf, rt>::base_type *p)

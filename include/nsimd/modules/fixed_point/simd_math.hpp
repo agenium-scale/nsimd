@@ -28,6 +28,7 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/simd.hpp"
 
 // Load/Store
+#include "nsimd/modules/fixed_point/function/simd/set1.hpp"
 #include "nsimd/modules/fixed_point/function/simd/loadu.hpp"
 #include "nsimd/modules/fixed_point/function/simd/loada.hpp"
 #include "nsimd/modules/fixed_point/function/simd/loadlu.hpp"
