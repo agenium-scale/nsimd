@@ -37,7 +37,7 @@ fpsimd_t<_lf, _rt> simd_set1(const typename fpsimd_t<_lf, _rt>::base_type &a0)
 {
   using raw_t = typename fpsimd_t<_lf, _rt>::base_type;
   fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::set1(a0._raw, raw_t());
+  res._raw = nsimd::set1(a0, raw_t());
   return res;
 }
 
