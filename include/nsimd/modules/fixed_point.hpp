@@ -44,8 +44,7 @@ struct pack
 {
   static constexpr uint8_t lf = T::lf;
   static constexpr uint8_t rt = T::rt;
-  using scalar_type = fp_t<lf, rt>;
-  using base_type = fp_t<lf, rt>;
+  using value_type = fp_t<lf, rt>;
   fpsimd_t<lf, rt> val;
 };
 
@@ -54,8 +53,7 @@ struct packl
 {
   static constexpr uint8_t lf = T::lf;
   static constexpr uint8_t rt = T::rt;
-  using scalar_type = fp_t<lf, rt>;
-  using base_type = typename fp_t<lf, rt>::logical_type;
+  using value_type = typename fp_t<lf, rt>::logical_type;
   fpsimdl_t<lf, rt> val;
 };
 
@@ -275,16 +273,8 @@ NSIMD_INLINE pack<T> rec(pack<T> a0)
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
 
-// template <typename T>
-// NSIMD_INLINE pack<T> set1(typename pack<T>::base_type a0)
-// {
-//   pack<T> res;
-//   res.val = simd_set1<T::lf, T::rt>(a0);
-//   return res;
-// }
-
 template <typename T>
-NSIMD_INLINE T set1(typename T::base_type a0)
+NSIMD_INLINE T set1(typename T::value_type a0)
 {
   T res;
   res.val = simd_set1<T::lf, T::rt>(a0);
@@ -292,7 +282,7 @@ NSIMD_INLINE T set1(typename T::base_type a0)
 }
 
 template <typename T>
-NSIMD_INLINE T loadu(typename T::base_type *p)
+NSIMD_INLINE T loadu(typename T::value_type *p)
 {
   T res;
   res.val = simd_loadu<T::lf, T::rt>(p);
@@ -300,14 +290,15 @@ NSIMD_INLINE T loadu(typename T::base_type *p)
 }
 
 template <typename T>
-NSIMD_INLINE T loada(typename T::base_type *p)
+NSIMD_INLINE T loada(typename T::value_type *p)
 {
   T res;
   res.val = simd_loada<T::lf, T::rt>(p);
   return res;
 }
+
 template <typename T>
-NSIMD_INLINE T loadlu(typename T::base_type *p)
+NSIMD_INLINE T loadlu(typename T::value_type *p)
 {
   T res;
   res.val = simd_loadlu<T::lf, T::rt>(p);
@@ -315,7 +306,7 @@ NSIMD_INLINE T loadlu(typename T::base_type *p)
 }
 
 template <typename T>
-NSIMD_INLINE T loadla(typename T::base_type *p)
+NSIMD_INLINE T loadla(typename T::value_type *p)
 {
   T res;
   res.val = simd_loadla<T::lf, T::rt>(p);
@@ -327,25 +318,25 @@ NSIMD_INLINE T loadla(typename T::base_type *p)
 // -----------------------------------------------------------------------------
 
 template <typename T>
-NSIMD_INLINE void storeu(typename T::base_type *p, T &v)
+NSIMD_INLINE void storeu(typename T::value_type *p, T &v)
 {
   simd_storeu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storea(typename T::base_type *p, T &v)
+NSIMD_INLINE void storea(typename T::value_type *p, T &v)
 {
   simd_storea<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storelu(typename T::base_type *p, T v)
+NSIMD_INLINE void storelu(typename T::value_type *p, T v)
 {
   simd_storelu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storela(typename T::base_type *p, T v)
+NSIMD_INLINE void storela(typename T::value_type *p, T v)
 {
   simd_storela<T::lf, T::rt>(p, v.val);
 }

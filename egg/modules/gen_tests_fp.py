@@ -52,8 +52,8 @@ arithmetic_aliases = """\
 using fp_t = nsimd::fixed_point::fp_t<{lf}, {rt}>;
 using vec_t = nsimd::fixed_point::pack<fp_t>;
 using vecl_t = nsimd::fixed_point::packl<fp_t>;
-using raw_t = nsimd::fixed_point::pack<fp_t>::base_type;
-using log_t = nsimd::fixed_point::packl<fp_t>::base_type;
+using raw_t = nsimd::fixed_point::pack<fp_t>::value_type;
+using log_t = nsimd::fixed_point::packl<fp_t>::value_type;
 const size_t v_size = nsimd::fixed_point::len(fp_t());
 """
 
