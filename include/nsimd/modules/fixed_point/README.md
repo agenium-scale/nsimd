@@ -4,21 +4,25 @@ NSIMD fixed-point module
 Description
 ----------
 
-This module implements a fixed-point numbers support for the NSIMD ibrary.
-Fixed-point numbers are integer type numbers where `lf` bits are used to encode
-the integer part on a real number, and `rt` bits are used to encode its fractional
+This module implements a fixed-point numbers support for the NSIMD library.
+Fixed-point numbers are integer type numbers where a number `lf` of bits are used to 
+encode the integer part on a real number, and `rt` bits are used to encode its fractional
 part.
 
 The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf, rt>` to 
 represent a fixed_point number. All the basic floating-point arithmetic operaors have 
-been defined so that fp\_t elements can be manipulated as normal numbers.
-Following the values of `lf` and `rt`, the fixed\_point module will use a `int8_t`, 
-`int16_t`, or `int32_t` integer types the number, depending in the value of lf + rt. 
+been defined, therefore fp\_t elements can be manipulated as normal numbers.
+The fixed\_point module will use a `int8_t`, `int16_t`, or `int32_t` integer types for 
+storage, depending on the value of `lf + rt`. 
 
 All the defined functions of the module are under the namespace `nsimd::fixed_point`, 
 and match the same interface that NSIMD.
 
-The modules redefines the simd pack for fixed-point numbers, templated with lf 
+The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd vector class 
+is defined in `simd.hpp`. Conversions from fixed to floating point umbers is performed by 
+the `float2fixed()` and `fixed2float()` functions.
+
+The modules redefines the NSIMD pack type for fixed-point numbers, templated with lf 
 and rt :
 
 ```C++
