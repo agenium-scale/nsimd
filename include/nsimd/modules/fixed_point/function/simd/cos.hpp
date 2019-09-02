@@ -58,8 +58,8 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_safe_cos(const fpsimd_t<_lf, _rt> &b)
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_cos(const fpsimd_t<_lf, _rt> &a)
 {
-  using val_t = typename fp_t<_lf, _rt>::value_type;
-  using log_t = typename fp_t<_lf, _rt>::simd_logical;
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
+  typedef typename fp_t<_lf, _rt>::simd_logical log_t;
   fpsimd_t<_lf, _rt> b = a;
   // Constants to use
   // TODO: See if dividing the twopi constant when using pi and half pi is

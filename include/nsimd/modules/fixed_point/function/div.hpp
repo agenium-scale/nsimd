@@ -41,10 +41,10 @@ inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
   // res._raw = res._raw << _rt;
 
   // Slower, but allows decimal output
-  using up_t = typename fp_t<_lf, _rt>::value_up;
-  using val_t = typename fp_t<_lf, _rt>::value_type;
-  constexpr int extra = 8 * sizeof(val_t) - _lf - _rt;
-  constexpr int shift = _rt + extra;
+  typedef typename fp_t<_lf, _rt>::value_up up_t;
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
+  const int extra = 8 * sizeof(val_t) - _lf - _rt;
+  const int shift = _rt + extra;
 
   up_t tmp;
   tmp = (up_t(a._raw) << shift);

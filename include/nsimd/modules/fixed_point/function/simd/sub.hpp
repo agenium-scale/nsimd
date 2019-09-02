@@ -35,7 +35,7 @@ template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_sub(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
   fpsimd_t<_lf, _rt> c;
   c._raw = nsimd::sub(a._raw, b._raw, raw_t());
   return c;

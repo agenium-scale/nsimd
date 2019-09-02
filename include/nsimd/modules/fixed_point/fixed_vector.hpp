@@ -34,8 +34,8 @@ namespace nsimd
 {
 namespace fixed_point
 {
-template <uint8_t _lf, uint8_t _rt>
-using fpv_t = std::vector<fp_t<_lf, _rt>>;
+// template <uint8_t _lf, uint8_t _rt>
+// typedef std::vector<fp_t<_lf, _rt>> fpv_t;
 
 // TODO: Add an aligned allocator to vector constructor
 // template< uint8_t _lf , uint8_t _rt >

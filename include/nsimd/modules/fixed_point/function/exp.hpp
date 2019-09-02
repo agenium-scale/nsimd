@@ -71,7 +71,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b)
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
-  using raw_type = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type raw_type;
 
   // Separate integer and fractional portions for better accuracy
   // - Taylor series is centered around x = 0
@@ -92,7 +92,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b
   //     int8_t         ,   log2( 1/(6!)  ) = 9.5  bits precision
   //    int16_t         ,   log2( 1/(8!)  ) = 15.3 bits precision
   //    int32_t         ,   log2( 1/(12!) ) = 28.8 bits precision
-  constexpr int stop = 4 + 2 * sizeof(raw_type);
+  const int stop = 4 + 2 * sizeof(raw_type);
   for(int i = 1; i < stop; ++i)
   {
     fact = fact / i;

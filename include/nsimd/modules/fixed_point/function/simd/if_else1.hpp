@@ -37,7 +37,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_if_else1(
     const fpsimdl_t<_lf, _rt> &a0, const fpsimd_t<_lf, _rt> &a1,
     const fpsimd_t<_lf, _rt> &a2)
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
   fpsimd_t<_lf, _rt> res;
   res._raw = nsimd::if_else1(a0._raw, a1._raw, a2._raw, raw_t());
   return res;

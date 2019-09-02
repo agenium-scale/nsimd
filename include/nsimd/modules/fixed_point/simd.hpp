@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 #include "nsimd/modules/fixed_point/fixed_math.hpp"
-#include "nsimd/modules/fixed_point/fixed_vector.hpp"
+// #include "nsimd/modules/fixed_point/fixed_vector.hpp"
 
 namespace nsimd
 {
@@ -38,13 +38,12 @@ namespace fixed_point
 // This implementation means that we must cast to the appropriate pointer type
 // to load/store values
 template <uint8_t _lf, uint8_t _rt>
-class fpsimd_t
+struct fpsimd_t
 {
-public:
-  using base_type = typename fp_t<_lf, _rt>::value_type;
-  using value_type = typename fp_t<_lf, _rt>::simd_type;
-  using value_up = typename fp_t<_lf, _rt>::simd_up;
-  using logic = typename fp_t<_lf, _rt>::simd_logical;
+  typedef typename fp_t<_lf, _rt>::value_type base_type;
+  typedef typename fp_t<_lf, _rt>::simd_type value_type;
+  typedef typename fp_t<_lf, _rt>::simd_up value_up;
+  typedef typename fp_t<_lf, _rt>::simd_logical logic;
   value_type _raw;
 
   fpsimd_t()
@@ -70,13 +69,12 @@ public:
 };
 
 template <uint8_t _lf, uint8_t _rt>
-class fpsimdl_t
+struct fpsimdl_t
 {
-public:
-  using base_type = typename fp_t<_lf, _rt>::logical_type;
-  using value_type = typename fp_t<_lf, _rt>::simd_type;
-  using value_up = typename fp_t<_lf, _rt>::simd_up;
-  using logic = typename fp_t<_lf, _rt>::simd_logical;
+  typedef typename fp_t<_lf, _rt>::logical_type base_type;
+  typedef typename fp_t<_lf, _rt>::simd_type value_type;
+  typedef typename fp_t<_lf, _rt>::simd_up value_up;
+  typedef typename fp_t<_lf, _rt>::simd_logical logic;
   logic _raw;
 
   fpsimdl_t()
@@ -92,29 +90,29 @@ public:
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-constexpr size_t fpsimd_n()
+const size_t fpsimd_n()
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
   return nsimd::len(raw_t());
 }
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-constexpr size_t fpsimd_n(const fp_t<_lf, _rt> &)
+const size_t fpsimd_n(const fp_t<_lf, _rt> &)
 {
   return fpsimd_n<_lf, _rt>();
 }
 
 // Number of elements that fit into a SIMD register
-template <uint8_t _lf, uint8_t _rt>
-constexpr size_t fpsimd_n(const fpv_t<_lf, _rt> &)
-{
-  return fpsimd_n<_lf, _rt>();
-}
+// template <uint8_t _lf, uint8_t _rt>
+// const size_t fpsimd_n(const fpv_t<_lf, _rt> &)
+// {
+//   return fpsimd_n<_lf, _rt>();
+// }
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-constexpr size_t fpsimd_n(const fpsimd_t<_lf, _rt> &)
+const size_t fpsimd_n(const fpsimd_t<_lf, _rt> &)
 {
   return fpsimd_n<_lf, _rt>();
 }

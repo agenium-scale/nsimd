@@ -36,7 +36,7 @@ template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE void
 simd_storela(typename fpsimdl_t<_lf, _rt>::base_type *a, fpsimdl_t<_lf, _rt> &val)
 {
-  using raw_t = typename fpsimdl_t<_lf, _rt>::base_type;
+  typedef typename fpsimdl_t<_lf, _rt>::base_type raw_t;
   nsimd::storela(a, val._raw, raw_t());
 }
 

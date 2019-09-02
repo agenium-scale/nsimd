@@ -44,7 +44,7 @@ NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a)
     return fp_t<_lf, _rt>(-1);
   }
 
-  using raw_type = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const fp_t<_lf, _rt> two(2);
 
   // First calculate integer portion

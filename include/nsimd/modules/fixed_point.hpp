@@ -42,29 +42,29 @@ namespace fixed_point
 template <typename T>
 struct pack
 {
-  static constexpr uint8_t lf = T::lf;
-  static constexpr uint8_t rt = T::rt;
-  using value_type = fp_t<lf, rt>;
+  static const uint8_t lf = T::lf;
+  static const uint8_t rt = T::rt;
+  typedef fp_t<lf, rt> value_type;
   fpsimd_t<lf, rt> val;
 };
 
 template <typename T>
 struct packl
 {
-  static constexpr uint8_t lf = T::lf;
-  static constexpr uint8_t rt = T::rt;
-  using value_type = typename fp_t<lf, rt>::logical_type;
+  static const uint8_t lf = T::lf;
+  static const uint8_t rt = T::rt;
+  typedef typename fp_t<lf, rt>::logical_type value_type;
   fpsimdl_t<lf, rt> val;
 };
 
 template <typename T>
-constexpr size_t len(const T &)
+const size_t len(const T &)
 {
   return fpsimd_n(T());
 }
 
 template <typename T>
-constexpr size_t len(const pack<T> &)
+const size_t len(const pack<T> &)
 {
   return fpsimd_n(fpsimd_t<T::lf, T::rt>());
 }

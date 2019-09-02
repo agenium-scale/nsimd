@@ -34,9 +34,9 @@ namespace fixed_point
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
-  using up_t = typename fp_t<_lf, _rt>::value_up;
-  constexpr int half_size = 4 * sizeof(up_t);
-  constexpr int shift = half_size - _lf;
+  typedef typename fp_t<_lf, _rt>::value_up up_t;
+  const int half_size = 4 * sizeof(up_t);
+  const int shift = half_size - _lf;
 
   up_t tmp = up_t(a._raw) * up_t(b._raw);
   tmp = tmp >> shift;

@@ -34,7 +34,7 @@ namespace fixed_point
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sqrt(const fpsimd_t<_lf, _rt> &a)
 {
-  using val_t = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
   fpsimd_t<_lf, _rt> x0, x1;
   fpsimd_t<_lf, _rt> two;
   two._raw = nsimd::set1(constants::two<_lf, _rt>()._raw, val_t());

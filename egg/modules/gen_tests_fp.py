@@ -37,23 +37,23 @@ def get_filename(opts, op, lf, rt):
         return None
 
 includes = """\
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
-#include <cmath>
-#include <ctime>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <math.h>
+#include <time.h>
 
 #include <nsimd/nsimd.h>
 #include <nsimd/modules/fixed_point.hpp>
 """
 
 arithmetic_aliases = """\
-using fp_t = nsimd::fixed_point::fp_t<{lf}, {rt}>;
-using vec_t = nsimd::fixed_point::pack<fp_t>;
-using vecl_t = nsimd::fixed_point::packl<fp_t>;
-using raw_t = nsimd::fixed_point::pack<fp_t>::value_type;
-using log_t = nsimd::fixed_point::packl<fp_t>::value_type;
+typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+typedef nsimd::fixed_point::pack<fp_t> vec_t;
+typedef nsimd::fixed_point::packl<fp_t> vecl_t;
+typedef nsimd::fixed_point::pack<fp_t>::value_type raw_t;
+typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
 const size_t v_size = nsimd::fixed_point::len(fp_t());
 """
 
@@ -74,7 +74,7 @@ check = """\
 
 limits = """\
 template <uint8_t lf, uint8_t rt>
-static constexpr double __get_numeric_precision() {
+static const double __get_numeric_precision() {
   return ldexpf(1.0, -(int)rt);
 }
 
@@ -104,9 +104,9 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 gen_random_val = """\
 template <uint8_t lf, uint8_t rt>
 nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
-  constexpr double max_val = ldexp(1.0, (lf - 1) / 2) - 1;
-  constexpr double min_val = -ldexp(1.0, (lf - 1) / 2);
-  constexpr int n_vals = (int)ldexp(1.0, (rt - 1) / 2);
+  const double max_val = ldexp(1.0, (lf - 1) / 2) - 1;
+  const double min_val = -ldexp(1.0, (lf - 1) / 2);
+  const int n_vals = (int)ldexp(1.0, (rt - 1) / 2);
   
   nsimd::fixed_point::fp_t<lf, rt> res = 0;
   const double integral =

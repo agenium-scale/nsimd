@@ -35,7 +35,7 @@ namespace fixed_point
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimdl_t<_lf, _rt> simd_loadla(typename fp_t<_lf, _rt>::logical_type *a)
 {
-  using raw_t = typename fpsimdl_t<_lf, _rt>::base_type;
+  typedef typename fpsimdl_t<_lf, _rt>::base_type raw_t;
   fpsimdl_t<_lf, _rt> res;
   res._raw = nsimd::loadla(a, raw_t());
 

@@ -36,7 +36,7 @@ template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_andnotb(const fpsimd_t<_lf, _rt> &a0, const fpsimd_t<_lf, _rt> &a1)
 {
-  using raw_t = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
   fpsimd_t<_lf, _rt> res;
   res._raw = nsimd::andnotb(a0._raw, a1._raw, raw_t());
   return res;

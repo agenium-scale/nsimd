@@ -36,24 +36,25 @@ template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt>
 simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 {
-  using up_t = typename fp_t<_lf, _rt>::value_up;
-  using val_t = typename fp_t<_lf, _rt>::value_type;
-  using simd_up_t = typename fp_t<_lf, _rt>::simd_up;
-  constexpr int half_size = 4 * sizeof(up_t);
-  constexpr int n_bits = 8 * sizeof(val_t);
-  // constexpr int shift = half_size - _lf;
-  constexpr int shift = n_bits - _lf;
+  typedef typename fp_t<_lf, _rt>::value_up up_t;
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
+  typedef typename fp_t<_lf, _rt>::simd_up simd_up_t;
+  const int half_size = 4 * sizeof(up_t);
+  const int n_bits = 8 * sizeof(val_t);
+  const int shift = n_bits - _lf;
   
-  auto a_big = nsimd::upcvt(a._raw, val_t(), up_t());
-  auto b_big = nsimd::upcvt(b._raw, val_t(), up_t());
+  simd_up_t a_big0 = nsimd::upcvt(a._raw, val_t(), up_t()).v0;
+  simd_up_t a_big1 = nsimd::upcvt(a._raw, val_t(), up_t()).v1;
+  simd_up_t b_big0 = nsimd::upcvt(b._raw, val_t(), up_t()).v0;
+  simd_up_t b_big1 = nsimd::upcvt(b._raw, val_t(), up_t()).v1;
 
-  a_big.v0 = nsimd::mul(a_big.v0, b_big.v0, up_t());
-  a_big.v0 = nsimd::shr(a_big.v0, shift, up_t());
-  a_big.v1 = nsimd::mul(a_big.v1, b_big.v1, up_t());
-  a_big.v1 = nsimd::shr(a_big.v1, shift, up_t());
+  a_big0 = nsimd::mul(a_big0, b_big0, up_t());
+  a_big0 = nsimd::shr(a_big0, shift, up_t());
+  a_big1 = nsimd::mul(a_big1, b_big1, up_t());
+  a_big1 = nsimd::shr(a_big1, shift, up_t());
 
   fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::downcvt(a_big.v0, a_big.v1, up_t(), val_t());
+  res._raw = nsimd::downcvt(a_big0, a_big1, up_t(), val_t());
 
   return res;
 }

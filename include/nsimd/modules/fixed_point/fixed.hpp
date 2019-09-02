@@ -25,10 +25,10 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FIXED_HPP
 #define NSIMD_MODULES_FIXED_POINT_FIXED_HPP
 
-#include <cstdint>
+#include <stdint.h>
 #include <iostream>
 #include <limits>
-#include <type_traits>
+// #include <type_traits>
 
 #include <nsimd/nsimd.h>
 
@@ -40,8 +40,8 @@ namespace fixed_point
 template <uint8_t lf, uint8_t rt, typename Out_Type, typename In_Type>
 void integer_convert(Out_Type &out, const In_Type &in)
 {
-  constexpr uint8_t extra = 8 * sizeof(Out_Type) - lf - rt;
-  constexpr uint8_t shift = rt + extra;
+  const uint8_t extra = 8 * sizeof(Out_Type) - lf - rt;
+  const uint8_t shift = rt + extra;
   out = In_Type(in) << shift;
 
   return;
@@ -81,8 +81,8 @@ void float2fixed(Out_Type &out, const float &in)
 template <typename Out_Type, typename In_Type, uint8_t lf, uint8_t rt>
 void easy_convert(Out_Type &out, const In_Type &in)
 {
-  constexpr Out_Type extra = 8 * sizeof(Out_Type) - lf - rt;
-  constexpr Out_Type out_one = 1 << (rt + extra);
+  const Out_Type extra = 8 * sizeof(Out_Type) - lf - rt;
+  const Out_Type out_one = 1 << (rt + extra);
   In_Type tmp = in * out_one;
   out = Out_Type(tmp);
 
@@ -90,7 +90,7 @@ void easy_convert(Out_Type &out, const In_Type &in)
 }
 
 template <uint8_t _lf, uint8_t _rt>
-class fp_t;
+struct fp_t;
 
 template <uint8_t _lf, uint8_t _rt>
 float fixed2float(const fp_t<_lf, _rt> &in);
@@ -98,51 +98,60 @@ float fixed2float(const fp_t<_lf, _rt> &in);
 //------------------------------------------------------------------------------
 // Helper class to outsource the _raw size evaluation
 //------------------------------------------------------------------------------
+
+template <bool B, typename T = void>
+struct enable_if
+{
+};
+
+template <typename T>
+struct enable_if<true, T>
+{
+  typedef T type;
+};
+
 template <uint8_t _lf, uint8_t _rt, typename T = void>
-class fp_types
+struct fp_types
 {
 };
 
 //  1-8 total bits = char
 template <uint8_t _lf, uint8_t _rt>
-class fp_types<
-    _lf, _rt, typename std::enable_if<(((_lf + _rt) > 0)) && ((_lf + _rt) <= 8)>::type>
+struct fp_types<
+    _lf, _rt, typename enable_if<(((_lf + _rt) > 0)) && ((_lf + _rt) <= 8)>::type>
 {
-public:
-  using value_type = int8_t;
-  using value_up = int16_t;
-  using logical_type = int8_t;
-  using simd_type = vi8;
-  using simd_up = vi16;
-  using simd_logical = vli8;
+  typedef int8_t value_type;
+  typedef int16_t value_up;
+  typedef int8_t logical_type;
+  typedef vi8 simd_type;
+  typedef vi16 simd_up;
+  typedef vli8 simd_logical;
 };
 
 //  9-16 total bits = char
 template <uint8_t _lf, uint8_t _rt>
-class fp_types<
-    _lf, _rt, typename std::enable_if<(((_lf + _rt) > 8)) && ((_lf + _rt) <= 16)>::type>
+struct fp_types<
+    _lf, _rt, typename enable_if<(((_lf + _rt) > 8)) && ((_lf + _rt) <= 16)>::type>
 {
-public:
-  using value_type = int16_t;
-  using value_up = int32_t;
-  using logical_type = int16_t;
-  using simd_type = vi16;
-  using simd_up = vi32;
-  using simd_logical = vli16;
+  typedef int16_t value_type;
+  typedef int32_t value_up;
+  typedef int16_t logical_type;
+  typedef vi16 simd_type;
+  typedef vi32 simd_up;
+  typedef vli16 simd_logical;
 };
 
 //  17-32 total bits = char
 template <uint8_t _lf, uint8_t _rt>
-class fp_types<
-    _lf, _rt, typename std::enable_if<(((_lf + _rt) > 16)) && ((_lf + _rt) <= 32)>::type>
+struct fp_types<
+    _lf, _rt, typename enable_if<(((_lf + _rt) > 16)) && ((_lf + _rt) <= 32)>::type>
 {
-public:
-  using value_type = int32_t;
-  using value_up = int64_t;
-  using logical_type = int32_t;
-  using simd_type = vi32;
-  using simd_up = vi64;
-  using simd_logical = vli32;
+  typedef int32_t value_type;
+  typedef int64_t value_up;
+  typedef int32_t logical_type;
+  typedef vi32 simd_type;
+  typedef vi64 simd_up;
+  typedef vli32 simd_logical;
 };
 
 //------------------------------------------------------------------------------
@@ -158,17 +167,16 @@ public:
 //------------------------------------------------------------------------------
 
 template <uint8_t _lf, uint8_t _rt>
-class fp_t
+struct fp_t
 {
-public:
-  static constexpr uint8_t lf = _lf;
-  static constexpr uint8_t rt = _rt;
-  using value_type = typename fp_types<_lf, _rt>::value_type;
-  using logical_type = typename fp_types<_lf, _rt>::logical_type;
-  using value_up = typename fp_types<_lf, _rt>::value_up;
-  using simd_type = typename fp_types<_lf, _rt>::simd_type;
-  using simd_up = typename fp_types<_lf, _rt>::simd_up;
-  using simd_logical = typename fp_types<_lf, _rt>::simd_logical;
+  static const uint8_t lf = _lf;
+  static const uint8_t rt = _rt;
+  typedef typename fp_types<_lf, _rt>::value_type value_type;
+  typedef typename fp_types<_lf, _rt>::logical_type logical_type;
+  typedef typename fp_types<_lf, _rt>::value_up value_up;
+  typedef typename fp_types<_lf, _rt>::simd_type simd_type;
+  typedef typename fp_types<_lf, _rt>::simd_up simd_up;
+  typedef typename fp_types<_lf, _rt>::simd_logical simd_logical;
   value_type _raw;
 
   fp_t()
@@ -254,7 +262,7 @@ uint8_t right(const fp_t<_lf, _rt>)
 template <uint8_t _lf, uint8_t _rt>
 float fixed2float(const fp_t<_lf, _rt> &in)
 {
-  using fx_t = typename fp_t<_lf, _rt>::value_type;
+  typedef typename fp_t<_lf, _rt>::value_type fx_t;
 
   // Remove any extra leading bits
   const uint8_t total = _lf + _rt;

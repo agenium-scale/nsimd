@@ -35,7 +35,7 @@ namespace constants
 {
 #define DEFINE_CONSTANT(name, value)                                                     \
   template <unsigned char lf, unsigned char rt>                                          \
-  constexpr NSIMD_INLINE fp_t<lf, rt> name()                                             \
+  const NSIMD_INLINE fp_t<lf, rt> name()                                          \
   {                                                                                      \
     return fp_t<lf, rt>(value);                                                          \
   }

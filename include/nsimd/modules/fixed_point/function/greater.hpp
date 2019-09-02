@@ -35,8 +35,8 @@ namespace fixed_point
 template <uint8_t _lf, uint8_t _rt>
 bool gt(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
-  using raw_type = typename fp_t<_lf, _rt>::value_type;
-  constexpr int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
+  typedef typename fp_t<_lf, _rt>::value_type raw_type;
+  const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
   const raw_type max = -1;
   const raw_type mask = (max << (shift_size));
   return ((a._raw & mask) > (b._raw & mask));
@@ -63,8 +63,8 @@ bool operator>(const T &a, const fp_t<_lf, _rt> &b)
 template <uint8_t _lf, uint8_t _rt>
 bool gte(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 {
-  using raw_type = typename fp_t<_lf, _rt>::value_type;
-  constexpr int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
+  typedef typename fp_t<_lf, _rt>::value_type raw_type;
+  const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
   const raw_type max = -1;
   const raw_type mask = (max << (shift_size));
   return ((a._raw & mask) >= (b._raw & mask));
