@@ -32,7 +32,7 @@ a minimal example :
 ```C++
 // Assumes that NSIMD is in your include path
 #include <iostream>
-#include <nsimd/nsimd:h>
+#include <nsimd/nsimd.h>
 
 int main() {
   typedef nsimd::fixed_point::fp_t<8, 8> fp_t;
