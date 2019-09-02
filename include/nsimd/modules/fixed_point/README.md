@@ -40,9 +40,9 @@ int main() {
   
   fp_t *input0;
   fp_t *input1;
-  fp_t /res;
+  fp_t *res;
   
-  // Input and output initialization ...
+  // Input and output initializations ...
   
   vec_t v0 = nsimd::fixed_point::loadu<vec_t>(input0);
   vec_t v1 = nsimd::fixed_point::loadu<vec_t>(input1);
