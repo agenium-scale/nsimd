@@ -75,7 +75,7 @@ check = """\
 limits = """\
 template <uint8_t lf, uint8_t rt>
 static constexpr double __get_numeric_precision() {
-  return ldexpf(1.0d, -(int)rt);
+  return ldexpf(1.0, -(int)rt);
 }
 
 """
@@ -104,21 +104,21 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 gen_random_val = """\
 template <uint8_t lf, uint8_t rt>
 nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
-  constexpr double max_val = ldexp(1.0d, (lf - 1) / 2) - 1;
-  constexpr double min_val = -ldexp(1.0d, (lf - 1) / 2);
-  constexpr int n_vals = (int)ldexp(1.0d, (rt - 1) / 2);
+  constexpr double max_val = ldexp(1.0, (lf - 1) / 2) - 1;
+  constexpr double min_val = -ldexp(1.0, (lf - 1) / 2);
+  constexpr int n_vals = (int)ldexp(1.0, (rt - 1) / 2);
   
   nsimd::fixed_point::fp_t<lf, rt> res = 0;
   const double integral =
       roundf(((double)rand() / (double)RAND_MAX) * (max_val - min_val) + min_val);
   const double decimal =
-      ((double)(rand() % n_vals) + ldexp(1.0d, rt / 2))
+      ((double)(rand() % n_vals) + ldexp(1.0, rt / 2))
       * __get_numeric_precision<lf, rt>();
   // Ensure abs(val) > 1
   double val = integral + decimal;
-  if(abs(val) < 1.0d)
+  if(abs(val) < 1.0)
   {{
-    val += val > 0.0d ? 1.0d : -1.0d;
+    val += val > 0.0 ? 1.0 : -1.0;
   }}
   res = nsimd::fixed_point::fp_t<lf, rt>(val);
   return res;
@@ -142,14 +142,14 @@ int main() {{
   srand(time(NULL));
 
   // FP vectors
-  fp_t tab0_fp[v_size];
-  fp_t tab1_fp[v_size];
-  fp_t res_fp[v_size];
+  fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *res_fp  = (fp_t *) malloc(v_size * sizeof(fp_t));
 
   // Floating point equivalent
-  double tab0_f[v_size];
-  double tab1_f[v_size];
-  double res_f[v_size];
+  double *tab0_f = (double *) malloc(v_size * sizeof(double));
+  double *tab1_f = (double *) malloc(v_size * sizeof(double));
+  double *res_f  = (double *) malloc(v_size * sizeof(double));
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -205,16 +205,16 @@ int main() {{
   srand(time(NULL));
 
   // FP vectors
-  fp_t tab0_fp[v_size];
-  fp_t tab1_fp[v_size];
-  fp_t tab2_fp[v_size];
-  fp_t res_fp[v_size];
+  fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *tab2_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *res_fp  = (fp_t *) malloc(v_size * sizeof(fp_t));
 
-  // Doubleing point equivalent
-  double tab0_f[v_size];
-  double tab1_f[v_size];
-  double tab2_f[v_size];
-  double res_f[v_size];
+  // Floating point equivalent
+  double *tab0_f = (double *) malloc(v_size * sizeof(double));;
+  double *tab1_f = (double *) malloc(v_size * sizeof(double));;
+  double *tab2_f = (double *) malloc(v_size * sizeof(double));;
+  double *res_f  = (double *) malloc(v_size * sizeof(double));;
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -270,8 +270,8 @@ math_test_template = """\
 
 {decls}
 
-// Rec operator on doubleing points (avoid to write a particular test for rec)
-static inline double rec(const double x){{return 1.0d / x;}}
+// Rec operator on floating points (avoid to write a particular test for rec)
+static inline double rec(const double x){{return 1.0 / x;}}
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -280,12 +280,12 @@ int main() {{
   srand(time(NULL));
 
   // FP vectors
-  fp_t tab0_fp[v_size];
-  fp_t res_fp[v_size];
+  fp_t *tab0_fp= (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *res_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
 
   // Floating point equivalent
-  double tab0_f[v_size];
-  double res_f[v_size];
+  double *tab0_f = (double *) malloc(v_size * sizeof(double));
+  double *res_f  = (double *) malloc(v_size * sizeof(double));
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -338,9 +338,9 @@ int main(){{
   srand(time(NULL));
 
   // FP vectors
-  fp_t tab0_fp[v_size];
-  fp_t tab1_fp[v_size];
-  log_t resl_fp[v_size];
+  fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  log_t *resl_fp = (log_t *) malloc(v_size * sizeof(log_t));
 
   for(size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -396,10 +396,10 @@ int main() {{
   
   srand(time(NULL));
   
-  {typ} tab0[v_size];
-  {typ} tab1[v_size];
-  {typ} res[v_size];
-
+  {typ} *tab0 = ({typ} *) malloc(v_size * sizeof({typ}));
+  {typ} *tab1 = ({typ} *) malloc(v_size * sizeof({typ}));
+  {typ} *res  = ({typ} *) malloc(v_size * sizeof({typ}));
+ 
   for(size_t i = 0; i < v_size; i++)
   {{
     tab0[i] = {rand_statement}
@@ -474,8 +474,8 @@ int main() {{
   
   srand(time(NULL));
   
-  {typ} tab0[v_size];
-  {typ} res[v_size];
+  {typ} *tab0 = ({typ} *) malloc(v_size * sizeof({typ}));;
+  {typ} *res  = ({typ} *) malloc(v_size * sizeof({typ}));;
 
   for(size_t i = 0; i < v_size; i++)
   {{
@@ -543,10 +543,10 @@ int main() {{
   
   srand(time(NULL));
   
-  fp_t tab0_fp[v_size];
-  fp_t tab1_fp[v_size];
-  log_t mask[v_size];
-  fp_t res_fp[v_size];
+  fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *res_fp  = (fp_t *) malloc(v_size * sizeof(fp_t));
+  log_t *mask = (log_t *) malloc(v_size * sizeof(log_t));
 
   for(size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();

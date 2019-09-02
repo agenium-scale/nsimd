@@ -35,22 +35,22 @@ namespace constants
 {
 #define DEFINE_CONSTANT(name, value)                                                     \
   template <unsigned char lf, unsigned char rt>                                          \
-  constexpr NSIMD_INLINE fp_t<lf, rt> name()                                                   \
+  constexpr NSIMD_INLINE fp_t<lf, rt> name()                                             \
   {                                                                                      \
     return fp_t<lf, rt>(value);                                                          \
   }
 
-DEFINE_CONSTANT(zero, 0);
-DEFINE_CONSTANT(one, 1);
-DEFINE_CONSTANT(two, 2);
-DEFINE_CONSTANT(neg, -1);
-DEFINE_CONSTANT(e, 2.718281828469045235360287471352662497757247093);
-DEFINE_CONSTANT(log2_e, 1.44269504089);
-DEFINE_CONSTANT(log2_10, 3.32192809489);
-DEFINE_CONSTANT(pi, 3.14159265359);
-DEFINE_CONSTANT(twopi, 2 * 3.14159265359);
-DEFINE_CONSTANT(halfpi, 3.14159265359 / 2);
-DEFINE_CONSTANT(pi_cvt, 0.01745329251); // pi / 180
+DEFINE_CONSTANT(zero, 0)
+DEFINE_CONSTANT(one, 1)
+DEFINE_CONSTANT(two, 2)
+DEFINE_CONSTANT(neg, -1)
+DEFINE_CONSTANT(e, 2.718281828469045235360287471352662497757247093)
+DEFINE_CONSTANT(log2_e, 1.44269504089)
+DEFINE_CONSTANT(log2_10, 3.32192809489)
+DEFINE_CONSTANT(pi, 3.14159265359)
+DEFINE_CONSTANT(twopi, 2 * 3.14159265359)
+DEFINE_CONSTANT(halfpi, 3.14159265359 / 2)
+DEFINE_CONSTANT(pi_cvt, 0.01745329251) // pi / 180
 
 } // namespace constants
 } // namespace fixed_point
