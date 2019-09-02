@@ -36,9 +36,7 @@ namespace fixed_point
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0)
 {
-   typedef typename fp_t<_lf, _rt>::value_type val_t;
    fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-
    return simd_div<_lf, _rt>(one, a0);
 }
 

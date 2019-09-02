@@ -74,7 +74,7 @@ check = """\
 
 limits = """\
 template <uint8_t lf, uint8_t rt>
-static const double __get_numeric_precision() {
+static double __get_numeric_precision() {
   return ldexpf(1.0, -(int)rt);
 }
 
@@ -137,7 +137,9 @@ arithmetic_test_template = """\
 // -----------------------------------------------------------------------------
 
 int main() {{
-  {aliases}
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
 
   srand(time(NULL));
 
@@ -182,8 +184,7 @@ def gen_arithmetic_ops_tests(lf, rt, opts):
         decls = check + limits + comparison_fp + gen_random_val
         content_src = arithmetic_test_template.format(
             op_name=op_name, op_val=op_val, lf=lf, rt=rt,
-            includes=includes, decls=decls,
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -200,8 +201,10 @@ ternary_ops_template = """\
 // -----------------------------------------------------------------------------
 
 int main() {{
-  {aliases}
-
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
+ 
   srand(time(NULL));
 
   // FP vectors
@@ -254,8 +257,7 @@ def gen_ternary_ops_tests(lf, rt, opts):
         decls = check + limits + comparison_fp + gen_random_val
         content_src = ternary_ops_template.format(
             op_name=op_name, check_statement=statement.format(lf=lf, rt=rt),
-            lf=lf, rt=rt,includes=includes, decls=decls,
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            lf=lf, rt=rt,includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -275,7 +277,9 @@ static inline double rec(const double x){{return 1.0 / x;}}
 // -----------------------------------------------------------------------------
 
 int main() {{
-  {aliases}
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
 
   srand(time(NULL));
 
@@ -315,8 +319,7 @@ def gen_math_functions_tests(lf, rt, opts):
         decls = check + limits + comparison_fp + gen_random_val
         content_src = math_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
-            includes=includes, decls=decls,
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -333,8 +336,12 @@ comparison_test_template = """\
 // -----------------------------------------------------------------------------
 
 int main(){{
-  {aliases}
-
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  typedef nsimd::fixed_point::packl<fp_t> vecl_t;
+  typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
+  
   srand(time(NULL));
 
   // FP vectors
@@ -372,8 +379,7 @@ def gen_comparison_tests(lf, rt, opts):
         decls = check + limits + comparison_log.format(op_val=op_val) + gen_random_val  
         content_src = comparison_test_template.format(
             op_name=op_name, op_val=op_val, lf=lf, rt=rt,
-            includes=includes, decls=decls,
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -392,13 +398,16 @@ bitwise_binary_test_template = """\
 // -----------------------------------------------------------------------------
 
 int main() {{
-  {aliases}
-  
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack{l}<fp_t> vec{l}_t;
+  typedef nsimd::fixed_point::pack{l}<fp_t>::value_type raw_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
+
   srand(time(NULL));
   
-  {typ} *tab0 = ({typ} *) malloc(v_size * sizeof({typ}));
-  {typ} *tab1 = ({typ} *) malloc(v_size * sizeof({typ}));
-  {typ} *res  = ({typ} *) malloc(v_size * sizeof({typ}));
+  raw_t *tab0 = (raw_t *) malloc(v_size * sizeof(raw_t));
+  raw_t *tab1 = (raw_t *) malloc(v_size * sizeof(raw_t));
+  raw_t *res  = (raw_t *) malloc(v_size * sizeof(raw_t));
  
   for(size_t i = 0; i < v_size; i++)
   {{
@@ -415,9 +424,9 @@ int main() {{
 
   for(size_t i = 0; i < v_size; i++)
   {{
-    {typ} a = tab0[i];
-    {typ} b = tab1[i];
-    {typ} c = res[i];
+    raw_t a = tab0[i];
+    raw_t b = tab1[i];
+    raw_t c = res[i];
     CHECK({test_statement});
   }}  
  
@@ -429,7 +438,7 @@ int main() {{
 bitwise_binary_ops = [("and", "c._raw == (a._raw & b._raw)", "c == (a & b)"),
                       ("andnot", "c._raw == (a._raw & ~b._raw)", "c == (a & ~b)"),
                       ("or", "c._raw == (a._raw | b._raw)", "c == (a | b)"),
-                      ("xor","c._raw == (~a._raw & b._raw) | (a._raw & ~b._raw)",
+                      ("xor","c._raw == ((~a._raw & b._raw) | (a._raw & ~b._raw))",
                        "c == ((~a & b) | (a & ~b))")]
 def gen_bitwise_ops_tests(lf, rt, opts):
     for op_name, s0, s1 in bitwise_binary_ops:
@@ -439,8 +448,7 @@ def gen_bitwise_ops_tests(lf, rt, opts):
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls,
             rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
-            typ="fp_t", test_statement=s0, l="", term="b",
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -450,9 +458,8 @@ def gen_bitwise_ops_tests(lf, rt, opts):
         content_src = bitwise_binary_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls,
-            rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
-            typ="log_t", test_statement=s1, l="l", term="l",
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            rand_statement="(raw_t)(rand() % 2);".format(lf=lf, rt=rt),
+            test_statement=s1, l="l", term="l")
         filename = get_filename(opts, op_name + "l", lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -470,12 +477,15 @@ bitwise_unary_test_template = """\
 // -----------------------------------------------------------------------------
 
 int main() {{
-  {aliases}
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack{l}<fp_t> vec{l}_t;
+  typedef nsimd::fixed_point::pack{l}<fp_t>::value_type raw_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
   
   srand(time(NULL));
   
-  {typ} *tab0 = ({typ} *) malloc(v_size * sizeof({typ}));;
-  {typ} *res  = ({typ} *) malloc(v_size * sizeof({typ}));;
+  raw_t *tab0 = (raw_t *) malloc(v_size * sizeof(raw_t));;
+  raw_t *res  = (raw_t *) malloc(v_size * sizeof(raw_t));;
 
   for(size_t i = 0; i < v_size; i++)
   {{
@@ -488,8 +498,8 @@ int main() {{
 
   for(size_t i = 0; i < v_size; i++)
   {{
-    {typ} a = tab0[i];
-    {typ} b = res[i];
+    raw_t a = tab0[i];
+    raw_t b = res[i];
     CHECK({test_statement});
   }}  
  
@@ -508,8 +518,7 @@ def gen_unary_ops_tests(lf, rt, opts):
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls,
             rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
-            typ="fp_t", test_statement=s0, l="", term="b",
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -519,9 +528,8 @@ def gen_unary_ops_tests(lf, rt, opts):
         content_src = bitwise_unary_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls,
-            rand_statement="(log_t)(rand() % 2);".format(lf=lf, rt=rt),
-            typ="log_t", test_statement=s1, l="l", term="l",
-            aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+            rand_statement="(raw_t)(rand() % 2);".format(lf=lf, rt=rt),
+            test_statement=s1, l="l", term="l")
         filename = get_filename(opts, op_name + "l", lf, rt)
         with common.open_utf8(filename) as fp:
             fp.write(content_src)
@@ -539,7 +547,11 @@ if_else_test_template = """\
 // -----------------------------------------------------------------------------
 
 int main() {{
-  {aliases}
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  typedef nsimd::fixed_point::packl<fp_t> vecl_t;
+  typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
   
   srand(time(NULL));
   
@@ -574,8 +586,7 @@ int main() {{
 def gen_if_else_tests(lf, rt, opts):
     decls = check + limits + comparison_fp + gen_random_val
     content_src = if_else_test_template.format(
-        lf=lf, rt=rt, includes=includes, decls=decls,
-        aliases=arithmetic_aliases.format(lf=lf, rt=rt))
+        lf=lf, rt=rt, includes=includes, decls=decls)
     filename = get_filename(opts, "if_else", lf, rt)
     with common.open_utf8(filename) as fp:
         fp.write(content_src)

@@ -40,7 +40,6 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_fma(
     const fpsimd_t<_lf, _rt> &a0, const fpsimd_t<_lf, _rt> &a1,
     const fpsimd_t<_lf, _rt> &a2)
 {
-  typedef typename fp_t<_lf, _rt>::value_type raw_t;
   fpsimd_t<_lf, _rt> res;
   return simd_add(a0, simd_mul(a1, a2));
 }

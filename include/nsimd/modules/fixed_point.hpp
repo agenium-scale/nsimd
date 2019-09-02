@@ -58,13 +58,13 @@ struct packl
 };
 
 template <typename T>
-const size_t len(const T &)
+size_t len(const T &)
 {
   return fpsimd_n(T());
 }
 
 template <typename T>
-const size_t len(const pack<T> &)
+size_t len(const pack<T> &)
 {
   return fpsimd_n(fpsimd_t<T::lf, T::rt>());
 }

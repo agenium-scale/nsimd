@@ -90,7 +90,7 @@ struct fpsimdl_t
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-const size_t fpsimd_n()
+size_t fpsimd_n()
 {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
   return nsimd::len(raw_t());
@@ -98,7 +98,7 @@ const size_t fpsimd_n()
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-const size_t fpsimd_n(const fp_t<_lf, _rt> &)
+size_t fpsimd_n(const fp_t<_lf, _rt> &)
 {
   return fpsimd_n<_lf, _rt>();
 }
@@ -112,7 +112,7 @@ const size_t fpsimd_n(const fp_t<_lf, _rt> &)
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-const size_t fpsimd_n(const fpsimd_t<_lf, _rt> &)
+size_t fpsimd_n(const fpsimd_t<_lf, _rt> &)
 {
   return fpsimd_n<_lf, _rt>();
 }

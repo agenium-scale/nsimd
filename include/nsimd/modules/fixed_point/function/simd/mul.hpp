@@ -39,7 +39,6 @@ simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
   typedef typename fp_t<_lf, _rt>::value_up up_t;
   typedef typename fp_t<_lf, _rt>::value_type val_t;
   typedef typename fp_t<_lf, _rt>::simd_up simd_up_t;
-  const int half_size = 4 * sizeof(up_t);
   const int n_bits = 8 * sizeof(val_t);
   const int shift = n_bits - _lf;
   
