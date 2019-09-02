@@ -25,16 +25,13 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SET1_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SET1_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-fpsimd_t<_lf, _rt> simd_set1(const typename fpsimd_t<_lf, _rt>::base_type &a0)
-{
+fpsimd_t<_lf, _rt> simd_set1(const typename fpsimd_t<_lf, _rt>::base_type &a0) {
   typedef typename fpsimd_t<_lf, _rt>::base_type raw_t;
   fpsimd_t<_lf, _rt> res;
   res._raw = nsimd::set1(a0, raw_t());

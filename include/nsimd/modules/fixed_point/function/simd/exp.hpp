@@ -31,36 +31,29 @@ SOFTWARE.
 
 #include <iostream>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // For integer exponents, use exponentiation by squaring
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a, const int &b)
-{
-  if(b == 0)
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a,
+                                         const int &b) {
+  if (b == 0)
     return fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1));
   fpsimd_t<_lf, _rt> one(constants::one<_lf, _rt>());
 
   fpsimd_t<_lf, _rt> val = a;
   int e = b;
-  if(e < 0)
-  {
+  if (e < 0) {
     val = one / val;
     e = -e;
   }
   fpsimd_t<_lf, _rt> res = one;
-  while(e > 1)
-  {
-    if(e % 2)
-    { // odd
+  while (e > 1) {
+    if (e % 2) { // odd
       res = res * val;
       val = val * val;
       e = (e - 1) / 2;
-    }
-    else
-    {
+    } else {
       val = val * val;
       e = e / 2;
     }

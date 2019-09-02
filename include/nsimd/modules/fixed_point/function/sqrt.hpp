@@ -27,20 +27,16 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> sqrt(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> sqrt(const fp_t<_lf, _rt> &a) {
   fp_t<_lf, _rt> x0, x1;
   x0 = a;
   // For the few cases tested, 10 iterations is more than enough to converge
-  for(int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     x1 = (x0 + (a / x0)) / 2;
-    if(x0._raw == 0 || (x0._raw - x1._raw) == 0)
+    if (x0._raw == 0 || (x0._raw - x1._raw) == 0)
       break;
     x0 = x1;
   }

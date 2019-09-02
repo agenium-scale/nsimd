@@ -27,13 +27,10 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-bool operator!=(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+bool operator!=(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   const uint8_t max = -1;
   const uint8_t mask = ~((mask << (_lf + _rt)) >> (_lf + _rt));
   return ((a._raw & mask) != (b._raw & mask));

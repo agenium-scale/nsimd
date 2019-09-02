@@ -28,13 +28,10 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/fixed.hpp"
 #include "nsimd/modules/fixed_point/function/bitwise_and.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE bool is_int(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE bool is_int(const fp_t<_lf, _rt> &a) {
   return (a == floor(a));
 }
 

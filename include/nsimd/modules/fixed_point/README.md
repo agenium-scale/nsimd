@@ -42,7 +42,12 @@ int main() {
   fp_t *input1;
   fp_t *res;
   
-  // Input and output initializations ...
+  // Input and output initializations 
+  for(size_t i = 0; i < nsimd::fixed_point::len(fp_t()); i++)
+  {
+    input0 = fp_t(rand_float());
+    input1 = fp_t(rand_float());
+  }
   
   vec_t v0 = nsimd::fixed_point::loadu<vec_t>(input0);
   vec_t v1 = nsimd::fixed_point::loadu<vec_t>(input1);

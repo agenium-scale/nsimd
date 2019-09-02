@@ -25,18 +25,15 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_STOREA_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_STOREA_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE void simd_storea(fp_t<_lf, _rt> *a, fpsimd_t<_lf, _rt> &val)
-{
+NSIMD_INLINE void simd_storea(fp_t<_lf, _rt> *a, fpsimd_t<_lf, _rt> &val) {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
-  nsimd::storea((raw_t *) a, val._raw, raw_t());
+  nsimd::storea((raw_t *)a, val._raw, raw_t());
 }
 
 } // namespace fixed_point

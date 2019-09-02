@@ -25,17 +25,14 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_DIV_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_DIV_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-simd_div(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_div(const fpsimd_t<_lf, _rt> &a,
+                                         const fpsimd_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type val_t;
   typedef typename fp_t<_lf, _rt>::value_up up_t;
   typedef typename fp_t<_lf, _rt>::simd_up simd_up_t;
@@ -60,9 +57,8 @@ simd_div(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 
 // Operator overload with base type compatibility
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-operator/(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> operator/(const fpsimd_t<_lf, _rt> &a,
+                                          const fpsimd_t<_lf, _rt> &b) {
   return simd_div(a, b);
 }
 

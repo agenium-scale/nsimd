@@ -30,16 +30,12 @@ SOFTWARE.
 
 #include <iostream>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // TODO: This iterative method is not vectorizable...
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a)
-{
-  if(a._raw <= 0)
-  {
+NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a) {
+  if (a._raw <= 0) {
     std::cout << "Error: cannot take log of negative number\n";
     return fp_t<_lf, _rt>(-1);
   }
@@ -56,33 +52,26 @@ NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a)
   char I = 0;
   fp_t<_lf, _rt> pow2(1);
   fp_t<_lf, _rt> tmp2(1);
-  if(0 != tmp)
-  {
-    while(tmp)
-    {
+  if (0 != tmp) {
+    while (tmp) {
       tmp = tmp >> 1;
       ++I;
       pow2 = two * pow2;
     }
     // If integer power of 2, stop here
-    if(constants::one<_lf, _rt>() == (a / pow2))
-    {
+    if (constants::one<_lf, _rt>() == (a / pow2)) {
       return fp_t<_lf, _rt>(I);
     }
-  }
-  else
-  {
+  } else {
     // Opposite of above - multiply by two and divide pow2 until tmp > 1
     fp_t<_lf, _rt> tmp2 = a;
-    while(tmp2._raw < constants::one<_lf, _rt>()._raw)
-    {
+    while (tmp2._raw < constants::one<_lf, _rt>()._raw) {
       tmp2 = tmp2 << 1;
       --I;
       pow2 = pow2 / 2;
     }
     // If integer power of 2, stop here
-    if(a == pow2)
-    {
+    if (a == pow2) {
       return fp_t<_lf, _rt>(I);
     }
   }
@@ -94,11 +83,9 @@ NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a)
   fp_t<_lf, _rt> z;
   pow2 = 1;
   // TODO: Look into choosing a better stopping condition
-  for(int i = 0; i < _rt + _lf; ++i)
-  {
+  for (int i = 0; i < _rt + _lf; ++i) {
     z = y0;
-    while(z._raw < two._raw)
-    {
+    while (z._raw < two._raw) {
       z = z * z;
       pow2 = pow2 / two;
       ++i;
@@ -111,15 +98,13 @@ NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> log(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> log(const fp_t<_lf, _rt> &a) {
   fp_t<_lf, _rt> res = log2(a) / fixed::constants::log2_e<_lf, _rt>();
   return res;
 }
 
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> log10(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> log10(const fp_t<_lf, _rt> &a) {
   fp_t<_lf, _rt> res = log2(a) / fixed::constants::log2_10<_lf, _rt>();
   return res;
 }

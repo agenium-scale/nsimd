@@ -28,49 +28,43 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/fixed_vector.hpp"
 #include "nsimd/modules/fixed_point/simd.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt> &b)
-{
-  if(c.size() < b.size())
-  {
+NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a,
+                      const fpv_t<_lf, _rt> &b) {
+  if (c.size() < b.size()) {
     c.resize(b.size());
   }
   using p_type = typename fp_t<_lf, _rt>::value_type;
-  p_type *aa = (p_type *) a.data();
-  p_type *bb = (p_type *) b.data();
-  p_type *cc = (p_type *) c.data();
+  p_type *aa = (p_type *)a.data();
+  p_type *bb = (p_type *)b.data();
+  p_type *cc = (p_type *)c.data();
 
   int card = fpsimd_n<_lf, _rt>();
   int i = 0;
   int end = int(a.size()) + 1 - card; // In case of small input
-  for(; i < end; i += card)
-  {
+  for (; i < end; i += card) {
     // fpsimd_t<_lf,_rt> aaa( &(aa[i]) );
     // fpsimd_t<_lf,_rt> bbb( &(bb[i]) );
     // simd_add<_lf,_rt>( aaa , aaa , bbb );
     // simd_store<_lf,_rt>( aaa , &(cc[i]) );
   }
-  for(; i < a.size(); ++i)
-  {
+  for (; i < a.size(); ++i) {
     c[i] = a[i] + b[i];
   }
 }
 
 // Compatibility with base types
 template <unsigned char _lf, unsigned char _rt, typename T>
-NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const T &b)
-{
-  if(c.size() < b.size())
-  {
+NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a,
+                      const T &b) {
+  if (c.size() < b.size()) {
     c.resize(b.size());
   }
   using p_type = typename fp_t<_lf, _rt>::value_type;
-  p_type *aa = (p_type *) a.data();
-  p_type *cc = (p_type *) c.data();
+  p_type *aa = (p_type *)a.data();
+  p_type *cc = (p_type *)c.data();
 
   // To be sure that the conversion only happens once
   fp_t<_lf, _rt> b_fp(b);
@@ -79,44 +73,40 @@ NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const fpv_t<_lf, _rt> &a, const T &b)
   int card = fpsimd_n<_lf, _rt>();
   int i = 0;
   int end = int(a.size()) + 1 - card; // In case of small input
-  for(; i < end; i += card)
-  {
+  for (; i < end; i += card) {
     // fpsimd_t<_lf,_rt> aaa( &(aa[i]) );
     // simd_add<_lf,_rt>( aaa , aaa , bbb );
     // simd_store<_lf,_rt>( aaa , &(cc[i]) );
   }
-  for(; i < a.size(); ++i)
-  {
+  for (; i < a.size(); ++i) {
     c[i] = a[i] + b[i];
   }
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const T &b, const fpv_t<_lf, _rt> &a)
-{
+NSIMD_INLINE void add(fpv_t<_lf, _rt> &c, const T &b,
+                      const fpv_t<_lf, _rt> &a) {
   add(c, a, b);
 }
 
 // Operator overload with base type compatibility
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const fpv_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a,
+                                       const fpv_t<_lf, _rt> &b) {
   fpv_t<_lf, _rt> c(a.size());
   add(c, a, b);
   return c;
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-NSIMD_INLINE fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const T &b)
-{
+NSIMD_INLINE fpv_t<_lf, _rt> operator+(const fpv_t<_lf, _rt> &a, const T &b) {
   fpv_t<_lf, _rt> c(a.size());
   add(c, a, b);
   return c;
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-NSIMD_INLINE fpv_t<_lf, _rt> operator+(const T &b, const fpv_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fpv_t<_lf, _rt> operator+(const T &b, const fpv_t<_lf, _rt> &a) {
   return (a + b);
 }
 

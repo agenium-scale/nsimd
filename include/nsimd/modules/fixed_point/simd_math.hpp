@@ -28,46 +28,46 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/simd.hpp"
 
 // Load/Store
-#include "nsimd/modules/fixed_point/function/simd/set1.hpp"
-#include "nsimd/modules/fixed_point/function/simd/loadu.hpp"
 #include "nsimd/modules/fixed_point/function/simd/loada.hpp"
-#include "nsimd/modules/fixed_point/function/simd/loadlu.hpp"
 #include "nsimd/modules/fixed_point/function/simd/loadla.hpp"
-#include "nsimd/modules/fixed_point/function/simd/storeu.hpp"
+#include "nsimd/modules/fixed_point/function/simd/loadlu.hpp"
+#include "nsimd/modules/fixed_point/function/simd/loadu.hpp"
+#include "nsimd/modules/fixed_point/function/simd/set1.hpp"
 #include "nsimd/modules/fixed_point/function/simd/storea.hpp"
-#include "nsimd/modules/fixed_point/function/simd/storelu.hpp"
 #include "nsimd/modules/fixed_point/function/simd/storela.hpp"
+#include "nsimd/modules/fixed_point/function/simd/storelu.hpp"
+#include "nsimd/modules/fixed_point/function/simd/storeu.hpp"
 
 // Constants
 #include "nsimd/modules/fixed_point/constants.hpp"
 
 // Bitwise operations
-#include "nsimd/modules/fixed_point/function/simd/andl.hpp"
 #include "nsimd/modules/fixed_point/function/simd/andb.hpp"
-#include "nsimd/modules/fixed_point/function/simd/andnotl.hpp"
+#include "nsimd/modules/fixed_point/function/simd/andl.hpp"
 #include "nsimd/modules/fixed_point/function/simd/andnotb.hpp"
-#include "nsimd/modules/fixed_point/function/simd/notl.hpp"
-#include "nsimd/modules/fixed_point/function/simd/notb.hpp"
-#include "nsimd/modules/fixed_point/function/simd/orl.hpp"
-#include "nsimd/modules/fixed_point/function/simd/orb.hpp"
-#include "nsimd/modules/fixed_point/function/simd/xorl.hpp"
-#include "nsimd/modules/fixed_point/function/simd/xorb.hpp"
+#include "nsimd/modules/fixed_point/function/simd/andnotl.hpp"
 #include "nsimd/modules/fixed_point/function/simd/if_else1.hpp"
+#include "nsimd/modules/fixed_point/function/simd/notb.hpp"
+#include "nsimd/modules/fixed_point/function/simd/notl.hpp"
+#include "nsimd/modules/fixed_point/function/simd/orb.hpp"
+#include "nsimd/modules/fixed_point/function/simd/orl.hpp"
+#include "nsimd/modules/fixed_point/function/simd/xorb.hpp"
+#include "nsimd/modules/fixed_point/function/simd/xorl.hpp"
 
 // Comparisons
 #include "nsimd/modules/fixed_point/function/simd/eq.hpp"
-#include "nsimd/modules/fixed_point/function/simd/ne.hpp"
-#include "nsimd/modules/fixed_point/function/simd/le.hpp"
-#include "nsimd/modules/fixed_point/function/simd/lt.hpp"
 #include "nsimd/modules/fixed_point/function/simd/ge.hpp"
 #include "nsimd/modules/fixed_point/function/simd/gt.hpp"
+#include "nsimd/modules/fixed_point/function/simd/le.hpp"
+#include "nsimd/modules/fixed_point/function/simd/lt.hpp"
+#include "nsimd/modules/fixed_point/function/simd/ne.hpp"
 
 // Basic arithmetic
 #include "nsimd/modules/fixed_point/function/simd/add.hpp"
-#include "nsimd/modules/fixed_point/function/simd/sub.hpp"
-#include "nsimd/modules/fixed_point/function/simd/mul.hpp"
 #include "nsimd/modules/fixed_point/function/simd/div.hpp"
 #include "nsimd/modules/fixed_point/function/simd/fma.hpp"
+#include "nsimd/modules/fixed_point/function/simd/mul.hpp"
+#include "nsimd/modules/fixed_point/function/simd/sub.hpp"
 
 // Math functions
 #include "nsimd/modules/fixed_point/function/simd/rec.hpp"
@@ -81,7 +81,7 @@ SOFTWARE.
 //#include "nsimd/modules/fixed_point/function/simd/round.hpp"
 
 // Trigonometric functions
-// #include "nsimd/modules/fixed_point/function/simd/cos.hpp" 
+// #include "nsimd/modules/fixed_point/function/simd/cos.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/sin.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/tan.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/csc.hpp"

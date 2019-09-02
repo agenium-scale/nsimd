@@ -27,14 +27,11 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 
 template <uint8_t _lf, uint8_t _rt>
-bool gt(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+bool gt(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
   const raw_type max = -1;
@@ -43,26 +40,22 @@ bool gt(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 }
 
 template <uint8_t _lf, uint8_t _rt>
-bool operator>(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+bool operator>(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   return gt(a, b);
 }
 
 template <uint8_t _lf, uint8_t _rt, typename T>
-bool operator>(const fp_t<_lf, _rt> &a, const T &b)
-{
+bool operator>(const fp_t<_lf, _rt> &a, const T &b) {
   return gt(a, fp_t<_lf, _rt>(b));
 }
 
 template <uint8_t _lf, uint8_t _rt, typename T>
-bool operator>(const T &a, const fp_t<_lf, _rt> &b)
-{
+bool operator>(const T &a, const fp_t<_lf, _rt> &b) {
   return gt(fp_t<_lf, _rt>(a), b);
 }
 
 template <uint8_t _lf, uint8_t _rt>
-bool gte(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+bool gte(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
   const raw_type max = -1;
@@ -71,20 +64,17 @@ bool gte(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 }
 
 template <uint8_t _lf, uint8_t _rt>
-bool operator>=(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+bool operator>=(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   return gte(a, b);
 }
 
 template <uint8_t _lf, uint8_t _rt, typename T>
-bool operator>=(const fp_t<_lf, _rt> &a, const T &b)
-{
+bool operator>=(const fp_t<_lf, _rt> &a, const T &b) {
   return gte(a, fp_t<_lf, _rt>(b));
 }
 
 template <uint8_t _lf, uint8_t _rt, typename T>
-bool operator>=(const T &a, const fp_t<_lf, _rt> &b)
-{
+bool operator>=(const T &a, const fp_t<_lf, _rt> &b) {
   return gte(fp_t<_lf, _rt>(a), b);
 }
 

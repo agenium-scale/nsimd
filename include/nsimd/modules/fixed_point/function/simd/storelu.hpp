@@ -25,17 +25,14 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_STORELU_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_STORELU_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE void
-simd_storelu(typename fpsimdl_t<_lf, _rt>::base_type *a, fpsimdl_t<_lf, _rt> &val)
-{
+NSIMD_INLINE void simd_storelu(typename fpsimdl_t<_lf, _rt>::base_type *a,
+                               fpsimdl_t<_lf, _rt> &val) {
   typedef typename fpsimdl_t<_lf, _rt>::base_type raw_t;
   nsimd::storelu(a, val._raw, raw_t());
 }

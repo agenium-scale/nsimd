@@ -27,13 +27,11 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-bool equal_ulp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b, const int &ulp)
-{
+bool equal_ulp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b,
+               const int &ulp) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
   const raw_type max = -1;

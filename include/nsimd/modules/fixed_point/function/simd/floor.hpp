@@ -27,17 +27,15 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_floor(const fpsimd_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_floor(const fpsimd_t<_lf, _rt> &a) {
   typederf typename fp_t<_lf, _rt>::value_type val_t;
   const int shift_size = 8 * sizeof(val_t) - _lf;
   fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::shl(nsimd::shr(a._raw, shift_size, val_t()), shift_size, val_t());
+  res._raw =
+      nsimd::shl(nsimd::shr(a._raw, shift_size, val_t()), shift_size, val_t());
   return res;
 }
 

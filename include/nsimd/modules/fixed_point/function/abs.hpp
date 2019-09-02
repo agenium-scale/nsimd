@@ -29,19 +29,13 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/greater.hpp"
 #include "nsimd/modules/fixed_point/function/mul.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> abs(const fp_t<_lf, _rt> &a)
-{
-  if(a._raw > 0)
-  {
+NSIMD_INLINE fp_t<_lf, _rt> abs(const fp_t<_lf, _rt> &a) {
+  if (a._raw > 0) {
     return a;
-  }
-  else
-  {
+  } else {
     return -1 * a;
   }
 }

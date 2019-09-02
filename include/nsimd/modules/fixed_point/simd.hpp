@@ -31,75 +31,59 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/fixed_math.hpp"
 // #include "nsimd/modules/fixed_point/fixed_vector.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // This implementation means that we must cast to the appropriate pointer type
 // to load/store values
-template <uint8_t _lf, uint8_t _rt>
-struct fpsimd_t
-{
+template <uint8_t _lf, uint8_t _rt> struct fpsimd_t {
   typedef typename fp_t<_lf, _rt>::value_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
   typedef typename fp_t<_lf, _rt>::simd_up value_up;
   typedef typename fp_t<_lf, _rt>::simd_logical logic;
   value_type _raw;
 
-  fpsimd_t()
-  {
-  }
-  
-  fpsimd_t(const fp_t<_lf, _rt> &cp)
-  {
+  fpsimd_t() {}
+
+  fpsimd_t(const fp_t<_lf, _rt> &cp) {
     _raw = nsimd::set1(cp._raw, base_type());
   }
 
   // Splats
-  // NSIMD_INLINE fpsimd_t( const float  &in ) { float2fixed<value_type,_lf,_rt>( _raw
-  // , in ); } NSIMD_INLINE fpsimd_t( const double &in ) {
-  // float2fixed<value_type,_lf,_rt>( _raw , in ); } template<typename T>
-  // fpsimd_t( const T &in ) { integer_convert<_lf,_rt>( _raw , in ); }
+  // NSIMD_INLINE fpsimd_t( const float  &in ) {
+  // float2fixed<value_type,_lf,_rt>( _raw , in ); } NSIMD_INLINE fpsimd_t(
+  // const double &in ) { float2fixed<value_type,_lf,_rt>( _raw , in ); }
+  // template<typename T> fpsimd_t( const T &in ) { integer_convert<_lf,_rt>(
+  // _raw , in ); }
 
-  fpsimd_t &operator=(const fpsimd_t<_lf, _rt> &cp)
-  {
+  fpsimd_t &operator=(const fpsimd_t<_lf, _rt> &cp) {
     _raw = cp._raw;
     return *this;
   }
 };
 
-template <uint8_t _lf, uint8_t _rt>
-struct fpsimdl_t
-{
+template <uint8_t _lf, uint8_t _rt> struct fpsimdl_t {
   typedef typename fp_t<_lf, _rt>::logical_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
   typedef typename fp_t<_lf, _rt>::simd_up value_up;
   typedef typename fp_t<_lf, _rt>::simd_logical logic;
   logic _raw;
 
-  fpsimdl_t()
-  {
-  }
+  fpsimdl_t() {}
 
-  fpsimdl_t &operator=(const fpsimdl_t<_lf, _rt> &cp)
-  {
+  fpsimdl_t &operator=(const fpsimdl_t<_lf, _rt> &cp) {
     _raw = cp._raw;
     return *this;
   }
 };
 
 // Number of elements that fit into a SIMD register
-template <uint8_t _lf, uint8_t _rt>
-size_t fpsimd_n()
-{
+template <uint8_t _lf, uint8_t _rt> size_t fpsimd_n() {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
   return nsimd::len(raw_t());
 }
 
 // Number of elements that fit into a SIMD register
-template <uint8_t _lf, uint8_t _rt>
-size_t fpsimd_n(const fp_t<_lf, _rt> &)
-{
+template <uint8_t _lf, uint8_t _rt> size_t fpsimd_n(const fp_t<_lf, _rt> &) {
   return fpsimd_n<_lf, _rt>();
 }
 
@@ -112,8 +96,7 @@ size_t fpsimd_n(const fp_t<_lf, _rt> &)
 
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt>
-size_t fpsimd_n(const fpsimd_t<_lf, _rt> &)
-{
+size_t fpsimd_n(const fpsimd_t<_lf, _rt> &) {
   return fpsimd_n<_lf, _rt>();
 }
 

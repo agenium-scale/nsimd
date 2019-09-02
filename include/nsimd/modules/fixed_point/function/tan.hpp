@@ -30,27 +30,22 @@ SOFTWARE.
 #include "fixed_point/function/cos.hpp"
 #include "fixed_point/function/sin.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // Calculate tan(x) using the identity tan = sin/cos
 // Limits input to range[0,pi/2] for best precision
 // -- range reduction is not trivially vectorizable though...
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> safe_tan(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> safe_tan(const fp_t<_lf, _rt> &a) {
   return safe_sin(a) / safe_cos(a);
 }
 
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> tan(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> tan(const fp_t<_lf, _rt> &a) {
   fp_t<_lf, _rt> b = a;
   // Reduce to range [0,inf]
   fp_t<_lf, _rt> mul = constants::one<_lf, _rt>();
-  if(b < fp_t<_lf, _rt>(0))
-  {
+  if (b < fp_t<_lf, _rt>(0)) {
     b = -1 * b;
     mul = mul * -1;
   }
@@ -60,8 +55,7 @@ NSIMD_INLINE fp_t<_lf, _rt> tan(const fp_t<_lf, _rt> &a)
 
   // Reduce to range [-pi/2,pi/2]
   fp_t<_lf, _rt> frac = b / constants::pi<_lf, _rt>();
-  if(frac > fp_t<_lf, _rt>(0.5))
-  {
+  if (frac > fp_t<_lf, _rt>(0.5)) {
     b = b - constants::pi<_lf, _rt>();
   }
 

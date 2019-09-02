@@ -31,35 +31,27 @@ SOFTWARE.
 
 #include <iostream>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // For integer exponents, use exponentiation by squaring
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b)
-{
-  if(b == 0)
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b) {
+  if (b == 0)
     return fp_t<_lf, _rt>(1);
 
   fp_t<_lf, _rt> val = a;
   int e = b;
-  if(e < 0)
-  {
+  if (e < 0) {
     val = constants::one<_lf, _rt>() / val;
     e = -e;
   }
   fp_t<_lf, _rt> res = constants::one<_lf, _rt>();
-  while(e > 1)
-  {
-    if(e % 2)
-    { // odd
+  while (e > 1) {
+    if (e % 2) { // odd
       res = res * val;
       val = val * val;
       e = (e - 1) / 2;
-    }
-    else
-    {
+    } else {
       val = val * val;
       e = e / 2;
     }
@@ -69,8 +61,8 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b)
 
 // For floating point exponents, use Taylor series
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a,
+                                const fp_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
 
   // Separate integer and fractional portions for better accuracy
@@ -78,8 +70,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b
   const raw_type integer = a._raw >> (8 * sizeof(raw_type) - _lf);
   const fp_t<_lf, _rt> rem = b - fp_t<_lf, _rt>(integer);
 
-  if(0 == rem._raw)
-  {
+  if (0 == rem._raw) {
     return exp(a, integer);
   }
 
@@ -93,8 +84,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b
   //    int16_t         ,   log2( 1/(8!)  ) = 15.3 bits precision
   //    int32_t         ,   log2( 1/(12!) ) = 28.8 bits precision
   const int stop = 4 + 2 * sizeof(raw_type);
-  for(int i = 1; i < stop; ++i)
-  {
+  for (int i = 1; i < stop; ++i) {
     fact = fact / i;
     log_eval = log_eval * log_init;
     res = res + (fact * log_eval);
@@ -105,14 +95,12 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b
 }
 
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const float &b)
-{
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const float &b) {
   return exp(a, fp_t<_lf, _rt>(b));
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-NSIMD_INLINE fp_t<_lf, _rt> exp(const T &b)
-{
+NSIMD_INLINE fp_t<_lf, _rt> exp(const T &b) {
   return exp(constants::e<_lf, _rt>(), fp_t<_lf, _rt>(b));
 }
 

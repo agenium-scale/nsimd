@@ -25,17 +25,13 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_NOTL_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_NOTL_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimdl_t<_lf, _rt>
-simd_notl(const fpsimdl_t<_lf, _rt> &a0)
-{
+NSIMD_INLINE fpsimdl_t<_lf, _rt> simd_notl(const fpsimdl_t<_lf, _rt> &a0) {
   typedef typename fp_t<_lf, _rt>::logical_type raw_t;
   fpsimdl_t<_lf, _rt> res;
   res._raw = nsimd::notl(a0._raw, raw_t());

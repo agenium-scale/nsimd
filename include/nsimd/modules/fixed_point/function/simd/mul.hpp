@@ -25,23 +25,20 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_mul(const fpsimd_t<_lf, _rt> &a,
+                                         const fpsimd_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_up up_t;
   typedef typename fp_t<_lf, _rt>::value_type val_t;
   typedef typename fp_t<_lf, _rt>::simd_up simd_up_t;
   const int n_bits = 8 * sizeof(val_t);
   const int shift = n_bits - _lf;
-  
+
   simd_up_t a_big0 = nsimd::upcvt(a._raw, val_t(), up_t()).v0;
   simd_up_t a_big1 = nsimd::upcvt(a._raw, val_t(), up_t()).v1;
   simd_up_t b_big0 = nsimd::upcvt(b._raw, val_t(), up_t()).v0;
@@ -60,9 +57,8 @@ simd_mul(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
 
 // Operator overload with base type compatibility
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt>
-operator*(const fpsimd_t<_lf, _rt> &a, const fpsimd_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> operator*(const fpsimd_t<_lf, _rt> &a,
+                                          const fpsimd_t<_lf, _rt> &b) {
   return simd_mul(a, b);
 }
 

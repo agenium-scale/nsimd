@@ -28,21 +28,15 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/fixed.hpp"
 #include "nsimd/modules/fixed_point/function/floor.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> ceil(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> ceil(const fp_t<_lf, _rt> &a) {
   const int shift_size = _lf;
   fp_t<_lf, _rt> res = floor(a);
-  if(0 == ((a._raw << (shift_size)) >> shift_size))
-  {
+  if (0 == ((a._raw << (shift_size)) >> shift_size)) {
     return res;
-  }
-  else
-  {
+  } else {
     return (res + constants::one<_lf, _rt>());
   }
 }

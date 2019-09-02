@@ -27,14 +27,12 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt>
-bitwise_xor(const fp_t<_lf, _rt> &a, const typename fp_t<_lf, _rt>::value_type &b)
-{
+bitwise_xor(const fp_t<_lf, _rt> &a,
+            const typename fp_t<_lf, _rt>::value_type &b) {
   fp_t<_lf, _rt> res;
   res._raw = a._raw ^ b;
   return res;
@@ -42,8 +40,8 @@ bitwise_xor(const fp_t<_lf, _rt> &a, const typename fp_t<_lf, _rt>::value_type &
 
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt>
-operator^(const fp_t<_lf, _rt> &a, const typename fp_t<_lf, _rt>::value_type &b)
-{
+operator^(const fp_t<_lf, _rt> &a,
+          const typename fp_t<_lf, _rt>::value_type &b) {
   return bitwise_xor(a, b);
 }
 

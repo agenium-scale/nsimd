@@ -31,41 +31,29 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/simd.hpp"
 #include "nsimd/modules/fixed_point/simd_math.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // -----------------------------------------------------------------------------
 // ------------------------ Types definitions and len --------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T>
-struct pack
-{
+template <typename T> struct pack {
   static const uint8_t lf = T::lf;
   static const uint8_t rt = T::rt;
   typedef fp_t<lf, rt> value_type;
   fpsimd_t<lf, rt> val;
 };
 
-template <typename T>
-struct packl
-{
+template <typename T> struct packl {
   static const uint8_t lf = T::lf;
   static const uint8_t rt = T::rt;
   typedef typename fp_t<lf, rt>::logical_type value_type;
   fpsimdl_t<lf, rt> val;
 };
 
-template <typename T>
-size_t len(const T &)
-{
-  return fpsimd_n(T());
-}
+template <typename T> size_t len(const T &) { return fpsimd_n(T()); }
 
-template <typename T>
-size_t len(const pack<T> &)
-{
+template <typename T> size_t len(const pack<T> &) {
   return fpsimd_n(fpsimd_t<T::lf, T::rt>());
 }
 
@@ -73,41 +61,32 @@ size_t len(const pack<T> &)
 // ------------------- Basic arithmetic operators ------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T>
-NSIMD_INLINE pack<T> add(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> add(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_add<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> sub(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> sub(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_sub<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> mul(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> mul(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_mul<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> div(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> div(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_div<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> fma(pack<T> a0, pack<T> a1, pack<T> a2)
-{
+NSIMD_INLINE pack<T> fma(pack<T> a0, pack<T> a1, pack<T> a2) {
   pack<T> res;
   res.val = simd_fma<T::lf, T::rt>(a0.val, a1.val, a2.val);
   return res;
@@ -117,57 +96,44 @@ NSIMD_INLINE pack<T> fma(pack<T> a0, pack<T> a1, pack<T> a2)
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T>
-NSIMD_INLINE packl<T> eq(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> eq(pack<T> a0, pack<T> a1) {
   packl<T> res;
   res.val = simd_eq(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> ne(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> ne(pack<T> a0, pack<T> a1) {
   packl<T> res;
   res.val = simd_ne(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> le(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> le(pack<T> a0, pack<T> a1) {
   packl<T> res;
   res.val = simd_le(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> lt(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> lt(pack<T> a0, pack<T> a1) {
   packl<T> res;
   res.val = simd_lt(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> ge(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> ge(pack<T> a0, pack<T> a1) {
   packl<T> res;
   res.val = simd_ge(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> gt(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> gt(pack<T> a0, pack<T> a1) {
   packl<T> res;
   res.val = simd_gt(a0.val, a1.val);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> if_else1(packl<T> a0, pack<T> a1, pack<T> a2)
-{
+NSIMD_INLINE pack<T> if_else1(packl<T> a0, pack<T> a1, pack<T> a2) {
   pack<T> res;
   res.val = simd_if_else1(a0.val, a1.val, a2.val);
   return res;
@@ -177,81 +143,61 @@ NSIMD_INLINE pack<T> if_else1(packl<T> a0, pack<T> a1, pack<T> a2)
 // ------------------- Bitwise operators  --------------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T>
-NSIMD_INLINE pack<T> andb(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> andb(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_andb(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> andl(packl<T> a0, packl<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> andl(packl<T> a0, packl<T> a1) {
   packl<T> res;
   res.val = simd_andl(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> andnotb(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> andnotb(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_andnotb(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> andnotl(packl<T> a0, packl<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> andnotl(packl<T> a0, packl<T> a1) {
   packl<T> res;
   res.val = simd_andnotl(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> notb(pack<T> a0)
-{
+template <typename T> NSIMD_INLINE pack<T> notb(pack<T> a0) {
   pack<T> res;
   res.val = simd_notb(a0.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> notl(packl<T> a0)
-{
+template <typename T> NSIMD_INLINE packl<T> notl(packl<T> a0) {
   packl<T> res;
   res.val = simd_notl(a0.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> orb(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> orb(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_orb(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> orl(packl<T> a0, packl<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> orl(packl<T> a0, packl<T> a1) {
   packl<T> res;
   res.val = simd_orl(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE pack<T> xorb(pack<T> a0, pack<T> a1)
-{
+template <typename T> NSIMD_INLINE pack<T> xorb(pack<T> a0, pack<T> a1) {
   pack<T> res;
   res.val = simd_xorb(a0.val, a1.val);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE packl<T> xorl(packl<T> a0, packl<T> a1)
-{
+template <typename T> NSIMD_INLINE packl<T> xorl(packl<T> a0, packl<T> a1) {
   packl<T> res;
   res.val = simd_xorl(a0.val, a1.val);
   return res;
@@ -261,9 +207,7 @@ NSIMD_INLINE packl<T> xorl(packl<T> a0, packl<T> a1)
 // ------------------- Math functions ------------------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T>
-NSIMD_INLINE pack<T> rec(pack<T> a0)
-{
+template <typename T> NSIMD_INLINE pack<T> rec(pack<T> a0) {
   pack<T> res;
   res.val = simd_rec(a0.val);
   return res;
@@ -273,41 +217,31 @@ NSIMD_INLINE pack<T> rec(pack<T> a0)
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T>
-NSIMD_INLINE T set1(typename T::value_type a0)
-{
+template <typename T> NSIMD_INLINE T set1(typename T::value_type a0) {
   T res;
   res.val = simd_set1<T::lf, T::rt>(a0);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE T loadu(typename T::value_type *p)
-{
+template <typename T> NSIMD_INLINE T loadu(typename T::value_type *p) {
   T res;
   res.val = simd_loadu<T::lf, T::rt>(p);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE T loada(typename T::value_type *p)
-{
+template <typename T> NSIMD_INLINE T loada(typename T::value_type *p) {
   T res;
   res.val = simd_loada<T::lf, T::rt>(p);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE T loadlu(typename T::value_type *p)
-{
+template <typename T> NSIMD_INLINE T loadlu(typename T::value_type *p) {
   T res;
   res.val = simd_loadlu<T::lf, T::rt>(p);
   return res;
 }
 
-template <typename T>
-NSIMD_INLINE T loadla(typename T::value_type *p)
-{
+template <typename T> NSIMD_INLINE T loadla(typename T::value_type *p) {
   T res;
   res.val = simd_loadla<T::lf, T::rt>(p);
   return res;
@@ -318,26 +252,22 @@ NSIMD_INLINE T loadla(typename T::value_type *p)
 // -----------------------------------------------------------------------------
 
 template <typename T>
-NSIMD_INLINE void storeu(typename T::value_type *p, T &v)
-{
+NSIMD_INLINE void storeu(typename T::value_type *p, T &v) {
   simd_storeu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storea(typename T::value_type *p, T &v)
-{
+NSIMD_INLINE void storea(typename T::value_type *p, T &v) {
   simd_storea<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storelu(typename T::value_type *p, T v)
-{
+NSIMD_INLINE void storelu(typename T::value_type *p, T v) {
   simd_storelu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storela(typename T::value_type *p, T v)
-{
+NSIMD_INLINE void storela(typename T::value_type *p, T v) {
   simd_storela<T::lf, T::rt>(p, v.val);
 }
 

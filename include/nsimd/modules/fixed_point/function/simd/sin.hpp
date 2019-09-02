@@ -28,36 +28,32 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/constants.hpp"
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // Calculate sin(x) using Taylor series up to x^9 (error is of the order x^11)
 // Limits input to range[0,pi/2] for best precision
 // -- range reduction is not trivially vectorizable though...
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_safe_sin(const fpsimd_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_safe_sin(const fpsimd_t<_lf, _rt> &b) {
   fpsimd_t<_lf, _rt> b2 = b * b;
   fpsimd_t<_lf, _rt> one(constants::one<_lf, _rt>());
   fpsimd_t<_lf, _rt> res = one;
   // TODO: Choose error according to precision of input/output
-  res =
-      (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 72.))) * (res))); // 72 = 8 * 9
-  res =
-      (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 42.))) * (res))); // 42 = 6 * 7
-  res =
-      (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 20.))) * (res))); // 20 = 4 * 5
-  res =
-      (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 6.))) * (res))); // 6  = 2 * 3
+  res = (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 72.))) *
+                (res))); // 72 = 8 * 9
+  res = (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 42.))) *
+                (res))); // 42 = 6 * 7
+  res = (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 20.))) *
+                (res))); // 20 = 4 * 5
+  res = (one - ((b2 * fpsimd_t<_lf, _rt>(fp_t<_lf, _rt>(1. / 6.))) *
+                (res))); // 6  = 2 * 3
   res = b * (res);
 
   return res;
 }
 
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sin(const fpsimd_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sin(const fpsimd_t<_lf, _rt> &a) {
   typedef typename fp_t<_lf, _rt>::value_type val_t;
   typedef typename fp_t<_lf, _rt>::simd_logical log_t;
   fpsimd_t<_lf, _rt> b = a;

@@ -27,13 +27,10 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   fp_t<_lf, _rt> res;
 
   //// Fastest, but only gives integer output
@@ -56,33 +53,29 @@ inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
 
 // Compatibility with base types
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const T &b)
-{
+inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const T &b) {
   return div(a, fp_t<_lf, _rt>(b));
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> div(const T &b, const fp_t<_lf, _rt> &a)
-{
+inline fp_t<_lf, _rt> div(const T &b, const fp_t<_lf, _rt> &a) {
   return div(fp_t<_lf, _rt>(b), a);
 }
 
 // Operator overload with base type compatibility
 template <unsigned char _lf, unsigned char _rt>
-inline fp_t<_lf, _rt> operator/(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b)
-{
+inline fp_t<_lf, _rt> operator/(const fp_t<_lf, _rt> &a,
+                                const fp_t<_lf, _rt> &b) {
   return div(a, b);
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> operator/(const fp_t<_lf, _rt> &a, const T &b)
-{
+inline fp_t<_lf, _rt> operator/(const fp_t<_lf, _rt> &a, const T &b) {
   return div(a, fp_t<_lf, _rt>(b));
 }
 
 template <unsigned char _lf, unsigned char _rt, typename T>
-inline fp_t<_lf, _rt> operator/(const T &b, const fp_t<_lf, _rt> &a)
-{
+inline fp_t<_lf, _rt> operator/(const T &b, const fp_t<_lf, _rt> &a) {
   return div(fp_t<_lf, _rt>(b), a);
 }
 

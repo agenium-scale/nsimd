@@ -25,19 +25,16 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FUNCTION_SIMD_REC_HPP
 #define NSIMD_MODULES_FUNCTION_SIMD_REC_HPP
 
-#include <nsimd/nsimd.h>
-#include "nsimd/modules/fixed_point/simd.hpp"
 #include "nsimd/modules/fixed_point/function/simd/div.hpp"
+#include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0)
-{
-   fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-   return simd_div<_lf, _rt>(one, a0);
+NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
+  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
+  return simd_div<_lf, _rt>(one, a0);
 }
 
 // // Calculate 1/a via newton-raphson
@@ -72,7 +69,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0)
 //     // tmp2 = tmp1 * res0;
 //     // res1 = tmp2 + res0;
 //     // res0 = res1;
-    
+
 //     res0 = res0 * (one + (one - abs * res0));
 //     // res0 = res0 * (two - abs * res0);
 //   }

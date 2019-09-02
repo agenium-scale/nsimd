@@ -30,10 +30,8 @@ SOFTWARE.
 
 #include <vector>
 
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 // template <uint8_t _lf, uint8_t _rt>
 // typedef std::vector<fp_t<_lf, _rt>> fpv_t;
 

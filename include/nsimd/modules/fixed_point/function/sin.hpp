@@ -31,13 +31,10 @@ SOFTWARE.
 // Calculate sin(x) using Taylor series up to x^9 (error is of the order x^11)
 // Limits input to range[0,pi/2] for best precision
 // -- range reduction is not trivially vectorizable though...
-namespace nsimd
-{
-namespace fixed_point
-{
+namespace nsimd {
+namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> safe_sin(const fp_t<_lf, _rt> &b)
-{
+NSIMD_INLINE fp_t<_lf, _rt> safe_sin(const fp_t<_lf, _rt> &b) {
   fp_t<_lf, _rt> b2 = b * b;
   fp_t<_lf, _rt> one = constants::one<_lf, _rt>();
   fp_t<_lf, _rt> res(1);
@@ -52,25 +49,23 @@ NSIMD_INLINE fp_t<_lf, _rt> safe_sin(const fp_t<_lf, _rt> &b)
 }
 
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> sin(const fp_t<_lf, _rt> &a)
-{
+NSIMD_INLINE fp_t<_lf, _rt> sin(const fp_t<_lf, _rt> &a) {
   fp_t<_lf, _rt> b = a;
   // Reduce to range [0,inf]
   fp_t<_lf, _rt> mul = constants::one<_lf, _rt>();
-  if(b < fp_t<_lf, _rt>(0))
-  {
+  if (b < fp_t<_lf, _rt>(0)) {
     b = -1 * b;
     mul = -1;
   }
 
   // Reduce to range [0,2pi]
-  b = b - constants::twopi<_lf, _rt>() * floor(b / constants::twopi<_lf, _rt>());
+  b = b -
+      constants::twopi<_lf, _rt>() * floor(b / constants::twopi<_lf, _rt>());
 
   // Reduce to range [0,pi/2]
   fp_t<_lf, _rt> frac = b / constants::twopi<_lf, _rt>();
   // Reduce to range [0,pi]
-  if(frac > fp_t<_lf, _rt>(0.5))
-  {
+  if (frac > fp_t<_lf, _rt>(0.5)) {
     b = b - constants::pi<_lf, _rt>();
     mul = -1 * mul;
     frac = frac - 0.5;

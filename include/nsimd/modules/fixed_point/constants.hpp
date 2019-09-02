@@ -27,17 +27,13 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 
-namespace nsimd
-{
-namespace fixed_point
-{
-namespace constants
-{
-#define DEFINE_CONSTANT(name, value)                                                     \
-  template <unsigned char lf, unsigned char rt>                                          \
-  const NSIMD_INLINE fp_t<lf, rt> name()                                          \
-  {                                                                                      \
-    return fp_t<lf, rt>(value);                                                          \
+namespace nsimd {
+namespace fixed_point {
+namespace constants {
+#define DEFINE_CONSTANT(name, value)                                           \
+  template <unsigned char lf, unsigned char rt>                                \
+  const NSIMD_INLINE fp_t<lf, rt> name() {                                     \
+    return fp_t<lf, rt>(value);                                                \
   }
 
 DEFINE_CONSTANT(zero, 0)
