@@ -64,7 +64,7 @@ Supported operators
 ===================
 
 The following nsimd operators are currently implemented, they have the same interface
-then the regular NSIMD library.
+than the regular NSIMD library.
 
 Load / store
 ------------
