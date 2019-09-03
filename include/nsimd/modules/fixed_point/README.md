@@ -114,7 +114,7 @@ Bitwise operators
 -----------------
 
 - `andb/l`
-- `andnotb\l`
+- `andnotb/l`
 - `notb/l`
 - `orb/l`
 - `xorb/l`

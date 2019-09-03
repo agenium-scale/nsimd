@@ -32,7 +32,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_min(const fpsimd_t<_lf, _rt> &a0,
                                          const fpsimd_t<_lf, _rt> &a1) {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
   fpsimd_t<_lf, _rt> res;
-  res.raw = nsimd::min(a0, a1, raw_t());
+  res._raw = nsimd::min(a0._raw, a1._raw, raw_t());
   return res;
 }
 

@@ -191,6 +191,68 @@ def gen_arithmetic_ops_tests(lf, rt, opts):
         common.clang_format(opts, filename)
 
 # ------------------------------------------------------------------------------
+# Min max operators template
+
+minmax_test_template = """\
+{includes}
+#define op_min(a, b) ((a) < (b) ?(a) : (b))
+#define op_max(a, b) ((a) > (b) ?(a) : (b))
+
+// -----------------------------------------------------------------------------
+
+{decls}
+// -----------------------------------------------------------------------------
+
+int main() {{
+  typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
+  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
+
+  srand(time(NULL));
+
+  // FP vectors
+  fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
+  fp_t *res_fp  = (fp_t *) malloc(v_size * sizeof(fp_t));
+
+  int *res_ref  = (int *) malloc(v_size * sizeof(int));
+
+  for (size_t i = 0; i < v_size; i++) {{
+    tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
+    tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
+  }}
+
+  vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
+  vec_t v1_fp = nsimd::fixed_point::loadu<vec_t>(tab1_fp);
+  vec_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp, v1_fp);
+  nsimd::fixed_point::storeu(res_fp, vres_fp);
+
+  for (size_t i = 0; i < v_size; i++) {{
+    res_ref[i] = op_{op_name}((int) tab0_fp[i]._raw, (int) tab1_fp[i]._raw);
+  }}
+
+  for(size_t i = 0; i < v_size; i++) {{
+    CHECK(res_fp[i]._raw == res_ref[i]);
+  }}
+ 
+  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  return EXIT_SUCCESS;
+}}
+"""
+
+minmax_ops = ["min", "max"]
+def gen_minmax_ops_tests(lf, rt, opts):
+    for op_name in minmax_ops:
+        decls = check + limits + comparison_fp + gen_random_val
+        content_src = minmax_test_template.format(
+            op_name=op_name, lf=lf, rt=rt,
+            includes=includes, decls=decls)
+        filename = get_filename(opts, op_name, lf, rt)
+        with common.open_utf8(filename) as fp:
+            fp.write(content_src)
+        common.clang_format(opts, filename)
+        
+# ------------------------------------------------------------------------------
 # Ternary ops (FMA and co)
 
 ternary_ops_template = """\
@@ -607,6 +669,9 @@ def doit(opts):
         for rt in rt_vals:
             ## Arithmetic operators
             gen_arithmetic_ops_tests(lf, rt, opts)
+
+            ## Min and max operators
+            gen_minmax_ops_tests(lf, rt, opts)
 
             ## Ternary_operators
             gen_ternary_ops_tests(lf, rt, opts)
