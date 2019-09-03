@@ -92,6 +92,18 @@ NSIMD_INLINE pack<T> fma(pack<T> a0, pack<T> a1, pack<T> a2) {
   return res;
 }
 
+template <typename T> NSIMD_INLINE pack<T> min(pack<T> a0, pack<T> a1) {
+  pack<T> res;
+  res.val = simd_min(a0.val, a1.val);
+  return res;
+}
+
+template <typename T> NSIMD_INLINE pack<T> max(pack<T> a0, pack<T> a1) {
+  pack<T> res;
+  res.val = simd_max(a0.val, a1.val);
+  return res;
+}
+
 // -----------------------------------------------------------------------------
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------
