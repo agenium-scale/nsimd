@@ -1140,6 +1140,153 @@ def gen_reverse(opts, op, typ, lang):
 
     common.clang_format(opts, filename)
 
+# -----------------------------------------------------------------------------
+# Unpack
+
+def gen_unpack(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+    if typ == 'f16':
+      left = '(double)nsimd_f16_to_f32(mpfr_out)'
+      right = '(double)nsimd_f16_to_f32(nsimd_out)'
+    elif typ == 'f32':
+      left = '(double)mpfr_out'
+      right = '(double)nsimd_out'
+    else:
+      left = 'mpfr_out'
+      right = 'nsimd_out'
+      
+    if lang == 'c_base':
+      extra_code = relative_distance_c
+      typ_nsimd = 'vec({typ})'.format(typ=typ)
+      vout1_comp = '''vec({typ}) va1, va2, vc;
+                      va1 = vloadu(&vin1[i], {typ});
+                      va2 = vloadu(&vin2[i], {typ});
+                      vc = v{op_name}(va1, va2, {typ});
+                      vstoreu(&vout[i], vc, {typ});'''. \
+                      format(typ=typ, op_name=op.name)
+    if lang == 'cxx_base':
+      extra_code = relative_distance_cpp
+      typ_nsimd = 'vec({typ})'.format(typ=typ)
+      vout1_comp = '''vec({typ}) va1, va2, vc;
+                      va1 = nsimd::loadu(&vin1[i], {typ}());
+                      va2 = nsimd::loadu(&vin2[i], {typ}());
+                      vc = nsimd::{op_name}(va1, va2, {typ}());
+                      nsimd::storeu(&vout[i], vc, {typ}());'''. \
+                      format(typ=typ, op_name=op.name)
+    if lang == 'cxx_adv':
+      extra_code = relative_distance_cpp
+      typ_nsimd = 'nsimd::pack<{typ}>'.format(typ=typ)
+      vout1_comp = '''nsimd::pack<{typ}> va1, va2, vc;
+                      va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
+                      va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[i]);
+                      vc = nsimd::{op_name}(va1, va2);
+                      nsimd::storeu(&vout[i], vc);'''. \
+                      format(typ=typ, op_name=op.name)
+
+
+    op_test =  'step/(2*nb_lane)'
+    comp_unpack =  '''comp_function(vout[i], vin1[j]) || 
+                      comp_function(vout[i+1], vin2[j])'''
+    
+    nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
+    comp = 'return ({} - {}) > get_2th_power(-{nbits})'. \
+            format(left, right, nbits='11' if typ != 'f16' else '9')   
+    head = '''#define _POSIX_C_SOURCE 200112L
+    
+              {includes}
+              #include <float.h>
+              #include <math.h>
+              
+              #define SIZE (2048 / {sizeof})
+
+              #define CHECK(a) {{ \\
+                errno = 0; \\
+                if (!(a)) {{ \\
+                fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                        __LINE__, strerror(errno)); \\
+                fflush(stderr); \\
+                exit(EXIT_FAILURE); \\
+                }} \\
+              }}
+
+              {extra_code}
+
+              // {simd}
+              
+              int comp_function({typ} mpfr_out, {typ} nsimd_out)
+            {{
+              {comp};
+            }}
+            ''' .format(year=date.today().year, typ=typ,
+                          includes=get_includes(lang), comp=comp,
+                          extra_code=extra_code, 
+                          comp_unpack=comp_unpack, 
+                          sizeof=common.sizeof(typ), simd= opts.simd)
+               
+    rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
+                / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
+    with common.open_utf8(filename) as out:
+        out.write(
+        '''{head}
+
+           int main(void) {{
+              int vi, i, step, nb_lane;
+              {typ} *vin1, *vin2;
+              {typ} *vout;
+
+              CHECK(vin1 = ({typ} *)nsimd_aligned_alloc(SIZE * {sizeof}));
+              CHECK(vin2 = ({typ} *)nsimd_aligned_alloc(SIZE * {sizeof}));
+              CHECK(vout = ({typ} *)nsimd_aligned_alloc(SIZE * {sizeof}));
+
+              step = vlen({typ});
+              nb_lane = sizeof({typ_nsimd})/16;
+              if (nb_lane == 0){{
+                nb_lane = 1;
+              }}
+
+              fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+              /* Fill input vector(s) with random */
+              for (i = 0; i < SIZE; i++)  
+              {{
+                vin1[i] = {rand};
+                vin2[i] = {rand};
+              }}
+
+              /* Fill output vector with computed values */
+              for (i = 0; i < SIZE; i += step) 
+              {{
+                {vout1_comp}
+              }}
+
+              /* Compare results */
+              for (vi = 0; vi < SIZE; vi += step) 
+              {{
+                for (int i = vi, j = vi + {pos}; i < vi+ {op_test}; 
+                i= i + 2, j++) 
+                {{
+                  if ({comp_unpack}) 
+                  {{
+                    fprintf(stdout, "test of {op_name} over {typ}... FAIL\\n");
+                    fflush(stdout);
+                    return -1;
+                  }}
+                }}
+              }}
+
+              fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+              fflush(stdout);
+              return EXIT_SUCCESS;
+            }}
+        '''.format(includes=get_includes(lang), op_name=op.name,
+                   typ=typ, year=date.today().year,sizeof=common.sizeof(typ), 
+                   rand=rand, head=head, comp_unpack=comp_unpack, 
+                   vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
+                   pos='0' if op.name != 'zip1' else op_test))
+
+    common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
 # Entry point
@@ -1191,6 +1338,10 @@ def doit(opts):
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');
                 gen_reverse(opts, operator, typ, 'cxx_adv');
+            elif operator.name in ['zip1', 'zip2']:
+                gen_unpack(opts, operator, typ, 'c_base')
+                gen_unpack(opts, operator, typ, 'cxx_base')
+                gen_unpack(opts, operator, typ, 'cxx_adv')
             else:
                 gen_test(opts, operator, typ, 'c_base', ulps)
                 gen_test(opts, operator, typ, 'cxx_base', ulps)

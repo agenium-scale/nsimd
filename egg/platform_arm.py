@@ -1686,6 +1686,21 @@ def downcvt1(simd_ext, from_typ, to_typ):
                     format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
+## unpack functions
+
+def zip(func, simd_ext, typ):
+   
+    if simd_ext in 'aarch64':
+        return 'return v{op}_{suf}({in0}, {in1});'. \
+                   format(op=func, **fmtspec)
+    elif simd_ext == 'neon128':
+        return 'return v{op}q_{suf}({in0}, {in1});'. \
+                   format(op=func, **fmtspec)  
+    else:
+        return 'return sv{op}_{suf}({in0}, {in1});'. \
+               format(op=func, **fmtspec)
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -1779,7 +1794,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': 'reverse1(simd_ext, from_typ)',
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
-        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)'
+        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        'zip2': 'zip("zip2", simd_ext, from_typ)',
+        'zip1': 'zip("zip1", simd_ext, from_typ)'
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

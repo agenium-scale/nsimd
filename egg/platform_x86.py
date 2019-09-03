@@ -2453,6 +2453,33 @@ def downcvt1(simd_ext, from_typ, to_typ):
               **fmtspec)
 
 # -----------------------------------------------------------------------------
+## zip functions
+
+def zip(func, simd_ext, typ):
+    if simd_ext == 'avx' and typ in ['i8', 'i16', 'i32', 'i64']:
+        extr='''__m128i alo = {extract_1};
+                __m128i ahi = {extract_2};
+                __m128i blo = {extract_3};
+                __m128i bhi = {extract_4};'''.\
+                format(func= func, **fmtspec,
+                extract_1=extract(simd_ext, typ, LO, common.in0), 
+                extract_2=extract(simd_ext, typ, HI, common.in0),
+                extract_3=extract(simd_ext, typ, LO, common.in1), 
+                extract_4=extract(simd_ext, typ, HI, common.in1))
+
+        return \
+            '''{extra}
+            __m128i c1 = _mm_{func}{suf}(alo, blo);
+            __m128i c2 = _mm_{func}{suf}(ahi, bhi);
+            return {merge}; '''.\
+            format(extra=extr, func=func, **fmtspec,
+                   merge=setr(simd_ext, typ, 'c1', 'c2'))
+    else:
+        return 'return {pre}{func}{suf}({in0}, {in1});'. \
+                format(func=func, **fmtspec)
+
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -2549,7 +2576,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': reverse1(simd_ext, from_typ),
         'addv': addv(simd_ext, from_typ),
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
-        'downcvt': downcvt1(simd_ext, from_typ, to_typ)
+        'downcvt': downcvt1(simd_ext, from_typ, to_typ),
+        'zip2': zip('unpacklo', simd_ext, from_typ),
+        'zip1': zip('unpackhi', simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
