@@ -276,10 +276,10 @@ int main() {{
   fp_t *res_fp  = (fp_t *) malloc(v_size * sizeof(fp_t));
 
   // Floating point equivalent
-  double *tab0_f = (double *) malloc(v_size * sizeof(double));;
-  double *tab1_f = (double *) malloc(v_size * sizeof(double));;
-  double *tab2_f = (double *) malloc(v_size * sizeof(double));;
-  double *res_f  = (double *) malloc(v_size * sizeof(double));;
+  double *tab0_f = (double *) malloc(v_size * sizeof(double));
+  double *tab1_f = (double *) malloc(v_size * sizeof(double));
+  double *tab2_f = (double *) malloc(v_size * sizeof(double));
+  double *res_f  = (double *) malloc(v_size * sizeof(double));
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
@@ -313,7 +313,7 @@ int main() {{
 }}
 """
 
-ternary_ops = [("fma", "res_f[i] = a + b * c;")]
+ternary_ops = [("fma", "res_f[i] = (a * b) + c;")]
 def gen_ternary_ops_tests(lf, rt, opts):
     for op_name, statement in ternary_ops:
         decls = check + limits + comparison_fp + gen_random_val

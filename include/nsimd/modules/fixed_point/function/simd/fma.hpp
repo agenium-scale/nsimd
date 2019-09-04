@@ -25,10 +25,10 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FMA_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_FMA_HPP
 
+#include <nsimd/nsimd.h>
+#include "nsimd/modules/fixed_point/simd.hpp"
 #include "nsimd/modules/fixed_point/function/simd/add.hpp"
 #include "nsimd/modules/fixed_point/function/simd/mul.hpp"
-#include "nsimd/modules/fixed_point/simd.hpp"
-#include <nsimd/nsimd.h>
 
 namespace nsimd {
 namespace fixed_point {
@@ -38,7 +38,9 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_fma(const fpsimd_t<_lf, _rt> &a0,
                                          const fpsimd_t<_lf, _rt> &a1,
                                          const fpsimd_t<_lf, _rt> &a2) {
   fpsimd_t<_lf, _rt> res;
-  return simd_add(a0, simd_mul(a1, a2));
+  res = simd_mul<_lf, _rt>(a0, a1);
+  res = simd_add<_lf, _rt>(res, a2);
+  return res;
 }
 
 } // namespace fixed_point

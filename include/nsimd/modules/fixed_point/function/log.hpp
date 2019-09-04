@@ -99,13 +99,13 @@ NSIMD_INLINE fp_t<_lf, _rt> log2(const fp_t<_lf, _rt> &a) {
 
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt> log(const fp_t<_lf, _rt> &a) {
-  fp_t<_lf, _rt> res = log2(a) / fixed::constants::log2_e<_lf, _rt>();
+  fp_t<_lf, _rt> res = log2(a) / fixed_point::constants::log2_e<_lf, _rt>();
   return res;
 }
 
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt> log10(const fp_t<_lf, _rt> &a) {
-  fp_t<_lf, _rt> res = log2(a) / fixed::constants::log2_10<_lf, _rt>();
+  fp_t<_lf, _rt> res = log2(a) / fixed_point::constants::log2_10<_lf, _rt>();
   return res;
 }
 

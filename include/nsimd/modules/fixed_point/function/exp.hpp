@@ -28,6 +28,7 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/constants.hpp"
 #include "nsimd/modules/fixed_point/fixed.hpp"
 #include "nsimd/modules/fixed_point/function/floor.hpp"
+#include "nsimd/modules/fixed_point/function/log.hpp"
 
 #include <iostream>
 
@@ -77,7 +78,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a,
   fp_t<_lf, _rt> fact = constants::one<_lf, _rt>();
   fp_t<_lf, _rt> res = constants::one<_lf, _rt>();
   fp_t<_lf, _rt> log_eval = constants::one<_lf, _rt>();
-  fp_t<_lf, _rt> log_init = rem * log(a);
+  fp_t<_lf, _rt> log_init = rem * nsimd::fixed_point::log(a);
   // TODO: choose better stopping condition
   // For   x  , error is of order 1/(3*sizeof(x))!
   //     int8_t         ,   log2( 1/(6!)  ) = 9.5  bits precision
