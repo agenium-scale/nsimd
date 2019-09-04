@@ -2456,27 +2456,37 @@ def downcvt1(simd_ext, from_typ, to_typ):
 ## zip functions
 
 def zip(func, simd_ext, typ):
-    if simd_ext == 'avx' and typ in ['i8', 'i16', 'i32', 'i64']:
-        extr='''__m128i alo = {extract_1};
-                __m128i ahi = {extract_2};
-                __m128i blo = {extract_3};
-                __m128i bhi = {extract_4};'''.\
-                format(func= func, **fmtspec,
-                extract_1=extract(simd_ext, typ, LO, common.in0), 
-                extract_2=extract(simd_ext, typ, HI, common.in0),
-                extract_3=extract(simd_ext, typ, LO, common.in1), 
-                extract_4=extract(simd_ext, typ, HI, common.in1))
 
-        return \
-            '''{extra}
-            __m128i c1 = _mm_{func}{suf}(alo, blo);
-            __m128i c2 = _mm_{func}{suf}(ahi, bhi);
-            return {merge}; '''.\
-            format(extra=extr, func=func, **fmtspec,
-                   merge=setr(simd_ext, typ, 'c1', 'c2'))
+    if typ in ['u8', 'u16', 'u32', 'u64']:
+        cast='''{simd_typ} a = 
+            nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in0});
+                {simd_typ} b = 
+            nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in1});'''.\
+            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
     else:
-        return 'return {pre}{func}{suf}({in0}, {in1});'. \
-                format(func=func, **fmtspec)
+        cast='''{simd_typ} a = {in0};
+                {simd_typ} b = {in1};'''.\
+                    format(**fmtspec, simd_typ=get_type(simd_ext, typ))
+
+
+    if simd_ext == 'avx' and typ in \
+        ['i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64']:
+        
+        return \
+            '''{cast}
+            __m128i c1 = _mm_{func}{suf}({extract_1}, {extract_3});
+            __m128i c2 = _mm_{func}{suf}({extract_2}, {extract_4});
+            return {merge}; '''.\
+            format(func=func, **fmtspec, cast=cast,
+                extract_1=extract(simd_ext, typ, LO, 'a'), 
+                extract_2=extract(simd_ext, typ, HI, 'a'),
+                extract_3=extract(simd_ext, typ, LO, 'b'), 
+                extract_4=extract(simd_ext, typ, HI, 'b'),
+                merge=setr(simd_ext, typ, 'c1', 'c2'))
+    else:
+        return  '''{cast}
+                return {pre}{func}{suf}(a, b);'''. \
+                format(func=func, cast=cast, **fmtspec)
 
 
 # -----------------------------------------------------------------------------

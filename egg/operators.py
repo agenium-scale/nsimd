@@ -991,7 +991,7 @@ class Rsqrt11(Operator):
 class Zip1(Operator):
     full_name = 'zip1'
     signature = 'v zip1 v v'
-    types = ['i8', 'i16', 'i32', 'i64', 'f32', 'f64']
+    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
     domain = Domain('R')
     categories = [DocMisc]
     tests_ulps = True
@@ -999,7 +999,7 @@ class Zip1(Operator):
 class Zip2(Operator):
     full_name = 'zip2'
     signature = 'v zip2 v v'
-    types = ['i8', 'i16', 'i32', 'i64', 'f32', 'f64']
+    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
     domain = Domain('R')
     categories = [DocMisc]
     tests_ulps = True
