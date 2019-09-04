@@ -1262,19 +1262,22 @@ def gen_unpack(opts, op, typ, lang):
               }}
 
               /* Compare results */
-              for (vi = 0; vi < SIZE; vi += step) 
-              {{
-                for (int i = vi, j = vi + {pos}; i < vi+ {op_test}; 
-                i= i + 2, j++) 
+              if (step != 1) {{
+                for (vi = 0; vi < SIZE; vi += step) 
                 {{
-                  if ({comp_unpack}) 
+                  for (int i = vi, j = vi + {pos}; i < vi+ {op_test}; 
+                  i= i + 2, j++) 
                   {{
-                    fprintf(stdout, "test of {op_name} over {typ}... FAIL\\n");
-                    fflush(stdout);
-                    return -1;
+                    if ({comp_unpack}) 
+                    {{
+                      fprintf(stdout, "test of {op_name} over {typ}... FAIL\\n");
+                      fflush(stdout);
+                      return -1;
+                    }}
                   }}
                 }}
               }}
+              
 
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
               fflush(stdout);

@@ -1691,7 +1691,10 @@ def downcvt1(simd_ext, from_typ, to_typ):
 def zip(func, simd_ext, typ):
    
     if simd_ext in 'aarch64':
-        return 'return v{op}_{suf}({in0}, {in1});'. \
+        if typ in['i64', 'u64', 'f64']:
+            return 'return {in0};'.format(**fmtspec)
+        else :
+            return 'return v{op}_{suf}({in0}, {in1});'. \
                    format(op=func, **fmtspec)
     elif simd_ext == 'neon128':
         return 'return v{op}q_{suf}({in0}, {in1});'. \
