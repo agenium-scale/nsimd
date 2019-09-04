@@ -31,10 +31,10 @@ SOFTWARE.
 namespace nsimd {
 namespace fixed_point {
 template <uint8_t _lf, uint8_t _rt>
-fpsimd_t<_lf, _rt> simd_set1(const typename fpsimd_t<_lf, _rt>::base_type &a0) {
+fpsimd_t<_lf, _rt> simd_set1(const fp_t<_lf, _rt> &a0) {
   typedef typename fpsimd_t<_lf, _rt>::base_type raw_t;
   fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::set1(a0, raw_t());
+  res._raw = nsimd::set1(a0._raw, raw_t());
   return res;
 }
 
