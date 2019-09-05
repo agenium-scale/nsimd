@@ -2587,8 +2587,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'addv': addv(simd_ext, from_typ),
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
         'downcvt': downcvt1(simd_ext, from_typ, to_typ),
-        'zip2': zip('unpacklo', simd_ext, from_typ),
-        'zip1': zip('unpackhi', simd_ext, from_typ)
+        'ziplo': zip('unpacklo', simd_ext, from_typ),
+        'ziphi': zip('unpackhi', simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

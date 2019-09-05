@@ -617,7 +617,7 @@ def len1(typ):
 def zip(func, typ):
     n = get_nb_el(typ)
     content = ''
-    if func == "zip2":
+    if func == "ziplo":
          content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
                         format(i=i, j1=i*2, j2=i*2+1, **fmtspec) \
                         for i in range(0, int(n/2)))
@@ -722,8 +722,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'addv': addv1(from_typ),
         'upcvt': upcvt1(from_typ, to_typ),
         'downcvt': downcvt2(from_typ, to_typ),
-        'zip2': zip('zip2', from_typ),
-        'zip1': zip('zip1', from_typ)
+        'ziplo': zip('ziplo', from_typ),
+        'ziphi': zip('ziphi', from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

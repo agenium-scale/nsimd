@@ -988,17 +988,17 @@ class Rsqrt11(Operator):
     categories = [DocBasicArithmetic]
     tests_ulps = True
 
-class Zip1(Operator):
-    full_name = 'zip1'
-    signature = 'v zip1 v v'
+class Ziplo(Operator):
+    full_name = 'ziplo'
+    signature = 'v ziplo v v'
     types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
     domain = Domain('R')
     categories = [DocMisc]
     tests_ulps = True
 
-class Zip2(Operator):
-    full_name = 'zip2'
-    signature = 'v zip2 v v'
+class Ziphi(Operator):
+    full_name = 'ziphi'
+    signature = 'v ziphi v v'
     types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
     domain = Domain('R')
     categories = [DocMisc]

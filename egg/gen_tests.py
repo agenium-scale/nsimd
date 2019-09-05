@@ -1265,7 +1265,7 @@ def gen_unpack(opts, op, typ, lang):
               if (step != 1) {{
                 for (vi = 0; vi < SIZE; vi += step) 
                 {{
-                  for (int i = vi, j = vi + {pos}; i < vi+ {op_test}; 
+                  for (int i = vi, j = vi + step; i < vi+ step; 
                   i= i + 2, j++) 
                   {{
                     if ({comp_unpack}) 
