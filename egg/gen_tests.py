@@ -1265,7 +1265,7 @@ def gen_unpack(opts, op, typ, lang):
               if (step != 1) {{
                 for (vi = 0; vi < SIZE; vi += step) 
                 {{
-                  for (int i = vi, j = vi + step; i < vi+ step; 
+                  for (int i = vi, j = vi + {pos}; i < vi+ step; 
                   i= i + 2, j++) 
                   {{
                     if ({comp_unpack}) 
@@ -1287,7 +1287,7 @@ def gen_unpack(opts, op, typ, lang):
                    typ=typ, year=date.today().year,sizeof=common.sizeof(typ), 
                    rand=rand, head=head, comp_unpack=comp_unpack, 
                    vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
-                   pos='0' if op.name != 'zip1' else op_test))
+                   pos='0' if op.name == 'ziplo' else op_test))
 
     common.clang_format(opts, filename)
 
@@ -1341,7 +1341,7 @@ def doit(opts):
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');
                 gen_reverse(opts, operator, typ, 'cxx_adv');
-            elif operator.name in ['zip1', 'zip2']:
+            elif operator.name in ['ziphi', 'ziplo']:
                 gen_unpack(opts, operator, typ, 'c_base')
                 gen_unpack(opts, operator, typ, 'cxx_base')
                 gen_unpack(opts, operator, typ, 'cxx_adv')
