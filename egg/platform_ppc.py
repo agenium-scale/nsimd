@@ -153,11 +153,11 @@ def get_logical_type(simd_ext, typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     elif typ == 'i64':
-        return 'struct {i64 v0; i64 v1;}'
+        return 'struct {u32 v0; u32 v1;}'
     elif typ == 'u64':
-        return 'struct {u64 v0; u64 v1;}'
+        return 'struct {u32 v0; u32 v1;}'
     elif typ == 'f64':
-        return 'struct {u64 v0; u64 v1;}'
+        return 'struct {u32 v0; u32 v1;}'
     else:
         return ppc_vec_typel(typ)
 
@@ -208,6 +208,9 @@ def get_additional_include(func, platform, simd_ext):
     if func in ['shr', 'shl']:
         ret += '''#include <nsimd/ppc/{simd_ext}/set1.h>
                   '''.format(**fmtspec)
+
+    if func[:11] == 'reinterpret':
+        ret += '#include <string.h>'
 
     if func[:4] == 'load':
         ret +='''
@@ -816,8 +819,8 @@ def shl_shr(op, simd_ext, typ):
     else:
         ppcop = {'shl': 'sl', 'shr': 'sr'}
         return '''
-             nsimd_{simd_ext}_vu{type_size} tmp;
-             tmp = nsimd_set1_{simd_ext}_u{type_size}({in1});
+             nsimd_{simd_ext}_vu{type_size} tmp
+                = nsimd_set1_{simd_ext}_u{type_size}((u{type_size})({in1}));
              return vec_{op}({in0}, tmp);'''. \
                      format(op=ppcop[op], type_size=typ[1:], **fmtspec)
 
@@ -898,11 +901,11 @@ def abs1(simd_ext, typ):
     else:
         return 'return vec_abs({in0});'.format(**fmtspec)
 
-## Round, trunc, ceil and round_to_even
+## Round, trunc and ceil
 
 def round1(op, simd_ext, typ):
     ppcop = {'round': 'round', 'trunc': 'trunc', 'ceil': 'ceil',
-            'floor':'floor', 'round_to_even': 'round'}
+            'floor':'floor'}
     if typ[0] == 'i' or typ[0] == 'u':
         return 'return {in0};'.format(**fmtspec)
     elif typ == 'f16':
@@ -914,6 +917,35 @@ def round1(op, simd_ext, typ):
     else:
         raise ValueError('Unknown round: "{}" for type : "{}"'. \
                 format(op, typ))
+
+# Round to even
+def round_to_even1(simd_ext, typ) :
+    if typ[0] == 'i' or typ[0] == 'u':
+        return 'return {in0};'.format(**fmtspec)
+    elif typ == 'f16':
+        return emulate_16('round_to_even', simd_ext, 1, False)
+    elif typ == 'f32':
+        return \
+        '''nsimd_{simd_ext}_v{typ} fl = vec_floor({in0});
+           nsimd_{simd_ext}_v{typ} ce = vec_ceil({in0});
+
+           nsimd_{simd_ext}_v{typ} half = {{0.5f, 0.5f, 0.5f, 0.5f}};
+           nsimd_{simd_ext}_v{typ} fl_p_half = fl + half;
+           nsimd_{simd_ext}_v{typ} flo2 = fl * half;
+
+           nsimd_{simd_ext}_vl{typ} test1 = vec_cmpeq(a0, fl_p_half);
+           nsimd_{simd_ext}_vl{typ} test2 = vec_cmpeq(vec_floor(flo2), flo2);
+           nsimd_{simd_ext}_vl{typ} test3 = vec_cmple(a0, fl_p_half);
+
+           nsimd_{simd_ext}_vl{typ} test4 =
+                vec_or(vec_and(vec_nor(test1, test1), test3),
+                       vec_and(test1, test2));
+
+           return vec_sel(ce, fl, test4);
+        '''.format(**fmtspec)
+    elif typ == 'f64':
+        return emulate_64('round_to_even', simd_ext, 2 * ['v'])
+
 
 ## FMA
 def fma(simd_ext, typ):
@@ -986,7 +1018,8 @@ def recs1(op, simd_ext, typ):
     elif op == 'rec11':
         return 'return vec_re({in0});'.format(**fmtspec)
     elif op == 'rec':
-        return 'return ({typ})(1)/{in0};'.format(**fmtspec)
+        return 'return nsimd_set1_{simd_ext}_f32(1.f)/{in0};'. \
+                format(vec_type=ppc_vec_type(typ), **fmtspec)
     elif op == 'rsqrt11':
         return 'return vec_rsqrte({in0});'.format(**fmtspec)
 
@@ -1050,11 +1083,11 @@ def nbtrue1(simd_ext, typ):
     else:
         return \
         '''nat i;
-           {typ} ret = ({typ}) 0;
+           int ret = 0;
            {typ} buf[{size}];
            nsimd_storelu_{simd_ext}_{typ}(buf, {in0});
            for (i=0; i<{size}; ++i) {{
-               ret += buf[i] ? 1:0;
+               ret += (u8)buf[i] ? 1:0;
            }}
            return ret;''' \
            .format(size=128//int(typ[1:]), **fmtspec)
@@ -1067,13 +1100,12 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
     elif from_typ[1:] == '64':
         return \
         '''nsimd_{simd_ext}_vl{to_typ} ret;
-           *((u64*)&ret.v0) = *((u64*)&{in0}.v0);
-           *((u64*)&ret.v1) = *((u64*)&{in0}.v1);
+           memcpy(&ret.v0, &{in0}.v0, sizeof(ret.v0));
+           memcpy(&ret.v1, &{in0}.v1, sizeof(ret.v1));
            return ret;'''.format(**fmtspec)
     elif from_typ == 'f16':
         return \
-        '''nsimd_{simd_ext}_vf16 ret;
-           {to_typ} buf[8];
+        '''{to_typ} buf[8];
            f32 buf_conv[4];
 
            vec_st((__vector float){in0}.v0, 0, buf_conv);
@@ -1093,7 +1125,7 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
     elif to_typ == 'f16':
         return \
         '''nsimd_{simd_ext}_vlf16 ret;
-           {from_typ} buf_conv[8];
+           u16 buf_conv[8];
            f32 buf[4];
 
            vec_st({in0}, 0, buf_conv);
@@ -1123,13 +1155,13 @@ def convert1(simd_ext, from_typ, to_typ):
     elif from_typ == 'f16':
         if to_typ == 'u16':
             return \
-            '''return vec_packsu(vec_ctu({in0}.v0, 0),
-                                 vec_ctu({in0}.v1, 0));'''.\
+            '''return vec_packsu((__vector unsigned int)vec_ctu({in0}.v0, 0),
+                                 (__vector unsigned int)vec_ctu({in0}.v1, 0));'''.\
             format(**fmtspec)
         elif to_typ == 'i16':
             return \
-            '''return vec_packs(vec_cts({in0}.v0, 0),
-                                vec_cts({in0}.v1, 0));'''.\
+            '''return vec_packs((__vector signed int)vec_cts({in0}.v0, 0),
+                                (__vector signed int)vec_cts({in0}.v1, 0));'''.\
             format(**fmtspec)
 
     elif to_typ == 'f16':
@@ -1176,13 +1208,12 @@ def reinterpret1(simd_ext, from_typ, to_typ):
     elif from_typ[1:] == '64':
         return '''
             nsimd_{simd_ext}_v{to_typ} ret;
-            ret.v0 = *({to_typ}*)(&{in0}.v0);
-            ret.v1 = *({to_typ}*)(&{in0}.v1);
+            memcpy(&ret.v0, &{in0}.v0, sizeof(ret.v0));
+            memcpy(&ret.v1, &{in0}.v1, sizeof(ret.v1));
             return ret;
         '''.format(**fmtspec)
     elif from_typ == 'f16':
-        return '''nsimd_{simd_ext}_vf16 ret;
-                  {to_typ} buf[8];
+        return '''{to_typ} buf[8];
                   f32 buf_conv[4];
 
                   vec_st({in0}.v0, 0, buf_conv);
@@ -1200,10 +1231,10 @@ def reinterpret1(simd_ext, from_typ, to_typ):
                   return vec_ld(0, buf);'''.format(**fmtspec)
     elif to_typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
-                  {from_typ} buf_conv[8];
+                  u16 buf_conv[8];
                   f32 buf[4];
 
-                  vec_st({in0}, 0, buf_conv);
+                  vec_st({in0}, 0, ({from_typ}*) buf_conv);
 
                   buf[0] = nsimd_u16_to_f32(buf_conv[0]);
                   buf[1] = nsimd_u16_to_f32(buf_conv[1]);
@@ -1398,7 +1429,8 @@ def downcvt1(simd_ext, from_typ, to_typ):
            return ret;'''.format(**fmtspec)
 
     elif from_typ == 'f32' and (to_typ[0] == 'u' or to_typ[0] == 'i'):
-        conv='vec_ctu' if to_typ[0]=='u' else 'vec_cts'
+        conv='(__vector unsigned int)vec_ctu' if to_typ[0]=='u' \
+            else '(__vector signed int) vec_cts'
 
         return \
         '''return ({ppc_typ})vec_pack({conv}({in0}, 0), {conv}({in1}, 0));'''.\
@@ -1450,11 +1482,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'store3u': 'store1234(simd_ext, from_typ, 3, False)',
         'store4u': 'store1234(simd_ext, from_typ, 4, False)',
         'andb': 'bop2("andb", simd_ext, from_typ)',
-        #Binary => chaque bit du vecteur compte
         'xorb': 'bop2("xorb", simd_ext, from_typ)',
         'orb': 'bop2("orb", simd_ext, from_typ)',
         'andl': 'lop2("andl", simd_ext, from_typ)',
-        # Logical => type de vecteur spéciale
         'xorl': 'lop2("xorl", simd_ext, from_typ)',
         'orl': 'lop2("orl", simd_ext, from_typ)',
         'notb': 'notb1(simd_ext, from_typ)',
@@ -1491,7 +1521,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'ceil': 'round1("ceil", simd_ext, from_typ)',
         'floor': 'round1("floor", simd_ext, from_typ)',
         'trunc': 'round1("trunc", simd_ext, from_typ)',
-        'round_to_even': 'round1("round_to_even", simd_ext, from_typ)',
+        'round_to_even': 'round_to_even1(simd_ext, from_typ)',
         'all': 'allany1("all", simd_ext, from_typ)',
         'any': 'allany1("any", simd_ext, from_typ)',
         'reinterpret': 'reinterpret1(simd_ext, from_typ, to_typ)',

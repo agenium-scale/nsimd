@@ -289,9 +289,6 @@ def round_to_even1(typ):
         return 'return {in0};'.format(**fmtspec)
     stmt = '''{{{{
               {typ2} fl_p_half = fl.v{{i}} + 0.5{suffix};
-              if (fl.v{{i}} == {in0}.v{{i}}) {{{{
-                ret.v{{i}} = {in0}.v{{i}};
-              }}}}
               if ({in0}.v{{i}} == fl_p_half) {{{{
                 f64 flo2 = (f64)(fl.v{{i}} * 0.5{suffix});
                 if (floor(flo2) == flo2) {{{{

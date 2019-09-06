@@ -200,7 +200,7 @@ class Operator(object, metaclass=MAddToOperators):
 
     # Defaults values (for tests)
     tests_mpfr = False
-    tests_ulps = False
+    tests_ulps = {}
 
     @property
     def returns(self):
@@ -855,21 +855,25 @@ class Fma(Operator):
     signature = 'v fma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Fnma(Operator):
     signature = 'v fnma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Fms(Operator):
     signature = 'v fms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Fnms(Operator):
     signature = 'v fnms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Ceil(Operator):
     signature = 'v ceil v'
@@ -967,7 +971,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = True
+    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -986,7 +990,7 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = True
+    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was

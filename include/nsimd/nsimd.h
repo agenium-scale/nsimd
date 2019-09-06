@@ -316,7 +316,15 @@ SOFTWARE.
 
   #define NSIMD_PLATFORM ppc
   #define NSIMD_SIMD power7
+
+  #ifdef NSIMD_IS_CLANG
+    // New version of clang are spamming useless warning comming from their altivec.h file
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wc++11-long-long"
+  #endif
   #include <altivec.h>
+  #ifdef NSIMD_IS_CLANG
+  #endif
   #ifdef bool
     #undef bool
   #endif

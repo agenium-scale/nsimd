@@ -296,7 +296,7 @@ def get_content(op, typ, lang):
                 vout0_set = 'vout0[i] = mpfr_get_flt(c, MPFR_RNDN);'
             else:
                 mpfr_set = 'mpfr_set_d(a{i}, vin{i}[i], MPFR_RNDN);'
-                vout0_set = 'vout0[i] = mpfr_get_d(c, MPFR_RNDN);'
+                vout0_set = 'vout0[i] = ({})mpfr_get_d(c, MPFR_RNDN);'.format(typ)
             mpfr_sets = '\n'.join([mpfr_set.format(i=j) for j in nargs])
             mpfr_clears = '\n'.join(['mpfr_clear(a{});'.format(i) \
                                      for i in nargs])
@@ -324,7 +324,8 @@ def get_content(op, typ, lang):
 
             if op.name[-2:] == '11':
                 vout0_comp += '''
-                    /* Intel 11 bit precision intrinsics normalize denormalized output. */
+                    /* Intel 11 bit precision intrinsics force denormalized output to 0. */
+                    #ifdef NSIMD_X86
                     #pragma GCC diagnostic push
                     #pragma GCC diagnostic ignored "-Wconversion"
                     #pragma GCC diagnostic ignored "-Wdouble-promotion"
@@ -334,6 +335,7 @@ def get_content(op, typ, lang):
                         }}
                     }}
                     #pragma GCC diagnostic pop
+                    #endif
                     '''.format(typ=typ,
                                  f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
                                  f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
@@ -501,6 +503,38 @@ def gen_test(opts, op, typ, lang, ulps):
     if op.name in ['not', 'and', 'or', 'xor', 'andnot']:
         comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
                format(uT=common.bitfield_type[typ])
+    elif op.name in ['max', 'min'] and typ in common.ftypes:
+        if typ == 'f16':
+            left = 'nsimd_f16_to_f32(mpfr_out)'
+            right = 'nsimd_f16_to_f32(nsimd_out)'
+        else:
+            left = 'mpfr_out'
+            right = 'nsimd_out'
+
+        comp = '''#pragma GCC diagnostic push
+                  #pragma GCC diagnostic ignored "-Wconversion"
+                  #pragma GCC diagnostic ignored "-Wdouble-promotion"
+
+                  // None of the architecture correctly manage NaN with the function min and max.
+                  // According to IEEE754, min(a, NaN) should return a but every architecture returns NaN.
+                  if({isnan}({right})) {{
+                    return 0;
+                  }}
+
+                  // PPC doesn't correctly manage +Inf and -Inf in relation with NaN either
+                  // (min(NaN, -Inf) returns -Inf).
+                  #ifdef NSIMD_POWERPC
+                  if({isinf}({right})) {{
+                    return 0;
+                  }}
+                  #endif
+
+                  return {left} != {right};
+                  #pragma GCC diagnostic pop
+                  '''.format(left=left, right=right,
+                          uT=common.bitfield_type[typ],
+                          isnan='isnan' if lang=='c_base' else 'std::isnan',
+                          isinf='isinf' if lang=='c_base' else 'std::isinf')
     else:
         if typ == 'f16':
             left = 'nsimd_f16_to_f32(mpfr_out)'
@@ -513,9 +547,9 @@ def gen_test(opts, op, typ, lang, ulps):
             right = 'nsimd_out'
         relative_distance = relative_distance_c if lang == 'c_base' \
                             else relative_distance_cpp
-        if op.tests_ulps:
+        if op.tests_ulps and typ in common.ftypes:
             comp = 'return relative_distance((double){}, (double){}) > get_2th_power(-{nbits})'. \
-                   format(left, right, nbits='11' if typ != 'f16' else '9')
+                   format(left, right, nbits=op.tests_ulps[typ])
             extra_code += relative_distance
         elif op.src:
             if op.name in ulps:
@@ -923,14 +957,14 @@ def gen_load_store_ravel(opts, op, typ, lang):
     align = op.name[5]
 
     if typ=='f16':
-        convert_to_f16='nsimd_f32_to_f16'
+        convert_to='nsimd_f32_to_f16((f32)'
     else:
-        convert_to_f16=''
+        convert_to='({typ})('.format(typ=typ)
 
     check = '\n'.join(['''
-      comp = vset1({convert_to_f16}({i}+1), {typ});
+      comp = vset1({convert_to}{i}+1), {typ});
       err = err || vany(vne(v.v{i}, comp, {typ}), {typ});
-      '''.format(typ=typ, i=i, convert_to_f16=convert_to_f16) \
+      '''.format(typ=typ, i=i, convert_to=convert_to) \
       for i in range (0, int(deg))])
 
     with common.open_utf8(filename) as out:
@@ -965,7 +999,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
 
              /* Fill in the vectors */
              for (i=0; i<n; ++i) {{
-                 vin[i] = {convert_to_f16}((i%{deg}) + 1);
+                 vin[i] = {convert_to}(i%{deg}) + 1);
              }}
 
              /* Load data and check that each vector is correctly filled */
@@ -986,7 +1020,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
              return EXIT_SUCCESS;
            }}'''.format(includes=get_includes(lang), op_name=op.name,
                         typ=typ, year=date.today().year, deg=deg,
-                        convert_to_f16=convert_to_f16,
+                        convert_to=convert_to,
                         sizeof=common.sizeof(typ), check=check))
     common.clang_format(opts, filename)
 

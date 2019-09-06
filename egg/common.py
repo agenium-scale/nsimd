@@ -900,7 +900,7 @@ class Domain(object):
 
                 for i, interval in enumerate(union):
                     if interval.logical_:
-                        ret += 'ret = rand()%2;'
+                        ret += 'ret = (u8)(rand())%2;'
                     else:
                         if not interval.removed:
                             test='0'
@@ -937,7 +937,10 @@ class Domain(object):
 
                 for i, interval in enumerate(union):
                     if interval.logical_:
-                        ret += 'ret = rand()%2;'
+                        if typ == 'f16':
+                            ret += 'ret = (f32)(rand()%2);'
+                        else:
+                            ret += 'ret = ({})(rand()%2);'.format(typ)
                     else:
                         ret += \
                          '''alias = (u8*)(&ret);
