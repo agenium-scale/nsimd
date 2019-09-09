@@ -764,7 +764,7 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
                              (i{typnbits}){in1}));'''.format(**fmtspec)
         else:
-            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
+            return '''return vshlq_u{typnbits}({in0}, vdupq_n_s{typnbits}(
                              (i{typnbits})(-{in1})));'''.format(**fmtspec)
     else:
         armop = 'lsl' if op == 'shl' else 'lsr'
