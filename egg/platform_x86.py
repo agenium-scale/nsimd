@@ -1391,8 +1391,10 @@ def abs1(simd_ext, typ):
        return {pre}xor{sufsi}({pre}add{suf}({in0}, mask), mask);'''. \
        format(typnbitsm1=int(typ[1:]) - 1, **fmtspec)
     with_blendv = \
-    '''return nsimd_if_else1_{simd_ext}_{typ}({in0}, {pre}sub{suf}(
-                {pre}setzero{sufsi}(), {in0}), {in0});'''.format(**fmtspec)
+    '''return _mm256_castpd_si256(_mm256_blendv_pd(
+        _mm256_castsi256_pd({in0}), 
+        _mm256_castsi256_pd(_mm256_sub_epi64(_mm256_setzero_si256(), {in0})), 
+        _mm256_castsi256_pd({in0})));'''.format(**fmtspec)
     if simd_ext in sse:
         if typ in ['i16', 'i32']:
             if simd_ext == 'sse42':
