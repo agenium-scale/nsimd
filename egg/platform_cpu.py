@@ -616,21 +616,45 @@ def len1(typ):
 
 def zip(func, typ):
     n = get_nb_el(typ)
-    content = ''
     if func == "ziplo":
-         content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
-                        format(i=i, j1=i*2, j2=i*2+1, **fmtspec) \
-                        for i in range(0, int(n/2)))
+      content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
+                          format(i=i, j1=i*2, j2=i*2+1, **fmtspec) \
+                          for i in range(0, int(n/2)))
     else :
-         content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
-                        format(i=i+int(n/2), j1=i*2, j2=i*2+1, **fmtspec) \
-                        for i in range(0, int(n/2)))
+      content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
+                          format(i=i+int(n/2), j1=i*2, j2=i*2+1, **fmtspec) \
+                          for i in range(0, int(n/2)))
 
 
     return '''nsimd_cpu_v{typ} ret;
               {content}
               return ret;'''.format(content=content, **fmtspec)
 
+# -----------------------------------------------------------------------------
+
+def unzip(func, typ):
+  n = get_nb_el(typ)
+  content = ''
+  if int(n/2) != 0:
+    if func == "unziplo":
+      content = '\n'.join('ret.v{i} = {in0}.v{j}; '. \
+                  format(i=i, j=i*2, **fmtspec) \
+                  for i in range(0, int(n/2)))
+      content = content + '\n'.join('ret.v{i} = {in1}.v{j}; '. \
+                  format(i=i, j=2*(i-int(n/2)), **fmtspec) \
+                  for i in range(int(n/2), n))
+    else :
+      content = '\n'.join('ret.v{i} = {in0}.v{j}; '. \
+                  format(i=i, j=i*2+1, **fmtspec) \
+                  for i in range(0, int(n/2)))
+      content = content + '\n'.join('ret.v{i} = {in1}.v{j}; '. \
+                  format(i=i, j=2*(i-int(n/2))+1, **fmtspec)\
+                  for i in range(int(n/2), n))
+
+
+  return '''nsimd_cpu_v{typ} ret;
+            {content}
+            return ret;'''.format(content=content, **fmtspec)
 # -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
@@ -723,7 +747,9 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'upcvt': upcvt1(from_typ, to_typ),
         'downcvt': downcvt2(from_typ, to_typ),
         'ziplo': zip('ziplo', from_typ),
-        'ziphi': zip('ziphi', from_typ)
+        'ziphi': zip('ziphi', from_typ),
+        'unziplo': unzip('unziplo', from_typ),
+        'unziphi': unzip('unziphi', from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

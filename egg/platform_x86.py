@@ -2488,6 +2488,32 @@ def zip(func, simd_ext, typ):
                 return {pre}{func}{suf}(a, b);'''. \
                 format(func=func, cast=cast, **fmtspec)
 
+# -----------------------------------------------------------------------------
+## unzip functions
+
+def unzip(func, simd_ext, typ):
+
+    if func == 'unziplo' :
+        shuf = '_MM_SHUFFLE(2,0,2,0)'
+    else :
+        shuf = '_MM_SHUFFLE(3,1,3,1)'
+
+    if typ in ['u8', 'u16', 'u32', 'u64', 'i8', 'i16', 'i32', 'i64']:
+        cast1='''__m{nbits} aps = {pre}castsi{nbits}_ps({in0});
+                __m{nbits} bps = {pre}castsi{nbits}_ps({in1});'''.\
+            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
+        cast2='{pre}castps_si{nbits}(res);'.format(**fmtspec)
+
+        return  '''{cast1}
+                __m{nbits} res = {pre}shuffle_ps(aps, bps, {shuf});
+                return {cast2};'''. \
+                format(func=func, cast1=cast1, cast2=cast2,
+                       shuf=shuf, **fmtspec)
+    else:
+        return  '''return {pre}shuffle{suf}({in0}, {in1}, {shuf});'''. \
+                format(func=func, shuf=shuf, **fmtspec)
+
+
 
 # -----------------------------------------------------------------------------
 ## get_impl function
@@ -2588,7 +2614,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
         'downcvt': downcvt1(simd_ext, from_typ, to_typ),
         'ziplo': zip('unpacklo', simd_ext, from_typ),
-        'ziphi': zip('unpackhi', simd_ext, from_typ)
+        'ziphi': zip('unpackhi', simd_ext, from_typ),
+        'unziplo': unzip('unziplo', simd_ext, from_typ),
+        'unziphi': unzip('unziphi', simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -2598,3 +2626,20 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         return common.NOT_IMPLEMENTED
     else:
         return impls[func]
+
+
+# static inline
+# __m128i unziplo(__m128i a, __m128i b) {
+#     __m128 aps = _mm_castsi128_ps(a);
+#     __m128 bps = _mm_castsi128_ps(b);
+#     __m128 lo = _mm_shuffle_ps(aps, bps, _MM_SHUFFLE(2,0,2,0));
+#     return _mm_castps_si128(lo);
+# }
+
+# static inline    
+# __m128i unziphi(__m128i a, __m128i b) {
+#     __m128 aps = _mm_castsi128_ps(a);
+#     __m128 bps = _mm_castsi128_ps(b);
+#     __m128 hi = _mm_shuffle_ps(aps, bps, _MM_SHUFFLE(3,1,3,1));
+#     return _mm_castps_si128(hi);
+# }
