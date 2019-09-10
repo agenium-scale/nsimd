@@ -51,7 +51,7 @@ def get_put_impl(simd_ext):
     for typ in common.types:
 
         if typ in ['i64', 'u64']:
-            fprintf = '''#ifdef NSIMD_IS_MSVC
+            fprintf = '''#if defined(NSIMD_IS_MSVC ) || (NSIMD_WORD_SIZE == 32)
                            code = fprintf(out, {fmt_msvc}, {val});
                          #else
                            code = fprintf(out, {fmt}, {val});

@@ -404,6 +404,12 @@ typedef double f64;
 #endif
 
 /* ------------------------------------------------------------------------- */
+/* Set if denormalized float are set to 0                                    */
+#ifdef NSIMD_NEON128
+#define NSIMD_DNZ_FLUSH_TO_ZERO
+#endif
+
+/* ------------------------------------------------------------------------- */
 /* POPCNT: GCC and Clang have intrinsics */
 
 #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)

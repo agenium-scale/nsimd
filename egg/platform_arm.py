@@ -186,6 +186,8 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(**fmtspec)
     if simd_ext in neon and func in ['fms', 'fnms']:
         ret += '''#include <nsimd/arm/{simd_ext}/ne.h>
+                  #include <nsimd/arm/{simd_ext}/fma.h>
+                  #include <nsimd/arm/{simd_ext}/fnma.h>
                   '''.format(**fmtspec)
     if func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
@@ -764,8 +766,13 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
                              (i{typnbits}){in1}));'''.format(**fmtspec)
         else:
-            return '''return vshlq_u{typnbits}({in0}, vdupq_n_s{typnbits}(
-                             (i{typnbits})(-{in1})));'''.format(**fmtspec)
+            if typ in common.itypes:
+                return '''return vreinterpretq_s{typnbits}_u{typnbits}(
+                                    vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
+                                    vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
+            else:
+                return '''return vshlq_u{typnbits}({in0}, vdupq_n_s{typnbits}(
+                                 (i{typnbits})(-{in1})));'''.format(**fmtspec)
     else:
         armop = 'lsl' if op == 'shl' else 'lsr'
         return '''return sv{armop}_{suf}_z({svtrue}, {in0},

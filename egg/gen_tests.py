@@ -219,6 +219,18 @@ int main(void) {{
     {vin_rand}
   }}
 
+
+
+  #ifdef NSIMD_DNZ_FLUSH_TO_ZERO
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wconversion"
+  #pragma GCC diagnostic ignored "-Wdouble-promotion"
+  for (i = 0; i < SIZE; i++) {{
+    {denormalize_inputs}
+  }}
+  #pragma GCC diagnostic pop
+  #endif
+
   /* Fill output vector 0 with reference values */
   for (i = 0; i < SIZE; i += {cpu_step}) {{
     /* This is a call directly to the cpu API of nsimd
@@ -259,6 +271,19 @@ def get_content(op, typ, lang):
     cpu_step = 'nsimd_len_cpu_{}()'.format(typ)
 
     nargs = range(1, len(op.params))
+
+    if typ in common.ftypes:
+        code = ['''if ({classify}({f32_conv}(vin{i}[i])) == FP_SUBNORMAL) {{
+                     vin{i}[i] = {f16_conv}(0.f);
+                }}'''. \
+                format(i=i,
+                    f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                    f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                    classify='fpclassify' if lang=='c_base' else 'std::fpclassify') for i in nargs]
+
+        denormalize_inputs = '\n'.join(code)
+    else:
+        denormalize_inputs = ''
 
     # Depending on function parameters, generate specific input, ...
     if all(e == 'v' for e in op.params) or all(e == 'l' for e in op.params):
@@ -485,7 +510,8 @@ def get_content(op, typ, lang):
         raise ValueError('No test available for operator "{}" on type "{}"'. \
                          format(op.name, typ))
     return { 'vin_defi': vin_defi, 'vin_rand': vin_rand, 'cpu_step': cpu_step,
-             'vout0_comp': vout0_comp, 'vout1_comp': vout1_comp }
+             'vout0_comp': vout0_comp, 'vout1_comp': vout1_comp,
+             'denormalize_inputs': denormalize_inputs }
 
 # -----------------------------------------------------------------------------
 # Generate test in C, C++ (base API) and C++ (advanced API) for almost all
