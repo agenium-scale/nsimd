@@ -170,6 +170,8 @@ def parse_args(args):
         help='Generate friendly but not optimized overloads for C++')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
+    parser.add_argument('--tests-fp', action='store_true',
+        help='Generate tests in C and C++ for the fixed precision module')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
     parser.add_argument('--include-dir', '-i', type=str,
@@ -224,6 +226,9 @@ def main():
         gen_ulps.doit(opts)
     if opts.tests == True or opts.all == True:
         gen_tests.doit(opts)
+    if opts.tests_fp == True or opts.all == True:
+        pass
+        #gen_tests_fp.doit(opts)
     if opts.benches == True or opts.all == True:
         gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
@@ -233,7 +238,7 @@ def main():
     if opts.doc == True or opts.all == True:
         gen_doc.doit(opts)
 
-    ## For modules
+    ## Gen modules
     modules.hatch.doit(opts)
 
 if __name__ == '__main__':

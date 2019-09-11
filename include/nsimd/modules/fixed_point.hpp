@@ -61,44 +61,51 @@ template <typename T> size_t len(const pack<T> &) {
 // ------------------- Basic arithmetic operators ------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T> NSIMD_INLINE pack<T> add(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> add(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_add<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> sub(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> sub(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_sub<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> mul(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> mul(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_mul<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> div(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> div(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_div<T::lf, T::rt>(a0.val, a1.val);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> fma(pack<T> a0, pack<T> a1, pack<T> a2) {
+NSIMD_INLINE pack<T> fma(const pack<T> &a0, const pack<T> &a1,
+                         const pack<T> &a2) {
   pack<T> res;
   res.val = simd_fma<T::lf, T::rt>(a0.val, a1.val, a2.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> min(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> min(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_min(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> max(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> max(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_max(a0.val, a1.val);
   return res;
@@ -108,44 +115,51 @@ template <typename T> NSIMD_INLINE pack<T> max(pack<T> a0, pack<T> a1) {
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T> NSIMD_INLINE packl<T> eq(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> eq(const pack<T> &a0, const pack<T> &a1) {
   packl<T> res;
   res.val = simd_eq(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> ne(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> ne(const pack<T> &a0, const pack<T> &a1) {
   packl<T> res;
   res.val = simd_ne(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> le(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> le(const pack<T> &a0, const pack<T> &a1) {
   packl<T> res;
   res.val = simd_le(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> lt(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> lt(const pack<T> &a0, const pack<T> &a1) {
   packl<T> res;
   res.val = simd_lt(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> ge(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> ge(const pack<T> &a0, const pack<T> &a1) {
   packl<T> res;
   res.val = simd_ge(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> gt(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> gt(const pack<T> &a0, const pack<T> &a1) {
   packl<T> res;
   res.val = simd_gt(a0.val, a1.val);
   return res;
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> if_else1(packl<T> a0, pack<T> a1, pack<T> a2) {
+NSIMD_INLINE pack<T> if_else1(const packl<T> &a0, const pack<T> &a1,
+                              const pack<T> &a2) {
   pack<T> res;
   res.val = simd_if_else1(a0.val, a1.val, a2.val);
   return res;
@@ -155,25 +169,29 @@ NSIMD_INLINE pack<T> if_else1(packl<T> a0, pack<T> a1, pack<T> a2) {
 // ------------------- Bitwise operators  --------------------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T> NSIMD_INLINE pack<T> andb(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> andb(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_andb(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> andl(packl<T> a0, packl<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> andl(const packl<T> &a0, const packl<T> &a1) {
   packl<T> res;
   res.val = simd_andl(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> andnotb(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> andnotb(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_andnotb(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> andnotl(packl<T> a0, packl<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> andnotl(const packl<T> &a0, const packl<T> &a1) {
   packl<T> res;
   res.val = simd_andnotl(a0.val, a1.val);
   return res;
@@ -191,25 +209,29 @@ template <typename T> NSIMD_INLINE packl<T> notl(packl<T> a0) {
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> orb(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> orb(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_orb(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> orl(packl<T> a0, packl<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> orl(const packl<T> &a0, const packl<T> &a1) {
   packl<T> res;
   res.val = simd_orl(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE pack<T> xorb(pack<T> a0, pack<T> a1) {
+template <typename T>
+NSIMD_INLINE pack<T> xorb(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_xorb(a0.val, a1.val);
   return res;
 }
 
-template <typename T> NSIMD_INLINE packl<T> xorl(packl<T> a0, packl<T> a1) {
+template <typename T>
+NSIMD_INLINE packl<T> xorl(const packl<T> &a0, const packl<T> &a1) {
   packl<T> res;
   res.val = simd_xorl(a0.val, a1.val);
   return res;
@@ -274,12 +296,12 @@ NSIMD_INLINE void storea(typename T::value_type *p, T &v) {
 }
 
 template <typename T>
-NSIMD_INLINE void storelu(typename T::value_type *p, T v) {
+NSIMD_INLINE void storelu(typename T::value_type *p, T &v) {
   simd_storelu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storela(typename T::value_type *p, T v) {
+NSIMD_INLINE void storela(typename T::value_type *p, T &v) {
   simd_storela<T::lf, T::rt>(p, v.val);
 }
 
