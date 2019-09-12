@@ -33,7 +33,7 @@
 set(MIPP_ROOT_DIR "" CACHE PATH "Folder containing MIPP")
 
 find_path(MIPP_INCLUDE_DIR "mipp.h"
-  PATHS ${MIPP_ROOT_DIR}
+  PATHS ${MIPP_ROOT_DIR} ${CMAKE_INCLUDE_PATH}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH)
 find_path(MIPP_INCLUDE_DIR "mipp.h")
