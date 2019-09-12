@@ -450,22 +450,6 @@ def get_content(op, typ, lang):
                             format(typ=typ, op_name=op.name,
                                    do_computation=do_computation)
 
-        if typ[0] == 'f' and op.name != 'ne':
-            vout1_comp += '''
-                /* Intel comparison intrinsics aren't IEEE754 compliant and
-                never returns false when comparing NaN with other floats. */
-                #pragma GCC diagnostic push
-                #pragma GCC diagnostic ignored "-Wconversion"
-                #pragma GCC diagnostic ignored "-Wdouble-promotion"
-                for (vi = i; vi < i+step; ++vi) {{
-                    if ({isnan}({f32_conv}(vin1[vi])) || {isnan}({f32_conv}(vin2[vi]))) {{
-                        vout1[vi] = {f16_conv}(0.f);
-                    }}
-                }}
-                #pragma GCC diagnostic pop
-                '''.format(f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                             f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                             isnan='isnan' if lang=='c_base' else 'std::isnan')
 
 
 
