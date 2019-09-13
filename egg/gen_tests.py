@@ -1190,12 +1190,12 @@ def gen_unpack(opts, op, typ, lang):
 
     if op.name in ['unziplo', 'unziphi']:
       comp_unpack =  \
-        '''comp_function(vout[j + add_index], vin1[{index} + add_index]) || 
-          comp_function(vout[j + step/(2*nb_lane) + add_index], vin2[{index} + add_index])'''. \
+        '''comp_function(vout[j + add_lane], vin1[{index} + add_lane]) || 
+          comp_function(vout[j + step/(2*nb_lane) + add_lane], vin2[{index} + add_lane])'''. \
           format(index='i' if op.name == 'unziplo' else 'i+1')
     else:
-      comp_unpack ='''comp_function(vout[i + add_index], vin1[j + add_index]) || 
-                    comp_function(vout[i+1 + add_index], vin2[j + add_index])'''
+      comp_unpack ='''comp_function(vout[i + add_lane], vin1[j + add_lane]) || 
+                    comp_function(vout[i+1 + add_lane], vin2[j + add_lane])'''
     
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     comp = 'return ({} - {}) > get_2th_power(-{nbits})'. \
@@ -1239,7 +1239,7 @@ def gen_unpack(opts, op, typ, lang):
         '''{head}
 
            int main(void) {{
-              int vi, i, j, k, step, nb_lane, add_index;
+              int vi, i, j, k, step, nb_lane, add_lane;
               {typ} *vin1, *vin2;
               {typ} *vout;
 
@@ -1277,7 +1277,7 @@ def gen_unpack(opts, op, typ, lang):
                   {{
                     for (k = 0; k < nb_lane; k++) 
                     {{
-                      add_index = (step*k)/nb_lane;
+                      add_lane = (step*k)/nb_lane;
                       if ({comp_unpack}) 
                       {{
                         fprintf(stdout, "test of {op_name} over {typ}... FAIL\\n");

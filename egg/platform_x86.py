@@ -2492,26 +2492,22 @@ def zip(func, simd_ext, typ):
 ## unzip functions
 
 def unzip(func, simd_ext, typ):
-
-    if func == 'unziplo' :
-        shuf = '_MM_SHUFFLE(2,0,2,0)'
-    else :
-        shuf = '_MM_SHUFFLE(3,1,3,1)'
-
-    if typ in ['u8', 'u16', 'u32', 'u64', 'i8', 'i16', 'i32', 'i64']:
-        cast1='''__m{nbits} aps = {pre}castsi{nbits}_ps({in0});
-                __m{nbits} bps = {pre}castsi{nbits}_ps({in1});'''.\
-            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
-        cast2='{pre}castps_si{nbits}(res);'.format(**fmtspec)
-
-        return  '''{cast1}
-                __m{nbits} res = {pre}shuffle_ps(aps, bps, {shuf});
-                return {cast2};'''. \
-                format(func=func, cast1=cast1, cast2=cast2,
-                       shuf=shuf, **fmtspec)
-    else:
-        return  '''return {pre}shuffle{suf}({in0}, {in1}, {shuf});'''. \
-                format(func=func, shuf=shuf, **fmtspec)
+    return '''{simd_typ} aps = {in0};
+                {simd_typ} bps = {in1};
+                {simd_typ} tmp;
+                int j = 0;
+                int step = log2({nb_reg}/sizeof({typ});
+                while (j < step)) {{
+                    tmp = nsimd_ziplo_{simd_ext}_{typ}(aps, bps);
+                    bps = nsimd_ziphi_{simd_ext}_{typ}(aps, bps);
+                    aps = tmp; 
+                    j++;
+                }}
+                return {ret};'''. \
+                format(**fmtspec, 
+                        simd_typ=get_type(simd_ext, typ),
+                        nb_reg=get_nb_registers(simd_ext),
+                        ret='aps' if func == 'unziplo' else 'bps')
 
 
 
