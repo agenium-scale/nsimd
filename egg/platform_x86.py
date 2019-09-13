@@ -1046,7 +1046,7 @@ def neq2(simd_ext, typ):
         return 'return _mm256_cmp{suf}({in0}, {in1}, _CMP_NEQ_UQ);'. \
                format(**fmtspec)
     if simd_ext in avx512 and typ in ['f32', 'f64']:
-        return 'return _mm512_cmp{suf}_mask({in0}, {in1}, _CMP_NEQ_OQ);'. \
+        return 'return _mm512_cmp{suf}_mask({in0}, {in1}, _CMP_NEQ_UQ);'. \
                format(**fmtspec)
     noteq = '''return nsimd_notl_{simd_ext}_{typ}(
                         nsimd_eq_{simd_ext}_{typ}({in0}, {in1}));'''. \
