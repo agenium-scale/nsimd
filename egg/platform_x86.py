@@ -2496,7 +2496,7 @@ def unzip(func, simd_ext, typ):
                 {simd_typ} bps = {in1};
                 {simd_typ} tmp;
                 int j = 0;
-                int step = log2({nb_reg}/sizeof({typ}));
+                int step = (int)log2({nb_reg}/sizeof({typ}));
                 while (j < step) {{
                     tmp = nsimd_ziplo_{simd_ext}_{typ}(aps, bps);
                     bps = nsimd_ziphi_{simd_ext}_{typ}(aps, bps);

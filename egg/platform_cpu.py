@@ -616,17 +616,20 @@ def len1(typ):
 
 def zip(func, typ):
     n = get_nb_el(typ)
-    if func == "ziplo":
-      content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
-                          format(i=i, j1=i*2, j2=i*2+1, **fmtspec) \
-                          for i in range(0, int(n/2)))
-    else :
-      content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
-                          format(i=i+int(n/2), j1=i*2, j2=i*2+1, **fmtspec) \
-                          for i in range(0, int(n/2)))
+    if typ in ['i64', 'u64', 'f64']:
+      return '''(void)({in1});
+                return {in0};'''.format(**fmtspec)
+    else:
+      if func == "ziplo":
+        content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
+                            format(i=i, j1=i*2, j2=i*2+1, **fmtspec) \
+                            for i in range(0, int(n/2)))
+      else :
+        content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
+                            format(i=i+int(n/2), j1=i*2, j2=i*2+1, **fmtspec) \
+                            for i in range(0, int(n/2)))
 
-
-    return '''nsimd_cpu_v{typ} ret;
+      return '''nsimd_cpu_v{typ} ret;
               {content}
               return ret;'''.format(content=content, **fmtspec)
 
@@ -650,11 +653,15 @@ def unzip(func, typ):
       content = content + '\n'.join('ret.v{i} = {in1}.v{j}; '. \
                   format(i=i, j=2*(i-int(n/2))+1, **fmtspec)\
                   for i in range(int(n/2), n))
-
-
-  return '''nsimd_cpu_v{typ} ret;
+    
+    return '''nsimd_cpu_v{typ} ret;
             {content}
             return ret;'''.format(content=content, **fmtspec)
+  else:
+    return '''(void)({in1});
+              return {in0};'''.format(**fmtspec)
+
+  
 # -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):

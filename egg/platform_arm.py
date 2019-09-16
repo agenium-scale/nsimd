@@ -1689,12 +1689,30 @@ def downcvt1(simd_ext, from_typ, to_typ):
 ## unpack functions
 
 def zip_unzip(func, simd_ext, typ):
-    if simd_ext in neon:
+    if simd_ext == 'aarch64':
         return 'return v{op}q_{suf}({in0}, {in1});'. \
                    format(op=func, **fmtspec)  
-    else:
+    elif simd_ext == 'sve':
         return 'return sv{op}_{suf}({in0}, {in1});'. \
                format(op=func, **fmtspec)
+    else :
+        armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
+                 'uzp2': 'uzpq'}
+
+        aop =   {'zip1': 'ziplo', 'zip2': 'ziphi', 'uzp1': 'unziplo',
+                 'uzp2': 'unziphi'}
+
+        prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
+        neon_typ = '{}{}x{}x2_t'. \
+            format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
+        if typ in ['i64', 'u64', 'f64'] :
+            return emulate_op3_neon(aop[func], simd_ext, typ)
+        else:
+            return '''{neon_typ} res;
+                    res = v{op}_{suf}({in0}, {in1});
+                    return res.val[{i}];'''. \
+                    format(neon_typ=neon_typ, op=armop[func], **fmtspec,
+                    i = '0' if func in ['zip1', 'uzp1'] else '1')
 
 # -----------------------------------------------------------------------------
 ## get_impl function
