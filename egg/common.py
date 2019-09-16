@@ -929,16 +929,16 @@ class Domain(object):
                     '''{typ} rand{u}() {{
                             nat i;
                             u8 *alias;
-                            {typ_ret} ret;
+                            {typ} ret;
                             (void)i;
                             (void)alias;
-                            '''.format(u=u+1, typ=typ,
-                                    typ_ret='f32' if typ=='f16' else typ)
+                            '''.format(u=u+1, typ=typ)
 
                 for i, interval in enumerate(union):
                     if interval.logical_:
                         if typ == 'f16':
-                            ret += 'ret = (f32)(rand()%2);'
+                            ret += '''u16 tmp = ((u16)rand()%2);
+                                      memcpy(&ret, &tmp, sizeof(ret));'''
                         else:
                             ret += 'ret = ({})(rand()%2);'.format(typ)
                     else:
@@ -947,12 +947,9 @@ class Domain(object):
                             for(i=0; i<{it}; ++i) {{
                                 alias[i] = (u8)(rand() & 0xFF);
                             }}
-                            '''.format(it=4 if typ=='f16' else int(typlen)//8)
+                            '''.format(it=int(typlen)//8)
 
-                if typ == 'f16':
-                    ret += 'return nsimd_f32_to_f16(ret);}'
-                else:
-                    ret += 'return ret;}'
+                ret += 'return ret;}'
 
         return ret
 

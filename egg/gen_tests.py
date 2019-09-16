@@ -203,11 +203,11 @@ int comp_function({typ} mpfr_out, {typ} nsimd_out)
 
 int main(void) {{
   int vi, i, step;
-  {typ} *vout0, *vout1;
+  {typ} *vout_ref, *vout_nsimd;
   {vin_defi}
 
-  CHECK(vout0 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
-  CHECK(vout1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
+  CHECK(vout_ref = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
+  CHECK(vout_nsimd = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
 
   step = vlen({typ});
 
@@ -236,18 +236,18 @@ int main(void) {{
     /* This is a call directly to the cpu API of nsimd
        to ensure that we call the scalar version of the
        function */
-    {vout0_comp}
+    {vout_ref_comp}
   }}
 
   /* Fill output vector 1 with computed values */
   for (i = 0; i < SIZE; i += step) {{
-    {vout1_comp}
+    {vout_nsimd_comp}
   }}
 
   /* Compare results */
   for (vi = 0; vi < SIZE; vi += step) {{
     for (i = vi; i < vi + step; i++) {{
-      if (comp_function(vout0[i], vout1[i])) {{
+      if (comp_function(vout_ref[i], vout_nsimd[i])) {{
         fprintf(stdout, STATUS "... FAIL\\n");
         fflush(stdout);
         return -1;
@@ -301,7 +301,7 @@ def get_content(op, typ, lang):
         if op.name == 'lgamma' and typ == 'f64':
             vin_rand = 'vin1[i] = rand()%64;'
 
-        # Make vout0_comp
+        # Make vout_ref_comp
         # We use MPFR on Linux to compare numerical results, but it is only on
         # Linux as MPFR does not play well on Windows. On Windows we compare
         # against the cpu implementation. When using MPFR, we set one element
@@ -314,28 +314,28 @@ def get_content(op, typ, lang):
             if typ == 'f16':
                 mpfr_set = '''mpfr_set_flt(a{i}, nsimd_u16_to_f32(
                                 ((u16 *)vin{i})[i]), MPFR_RNDN);'''
-                vout0_set = '''((u16 *)vout0)[i] = nsimd_f32_to_u16(
+                vout_ref_set = '''((u16 *)vout_ref)[i] = nsimd_f32_to_u16(
                                  mpfr_get_flt(c, MPFR_RNDN));'''
             elif typ == 'f32':
                 mpfr_set = 'mpfr_set_flt(a{i}, vin{i}[i], MPFR_RNDN);'
-                vout0_set = 'vout0[i] = mpfr_get_flt(c, MPFR_RNDN);'
+                vout_ref_set = 'vout_ref[i] = mpfr_get_flt(c, MPFR_RNDN);'
             else:
                 mpfr_set = 'mpfr_set_d(a{i}, vin{i}[i], MPFR_RNDN);'
-                vout0_set = 'vout0[i] = ({})mpfr_get_d(c, MPFR_RNDN);'.format(typ)
+                vout_ref_set = 'vout_ref[i] = ({})mpfr_get_d(c, MPFR_RNDN);'.format(typ)
             mpfr_sets = '\n'.join([mpfr_set.format(i=j) for j in nargs])
             mpfr_clears = '\n'.join(['mpfr_clear(a{});'.format(i) \
                                      for i in nargs])
-            vout0_comp = \
+            vout_ref_comp = \
             '''mpfr_t c, {variables};
                mpfr_init2(c, 64);
                {mpfr_inits}
                {mpfr_sets}
                {mpfr_op_name}(c, {variables}, MPFR_RNDN);
-               {vout0_set}
+               {vout_ref_set}
                mpfr_clear(c);
                {mpfr_clears}'''. \
                format(variables=variables, mpfr_sets=mpfr_sets,
-                      mpfr_clears=mpfr_clears, vout0_set=vout0_set,
+                      mpfr_clears=mpfr_clears, vout_ref_set=vout_ref_set,
                       mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
         else:
             args = ', '.join(['va{}'.format(i) for i in nargs])
@@ -343,20 +343,20 @@ def get_content(op, typ, lang):
             code += ['va{} = nsimd_load{}u_cpu_{}(&vin{}[i]);'. \
                      format(i, logical, typ, i) for i in nargs]
             code += ['vc = nsimd_{}_cpu_{}({});'.format(op.name, typ, args)]
-            code += ['nsimd_store{}u_cpu_{}(&vout0[i], vc);'. \
+            code += ['nsimd_store{}u_cpu_{}(&vout_ref[i], vc);'. \
                      format(logical, typ)]
-            vout0_comp = '\n'.join(code)
+            vout_ref_comp = '\n'.join(code)
 
             if op.name[-2:] == '11':
-                vout0_comp += '''
+                vout_ref_comp += '''
                     /* Intel 11 bit precision intrinsics force denormalized output to 0. */
                     #ifdef NSIMD_X86
                     #pragma GCC diagnostic push
                     #pragma GCC diagnostic ignored "-Wconversion"
                     #pragma GCC diagnostic ignored "-Wdouble-promotion"
                     for (vi = i; vi < i+nsimd_len_cpu_{typ}(); ++vi) {{
-                        if ({classify}({f32_conv}(vout0[vi])) == FP_SUBNORMAL) {{
-                            vout0[vi] = {f16_conv}(0.f);
+                        if ({classify}({f32_conv}(vout_ref[vi])) == FP_SUBNORMAL) {{
+                            vout_ref[vi] = {f16_conv}(0.f);
                         }}
                     }}
                     #pragma GCC diagnostic pop
@@ -367,23 +367,23 @@ def get_content(op, typ, lang):
                                  classify='fpclassify' if lang=='c_base' else 'std::fpclassify')
 
 
-        # Make vout1_comp
+        # Make vout_nsimd_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
         if lang == 'c_base':
             code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]
             code += ['va{} = vload{}u(&vin{}[i], {});'. \
                      format(i, logical, i, typ) for i in nargs]
             code += ['vc = v{}({}, {});'.format(op.name, args, typ)]
-            code += ['vstore{}u(&vout1[i], vc, {});'.format(logical, typ)]
-            vout1_comp = '\n'.join(code)
+            code += ['vstore{}u(&vout_nsimd[i], vc, {});'.format(logical, typ)]
+            vout_nsimd_comp = '\n'.join(code)
         if lang == 'cxx_base':
             code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]
             code += ['va{} = nsimd::load{}u(&vin{}[i], {}());'. \
                      format(i, logical, i, typ) for i in nargs]
             code += ['vc = nsimd::{}({}, {}());'.format(op.name, args, typ)]
-            code += ['nsimd::store{}u(&vout1[i], vc, {}());'. \
+            code += ['nsimd::store{}u(&vout_nsimd[i], vc, {}());'. \
                      format(logical, typ)]
-            vout1_comp = '\n'.join(code)
+            vout_nsimd_comp = '\n'.join(code)
         if lang == 'cxx_adv':
             code = ['nsimd::pack{}<{}> {}, vc;'.format(logical, typ, args)]
             code += ['''va{i} = nsimd::load{logical}u<
@@ -399,8 +399,8 @@ def get_content(op, typ, lang):
                              format(op.cxx_operator[8:])]
             else:
                 code += ['vc = nsimd::{}({});'.format(op.name, args)]
-            code += ['nsimd::store{}u(&vout1[i], vc);'.format(logical, typ)]
-            vout1_comp = '\n'.join(code)
+            code += ['nsimd::store{}u(&vout_nsimd[i], vc);'.format(logical, typ)]
+            vout_nsimd_comp = '\n'.join(code)
     elif op.params == ['l', 'v', 'v']:
         vin_defi = \
         '''{typ} *vin1, *vin2;
@@ -410,29 +410,29 @@ def get_content(op, typ, lang):
         code = ['vin{}[i] = rand{}();'.format(i,i) for i in nargs]
         vin_rand = '\n'.join(code)
 
-        vout0_comp = '''nsimd_cpu_v{typ} va1, va2;
+        vout_ref_comp = '''nsimd_cpu_v{typ} va1, va2;
                         nsimd_cpu_vl{typ} vc;
                         va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
                         va2 = nsimd_loadu_cpu_{typ}(&vin2[i]);
                         vc = nsimd_{op_name}_cpu_{typ}(va1, va2);
-                        nsimd_storelu_cpu_{typ}(&vout0[i], vc);'''. \
+                        nsimd_storelu_cpu_{typ}(&vout_ref[i], vc);'''. \
                         format(typ=typ, op_name=op.name)
 
         if lang == 'c_base':
-            vout1_comp = '''vec({typ}) va1, va2;
+            vout_nsimd_comp = '''vec({typ}) va1, va2;
                             vecl({typ}) vc;
                             va1 = vloadu(&vin1[i], {typ});
                             va2 = vloadu(&vin2[i], {typ});
                             vc = v{op_name}(va1, va2, {typ});
-                            vstorelu(&vout1[i], vc, {typ});'''. \
+                            vstorelu(&vout_nsimd[i], vc, {typ});'''. \
                             format(typ=typ, op_name=op.name)
         if lang == 'cxx_base':
-            vout1_comp = '''vec({typ}) va1, va2;
+            vout_nsimd_comp = '''vec({typ}) va1, va2;
                             vecl({typ}) vc;
                             va1 = nsimd::loadu(&vin1[i], {typ}());
                             va2 = nsimd::loadu(&vin2[i], {typ}());
                             vc = nsimd::{op_name}(va1, va2, {typ}());
-                            nsimd::storelu(&vout1[i], vc, {typ}());'''. \
+                            nsimd::storelu(&vout_nsimd[i], vc, {typ}());'''. \
                             format(typ=typ, op_name=op.name)
         if lang == 'cxx_adv':
             if op.cxx_operator:
@@ -441,12 +441,12 @@ def get_content(op, typ, lang):
             else:
                 do_computation = 'vc = nsimd::{}(va1, va2, {}());'. \
                                  format(op.name, typ)
-            vout1_comp = '''nsimd::pack<{typ}> va1, va2;
+            vout_nsimd_comp = '''nsimd::pack<{typ}> va1, va2;
                             nsimd::packl<{typ}> vc;
                             va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
                             va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[i]);
                             {do_computation}
-                            nsimd::storelu(&vout1[i], vc);'''. \
+                            nsimd::storelu(&vout_nsimd[i], vc);'''. \
                             format(typ=typ, op_name=op.name,
                                    do_computation=do_computation)
 
@@ -459,23 +459,23 @@ def get_content(op, typ, lang):
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
         vin_rand = 'vin1[i] = rand1();'.format(typ=typ)
-        vout0_comp = '''nsimd_cpu_v{typ} va1, vc;
+        vout_ref_comp = '''nsimd_cpu_v{typ} va1, vc;
                         va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
                         vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % 7);
-                        nsimd_storeu_cpu_{typ}(&vout0[i], vc);'''. \
+                        nsimd_storeu_cpu_{typ}(&vout_ref[i], vc);'''. \
                         format(typ=typ, op_name=op.name)
         if lang == 'c_base':
-            vout1_comp = '''vec({typ}) va1, vc;
+            vout_nsimd_comp = '''vec({typ}) va1, vc;
                             va1 = vloadu(&vin1[i], {typ});
                             vc = v{op_name}(va1, (i / step) % 7, {typ});
-                            vstoreu(&vout1[i], vc, {typ});'''. \
+                            vstoreu(&vout_nsimd[i], vc, {typ});'''. \
                             format(typ=typ, op_name=op.name)
         if lang == 'cxx_base':
-            vout1_comp = \
+            vout_nsimd_comp = \
             '''vec({typ}) va1, vc;
                va1 = nsimd::loadu(&vin1[i], {typ}());
                vc = nsimd::{op_name}(va1, (i / step) % 7, {typ}());
-               nsimd::storeu(&vout1[i], vc, {typ}());'''. \
+               nsimd::storeu(&vout_nsimd[i], vc, {typ}());'''. \
                format(typ=typ, op_name=op.name)
         if lang == 'cxx_adv':
             if op.cxx_operator:
@@ -484,17 +484,17 @@ def get_content(op, typ, lang):
             else:
                 do_computation = 'vc = nsimd::{}(va1, (i / step) % 7);'. \
                                  format(op.name)
-            vout1_comp = \
+            vout_nsimd_comp = \
             '''nsimd::pack<{typ}> va1, vc;
                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
                {do_computation}
-               nsimd::storeu(&vout1[i], vc);'''. \
+               nsimd::storeu(&vout_nsimd[i], vc);'''. \
                format(typ=typ, do_computation=do_computation)
     else:
         raise ValueError('No test available for operator "{}" on type "{}"'. \
                          format(op.name, typ))
     return { 'vin_defi': vin_defi, 'vin_rand': vin_rand, 'cpu_step': cpu_step,
-             'vout0_comp': vout0_comp, 'vout1_comp': vout1_comp,
+             'vout_ref_comp': vout_ref_comp, 'vout_nsimd_comp': vout_nsimd_comp,
              'denormalize_inputs': denormalize_inputs }
 
 # -----------------------------------------------------------------------------
@@ -666,8 +666,8 @@ def gen_test(opts, op, typ, lang, ulps):
             op_name=op.name, year=date.today().year, comp=comp,
             extra_code=extra_code, **content))
             #vin_defi=content['vin_defi'],
-            #vin_rand=content['vin_rand'], vout0_comp=content['vout0_comp'],
-            #vout1_comp=content['vout1_comp']))
+            #vin_rand=content['vin_rand'], vout_ref_comp=content['vout_ref_comp'],
+            #vout_nsimd_comp=content['vout_nsimd_comp']))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
