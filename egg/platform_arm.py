@@ -1695,6 +1695,24 @@ def zip_unzip(func, simd_ext, typ):
     elif simd_ext == 'sve':
         return 'return sv{op}_{suf}({in0}, {in1});'. \
                format(op=func, **fmtspec)
+    elif simd_ext == 'neon128' and typ in ['i64', 'u64']:
+        return '''{typ} buf0[2], buf1[2];
+                {typ} ret[2];
+                vst1q_{suf}(buf0, {in0});
+                vst1q_{suf}(buf1, {in1});
+                ret[0] = buf0[{i}];
+                ret[1] = buf1[{i}];
+                return vld1q_{suf}(ret);'''. \
+                format(**fmtspec,  
+                    i= '0' if func in ['zip1', 'uzp1'] else '1')
+
+    elif simd_ext == 'neon128' and typ == 'f64' :
+        return '''nsimd_{simd_ext}_v{typ} ret;
+                ret.v0 = {in0}.v{i};
+                ret.v1 = {in1}.v{i};
+                return ret;'''. \
+                format(**fmtspec,  
+                    i= '0' if func in ['zip1', 'uzp1'] else '1')  
     else :
         armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
                  'uzp2': 'uzpq'}
@@ -1705,14 +1723,12 @@ def zip_unzip(func, simd_ext, typ):
         prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
         neon_typ = '{}{}x{}x2_t'. \
             format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
-        if typ in ['i64', 'u64', 'f64'] :
-            return emulate_op3_neon(aop[func], simd_ext, typ)
-        else:
-            return '''{neon_typ} res;
-                    res = v{op}_{suf}({in0}, {in1});
-                    return res.val[{i}];'''. \
-                    format(neon_typ=neon_typ, op=armop[func], **fmtspec,
-                    i = '0' if func in ['zip1', 'uzp1'] else '1')
+
+        return '''{neon_typ} res;
+                res = v{op}_{suf}({in0}, {in1});
+                return res.val[{i}];'''. \
+                format(neon_typ=neon_typ, op=armop[func], **fmtspec,
+                        i = '0' if func in ['zip1', 'uzp1'] else '1')
 
 # -----------------------------------------------------------------------------
 ## get_impl function
