@@ -1442,6 +1442,52 @@ def downcvt1(simd_ext, from_typ, to_typ):
         format(ppc_typ=ppc_vec_type(to_typ), **fmtspec)
 
 
+# # -----------------------------------------------------------------------------
+# ## zip functions
+
+# def zip(func, simd_ext, typ):
+#     if typ[1:] == '64':
+#         return '''nsimd_{simd_ext}_v{typ} ret;
+#                 ret.v0 = {in0}.v{i};
+#                 ret.v1 = {in1}.v{i};
+#                 return ret;'''. \
+#                 format(**fmtspec,  
+#                     i= '0' if func in ['zip1', 'uzp1'] else '1')
+#     else :
+#         return '''
+#             return vec_vpkudum(vec_vupk{suff}({in0}), vec_vupk{suff}({in1}));'''. \
+#             format(**fmtspec,
+#                 func=func, 
+#                 suff= 'lsw' if func == 'ziplo' else 'hsw')
+
+# # -----------------------------------------------------------------------------
+# ## unzip functions
+
+# def unzip(func, simd_ext, typ):
+#     if typ[1:] == '64':
+#         return '''nsimd_{simd_ext}_v{typ} ret;
+#                 ret.v0 = {in0}.v{i};
+#                 ret.v1 = {in1}.v{i};
+#                 return ret;'''. \
+#                 format(**fmtspec,  
+#                     i= '0' if func in ['zip1', 'uzp1'] else '1')
+#     else :
+#         return '''{simd_typ} aps = {in0};
+#                     {simd_typ} bps = {in1};
+#                     {simd_typ} tmp;
+#                     int j = 0;
+#                     int step = (int)log2({nb_reg}/sizeof({typ}));
+#                     while (j < step) {{
+#                         tmp = nsimd_ziplo_{simd_ext}_{typ}(aps, bps);
+#                         bps = nsimd_ziphi_{simd_ext}_{typ}(aps, bps);
+#                         aps = tmp; 
+#                         j++;
+#                     }}
+#                     return {ret};'''. \
+#                     format(**fmtspec, 
+#                             simd_typ=get_type(simd_ext, typ),
+#                             nb_reg=get_nb_registers(simd_ext),
+#                             ret='aps' if func == 'unziplo' else 'bps')
 
 
 ## get_impl function
@@ -1535,7 +1581,11 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': 'reverse1(simd_ext, from_typ)',
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
-        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)'
+        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        'ziplo': 'zip("ziplo", simd_ext, from_typ)',
+        'ziphi': 'zip("ziphi", simd_ext, from_typ)',
+        'unziplo': 'unzip("unziplo", simd_ext, from_typ)',
+        'unziphi': 'unzip("unziphi", simd_ext, from_typ)'
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
