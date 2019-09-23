@@ -66,14 +66,14 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/simd/add.hpp"
 #include "nsimd/modules/fixed_point/function/simd/div.hpp"
 #include "nsimd/modules/fixed_point/function/simd/fma.hpp"
+#include "nsimd/modules/fixed_point/function/simd/max.hpp"
+#include "nsimd/modules/fixed_point/function/simd/min.hpp"
 #include "nsimd/modules/fixed_point/function/simd/mul.hpp"
 #include "nsimd/modules/fixed_point/function/simd/sub.hpp"
-#include "nsimd/modules/fixed_point/function/simd/min.hpp"
-#include "nsimd/modules/fixed_point/function/simd/max.hpp"
 
 // Math functions
+#include "nsimd/modules/fixed_point/function/simd/abs.hpp"
 #include "nsimd/modules/fixed_point/function/simd/rec.hpp"
-//#include "nsimd/modules/fixed_point/function/simd/abs.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/sqrt.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/log.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/rsqrt.hpp"

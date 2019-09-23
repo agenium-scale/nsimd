@@ -20,11 +20,11 @@
 
 # -----------------------------------------------------------------------------
 # Imports
-import modules.gen_tests_fp
+import modules.fixed_point.gen_tests 
 
 # -----------------------------------------------------------------------------
 # Entry point
 
 def doit(opts):
     if opts.tests == True or opts.all == True:
-        modules.gen_tests_fp.doit(opts)
+        modules.fixed_point.gen_tests.doit(opts)

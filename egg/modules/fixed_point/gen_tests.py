@@ -173,7 +173,7 @@ int main() {{
     CHECK(__compare_values(res_fp[i], res_f[i]));
   }}
  
-  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
@@ -235,7 +235,7 @@ int main() {{
     CHECK(res_fp[i]._raw == res_ref[i]);
   }}
  
-  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
@@ -308,7 +308,7 @@ int main() {{
     CHECK(__compare_values(res_fp[i], res_f[i]));
   }}
  
-  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
@@ -334,7 +334,7 @@ math_test_template = """\
 
 {decls}
 
-// Rec operator on floating points (avoid to write a particular test for rec)
+// Rec operator on floating points (avoids to write a particular test for rec)
 static inline double rec(const double x){{return 1.0 / x;}}
 // -----------------------------------------------------------------------------
 
@@ -370,12 +370,12 @@ int main() {{
     CHECK(__compare_values(res_fp[i], res_f[i]));
   }}
  
-  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
 
-math_ops = ["rec"]
+math_ops = ["rec", "abs"]
 def gen_math_functions_tests(lf, rt, opts):
     for op_name in math_ops:
         decls = check + limits + comparison_fp + gen_random_val
@@ -428,7 +428,7 @@ int main(){{
         resl_fp[i], tab0_fp[i], tab1_fp[i])));
   }}
 
-  fprintf(stdout, \"Test of {op_name} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
@@ -492,7 +492,7 @@ int main() {{
     CHECK({test_statement});
   }}  
  
-  fprintf(stdout, \"Test of {op_name}{term} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name}{term} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
@@ -565,7 +565,7 @@ int main() {{
     CHECK({test_statement});
   }}  
  
-  fprintf(stdout, \"Test of {op_name}{term} for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of {op_name}{term} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
@@ -640,7 +640,7 @@ int main() {{
     CHECK(ref._raw == res_fp[i]._raw);
   }}
  
-  fprintf(stdout, \"Test of if_else1 for fp_t<{lf},{rt}>... OK\\n\");
+  fprintf(stdout, \"test of if_else1 over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """

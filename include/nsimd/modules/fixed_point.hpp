@@ -241,6 +241,12 @@ NSIMD_INLINE packl<T> xorl(const packl<T> &a0, const packl<T> &a1) {
 // ------------------- Math functions ------------------------------------------
 // -----------------------------------------------------------------------------
 
+template <typename T> NSIMD_INLINE pack<T> abs(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_abs(a0.val);
+  return res;
+}
+
 template <typename T> NSIMD_INLINE pack<T> rec(pack<T> a0) {
   pack<T> res;
   res.val = simd_rec(a0.val);
