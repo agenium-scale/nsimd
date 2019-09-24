@@ -274,10 +274,16 @@ def floor1(typ):
 # -----------------------------------------------------------------------------
 
 def trunc1(typ):
-    if typ in common.ftypes:
-        c89_code = '''ret.v{{i}} = {in0}.v{{i}} >= {typ}0
-                                 ? nsimd_floor_cpu_{typ}({in0}.v{{i}})
-                                 : nsimd_ceil_cpu_{typ}({in0}.v{{i}});'''. \
+    if typ == 'f16':
+        c89_code = '''ret = {in0}.v{{i}} >= 0.0f
+                                 ? nsimd_floor_cpu_{typ}({in0})
+                                 : nsimd_ceil_cpu_{typ}({in0});'''. \
+                                 format(**fmtspec)
+        return libm_op1('trunc', typ, True, c89_code)
+    elif typ in common.ftypes:
+        c89_code = '''ret = {in0}.v{{i}} >= ({typ})0
+                                 ? nsimd_floor_cpu_{typ}({in0})
+                                 : nsimd_ceil_cpu_{typ}({in0});'''. \
                                  format(**fmtspec)
         return libm_op1('trunc', typ, True, c89_code)
     return 'return {in0};'.format(**fmtspec)
