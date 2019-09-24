@@ -1686,6 +1686,51 @@ def downcvt1(simd_ext, from_typ, to_typ):
                     format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
+## unpack functions
+
+def zip_unzip(func, simd_ext, typ):
+    if simd_ext == 'aarch64':
+        return 'return v{op}q_{suf}({in0}, {in1});'. \
+                   format(op=func, **fmtspec)  
+    elif simd_ext == 'sve':
+        return 'return sv{op}_{suf}({in0}, {in1});'. \
+               format(op=func, **fmtspec)
+    elif simd_ext == 'neon128' and typ in ['i64', 'u64']:
+        return '''{typ} buf0[2], buf1[2];
+                {typ} ret[2];
+                vst1q_{suf}(buf0, {in0});
+                vst1q_{suf}(buf1, {in1});
+                ret[0] = buf0[{i}];
+                ret[1] = buf1[{i}];
+                return vld1q_{suf}(ret);'''. \
+                format(**fmtspec,  
+                    i= '0' if func in ['zip1', 'uzp1'] else '1')
+
+    elif simd_ext == 'neon128' and typ == 'f64' :
+        return '''nsimd_{simd_ext}_v{typ} ret;
+                ret.v0 = {in0}.v{i};
+                ret.v1 = {in1}.v{i};
+                return ret;'''. \
+                format(**fmtspec,  
+                    i= '0' if func in ['zip1', 'uzp1'] else '1')  
+    else :
+        armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
+                 'uzp2': 'uzpq'}
+
+        aop =   {'zip1': 'ziplo', 'zip2': 'ziphi', 'uzp1': 'unziplo',
+                 'uzp2': 'unziphi'}
+
+        prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
+        neon_typ = '{}{}x{}x2_t'. \
+            format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
+
+        return '''{neon_typ} res;
+                res = v{op}_{suf}({in0}, {in1});
+                return res.val[{i}];'''. \
+                format(neon_typ=neon_typ, op=armop[func], **fmtspec,
+                        i = '0' if func in ['zip1', 'uzp1'] else '1')
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -1779,7 +1824,11 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': 'reverse1(simd_ext, from_typ)',
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
-        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)'
+        'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        'ziplo': 'zip_unzip("zip1", simd_ext, from_typ)',
+        'ziphi': 'zip_unzip("zip2", simd_ext, from_typ)',
+        'unziplo': 'zip_unzip("uzp1", simd_ext, from_typ)',
+        'unziphi': 'zip_unzip("uzp2", simd_ext, from_typ)'
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

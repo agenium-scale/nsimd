@@ -2453,6 +2453,65 @@ def downcvt1(simd_ext, from_typ, to_typ):
               **fmtspec)
 
 # -----------------------------------------------------------------------------
+## zip functions
+
+def zip(func, simd_ext, typ):
+
+    if typ in ['u8', 'u16', 'u32', 'u64']:
+        cast='''{simd_typ} a = 
+            nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in0});
+                {simd_typ} b = 
+            nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in1});'''.\
+            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
+    else:
+        cast='''{simd_typ} a = {in0};
+                {simd_typ} b = {in1};'''.\
+                    format(**fmtspec, simd_typ=get_type(simd_ext, typ))
+
+
+    if simd_ext == 'avx' and typ in \
+        ['i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64']:
+        
+        return \
+            '''{cast}
+            __m128i c1 = _mm_{func}{suf}({extract_1}, {extract_3});
+            __m128i c2 = _mm_{func}{suf}({extract_2}, {extract_4});
+            return {merge}; '''.\
+            format(func=func, **fmtspec, cast=cast,
+                extract_1=extract(simd_ext, typ, LO, 'a'), 
+                extract_2=extract(simd_ext, typ, HI, 'a'),
+                extract_3=extract(simd_ext, typ, LO, 'b'), 
+                extract_4=extract(simd_ext, typ, HI, 'b'),
+                merge=setr(simd_ext, typ, 'c1', 'c2'))
+    else:
+        return  '''{cast}
+                return {pre}{func}{suf}(a, b);'''. \
+                format(func=func, cast=cast, **fmtspec)
+
+# -----------------------------------------------------------------------------
+## unzip functions
+
+def unzip(func, simd_ext, typ):
+    return '''{simd_typ} aps = {in0};
+                {simd_typ} bps = {in1};
+                {simd_typ} tmp;
+                int j = 0;
+                int step = (int)log2({nb_reg}/sizeof({typ}));
+                while (j < step) {{
+                    tmp = nsimd_ziplo_{simd_ext}_{typ}(aps, bps);
+                    bps = nsimd_ziphi_{simd_ext}_{typ}(aps, bps);
+                    aps = tmp; 
+                    j++;
+                }}
+                return {ret};'''. \
+                format(**fmtspec, 
+                        simd_typ=get_type(simd_ext, typ),
+                        nb_reg=get_nb_registers(simd_ext),
+                        ret='aps' if func == 'unziplo' else 'bps')
+
+
+
+# -----------------------------------------------------------------------------
 ## get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -2549,7 +2608,11 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': reverse1(simd_ext, from_typ),
         'addv': addv(simd_ext, from_typ),
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
-        'downcvt': downcvt1(simd_ext, from_typ, to_typ)
+        'downcvt': downcvt1(simd_ext, from_typ, to_typ),
+        'ziplo': zip('unpacklo', simd_ext, from_typ),
+        'ziphi': zip('unpackhi', simd_ext, from_typ),
+        'unziplo': unzip('unziplo', simd_ext, from_typ),
+        'unziphi': unzip('unziphi', simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -2559,3 +2622,20 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         return common.NOT_IMPLEMENTED
     else:
         return impls[func]
+
+
+# static inline
+# __m128i unziplo(__m128i a, __m128i b) {
+#     __m128 aps = _mm_castsi128_ps(a);
+#     __m128 bps = _mm_castsi128_ps(b);
+#     __m128 lo = _mm_shuffle_ps(aps, bps, _MM_SHUFFLE(2,0,2,0));
+#     return _mm_castps_si128(lo);
+# }
+
+# static inline    
+# __m128i unziphi(__m128i a, __m128i b) {
+#     __m128 aps = _mm_castsi128_ps(a);
+#     __m128 bps = _mm_castsi128_ps(b);
+#     __m128 hi = _mm_shuffle_ps(aps, bps, _MM_SHUFFLE(3,1,3,1));
+#     return _mm_castps_si128(hi);
+# }
