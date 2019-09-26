@@ -1004,6 +1004,14 @@ class Ziphi(Operator):
     categories = [DocMisc]
     tests_ulps = True
 
+class Zip(Operator):
+    full_name = 'zip'
+    signature = 'vx2 zip v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    tests_ulps = True
+    
 class Unziplo(Operator):
     full_name = 'unziplo'
     signature = 'v unziplo v v'
