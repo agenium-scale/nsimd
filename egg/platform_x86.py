@@ -152,6 +152,10 @@ def get_additional_include(func, platform, simd_ext):
     if func == 'upcvt':
         ret += '''#include <nsimd/x86/{simd_ext}/cvt.h>
                   '''.format(simd_ext=simd_ext)
+    if func == 'zip':
+        ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
+                  #include <nsimd/x86/{simd_ext}/ziphi.h>
+                  '''.format(simd_ext=simd_ext)
     if simd_ext in avx512 and func in ['loadlu', 'loadla']:
         ret += '''
                   #if NSIMD_CXX > 0
@@ -2455,87 +2459,192 @@ def downcvt1(simd_ext, from_typ, to_typ):
 # -----------------------------------------------------------------------------
 ## zip functions
 
-def zip_half(func, simd_ext, typ):
-    if typ in ['u8', 'u16', 'u32', 'u64']:
-        cast='''{simd_typ} a = 
-            nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in0});
-                {simd_typ} b = 
-            nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in1});'''.\
-            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
-    else:
-        cast='''{simd_typ} a = {in0};
-                {simd_typ} b = {in1};'''.\
-                    format(**fmtspec, simd_typ=get_type(simd_ext, typ))
+def ziplo(simd_ext, typ):
+    if simd_ext in ['sse2', 'sse42']:
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_v{typ} ret;
+            ret.v0 = _mm_unpacklo_ps({in0}.v0, {in1}.v0);
+            ret.v1 = _mm_unpackhi_ps({in0}.v0, {in1}.v0);
+            return ret;'''.format(**fmtspec)
+        else:
+            return '''return {pre}unpacklo{suf}({in0}, {in1});'''.\
+                format(**fmtspec)
+    elif simd_ext in ['avx', 'avx2']:
+        # Maybe is there a better way to do it without downcasting
+        # the vectors (with shuffles?).
+        epi = suf_ep(typ)
+        if typ in common.iutypes:
+            i='i'
+            cast_low = '_mm256_castsi256_si128'
+            cast_high = '_mm256_castsi128_si256'
+            extract = '_mm256_extractf128_si256'
+            insert = '_mm256_insertf128_si256'
+        elif typ in ['f32', 'f16']:
+            i=''
+            cast_low = '_mm256_castps256_ps128'
+            cast_high = '_mm256_castps128_ps256'
+            extract = '_mm256_extractf128_ps'
+            insert = '_mm256_insertf128_ps'
+        elif typ == 'f64':
+            i='d'
+            cast_low = '_mm256_castpd256_pd128'
+            cast_high = '_mm256_castpd128_pd256'
+            extract = '_mm256_extractf128_pd'
+            insert = '_mm256_insertf128_pd'
 
+        if typ == 'f16':
+            return'''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m128 v_tmp0 = {cast_low}({in0}.v0);
+            __m128 v_tmp1 = {cast_low}({in1}.v0);
+            __m128 v_tmp2 = {extract}({in0}.v0, 0x01);
+            __m128 v_tmp3 = {extract}({in1}.v0, 0x01);
+            __m128 vres_lo0 = _mm_unpacklo_ps(v_tmp0, v_tmp1);
+            __m128 vres_hi0 = _mm_unpackhi_ps(v_tmp0, v_tmp1);
+            ret.v0 = {insert}({cast_high}(vres_lo0), vres_hi0, 0x01);
+            __m128 vres_lo1 = _mm_unpacklo_ps(v_tmp2, v_tmp3);
+            __m128 vres_hi1 = _mm_unpackhi_ps(v_tmp2, v_tmp3);
+            ret.v1 = {insert}({cast_high}(vres_lo1), vres_hi1, 0x01);
+            return ret;
+            '''.format(cast_low=cast_low, cast_high=cast_high,
+                       extract=extract, epi=epi, insert=insert, **fmtspec)
+        else:
+            return '''\
+            __m128{i} v_tmp0 = {cast_low}({in0});
+            __m128{i} v_tmp1 = {cast_low}({in1});
+            __m128{i} vres_lo = _mm_unpacklo{epi}(v_tmp0, v_tmp1);
+            __m128{i} vres_hi = _mm_unpackhi{epi}(v_tmp0, v_tmp1);
+            return {insert}({cast_high}(vres_lo), vres_hi, 0x01);
+            '''.format(cast_low=cast_low, cast_high=cast_high,
+                       extract=extract, epi=epi, insert=insert, i=i,**fmtspec)
+    elif simd_ext == 'avx512':
+        if typ in common.iutypes:
+            i = 'i'
+            cast_low = '_mm512_castsi512_si256'
+            cast_high = '_mm512_castsi256_si512'
+            extract = '_mm512_extractf128_si256'
+            insert = '_mm512inserti32x8'
+        elif typ in ['f32', 'f16']:
+            i = ''
+            cast_low = '_mm512_castps512_ps256'
+            cast_high = '_mm512_castps256_ps512'
+            extract = '_mm512_extractf32x8_ps'
+            insert = '_mm512_insertf32x8'
+        elif typ == 'f64':
+            i = 'd'
+            cast_low = '_mm512_castpd512_pd256'
+            cast_high = '_mm512_castpd256_pd512'
+            extract = '_mm512_extractf64x4_pd'
+            insert = '__mm512_insertf64x4'
+            
+        if typ == 'f16':
+            return ''
+        else:
+            return '''\
+            __m25{i} v_tmp0, v_tmp1;
+            v_tmp0 = {cast_low}({in0});
+            v_tmp1 = {cast_low}({in0});
+            __m256{i} vres_lo = nsimd_ziplo_avx2_f64(v_tmp0, v_tmp1);
+            __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1)
+            __m512{i} vres = {cast_high}(vres_lo);
+            return {insert}(vres, v_res_hi, 1);
+            '''.format(extract=extract, cast_high=cast_high, insert=insert,
+                       i=i, **fmtspec)
 
-    if simd_ext == 'avx' and typ in \
-        ['i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64']:
-        
-        return \
-            '''{cast}
-            __m128i c1 = _mm_{func}{suf}({extract_1}, {extract_3});
-            __m128i c2 = _mm_{func}{suf}({extract_2}, {extract_4});
-            return {merge}; '''.\
-            format(func=func, **fmtspec, cast=cast,
-                extract_1=extract(simd_ext, typ, LO, 'a'), 
-                extract_2=extract(simd_ext, typ, HI, 'a'),
-                extract_3=extract(simd_ext, typ, LO, 'b'), 
-                extract_4=extract(simd_ext, typ, HI, 'b'),
-                merge=setr(simd_ext, typ, 'c1', 'c2'))
-    else:
-        return  '''{cast}
-                return {pre}{func}{suf}(a, b);'''. \
-                format(func=func, cast=cast, **fmtspec)
+def ziphi(simd_ext, typ):
+    if simd_ext in ['sse2', 'sse42']:
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_v{typ} ret;
+            ret.v0 = _mm_unpacklo_ps({in0}.v1, {in1}.v1);
+            ret.v1 = _mm_unpackhi_ps({in0}.v1, {in1}.v1);
+            return ret;'''.format(**fmtspec)
+        else:
+            return '''return {pre}unpackhi{suf}({in0}, {in1});'''.\
+                format(**fmtspec)
+    elif simd_ext in ['avx', 'avx2']:
+        # Maybe is there a better way to do it without downcasting
+        # the vectors (with shuffles?).
+        epi = suf_ep(typ)
+        if typ in common.iutypes:
+            i='i'
+            cast_low = '_mm256_castsi256_si128'
+            cast_high = '_mm256_castsi128_si256'
+            extract = '_mm256_extractf128_si256'
+            insert = '_mm256_insertf128_si256'
+        elif typ in ['f32', 'f16']:
+            i=''
+            cast_low = '_mm256_castps256_ps128'
+            cast_high = '_mm256_castps128_ps256'
+            extract = '_mm256_extractf128_ps'
+            insert = '_mm256_insertf128_ps'
+        elif typ == 'f64':
+            i='d'
+            cast_low = '_mm256_castpd256_pd128'
+            cast_high = '_mm256_castpd128_pd256'
+            extract = '_mm256_extractf128_pd'
+            insert = '_mm256_insertf128_pd'
+
+        if typ == 'f16':
+            return'''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m128 v_tmp0 = {cast_low}({in0}.v1);
+            __m128 v_tmp1 = {cast_low}({in1}.v1);
+            __m128 v_tmp2 = {extract}({in0}.v1, 0x01);
+            __m128 v_tmp3 = {extract}({in1}.v1, 0x01);
+            __m128 vres_lo0 = _mm_unpacklo_ps(v_tmp0, v_tmp1);
+            __m128 vres_hi0 = _mm_unpackhi_ps(v_tmp0, v_tmp1);
+            ret.v0 = {insert}({cast_high}(vres_lo0), vres_hi0, 0x01);
+            __m128 vres_lo1 = _mm_unpacklo_ps(v_tmp2, v_tmp3);
+            __m128 vres_hi1 = _mm_unpackhi_ps(v_tmp2, v_tmp3);
+            ret.v1 = {insert}({cast_high}(vres_lo1), vres_hi1, 0x01);
+            return ret;
+            '''.format(cast_low=cast_low, cast_high=cast_high,
+                       extract=extract, epi=epi, insert=insert, **fmtspec)
+        else:
+            return '''\
+            __m128{i} v_tmp0 = {extract}({in0}, 0x01);
+            __m128{i} v_tmp1 = {extract}({in1}, 0x01);
+            __m128{i} vres_lo = _mm_unpacklo{epi}(v_tmp0, v_tmp1);
+            __m128{i} vres_hi = _mm_unpackhi{epi}(v_tmp0, v_tmp1);
+            return {insert}({cast_high}(vres_lo), vres_hi, 0x01);
+            '''.format(cast_low=cast_low, cast_high=cast_high,
+                       extract=extract, epi=epi, insert=insert, i=i,**fmtspec)
+    elif simd_ext == 'avx512':
+        if typ in common.iutypes:
+            i = 'i'
+            cast_low = '_mm512_castsi512_si256'
+            cast_high = '_mm512_castsi256_si512'
+            extract = '_mm512_extractf128_si256'
+            insert = '_mm512inserti32x8'
+        elif typ in ['f32', 'f16']:
+            i = ''
+            cast_low = '_mm512_castps512_ps256'
+            cast_high = '_mm512_castps256_ps512'
+            extract = '_mm512_extractf32x8_ps'
+            insert = '_mm512_insertf32x8'
+        elif typ == 'f64':
+            i = 'd'
+            cast_low = '_mm512_castpd512_pd256'
+            cast_high = '_mm512_castpd256_pd512'
+            extract = '_mm512_extractf64x4_pd'
+            insert = '__mm512_insertf64x4'
+            
+        if typ == 'f16':
+            return ''
+        else:
+            return '''\
+            __m25{i} v_tmp0, v_tmp1;
+            v_tmp0 = {extract}({in0}, 0x1);
+            v_tmp1 = {extract}({in0}, 0x1);
+            __m256{i} vres_lo = nsimd_ziplo_avx2_f64(v_tmp0, v_tmp1);
+            __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1)
+            __m512{i} vres = {cast_high}(vres_lo);
+            return {insert}(vres, v_res_hi, 1);
+            '''.format(extract=extract, cast_high=cast_high, insert=insert,
+                       i=i, **fmtspec)
 
 def zip(simd_ext, typ):
-    # Here we can make a call to ziphi and ziplo if we include
-    # ziplo.h and ziphi.h
-    if typ in ['u8', 'u16', 'u32', 'u64']:
-        cast=\
-        '''{simd_typ} a = 
-        nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in0});
-        {simd_typ} b = 
-        nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}({in1});'''.\
-            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
-    else:
-        cast='''{simd_typ} a = {in0};
-        {simd_typ} b = {in1};'''.\
-            format(**fmtspec, simd_typ=get_type(simd_ext, typ))
-        
-    if simd_ext == 'avx' and typ in \
-        ['i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64']:
-        return '''nsimd_{simd_ext}_v{typ}x2 ret;
-        {cast}
-        __m128i c1 = _mm_unpacklo{suf}({extract_1}, {extract_3});
-        __m128i c2 = _mm_unpacklo{suf}({extract_2}, {extract_4});
-        __m128i c3 = _mm_unpackhi{suf}({extract_1}, {extract_3});
-        __m128i c4 = _mm_unpackhi{suf}({extract_2}, {extract_4});
-        ret[0] = {merge0};
-        ret[1] = {merge1};
-        return ret;'''. \
-            format(**fmtspec, cast=cast,
-                   extract_1=extract(simd_ext, typ, LO, 'a'), 
-                   extract_2=extract(simd_ext, typ, HI, 'a'),
-                   extract_3=extract(simd_ext, typ, LO, 'b'), 
-                   extract_4=extract(simd_ext, typ, HI, 'b'),
-                   merge0=setr(simd_ext, typ, 'c1', 'c2'),
-                   merge1=setr(simd_ext, typ, 'c3', 'c4'))
-    else:
-        if typ == 'f16':
-            return '''nsimd_{simd_ext}_v{typ}x2 ret;
-            {cast}
-            ret[0].v0 = {pre}unpacklo_ps(a.v0, a.v1);
-            ret[0].v1 = {pre}unpackhi_ps(a.v0, a.v1);
-            ret[1].v0 = {pre}unpacklo_ps(b.v0, b.v1);
-            ret[1].v1 = {pre}unpackhi_ps(b.v0, b.v1);
-            return ret;
-            '''.format(cast=cast, **fmtspec)
-        else:
-            return '''nsimd_{simd_ext}_v{typ}x2 ret;
-            {cast}
-            ret[0] = {pre}unpacklo{suf}(a, b);
-            ret[1] = {pre}unpackhi{suf}(a, b);
-            return ret;'''.format(cast=cast, **fmtspec)
+    return '// Not implemented yet'
     
 # -----------------------------------------------------------------------------
 ## unzip functions
@@ -2656,8 +2765,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'addv': addv(simd_ext, from_typ),
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
         'downcvt': downcvt1(simd_ext, from_typ, to_typ),
-        'ziplo': zip_half('unpacklo', simd_ext, from_typ),
-        'ziphi': zip_half('unpackhi', simd_ext, from_typ),
+        'ziplo': ziplo(simd_ext, from_typ),
+        'ziphi': ziphi(simd_ext, from_typ),
         'zip': zip(simd_ext, from_typ),
         'unziplo': unzip('unziplo', simd_ext, from_typ),
         'unziphi': unzip('unziphi', simd_ext, from_typ)
