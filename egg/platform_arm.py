@@ -1698,6 +1698,7 @@ def zip_unzip_half(func, simd_ext, typ):
             nsimd_{simd_ext}_v{typ} ret;
             ret.v0 = {s}v{zip}1q_f32({in0}.v{i}, {in1}.v{i});
             ret.v1 = {s}v{zip}2q_f32({in0}.v{i}, {in1}.v{i});
+            return ret;
             #endif
             '''.format(op=func,
                        i = '0' if func in ['zip1', 'uzp1'] else '1',
@@ -1711,8 +1712,9 @@ def zip_unzip_half(func, simd_ext, typ):
     elif simd_ext == 'neon128':
         if typ == 'f16':
             return '''\
-            // Not implemented yet
-            '''
+            nsimd_{simd_ext}_v{typ} ret;
+            return ret;
+            '''.format(**fmtspec)
         elif typ in ['i64', 'u64']:
             return '''\
             {typ} buf0[2], buf1[2];
@@ -1724,7 +1726,6 @@ def zip_unzip_half(func, simd_ext, typ):
             return vld1q_{suf}(ret);'''. \
                 format(**fmtspec,  
                        i= '0' if func in ['zip1', 'uzp1'] else '1')
-
         elif  typ == 'f64' :
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
@@ -1741,7 +1742,6 @@ def zip_unzip_half(func, simd_ext, typ):
             prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
             neon_typ = '{}{}x{}x2_t'. \
                 format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
-            
             return '''\
             {neon_typ} res;
             res = v{op}_{suf}({in0}, {in1});
