@@ -2517,7 +2517,7 @@ def ziplo(simd_ext, typ):
             return {insert}({cast_high}(vres_lo), vres_hi, 0x01);
             '''.format(cast_low=cast_low, cast_high=cast_high,
                        extract=extract, epi=epi, insert=insert, i=i,**fmtspec)
-    elif simd_ext == 'avx512':
+    else:
         if typ in common.iutypes:
             i = 'i'
             cast_low = '_mm512_castsi512_si256'
@@ -2545,11 +2545,11 @@ def ziplo(simd_ext, typ):
             v_tmp0 = {cast_low}({in0});
             v_tmp1 = {cast_low}({in0});
             __m256{i} vres_lo = nsimd_ziplo_avx2_f64(v_tmp0, v_tmp1);
-            __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1)
+            __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1);
             __m512{i} vres = {cast_high}(vres_lo);
             return {insert}(vres, v_res_hi, 1);
-            '''.format(extract=extract, cast_high=cast_high, insert=insert,
-                       i=i, **fmtspec)
+            '''.format(extract=extract, cast_high=cast_high, cast_low=cast_low,
+                       insert=insert, i=i, **fmtspec)
 
 def ziphi(simd_ext, typ):
     if simd_ext in ['sse2', 'sse42']:
@@ -2609,7 +2609,7 @@ def ziphi(simd_ext, typ):
             return {insert}({cast_high}(vres_lo), vres_hi, 0x01);
             '''.format(cast_low=cast_low, cast_high=cast_high,
                        extract=extract, epi=epi, insert=insert, i=i,**fmtspec)
-    elif simd_ext == 'avx512':
+    else:
         if typ in common.iutypes:
             i = 'i'
             cast_low = '_mm512_castsi512_si256'
@@ -2630,18 +2630,21 @@ def ziphi(simd_ext, typ):
             insert = '__mm512_insertf64x4'
             
         if typ == 'f16':
-            return ''
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            return ret;
+            '''.format(**fmtspec)
         else:
             return '''\
             __m25{i} v_tmp0, v_tmp1;
             v_tmp0 = {extract}({in0}, 0x1);
             v_tmp1 = {extract}({in0}, 0x1);
             __m256{i} vres_lo = nsimd_ziplo_avx2_f64(v_tmp0, v_tmp1);
-            __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1)
+            __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1);
             __m512{i} vres = {cast_high}(vres_lo);
             return {insert}(vres, v_res_hi, 1);
-            '''.format(extract=extract, cast_high=cast_high, insert=insert,
-                       i=i, **fmtspec)
+            '''.format(extract=extract, cast_high=cast_high, cast_low=cast_low,
+                       insert=insert,i=i, **fmtspec)
 
 def zip(simd_ext, typ):
     return '// Not implemented yet'
