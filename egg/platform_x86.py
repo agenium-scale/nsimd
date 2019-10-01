@@ -2547,7 +2547,7 @@ def ziplo(simd_ext, typ):
             __m256{i} vres_lo = nsimd_ziplo_avx2_f64(v_tmp0, v_tmp1);
             __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1);
             __m512{i} vres = {cast_high}(vres_lo);
-            return {insert}(vres, v_res_hi, 1);
+            return {insert}(vres, vres_hi, 1);
             '''.format(extract=extract, cast_high=cast_high, cast_low=cast_low,
                        insert=insert, i=i, **fmtspec)
 
@@ -2642,7 +2642,7 @@ def ziphi(simd_ext, typ):
             __m256{i} vres_lo = nsimd_ziplo_avx2_f64(v_tmp0, v_tmp1);
             __m256{i} vres_hi = nsimd_ziphi_avx2_f64(v_tmp0, v_tmp1);
             __m512{i} vres = {cast_high}(vres_lo);
-            return {insert}(vres, v_res_hi, 1);
+            return {insert}(vres, vres_hi, 1);
             '''.format(extract=extract, cast_high=cast_high, cast_low=cast_low,
                        insert=insert,i=i, **fmtspec)
 
