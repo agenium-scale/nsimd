@@ -2542,7 +2542,27 @@ def ziplo(simd_ext, typ):
             insert = '_mm512_insertf64x4'
             
         if typ == 'f16':
-            return ''
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m512 v0 = {in0}.v0;
+            __m512 v1 = {in1}.v0;
+            __m256 v_tmp0, v_tmp1, vres_lo, vres_hi;
+            // Low part
+            v_tmp0 = _mm512_castps512_ps256(v0);
+            v_tmp1 = _mm512_castps512_ps256(v1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v0 _mm512_insertf32x8(vres, vres_hi, 1);
+            // High part
+            v_tmp0 = _mm512_extractf32x8_ps(a0, 0x1);
+            v_tmp1 = _mm512_extractf32x8_ps(a1, 0x1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v1 _mm512_insertf32x8(vres, vres_hi, 1);
+            return ret;
+            '''.format(**fmtspec)
         else:
             return '''\
             __m256{i} v_tmp0, v_tmp1;
@@ -2636,6 +2656,23 @@ def ziphi(simd_ext, typ):
         if typ == 'f16':
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
+            __m512 v0 = {in0}.v1;
+            __m512 v1 = {in1}.v1;
+            __m256 v_tmp0, v_tmp1, vres_lo, vres_hi;
+            // Low part
+            v_tmp0 = _mm512_castps512_ps256(v0);
+            v_tmp1 = _mm512_castps512_ps256(v1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v0 _mm512_insertf32x8(vres, vres_hi, 1);
+            // High part
+            v_tmp0 = _mm512_extractf32x8_ps(a0, 0x1);
+            v_tmp1 = _mm512_extractf32x8_ps(a1, 0x1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v1 _mm512_insertf32x8(vres, vres_hi, 1);
             return ret;
             '''.format(**fmtspec)
         else:
