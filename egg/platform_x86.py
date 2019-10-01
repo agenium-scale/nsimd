@@ -2627,7 +2627,7 @@ def ziphi(simd_ext, typ):
             cast_low = '_mm512_castpd512_pd256'
             cast_high = '_mm512_castpd256_pd512'
             extract = '_mm512_extractf64x4_pd'
-            insert = '__mm512_insertf64x4'
+            insert = '_mm512_insertf64x4'
             
         if typ == 'f16':
             return '''\
@@ -2638,7 +2638,7 @@ def ziphi(simd_ext, typ):
             return '''\
             __m256{i} v_tmp0, v_tmp1;
             v_tmp0 = {extract}({in0}, 0x1);
-            v_tmp1 = {extract}({in0}, 0x1);
+            v_tmp1 = {extract}({in1}, 0x1);
             __m256{i} vres_lo = nsimd_ziplo_avx2_{typ}(v_tmp0, v_tmp1);
             __m256{i} vres_hi = nsimd_ziphi_avx2_{typ}(v_tmp0, v_tmp1);
             __m512{i} vres = {cast_high}(vres_lo);
