@@ -2523,7 +2523,7 @@ def ziplo(simd_ext, typ):
             cast_low = '_mm512_castsi512_si256'
             cast_high = '_mm512_castsi256_si512'
             extract = '_mm512_extractf128_si256'
-            insert = '_mm512inserti32x8'
+            insert = '_mm512_inserti32x8'
         elif typ in ['f32', 'f16']:
             i = ''
             cast_low = '_mm512_castps512_ps256'
@@ -2615,7 +2615,7 @@ def ziphi(simd_ext, typ):
             cast_low = '_mm512_castsi512_si256'
             cast_high = '_mm512_castsi256_si512'
             extract = '_mm512_extractf128_si256'
-            insert = '_mm512inserti32x8'
+            insert = '_mm512_inserti32x8'
         elif typ in ['f32', 'f16']:
             i = ''
             cast_low = '_mm512_castps512_ps256'
