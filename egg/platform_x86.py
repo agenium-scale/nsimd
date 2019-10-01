@@ -2614,7 +2614,7 @@ def ziphi(simd_ext, typ):
             i = 'i'
             cast_low = '_mm512_castsi512_si256'
             cast_high = '_mm512_castsi256_si512'
-            extract = '_mm512_extractf128_si256'
+            extract = '_mm512_extracti32x8_epi32'
             insert = '_mm512_inserti32x8'
         elif typ in ['f32', 'f16']:
             i = ''
