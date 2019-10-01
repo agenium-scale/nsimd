@@ -1195,8 +1195,12 @@ def gen_unpack(opts, op, typ, lang):
           comp_function(vout[j + step/(2*nb_lane) + add_lane], vin2[{index} + add_lane])'''. \
           format(index='i' if op.name == 'unziplo' else 'i+1')
     else:
-      comp_unpack ='''(vout[i] != vin1[j]) || 
-                    (vout[i + 1] != vin2[j])'''
+        if typ == 'f16':
+            comp_unpack ='''(nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[j])) || 
+            (nsimd_f16_to_f32(vout[i + 1]) != nsimd_f16_to_f32(vin2[j]))'''
+        else:
+            comp_unpack ='''(vout[i] != vin1[j]) || 
+            (vout[i + 1] != vin2[j])'''
       
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     comp = 'return ({} - {}) > get_2th_power(-{nbits})'. \
@@ -1245,7 +1249,7 @@ def gen_unpack(opts, op, typ, lang):
         '''{head}
 
            int main(void) {{
-              int vi, i, j, k, step, nb_lane, add_lane;
+              int vi, i, j, step, nb_lane;
               {typ} *vin1, *vin2;
               {typ} *vout;
 
