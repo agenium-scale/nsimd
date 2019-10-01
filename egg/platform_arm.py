@@ -1693,21 +1693,23 @@ def zip_unzip_half(func, simd_ext, typ):
         if typ =='f16':
             return '''\
             #ifdef NSIMD_FP16
-            return {s}v{op}q_{suf}({in0}, {in1});
+            return {s}v{op}{q}_{suf}({in0}, {in1});
             #else
             nsimd_{simd_ext}_v{typ} ret;
-            ret.v0 = {s}v{zip}1q_f32({in0}.v{i}, {in1}.v{i});
-            ret.v1 = {s}v{zip}2q_f32({in0}.v{i}, {in1}.v{i});
+            ret.v0 = {s}v{zip}1{q}_f32({in0}.v{i}, {in1}.v{i});
+            ret.v1 = {s}v{zip}2{q}_f32({in0}.v{i}, {in1}.v{i});
             return ret;
             #endif
             '''.format(op=func,
                        i = '0' if func in ['zip1', 'uzp1'] else '1',
                        zip = 'zip' if func in ['zip1', 'zip2'] else 'uzp',
                        s = 's' if simd_ext == 'sve' else '',
+                       q = '' if simd_ext == 'sve' else 'q',
                        **fmtspec)
         else:
-            return 'return {s}v{op}q_{suf}({in0}, {in1});'. \
+            return 'return {s}v{op}{q}_{suf}({in0}, {in1});'. \
                 format(op=func, s = 's' if simd_ext == 'sve' else '',
+                       q = '' if simd_ext == 'sve' else 'q',
                        **fmtspec)  
     elif simd_ext == 'neon128':
         if typ == 'f16':
@@ -1737,8 +1739,6 @@ def zip_unzip_half(func, simd_ext, typ):
         else :
             armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
                      'uzp2': 'uzpq'}
-            aop =   {'zip1': 'ziplo', 'zip2': 'ziphi', 'uzp1': 'unziplo',
-                     'uzp2': 'unziphi'}
             prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
             neon_typ = '{}{}x{}x2_t'. \
                 format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
