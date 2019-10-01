@@ -1688,7 +1688,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
 # -----------------------------------------------------------------------------
 ## unpack functions
 
-def zip_half(func, simd_ext, typ):
+def zip_unzip_half(func, simd_ext, typ):
     if simd_ext in ['aarch64', 'sve']:
         if typ =='f16' and simd_ext == 'aarch64':
             return '''\
