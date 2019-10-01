@@ -2546,6 +2546,7 @@ def ziplo(simd_ext, typ):
             nsimd_{simd_ext}_v{typ} ret;
             __m512 v0 = {in0}.v0;
             __m512 v1 = {in1}.v0;
+            __m512 vres;
             __m256 v_tmp0, v_tmp1, vres_lo, vres_hi;
             // Low part
             v_tmp0 = _mm512_castps512_ps256(v0);
@@ -2658,6 +2659,7 @@ def ziphi(simd_ext, typ):
             nsimd_{simd_ext}_v{typ} ret;
             __m512 v0 = {in0}.v1;
             __m512 v1 = {in1}.v1;
+            __m512 vres;
             __m256 v_tmp0, v_tmp1, vres_lo, vres_hi;
             // Low part
             v_tmp0 = _mm512_castps512_ps256(v0);
