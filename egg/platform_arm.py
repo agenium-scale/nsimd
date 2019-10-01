@@ -1718,7 +1718,7 @@ def zip_unzip_half(func, simd_ext, typ):
             float32x4x2_t tmp = vzipq_f32({in0}.v{i}, {in1}.v{i});
             ret.v0 = tmp.val[0];
             ret.v1 = tmp.val[1];
-            '''.format(i = '0' if op == 'ziplo' else '1', **fmtspec)
+            '''.format(i = '0' if func == 'zip1' else '1', **fmtspec)
         elif typ in ['i64', 'u64']:
             return '''\
             {typ} buf0[2], buf1[2];
