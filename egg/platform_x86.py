@@ -152,6 +152,10 @@ def get_additional_include(func, platform, simd_ext):
     if func == 'upcvt':
         ret += '''#include <nsimd/x86/{simd_ext}/cvt.h>
                   '''.format(simd_ext=simd_ext)
+    if func in ['ziphi', 'ziplo'] and simd_ext in ['avx512_knl', 'avx512_skylake']:
+        ret += '''#include <nsimd/x86/avx2/ziplo.h>
+                  #include <nsimd/x86/avx2/ziphi.h>
+                  '''.format(simd_ext=simd_ext)
     if func == 'zip':
         ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
                   #include <nsimd/x86/{simd_ext}/ziphi.h>
