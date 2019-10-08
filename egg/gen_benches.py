@@ -462,7 +462,8 @@ class BenchOperator(object, metaclass=type):
         if lang == 'c_base':
             includes += ['<stdlib.h>', '<stdio.h>', '<errno.h>', '<string.h>']
         else:
-            includes += ['<cstdlib>', '<cstdio>', '<cerrno>', '<cstring>']
+            includes += ['<cstdlib>', '<cstdio>', '<cerrno>', '<cstring>',
+                         '<algorithm>']
         return includes
 
     def match_sig(self, signature):
@@ -1062,7 +1063,7 @@ def gen_bench_with_timestamp(f, simd, typ, category, unroll=None):
         gnuplot_file << "\\n";
         gnuplot_file << "plot '" << dat_filename << "' with linespoints linestyle 1" << "\\n";
         std::system(("cd gnuplot && gnuplot \\"" + gnuplot_filename + "\\"").c_str());
-      }} 
+      }}
       '''.format(bench_name=bench_name,
                   typ=typ,
                   bench_args_decl=bench_args_decl,
