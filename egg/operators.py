@@ -988,37 +988,37 @@ class Rsqrt11(Operator):
     categories = [DocBasicArithmetic]
     tests_ulps = True
 
-class Ziplo(Operator):
-    full_name = 'ziplo'
-    signature = 'v ziplo v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
+#class Ziplo(Operator):
+#    full_name = 'ziplo'
+#    signature = 'v ziplo v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
 
-class Ziphi(Operator):
-    full_name = 'ziphi'
-    signature = 'v ziphi v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
+#class Ziphi(Operator):
+#    full_name = 'ziphi'
+#    signature = 'v ziphi v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
 
-class Unziplo(Operator):
-    full_name = 'unziplo'
-    signature = 'v unziplo v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
+#class Unziplo(Operator):
+#    full_name = 'unziplo'
+#    signature = 'v unziplo v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
 
-class Unziphi(Operator):
-    full_name = 'unziphi'
-    signature = 'v unziphi v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
+#class Unziphi(Operator):
+#    full_name = 'unziphi'
+#    signature = 'v unziphi v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
