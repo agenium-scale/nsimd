@@ -1183,6 +1183,7 @@ def doit(opts):
                 if opts.match and not opts.match.match(f.name):
                     continue
                 ## FIXME
-                if f.name in ['gamma', 'lgamma']:
+                if f.name in ['gamma', 'lgamma', 'ziplo', 'ziphi',
+                              'unziphi', 'unziplo']:
                     continue
                 gen_bench(f, simd, typ)
