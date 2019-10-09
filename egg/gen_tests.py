@@ -1190,10 +1190,15 @@ def gen_unpack(opts, op, typ, lang):
         format(val= '0' if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
 
     if op.name in ['unziplo', 'unziphi']:
-      comp_unpack =  \
-        '''comp_function(vout[j + add_lane], vin1[{index} + add_lane]) || 
-          comp_function(vout[j + step/(2*nb_lane) + add_lane], vin2[{index} + add_lane])'''. \
-          format(index='i' if op.name == 'unziplo' else 'i+1')
+        if typ == 'f16':
+            comp_unpack = '''\
+            (nsimd_f16_to_f32(vout[j]) != nsimd_f16_to_f32(vin1[2 * j + {i}]))
+            || (nsimd_f16_to_f32(vout[j + step / 2]) != nsimd_f16_to_f32(vin2[2 * j + {i}]))
+            '''.format(i = '0' if op.name == 'unziplo' else '1')
+        else:
+             comp_unpack =  '''\
+             (vout[j] != vin1[2 * j + {i}]) || (vout[j + step / 2] != vin2[2 * j + {i}])
+             '''.format(i = '0' if op.name == 'unziplo' else '1')
     else:
         if typ == 'f16':
             comp_unpack ='''(nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[j])) || 
@@ -1203,8 +1208,6 @@ def gen_unpack(opts, op, typ, lang):
             (vout[i + 1] != vin2[j])'''
       
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
-    comp = 'return ({} - {}) > get_2th_power(-{nbits})'. \
-            format(left, right, nbits='11' if typ != 'f16' else '9')   
     head = '''#define _POSIX_C_SOURCE 200112L
     
               {includes}
@@ -1226,13 +1229,8 @@ def gen_unpack(opts, op, typ, lang):
               {extra_code}
 
               // {simd}
-              
-              int comp_function({typ} mpfr_out, {typ} nsimd_out)
-            {{
-              {comp};
-            }}
             ''' .format(year=date.today().year, typ=typ,
-                          includes=get_includes(lang), comp=comp,
+                          includes=get_includes(lang),
                           extra_code=extra_code, 
                           comp_unpack=comp_unpack, 
                           sizeof=common.sizeof(typ), simd= opts.simd)

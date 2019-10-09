@@ -1015,7 +1015,7 @@ class Ziphi(Operator):
 # class Unziplo(Operator):
 #     full_name = 'unziplo'
 #     signature = 'v unziplo v v'
-#     types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#     types = common.types
 #     domain = Domain('R')
 #     categories = [DocMisc]
 #     tests_ulps = True
@@ -1023,7 +1023,7 @@ class Ziphi(Operator):
 # class Unziphi(Operator):
 #     full_name = 'unziphi'
 #     signature = 'v unziphi v v'
-#     types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#     types = common.types
 #     domain = Domain('R')
 #     categories = [DocMisc]
 #     tests_ulps = True

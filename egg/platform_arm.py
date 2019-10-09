@@ -1716,8 +1716,9 @@ def zip_unzip_half(func, simd_ext, typ):
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
             float32x4x2_t tmp = vzipq_f32({in0}.v{i}, {in1}.v{i});
-            ret.v0 = tmp.val[0];
-            ret.v1 = tmp.val[1];
+            ret.v0 = tmp.val[1];
+            ret.v1 = tmp.val[0];
+            return ret;
             '''.format(i = '0' if func == 'zip1' else '1', **fmtspec)
         elif typ in ['i64', 'u64']:
             return '''\
@@ -1793,10 +1794,10 @@ def zip_unzip(func, simd_ext, typ):
            nsimd_{simd_ext}_vf16x2 ret;
            float32x4x2_t v_tmp0 = vzipq_f32({in0}.v0, {in1}.v0);
            float32x4x2_t v_tmp1 = vzipq_f32({in0}.v1, {in1}.v1);
-           ret[0].v0 = v_tmp0.v0;
-           ret[0].v1 = v_tmp0.v1;
-           ret[1].v0 = v_tmp1.v0;
-           ret[1].v1 = v_tmp1.v1;
+           ret[1].v0 = v_tmp0.v0;
+           ret[1].v1 = v_tmp0.v1;
+           ret[0].v0 = v_tmp1.v0;
+           ret[0].v1 = v_tmp1.v1;
            return ret;
            #endif
            '''.format(content, **fmtspec)

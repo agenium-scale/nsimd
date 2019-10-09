@@ -111,7 +111,6 @@ import gen_archis
 import gen_base_apis
 import gen_advanced_api
 import gen_tests
-import gen_tests_fp
 import gen_benches
 import gen_src
 import gen_doc
@@ -225,9 +224,6 @@ def main():
         gen_ulps.doit(opts)
     if opts.tests == True or opts.all == True:
         gen_tests.doit(opts)
-    if opts.tests_fp == True or opts.all == True:
-        pass
-        #gen_tests_fp.doit(opts)
     if opts.benches == True or opts.all == True:
         gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
