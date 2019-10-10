@@ -1012,21 +1012,21 @@ class Ziphi(Operator):
 #     categories = [DocMisc]
 #     tests_ulps = True
     
-# class Unziplo(Operator):
-#     full_name = 'unziplo'
-#     signature = 'v unziplo v v'
-#     types = common.types
-#     domain = Domain('R')
-#     categories = [DocMisc]
-#     tests_ulps = True
+class Unziplo(Operator):
+    full_name = 'unziplo'
+    signature = 'v unziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    tests_ulps = True
 
-# class Unziphi(Operator):
-#     full_name = 'unziphi'
-#     signature = 'v unziphi v v'
-#     types = common.types
-#     domain = Domain('R')
-#     categories = [DocMisc]
-#     tests_ulps = True
+class Unziphi(Operator):
+    full_name = 'unziphi'
+    signature = 'v unziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    tests_ulps = True
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was

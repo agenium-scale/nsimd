@@ -158,6 +158,9 @@ def get_additional_include(func, platform, simd_ext):
     if func == 'ziphi' and simd_ext in ['avx512_knl', 'avx512_skylake']:
         ret += '''#include <nsimd/x86/avx2/ziplo.h>
                   '''.format(simd_ext=simd_ext)
+    if func in ['unziphi', 'unziplo']:
+        ret += '''#include <nsimd/x86/{simd_ext}/load2u.h>
+                  '''.format(simd_ext=simd_ext)
     if func == 'zip':
         ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
                   #include <nsimd/x86/{simd_ext}/ziphi.h>
@@ -2608,23 +2611,23 @@ def zip(simd_ext, typ):
 ## unzip functions
 
 def unzip_half(func, simd_ext, typ):
-    return '''\
-    nsimd_{simd_ext}_v{typ} aps = {in0};
-    nsimd_{simd_ext}_v{typ} bps = {in1};
-    nsimd_{simd_ext}_v{typ} tmp;
-    int j = 0;
-    int step = (int)log2({nb_reg}/sizeof({typ}));
-    while (j < step) {{
-    tmp = nsimd_ziplo_{simd_ext}_{typ}(aps, bps);
-    bps = nsimd_ziphi_{simd_ext}_{typ}(aps, bps);
-    aps = tmp; 
-    j++;
-    }}
-    return {ret};
-    '''.format(**fmtspec, simd_typ=get_type(simd_ext, typ),
-                            nb_reg=get_nb_registers(simd_ext),
-                            ret='aps' if func == 'unziplo' else 'bps')
-
+    tab_size = 2 * int(fmtspec['le'])
+    vec_size = int(fmtspec['le'])
+    if typ in common.types:
+        return '''\
+        nsimd_{simd_ext}_v{typ}x2 tmp;
+        {typ} tab[{tab_size}];
+        nsimd_storeu_{simd_ext}_{typ}(tab, {in0});
+        nsimd_storeu_{simd_ext}_{typ}(tab + {vec_size}, {in1});
+        tmp = nsimd_load2u_{simd_ext}_{typ}(tab);
+        return tmp.v0;
+        '''.format(tab_size=tab_size, vec_size=vec_size,
+                   cast='({}*)'.format(get_type(simd_ext, typ)) \
+                   if typ in common.iutypes else '',
+                   **fmtspec)
+    else:
+        return ''' // Not implemented yet'''
+    
 # -----------------------------------------------------------------------------
 ## get_impl function
 
