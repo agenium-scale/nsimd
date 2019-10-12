@@ -955,7 +955,10 @@ def round1(op, simd_ext, typ):
 ## FMA and FNMA
 
 def fmafnma3(op, simd_ext, typ):
-    armop = {'fma': 'mla', 'fnma': 'mls'}
+    if typ in common.ftypes:
+        armop = {'fma': 'fma', 'fnma': 'fms'}
+    else:
+        armop = {'fma': 'mla', 'fnma': 'mls'}
     if simd_ext in neon:
         normal = 'return v{armop}q_{suf}({in2}, {in1}, {in0});'. \
                  format(armop=armop[op], **fmtspec)
@@ -1691,7 +1694,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
 def zip_unzip(func, simd_ext, typ):
     if simd_ext == 'aarch64':
         return 'return v{op}q_{suf}({in0}, {in1});'. \
-                   format(op=func, **fmtspec)  
+                   format(op=func, **fmtspec)
     elif simd_ext == 'sve':
         return 'return sv{op}_{suf}({in0}, {in1});'. \
                format(op=func, **fmtspec)
@@ -1703,7 +1706,7 @@ def zip_unzip(func, simd_ext, typ):
                 ret[0] = buf0[{i}];
                 ret[1] = buf1[{i}];
                 return vld1q_{suf}(ret);'''. \
-                format(**fmtspec,  
+                format(**fmtspec,
                     i= '0' if func in ['zip1', 'uzp1'] else '1')
 
     elif simd_ext == 'neon128' and typ == 'f64' :
@@ -1711,8 +1714,8 @@ def zip_unzip(func, simd_ext, typ):
                 ret.v0 = {in0}.v{i};
                 ret.v1 = {in1}.v{i};
                 return ret;'''. \
-                format(**fmtspec,  
-                    i= '0' if func in ['zip1', 'uzp1'] else '1')  
+                format(**fmtspec,
+                    i= '0' if func in ['zip1', 'uzp1'] else '1')
     else :
         armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
                  'uzp2': 'uzpq'}
