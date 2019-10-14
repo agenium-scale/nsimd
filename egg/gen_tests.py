@@ -1186,18 +1186,21 @@ def gen_unpack(opts, op, typ, lang):
                       format(typ=typ, op_name=op.name)
 
     op_test =  'step/(2*nb_lane)'
-    offset = 'int offset = {val};'.\
-        format(val= '0' if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
-
+    if op.name in['ziphi', 'ziplo']:
+        offset = 'int offset = {val};'.\
+            format(val= '0' if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
+    else:
+        offset = ''
+        
     if op.name in ['unziplo', 'unziphi']:
         if typ == 'f16':
             comp_unpack = '''\
-            (nsimd_f16_to_f32(vout[j]) != nsimd_f16_to_f32(vin1[2 * j + {i}]))
-            || (nsimd_f16_to_f32(vout[j + step / 2]) != nsimd_f16_to_f32(vin2[2 * j + {i}]))
+            (nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[vi + 2 * j + {i}]))
+            || (nsimd_f16_to_f32(vout[i + step / 2]) != nsimd_f16_to_f32(vin2[vi + 2 * j + {i}]))
             '''.format(i = '0' if op.name == 'unziplo' else '1')
         else:
              comp_unpack =  '''\
-             (vout[j] != vin1[2 * j + {i}]) || (vout[j + step / 2] != vin2[2 * j + {i}])
+             (vout[i] != vin1[vi + 2 * j + {i}]) || (vout[i + step / 2] != vin2[vi + 2 * j + {i}])
              '''.format(i = '0' if op.name == 'unziplo' else '1')
     else:
         if typ == 'f16':
@@ -1280,8 +1283,8 @@ def gen_unpack(opts, op, typ, lang):
               if (step != 1) {{
                 {offset}
                 for (vi = 0; vi < SIZE; vi += step){{
-                 j = vi + offset;
-                 for (i = vi; i < vi + step; i += 2) {{
+                 j = {init_j};
+                 for (i = vi; i < {cond}; {inc}) {{
                    if({comp_unpack}) {{
                      fprintf(stderr, "test of {op_name} over {typ}... FAIL\\n");
                      exit(EXIT_FAILURE);
@@ -1300,6 +1303,9 @@ def gen_unpack(opts, op, typ, lang):
             rand=rand, head=head, comp_unpack=comp_unpack, 
             vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
             offset=offset,
+            cond='vi + step' if op.name in['ziplo', 'ziphi'] else 'vi + step / 2',
+            init_j='vi + offset' if op.name in['ziplo', 'ziphi'] else '0',
+            inc='i += 2' if op.name in['ziphi', 'ziplo'] else 'i++',
             pos='0' if op.name in ['ziplo', 'unziplo', 'unziphi'] else op_test))
 
     common.clang_format(opts, filename)

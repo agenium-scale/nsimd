@@ -158,9 +158,6 @@ def get_additional_include(func, platform, simd_ext):
     if func == 'ziphi' and simd_ext in ['avx512_knl', 'avx512_skylake']:
         ret += '''#include <nsimd/x86/avx2/ziplo.h>
                   '''.format(simd_ext=simd_ext)
-    if func in ['unziphi', 'unziplo']:
-        ret += '''#include <nsimd/x86/{simd_ext}/load2u.h>
-                  '''.format(simd_ext=simd_ext)
     if func == 'zip':
         ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
                   #include <nsimd/x86/{simd_ext}/ziphi.h>
@@ -2613,20 +2610,72 @@ def zip(simd_ext, typ):
 def unzip_half(func, simd_ext, typ):
     tab_size = 2 * int(fmtspec['le'])
     vec_size = int(fmtspec['le'])
-    if typ in common.types:
+    if simd_ext in ['sse2', 'sse42'] and typ in ['u32', 'i32']:
         return '''\
-        nsimd_{simd_ext}_v{typ}x2 tmp;
+        {styp} v_res;
+        {styp} v_tmp0, v_tmp1;
+        v_tmp0 = _mm_shuffle_epi32({in0}, _MM_SHUFFLE(3, 1, 2, 0));
+        v_tmp1 = _mm_shuffle_epi32({in1}, _MM_SHUFFLE(3, 1, 2, 0));
+        v_res = _mm_unpack{lo_hi}_epi32(v_tmp0, v_tmp1);
+        v_res = _mm_shuffle_epi32(v_res, _MM_SHUFFLE(3, 1, 2, 0));
+        return v_res;
+        '''.format(lo_hi='lo' if func == 'unziplo' else 'hi',
+                   **fmtspec)
+    elif simd_ext in ['sse2', 'sse42'] and typ == 'f32':
+        return '''\
+        {styp} v_res;
+        v_res = _mm_shuffle_ps({in0}, {in1}, _MM_SHUFFLE({mask}));
+        return v_res;
+        '''.format(mask='2, 0, 2, 0' if func == 'unziplo' else '3, 1, 3, 1',
+                   **fmtspec)
+    elif simd_ext in ['avx2'] and typ in ['f32']:
+        return '''\
+        {styp} v_res;
+        {styp} v_tmp0, v_tmp1;
+        v_tmp0 = _mm256_permute2f128{sufsi}({in0}, {in0}, 0x01);
+        v_tmp0 = _mm256_shuffle{suf}({in0}, v_tmp0, _MM_SHUFFLE({mask}));
+        v_tmp1 = _mm256_permute2f128{sufsi}({in1}, {in1}, 0x01);
+        v_tmp1 = _mm256_shuffle{suf}({in1}, v_tmp1, _MM_SHUFFLE({mask}));
+        v_res = _mm256_permute2f128{sufsi}(v_tmp0, v_tmp1, 0x20);
+        return v_res;
+        '''.format(mask='2, 0, 2, 0' if func == 'unziplo' else '3, 1, 3, 1',
+                   **fmtspec)
+    elif simd_ext == 'avx2' and typ in ['i32', 'u32']:
+        return '''\
+        __m256i v_tmp0, v_tmp1;
+        {in0} = _mm256_shuffle_epi32({in0}, _MM_SHUFFLE({mask}));
+        {in1} = _mm256_shuffle_epi32({in1}, _MM_SHUFFLE({mask}));
+        v_tmp0 = _mm256_permute2f128_si256({in0}, {in0}, 0x01);
+        v_tmp1 = _mm256_permute2f128_si256({in1}, {in1}, 0x01);
+        __m128i {in0}_lo = _mm256_castsi256_si128({in0});
+        __m128i v_tmp0_lo = _mm256_castsi256_si128(v_tmp0);
+        __m128i {in1}_lo = _mm256_castsi256_si128({in1});
+        __m128i v_tmp1_lo = _mm256_castsi256_si128(v_tmp1);
+        v_tmp0_lo = _mm_unpacklo_epi32({in0}_lo, v_tmp0_lo);
+        v_tmp1_lo = _mm_unpacklo_epi32({in1}_lo, v_tmp1_lo);
+        v_tmp0_lo = _mm_shuffle_epi32(v_tmp0_lo, _MM_SHUFFLE(3, 1, 2, 0));
+        v_tmp1_lo = _mm_shuffle_epi32(v_tmp1_lo, _MM_SHUFFLE(3, 1, 2, 0));
+        v_tmp0 = _mm256_castsi128_si256(v_tmp0_lo);
+        v_tmp0 = _mm256_insertf128_si256(v_tmp0, v_tmp1_lo, 0x01);
+        return v_tmp0;
+        '''.format(mask='2, 0, 2, 0' if func == 'unziplo' else '3, 1, 3, 1',
+                   **fmtspec)
+    else:
+        return '''\
         {typ} tab[{tab_size}];
+        {typ} res[{vec_size}];
+        int i;
         nsimd_storeu_{simd_ext}_{typ}(tab, {in0});
         nsimd_storeu_{simd_ext}_{typ}(tab + {vec_size}, {in1});
-        tmp = nsimd_load2u_{simd_ext}_{typ}(tab);
-        return tmp.v0;
+        for(i = 0; i < {vec_size}; i++) {{
+          res[i] = tab[2 * i + {offset}];
+        }}
+        return nsimd_loadu_{simd_ext}_{typ}(res);
         '''.format(tab_size=tab_size, vec_size=vec_size,
                    cast='({}*)'.format(get_type(simd_ext, typ)) \
                    if typ in common.iutypes else '',
+                   offset = '0' if func == 'unziplo' else '1',
                    **fmtspec)
-    else:
-        return ''' // Not implemented yet'''
     
 # -----------------------------------------------------------------------------
 ## get_impl function
