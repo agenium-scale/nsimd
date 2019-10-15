@@ -1200,7 +1200,8 @@ def gen_unpack(opts, op, typ, lang):
             '''.format(i = '0' if op.name == 'unziplo' else '1')
         else:
              comp_unpack =  '''\
-             (vout[i] != vin1[vi + 2 * j + {i}]) || (vout[i + step / 2] != vin2[vi + 2 * j + {i}])
+             (vout[i] != vin1[vi + 2 * j + {i}]) 
+             || (vout[i + step / 2] != vin2[vi + 2 * j + {i}])
              '''.format(i = '0' if op.name == 'unziplo' else '1')
     else:
         if typ == 'f16':

@@ -2610,73 +2610,140 @@ def zip(simd_ext, typ):
 def unzip_half(func, simd_ext, typ):
     tab_size = 2 * int(fmtspec['le'])
     vec_size = int(fmtspec['le'])
-    if simd_ext in ['sse2', 'sse42'] and typ in ['u32', 'i32']:
-        return '''\
-        {styp} v_res;
-        {styp} v_tmp0, v_tmp1;
-        v_tmp0 = _mm_shuffle_epi32({in0}, _MM_SHUFFLE(3, 1, 2, 0));
-        v_tmp1 = _mm_shuffle_epi32({in1}, _MM_SHUFFLE(3, 1, 2, 0));
-        v_res = _mm_unpack{lo_hi}_epi32(v_tmp0, v_tmp1);
-        v_res = _mm_shuffle_epi32(v_res, _MM_SHUFFLE(3, 1, 2, 0));
-        return v_res;
-        '''.format(lo_hi='lo' if func == 'unziplo' else 'hi',
-                   **fmtspec)
-    elif simd_ext in ['sse2', 'sse42'] and typ == 'f32':
-        return '''\
-        {styp} v_res;
-        v_res = _mm_shuffle_ps({in0}, {in1}, _MM_SHUFFLE({mask}));
-        return v_res;
-        '''.format(mask='2, 0, 2, 0' if func == 'unziplo' else '3, 1, 3, 1',
-                   **fmtspec)
-    elif simd_ext in ['avx2'] and typ in ['f32']:
-        return '''\
-        {styp} v_res;
-        {styp} v_tmp0, v_tmp1;
-        v_tmp0 = _mm256_permute2f128{sufsi}({in0}, {in0}, 0x01);
-        v_tmp0 = _mm256_shuffle{suf}({in0}, v_tmp0, _MM_SHUFFLE({mask}));
-        v_tmp1 = _mm256_permute2f128{sufsi}({in1}, {in1}, 0x01);
-        v_tmp1 = _mm256_shuffle{suf}({in1}, v_tmp1, _MM_SHUFFLE({mask}));
-        v_res = _mm256_permute2f128{sufsi}(v_tmp0, v_tmp1, 0x20);
-        return v_res;
-        '''.format(mask='2, 0, 2, 0' if func == 'unziplo' else '3, 1, 3, 1',
-                   **fmtspec)
-    elif simd_ext == 'avx2' and typ in ['i32', 'u32']:
-        return '''\
-        __m256i v_tmp0, v_tmp1;
-        {in0} = _mm256_shuffle_epi32({in0}, _MM_SHUFFLE({mask}));
-        {in1} = _mm256_shuffle_epi32({in1}, _MM_SHUFFLE({mask}));
-        v_tmp0 = _mm256_permute2f128_si256({in0}, {in0}, 0x01);
-        v_tmp1 = _mm256_permute2f128_si256({in1}, {in1}, 0x01);
-        __m128i {in0}_lo = _mm256_castsi256_si128({in0});
-        __m128i v_tmp0_lo = _mm256_castsi256_si128(v_tmp0);
-        __m128i {in1}_lo = _mm256_castsi256_si128({in1});
-        __m128i v_tmp1_lo = _mm256_castsi256_si128(v_tmp1);
-        v_tmp0_lo = _mm_unpacklo_epi32({in0}_lo, v_tmp0_lo);
-        v_tmp1_lo = _mm_unpacklo_epi32({in1}_lo, v_tmp1_lo);
-        v_tmp0_lo = _mm_shuffle_epi32(v_tmp0_lo, _MM_SHUFFLE(3, 1, 2, 0));
-        v_tmp1_lo = _mm_shuffle_epi32(v_tmp1_lo, _MM_SHUFFLE(3, 1, 2, 0));
-        v_tmp0 = _mm256_castsi128_si256(v_tmp0_lo);
-        v_tmp0 = _mm256_insertf128_si256(v_tmp0, v_tmp1_lo, 0x01);
-        return v_tmp0;
-        '''.format(mask='2, 0, 2, 0' if func == 'unziplo' else '3, 1, 3, 1',
-                   **fmtspec)
+    loop = '''\
+    {typ} tab[{tab_size}];
+    {typ} res[{vec_size}];
+    int i;
+    nsimd_storeu_{simd_ext}_{typ}(tab, {in0});
+    nsimd_storeu_{simd_ext}_{typ}(tab + {vec_size}, {in1});
+    for(i = 0; i < {vec_size}; i++) {{
+    res[i] = tab[2 * i + {offset}];
+    }}
+    return nsimd_loadu_{simd_ext}_{typ}(res);
+    '''.format(tab_size=tab_size, vec_size=vec_size,
+               cast='({}*)'.format(get_type(simd_ext, typ)) \
+               if typ in common.iutypes else '',
+               offset = '0' if func == 'unziplo' else '1', **fmtspec)
+    ## SSE ------------------------------------------------------------
+    if simd_ext in ['sse2', 'sse42']:
+        if typ in ['f32', 'i32', 'u32']:
+            v0 = '_mm_castsi128_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
+            v1 = '_mm_castsi128_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
+            ret = '_mm_castps_si128(v_res)' if typ in ['i32', 'u32'] else 'v_res'
+            return '''\
+            __m128 v_res;
+            v_res = _mm_shuffle_ps({v0}, {v1}, {mask});
+            return {ret};
+            '''.format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       v0=v0.format(**fmtspec), v1=v1.format(**fmtspec), ret=ret,
+                       **fmtspec)
+        elif typ == 'f16':
+            return '''\
+            nsimd_{simd_ext}_v{typ} v_res;
+            v_res.v0 = _mm_shuffle_ps({in0}.v0, {in0}.v1, {mask});
+            v_res.v1 = _mm_shuffle_ps({in1}.v0, {in1}.v1, {mask});
+            return v_res;
+            '''.format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       **fmtspec)
+        elif typ in ['f64', 'i64', 'u64']:
+            v0 = '_mm_castsi128_pd({in0})' if typ in ['i64', 'u64'] else '{in0}'
+            v1 = '_mm_castsi128_pd({in1})' if typ in ['i64', 'u64'] else '{in1}'
+            ret = '_mm_castpd_si128(v_res)' if typ in ['i64', 'u64'] else 'v_res'
+            return '''\
+            __m128d v_res;
+            v_res = _mm_shuffle_pd({v0}, {v1}, {mask});
+            return {ret};
+            '''.format(mask='0x00' if func == 'unziplo' else '0x03',
+                       v0=v0.format(**fmtspec),v1=v1.format(**fmtspec), ret=ret,
+                       **fmtspec)
+        elif typ in ['i16', 'u16']:
+            return '''\
+            __m128i v_tmp0 = _mm_shufflelo_epi16({in0}, _MM_SHUFFLE(3, 1, 2, 0));
+            v_tmp0 = _mm_shufflehi_epi16(v_tmp0, _MM_SHUFFLE(3, 1, 2, 0));
+            __m128i v_tmp1 = _mm_shufflelo_epi16({in1}, _MM_SHUFFLE(3, 1, 2, 0));
+            v_tmp1 = _mm_shufflehi_epi16(v_tmp1, _MM_SHUFFLE(3, 1, 2, 0));
+            __m128 v_res = _mm_shuffle_ps(
+            _mm_castsi128_ps(v_tmp0), _mm_castsi128_ps(v_tmp1), {mask});
+            return _mm_castps_si128(v_res);
+            '''.format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       **fmtspec)
+        else:
+            return loop
+    ## AVX, AVX2 ----------------------------------------------------
+    elif simd_ext in ['avx', 'avx2']:
+        ret_template ='''\
+        v_tmp0 = _mm256_permute2f128_{t}({v0}, {v0}, 0x01);
+        v_tmp0 = _mm256_shuffle_{t}({v0}, v_tmp0, {mask});
+        v_tmp1 = _mm256_permute2f128_{t}({v1}, {v1}, 0x01);
+        v_tmp1 = _mm256_shuffle_{t}({v1}, v_tmp1, {mask});
+        v_res  = _mm256_permute2f128_{t}(v_tmp0, v_tmp1, 0x20);
+        {ret} = {v_res};'''
+        if typ in ['f32', 'i32', 'u32']:
+            v0 = '_mm256_castsi256_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
+            v1 = '_mm256_castsi256_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
+            v_res = '_mm256_castps_si256(v_res)' if typ in ['i32', 'u32'] else 'v_res'
+            ret = 'ret' 
+            src = ret_template .\
+                format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       v0=v0, v1=v1, v_res=v_res, ret=ret, t='ps', **fmtspec)
+            return '''\
+            {styp} ret;
+            __m256 v_res, v_tmp0, v_tmp1;
+            {src}
+            return ret;
+            '''.format(src=src.format(**fmtspec), **fmtspec)
+        elif typ == 'f16':
+            src0 = ret_template.format(
+                mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                else '_MM_SHUFFLE(3, 1, 3, 1)',
+                v0='{in0}.v0', v1='{in0}.v1', v_res='v_res', ret='ret.v0', t='ps')
+            src1 = ret_template.format(
+                mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                else '_MM_SHUFFLE(3, 1, 3, 1)',
+                v0='{in1}.v0', v1='{in1}.v1', v_res='v_res', ret='ret.v1', t='ps')
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m256 v_res, v_tmp0, v_tmp1;
+            {src0}
+            {src1}
+            return ret;
+            '''.format(src0=src0.format(**fmtspec), src1=src1.format(**fmtspec),
+                       **fmtspec)
+        elif typ in ['f64', 'i64', 'u64']:
+            v0 = '_mm256_castsi256_pd({in0})' if typ in ['i64', 'u64'] else '{in0}'
+            v1 = '_mm256_castsi256_pd({in1})' if typ in ['i64', 'u64'] else '{in1}'
+            v_res = '_mm256_castpd_si256(v_res)' if typ in ['i64', 'u64'] else 'v_res'
+            src = ret_template . \
+                format(mask='0x00' if func == 'unziplo' else '0x03',
+                       v0=v0, v1=v1, ret='ret', v_res=v_res, t='pd')
+            return '''\
+            {styp} ret;
+            __m256d v_res, v_tmp0, v_tmp1;
+            {src}
+            return ret;
+            '''.format(src=src.format(**fmtspec), **fmtspec)
+        elif typ in ['i16', 'u16']:
+            return '''\
+            __m128i v_tmp0_hi = _mm256_extractf128_si256({in0}, 0x01);
+            __m128i v_tmp0_lo = _mm256_castsi256_si128({in0});
+            __m128i v_tmp1_hi = _mm256_extractf128_si256({in1}, 0x01);
+            __m128i v_tmp1_lo = _mm256_castsi256_si128({in1});
+            v_tmp0_lo = nsimd_{func}_sse2_{typ}(v_tmp0_lo, v_tmp0_hi);
+            v_tmp1_lo = nsimd_{func}_sse2_{typ}(v_tmp1_lo, v_tmp1_hi);
+            __m256i v_res = _mm256_castsi128_si256(v_tmp0_lo);
+            v_res = _mm256_insertf128_si256(v_res, v_tmp1_lo, 0x01);
+            return v_res;
+            '''.format(func=func, **fmtspec)
+        else:
+            return loop
+        ## AVX 512 --------------------------------------------------
     else:
-        return '''\
-        {typ} tab[{tab_size}];
-        {typ} res[{vec_size}];
-        int i;
-        nsimd_storeu_{simd_ext}_{typ}(tab, {in0});
-        nsimd_storeu_{simd_ext}_{typ}(tab + {vec_size}, {in1});
-        for(i = 0; i < {vec_size}; i++) {{
-          res[i] = tab[2 * i + {offset}];
-        }}
-        return nsimd_loadu_{simd_ext}_{typ}(res);
-        '''.format(tab_size=tab_size, vec_size=vec_size,
-                   cast='({}*)'.format(get_type(simd_ext, typ)) \
-                   if typ in common.iutypes else '',
-                   offset = '0' if func == 'unziplo' else '1',
-                   **fmtspec)
-    
+        return loop
+  
 # -----------------------------------------------------------------------------
 ## get_impl function
 
