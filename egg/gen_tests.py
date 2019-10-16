@@ -939,7 +939,7 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                             lang)
     if filename == None:
         return
-    logical = 'l' if op.name == 'reinterpretl' else ''
+    logical = 'l' if op.name == 'reinterpretl' or op.name == 'to_mask' else ''
     if lang == 'c_base':
         if op.name == 'upcvt':
             comp = '''{{
@@ -951,6 +951,9 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                             {from_typ});
                       }}'''.format(op_name=op.name, from_typ=from_typ,
                                    to_typ=to_typ, logical=logical)
+        elif op.name == 'to_mask':
+            comp = '''vstorela(out, vto_logical(vto_mask(vloadla(in, {typ}),
+                               {typ}), {typ}), {typ});'''.format(typ=from_typ)
         else:
             comp = '''vstore{logical}a(out, v{op_name}(v{op_name}(
                         vload{logical}a(in, {from_typ}), {from_typ}, {to_typ}),
@@ -967,13 +970,17 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                             {from_typ}());'''. \
                             format(op_name=op.name, from_typ=from_typ,
                             to_typ=to_typ, logical=logical)
+        elif op.name == 'to_mask':
+            comp = '''nsimd::storela(out, nsimd::to_logical(nsimd::to_mask(
+                        nsimd::loadla(in, {typ}()), {typ}()), {typ}()),
+                          {typ}());'''.format(typ=from_typ)
         else:
             comp = '''nsimd::store{logical}a(out, nsimd::{op_name}(
                         nsimd::{op_name}(nsimd::load{logical}a(
                           in, {from_typ}()), {from_typ}(), {to_typ}()),
                             {to_typ}(), {from_typ}()), {from_typ}());'''. \
-                          format(op_name=op.name, from_typ=from_typ,
-                                 to_typ=to_typ, logical=logical)
+                            format(op_name=op.name, from_typ=from_typ,
+                                   to_typ=to_typ, logical=logical)
     else:
         if op.name == 'upcvt':
             comp = \
@@ -984,6 +991,10 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                  nsimd::pack{logical}<{from_typ}> >(tmp.v0, tmp.v1));'''. \
                  format(op_name=op.name, from_typ=from_typ,
                         to_typ=to_typ, logical=logical)
+        elif op.name == 'to_mask':
+            comp = '''nsimd::storela(out, nsimd::to_logical(nsimd::to_mask(
+                        nsimd::loadla<nsimd::packl<{}> >(in))));'''. \
+                        format(from_typ)
         else:
             comp = \
             '''nsimd::store{logical}a(out, nsimd::{op_name}<
@@ -1156,7 +1167,7 @@ def gen_unpack(opts, op, typ, lang):
     else:
       left = 'mpfr_out'
       right = 'nsimd_out'
-      
+
     if lang == 'c_base':
       extra_code = relative_distance_c
       typ_nsimd = 'vec({typ})'.format(typ=typ)
@@ -1190,22 +1201,22 @@ def gen_unpack(opts, op, typ, lang):
 
     if op.name in ['unziplo', 'unziphi']:
       comp_unpack =  \
-        '''comp_function(vout[j + add_lane], vin1[{index} + add_lane]) || 
+        '''comp_function(vout[j + add_lane], vin1[{index} + add_lane]) ||
           comp_function(vout[j + step/(2*nb_lane) + add_lane], vin2[{index} + add_lane])'''. \
           format(index='i' if op.name == 'unziplo' else 'i+1')
     else:
-      comp_unpack ='''comp_function(vout[i + add_lane], vin1[j + add_lane]) || 
+      comp_unpack ='''comp_function(vout[i + add_lane], vin1[j + add_lane]) ||
                     comp_function(vout[i+1 + add_lane], vin2[j + add_lane])'''
-    
+
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     comp = 'return ({} - {}) > get_2th_power(-{nbits})'. \
-            format(left, right, nbits='11' if typ != 'f16' else '9')   
+            format(left, right, nbits='11' if typ != 'f16' else '9')
     head = '''#define _POSIX_C_SOURCE 200112L
-    
+
               {includes}
               #include <float.h>
               #include <math.h>
-              
+
               #define SIZE (2048 / {sizeof})
 
               #define CHECK(a) {{ \\
@@ -1221,18 +1232,18 @@ def gen_unpack(opts, op, typ, lang):
               {extra_code}
 
               // {simd}
-              
+
               int comp_function({typ} mpfr_out, {typ} nsimd_out)
             {{
               {comp};
             }}
             ''' .format(year=date.today().year, typ=typ,
                           includes=get_includes(lang), comp=comp,
-                          extra_code=extra_code, 
-                          comp_unpack=comp_unpack, 
+                          extra_code=extra_code,
+                          comp_unpack=comp_unpack,
                           sizeof=common.sizeof(typ), simd= opts.simd)
-               
-    rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
+
+    rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
                 / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
     with common.open_utf8(filename) as out:
         out.write(
@@ -1256,29 +1267,29 @@ def gen_unpack(opts, op, typ, lang):
               fprintf(stdout, "test of {op_name} over {typ}...\\n");
 
               /* Fill input vector(s) with random */
-              for (i = 0; i < SIZE; i++)  
+              for (i = 0; i < SIZE; i++)
               {{
                 vin1[i] = {rand};
                 vin2[i] = {rand};
               }}
 
               /* Fill output vector with computed values */
-              for (i = 0; i < SIZE; i += step) 
+              for (i = 0; i < SIZE; i += step)
               {{
                 {vout1_comp}
               }}
 
               /* Compare results */
               if (step != 1) {{
-                for (vi = 0; vi < SIZE; vi += step) 
+                for (vi = 0; vi < SIZE; vi += step)
                 {{
-                  for (i = vi, j = vi + {pos}; i < vi+ {op_test}; 
-                  i= i + 2, j++) 
+                  for (i = vi, j = vi + {pos}; i < vi+ {op_test};
+                  i= i + 2, j++)
                   {{
-                    for (k = 0; k < nb_lane; k++) 
+                    for (k = 0; k < nb_lane; k++)
                     {{
                       add_lane = (step*k)/nb_lane;
-                      if ({comp_unpack}) 
+                      if ({comp_unpack})
                       {{
                         fprintf(stdout, "test of {op_name} over {typ}... FAIL\\n");
                         fflush(stdout);
@@ -1288,15 +1299,15 @@ def gen_unpack(opts, op, typ, lang):
                   }}
                 }}
               }}
-              
+
 
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
               fflush(stdout);
               return EXIT_SUCCESS;
             }}
         '''.format(includes=get_includes(lang), op_name=op.name,
-            typ=typ, year=date.today().year,sizeof=common.sizeof(typ), 
-            rand=rand, head=head, comp_unpack=comp_unpack, 
+            typ=typ, year=date.today().year,sizeof=common.sizeof(typ),
+            rand=rand, head=head, comp_unpack=comp_unpack,
             vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
             pos='0' if op.name in ['ziplo', 'unziplo', 'unziphi'] else op_test))
 
@@ -1316,7 +1327,7 @@ def doit(opts):
         if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
-                        'store4a', 'store4u', 'downcvt']:
+                        'store4a', 'store4u', 'downcvt', 'to_logical']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
@@ -1335,7 +1346,7 @@ def doit(opts):
                 gen_all_any(opts, operator, typ, 'cxx_base')
                 gen_all_any(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['reinterpret', 'reinterpretl', 'cvt',
-                                   'upcvt']:
+                                   'upcvt', 'to_mask']:
                 for to_typ in common.get_output_types(typ, operator.output_to):
                     gen_reinterpret_convert(opts, operator, typ, to_typ,
                                             'c_base')

@@ -988,6 +988,18 @@ class Rsqrt11(Operator):
     categories = [DocBasicArithmetic]
     tests_ulps = True
 
+class ToMask(Operator):
+    full_name = 'square root'
+    signature = 'v to_mask l'
+    categories = [DocLogicalOperators]
+    do_bench = False
+
+class ToLogical(Operator):
+    full_name = 'square root'
+    signature = 'l to_logical v'
+    categories = [DocLogicalOperators]
+    do_bench = False
+
 #class Ziplo(Operator):
 #    full_name = 'ziplo'
 #    signature = 'v ziplo v v'

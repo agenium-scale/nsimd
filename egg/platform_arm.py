@@ -198,6 +198,10 @@ def get_additional_include(func, platform, simd_ext):
                   #include <nsimd/arm/{simd_ext}/set1.h>
                   #include <nsimd/arm/{simd_ext}/{store}.h>
                   '''.format(store='store' + func[6], **fmtspec)
+    if func == 'to_logical':
+        ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
+                  #include <nsimd/arm/{simd_ext}/ne.h>
+                  '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -955,7 +959,7 @@ def round1(op, simd_ext, typ):
 ## FMA and FNMA
 
 def fmafnma3(op, simd_ext, typ):
-    if typ in common.ftypes:
+    if typ in common.ftypes and simd_ext in ['aarch64', 'sve']:
         armop = {'fma': 'fma', 'fnma': 'fms'}
     else:
         armop = {'fma': 'mla', 'fnma': 'mls'}
@@ -1689,6 +1693,78 @@ def downcvt1(simd_ext, from_typ, to_typ):
                     format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
+## to_mask
+
+def to_mask1(simd_ext, typ):
+    if typ in common.itypes + common.ftypes:
+        normal = 'return vreinterpretq_{suf}_u{typnbits}({in0});'. \
+                 format(**fmtspec)
+    else:
+        normal = 'return {in0};'.format(**fmtspec)
+    emulate_f16 = '''nsimd_{simd_ext}_vf16 ret;
+                     ret.v0 = nsimd_to_mask_{simd_ext}_f32({in0}.v0);
+                     ret.v1 = nsimd_to_mask_{simd_ext}_f32({in0}.v1);
+                     return ret;'''.format(**fmtspec)
+    if simd_ext == 'neon128' and typ == 'f16':
+        return emulate_f16
+    elif simd_ext == 'neon128' and typ == 'f64':
+        return '''nsimd_neon128_vf64 ret;
+                  ret.v0 = {in0}.v0;
+                  ret.v1 = {in0}.v1;
+                  return ret;'''.format(**fmtspec)
+    elif simd_ext == 'aarch64' and typ == 'f16':
+        return '''#ifdef NSIMD_FP16
+                    {normal}
+                  #else
+                    {emulate_f16}
+                  #endif'''.format(normal=normal, emulate_f16=emulate_f16)
+    elif simd_ext == 'sve':
+        if typ in common.iutypes:
+            return '''return svsel_{suf}({in0}, svdup_n_{suf}(
+                               ({typ})-1), svdup_n_{suf}(({typ})0));'''. \
+                               format(**fmtspec)
+        else:
+            utyp = 'u{}'.format(fmtspec['typnbits'])
+            return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
+                               svreinterpret_{utyp}_{suf}({in0}),
+                                 svdup_n_{utyp}(({utyp})-1),
+                                   svdup_n_{suf}(({typ})0)));'''. \
+                                   format(utyp=utyp, **fmtspec)
+    else:
+        return normal
+
+# -----------------------------------------------------------------------------
+## to_logical
+
+def to_logical1(simd_ext, typ):
+    if typ in common.iutypes:
+        return '''return nsimd_ne_{simd_ext}_{typ}({in0},
+                           nsimd_set1_{simd_ext}_{typ}(({typ})0));'''. \
+                           format(**fmtspec)
+    normal_fp = \
+    '''return nsimd_reinterpretl_{simd_ext}_{suf}_{utyp}(
+                nsimd_ne_{simd_ext}_{utyp}(
+                  nsimd_reinterpret_{simd_ext}_{utyp}_{typ}(
+                    {in0}), nsimd_set1_{simd_ext}_{utyp}(({utyp})0)));'''. \
+                    format(utyp='u{}'.format(fmtspec['typnbits']), **fmtspec)
+    if typ in ['f32', 'f64'] or (typ == 'f16' and simd_ext == 'sve'):
+        return normal_fp
+    emulate_fp16 = \
+    '''nsimd_{simd_ext}_vlf16 ret;
+       ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
+       ret.v1 = nsimd_to_logical_{simd_ext}_f32({in0}.v1);
+       return ret;'''.format(**fmtspec)
+    if simd_ext == 'aarch64':
+        return '''#ifdef NSIMD_FP16
+                    {normal_fp}
+                  #else
+                    {emulate_fp16}
+                  #endif'''.format(normal_fp=normal_fp,
+                                   emulate_fp16=emulate_fp16)
+    elif simd_ext == 'neon128':
+        return emulate_fp16
+
+# -----------------------------------------------------------------------------
 ## unpack functions
 
 def zip_unzip(func, simd_ext, typ):
@@ -1828,6 +1904,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        'to_logical': 'to_logical1(simd_ext, from_typ)',
+        'to_mask': 'to_mask1(simd_ext, from_typ)',
         'ziplo': 'zip_unzip("zip1", simd_ext, from_typ)',
         'ziphi': 'zip_unzip("zip2", simd_ext, from_typ)',
         'unziplo': 'zip_unzip("uzp1", simd_ext, from_typ)',
