@@ -201,6 +201,11 @@ def get_additional_include(func, platform, simd_ext):
                   }} // extern "C"
                   #endif
                   '''.format(func=func, deg=deg, args=args, **fmtspec)
+    if func == 'to_logical':
+        ret += '''#include <nsimd/x86/{simd_ext}/ne.h>
+                  #include <nsimd/x86/{simd_ext}/reinterpretl.h>
+                  '''.format(simd_ext=simd_ext)
+
     return ret
 
 # -----------------------------------------------------------------------------
@@ -2501,13 +2506,14 @@ def to_mask1(simd_ext, typ):
 def to_logical1(simd_ext, typ):
     if typ in common.iutypes:
         return '''return nsimd_ne_{simd_ext}_{typ}(
-                           {in0}, {pre}zero{sufsi}());'''.format(**fmtspec)
+                           {in0}, {pre}setzero{sufsi}());'''.format(**fmtspec)
     elif typ in ['f32', 'f64']:
-        return '''return nsimd_reinterpretl_{typ}_u{typnbits}(
-                           nsimd_ne_{simd_ext}_u{typnbits}(
-                             {pre}cast{typ2}{sufsi}({in0}),
-                               {pre}zero{sufsi}()));'''. \
-                           format(typ2=suf_ep(typ)[1:], **fmtspec)
+        return '''return nsimd_reinterpretl_{simd_ext}_{typ}_{utyp}(
+                           nsimd_ne_{simd_ext}_{utyp}(
+                             {pre}castsi{nbits}{sufsi}({in0}),
+                               {pre}setzero_si{nbits}()));'''. \
+                               format(utyp='u{}'.format(fmtspec['typnbits']),
+                                      **fmtspec)
     else:
         return '''nsimd_{simd_ext}_vlf16 ret;
                   ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
