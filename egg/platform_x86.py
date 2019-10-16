@@ -2740,10 +2740,13 @@ def unzip_half(func, simd_ext, typ):
             '''.format(func=func, **fmtspec)
         else:
             return loop
-        ## AVX 512 --------------------------------------------------
+        ## AVX 512 --------------------------------------------------     
     else:
-        return loop
-  
+        if typ == 'f16':
+            return loop
+        else:
+            return split_opn(func, simd_ext, typ, 1)
+        
 # -----------------------------------------------------------------------------
 ## get_impl function
 
