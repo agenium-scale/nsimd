@@ -1691,35 +1691,62 @@ def downcvt1(simd_ext, from_typ, to_typ):
 def zip_unzip_half(func, simd_ext, typ):
     if simd_ext in ['aarch64', 'sve']:
         if typ =='f16' and simd_ext == 'aarch64':
-            return '''\
-            #ifdef NSIMD_FP16
-            return {s}v{op}{q}_{suf}({in0}, {in1});
-            #else
-            nsimd_{simd_ext}_v{typ} ret;
-            ret.v0 = {s}v{zip}1{q}_f32({in0}.v{i}, {in1}.v{i});
-            ret.v1 = {s}v{zip}2{q}_f32({in0}.v{i}, {in1}.v{i});
-            return ret;
-            #endif
-            '''.format(op=func,
-                       i = '0' if func in ['zip1', 'uzp1'] else '1',
-                       zip = 'zip' if func in ['zip1', 'zip2'] else 'uzp',
-                       s = 's' if simd_ext == 'sve' else '',
-                       q = '' if simd_ext == 'sve' else 'q',
-                       **fmtspec)
+            if func in ['zip1', 'zip2']:
+                return '''\
+                #ifdef NSIMD_FP16
+                return {s}v{op}{q}_{suf}({in0}, {in1});
+                #else
+                nsimd_{simd_ext}_v{typ} ret;
+                ret.v0 = {s}vzip1{q}_f32({in0}.v{i}, {in1}.v{i});
+                ret.v1 = {s}vzip2{q}_f32({in0}.v{i}, {in1}.v{i});
+                return ret;
+                #endif
+                '''.format(op=func,
+                           i = '0' if func in ['zip1', 'uzp1'] else '1',
+                           s = 's' if simd_ext == 'sve' else '',
+                           q = '' if simd_ext == 'sve' else 'q', **fmtspec)
+            else:
+                return '''\
+                #ifdef NSIMD_FP16
+                return {s}v{op}{q}_{suf}({in0}, {in1});
+                #else
+                nsimd_{simd_ext}_v{typ} ret;
+                ret.v0 = {s}v{func}{q}_f32({in0}.v0, {in0}.v1);
+                ret.v1 = {s}v{func}{q}_f32({in1}.v0, {in1}.v1);
+                return ret;
+                #endif
+                '''. format(op=func, func=func,
+                            s = 's' if simd_ext == 'sve' else '',
+                            q = '' if simd_ext == 'sve' else 'q', **fmtspec)
         else:
             return 'return {s}v{op}{q}_{suf}({in0}, {in1});'. \
                 format(op=func, s = 's' if simd_ext == 'sve' else '',
-                       q = '' if simd_ext == 'sve' else 'q',
-                       **fmtspec)  
+                       q = '' if simd_ext == 'sve' else 'q', **fmtspec)  
     elif simd_ext == 'neon128':
+        armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
+                 'uzp2': 'uzpq'}
+        prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
+        neon_typ = '{}{}x{}x2_t'. \
+            format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
         if typ == 'f16':
-            return '''\
-            nsimd_{simd_ext}_v{typ} ret;
-            float32x4x2_t tmp = vzipq_f32({in0}.v{i}, {in1}.v{i});
-            ret.v0 = tmp.val[0];
-            ret.v1 = tmp.val[1];
-            return ret;
-            '''.format(i = '0' if func == 'zip1' else '1', **fmtspec)
+            if func in ['zip1', 'zip2']:
+                return '''\
+                nsimd_{simd_ext}_v{typ} ret;
+                float32x4x2_t tmp = v{op}_f32({in0}.v{i}, {in1}.v{i});
+                ret.v0 = tmp.val[0];
+                ret.v1 = tmp.val[1];
+                return ret;
+                '''.format(i = '0' if func == 'zip1' else '1',
+                           op=armop[func], **fmtspec)
+            else:
+                return '''\
+                nsimd_{simd_ext}_v{typ} ret;
+                float32x4x2_t tmp0 = vuzpq_f32({in0}.v0, {in0}.v1);
+                float32x4x2_t tmp1 = vuzpq_f32({in1}.v0, {in1}.v1);
+                ret.v0 = tmp0.val[{i}];
+                ret.v1 = tmp1.val[{i}];
+                return ret;
+                '''.format(i = '0' if func == 'uzp1' else '1', **fmtspec)
         elif typ in ['i64', 'u64']:
             return '''\
             {typ} buf0[2], buf1[2];
@@ -1729,22 +1756,15 @@ def zip_unzip_half(func, simd_ext, typ):
             ret[0] = buf0[{i}];
             ret[1] = buf1[{i}];
             return vld1q_{suf}(ret);'''. \
-                format(**fmtspec,  
-                       i= '0' if func in ['zip1', 'uzp1'] else '1')
+                format(**fmtspec, i= '0' if func in ['zip1', 'uzp1'] else '1')
         elif  typ == 'f64' :
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
             ret.v0 = {in0}.v{i};
             ret.v1 = {in1}.v{i};
             return ret;'''. \
-                format(**fmtspec,  
-                    i= '0' if func in ['zip1', 'uzp1'] else '1')  
+                format(**fmtspec, i= '0' if func in ['zip1', 'uzp1'] else '1')  
         else :
-            armop = {'zip1': 'zipq', 'zip2': 'zipq', 'uzp1': 'uzpq',
-                     'uzp2': 'uzpq'}
-            prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
-            neon_typ = '{}{}x{}x2_t'. \
-                format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
             return '''\
             {neon_typ} res;
             res = v{op}_{suf}({in0}, {in1});
