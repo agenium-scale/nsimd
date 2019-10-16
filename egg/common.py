@@ -63,8 +63,19 @@ def can_create_filename(opts, filename):
 # open with UTF8 encoding
 
 def open_utf8(filename):
+    dummy, ext = os.path.splitext(filename)
+    if ext.lower() in ['c', 'h', 'cpp', 'hpp', 'cc', 'cxx', 'hxx', 'hpp']:
+        begin_comment = '/*'
+        end_comment = '*/'
+    else if ext.lower() in ['md', 'htm', 'html']:
+        begin_comment = '<!--'
+        end_comment = '-->'
+    else:
+        begin_comment = None
     with io.open(filename, mode='w', encoding='utf-8') as fout:
-        fout.write('''/*
+
+        if begin_comment != None:
+            fout.write('''{}
 
 Copyright (c) 2019 Agenium Scale
 
@@ -86,9 +97,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-*/
+{}
 
-''')
+'''.format(begin_comment, end_comment))
     return io.open(filename, mode='a', encoding='utf-8')
 
 # -----------------------------------------------------------------------------
