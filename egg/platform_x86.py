@@ -211,6 +211,11 @@ def get_additional_include(func, platform, simd_ext):
                   }} // extern "C"
                   #endif
                   '''.format(func=func, deg=deg, args=args, **fmtspec)
+    if func == 'to_logical':
+        ret += '''#include <nsimd/x86/{simd_ext}/ne.h>
+                  #include <nsimd/x86/{simd_ext}/reinterpretl.h>
+                  '''.format(simd_ext=simd_ext)
+
     return ret
 
 # -----------------------------------------------------------------------------
@@ -2463,6 +2468,69 @@ def downcvt1(simd_ext, from_typ, to_typ):
               **fmtspec)
 
 # -----------------------------------------------------------------------------
+## to_mask
+
+def to_mask1(simd_ext, typ):
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  ret.v0 = nsimd_to_mask_{simd_ext}_f32({in0}.v0);
+                  ret.v1 = nsimd_to_mask_{simd_ext}_f32({in0}.v1);
+                  return ret;'''.format(**fmtspec)
+    if simd_ext in sse + avx:
+        return 'return {in0};'.format(**fmtspec)
+    elif simd_ext == 'avx512_skylake':
+        if typ in common.iutypes:
+            return 'return _mm512_movm_epi{typnbits}({in0});'. \
+                   format(**fmtspec)
+        elif typ in ['f32', 'f64']:
+            return '''return _mm512_castsi512{suf}(
+                               _mm512_movm_epi{typnbits}({in0}));'''. \
+                               format(**fmtspec)
+    else:
+        if typ in ['i32', 'u32', 'i64', 'u64']:
+            return '''return _mm512_mask_mov{suf}(_mm512_setzeros(),
+                                 {in0}, _mm512_set1_epi32(-1));'''. \
+                                 format(**fmtspec)
+        elif typ in ['f32', 'f64']:
+            return '''return _mm512_mask_mov{suf}(_mm512_castsi512{suf}(
+                               _mm512_setzeros()), {in0},
+                                 _mm512_castsi512{suf}(
+                                   _mm512_set1_epi32(-1)));'''. \
+                                   format(**fmtspec)
+        else:
+            return '''nsimd_avx512_knl_v{typ} ret;
+                      {typ} buf[{le}];
+                      int i;
+                      for (i = 0; i < {le}; i++) {{
+                        if (({in0} >> i) & 1) {{
+                          buf[i] = ({typ})-1;
+                        }} else {{
+                          buf[i] = ({typ})0;
+                        }}
+                      }}
+                      return _mm512_loadu_si512(buf);'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## to_logical
+
+def to_logical1(simd_ext, typ):
+    if typ in common.iutypes:
+        return '''return nsimd_ne_{simd_ext}_{typ}(
+                           {in0}, {pre}setzero{sufsi}());'''.format(**fmtspec)
+    elif typ in ['f32', 'f64']:
+        return '''return nsimd_reinterpretl_{simd_ext}_{typ}_{utyp}(
+                           nsimd_ne_{simd_ext}_{utyp}(
+                             {pre}castsi{nbits}{sufsi}({in0}),
+                               {pre}setzero_si{nbits}()));'''. \
+                               format(utyp='u{}'.format(fmtspec['typnbits']),
+                                      **fmtspec)
+    else:
+        return '''nsimd_{simd_ext}_vlf16 ret;
+                  ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
+                  ret.v1 = nsimd_to_logical_{simd_ext}_f32({in0}.v1);
+                  return ret;'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 ## zip functions
 
 def zip_half(func, simd_ext, typ):
@@ -2508,7 +2576,6 @@ def zip_half(func, simd_ext, typ):
             cast_high = '_mm256_castpd128_pd256'
             extract = '_mm256_extractf128_pd'
             insert = '_mm256_insertf128_pd'
-
         if typ == 'f16':
             return'''\
             nsimd_{simd_ext}_v{typ} ret;
@@ -2845,9 +2912,10 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'addv': addv(simd_ext, from_typ),
         'upcvt': upcvt1(simd_ext, from_typ, to_typ),
         'downcvt': downcvt1(simd_ext, from_typ, to_typ),
+        'to_mask': to_mask1(simd_ext, from_typ),
+        'to_logical': to_logical1(simd_ext, from_typ),
         'ziplo': zip_half('ziplo', simd_ext, from_typ),
         'ziphi': zip_half('ziphi', simd_ext, from_typ),
-        'zip': zip(simd_ext, from_typ),
         'unziplo': unzip_half('unziplo', simd_ext, from_typ),
         'unziphi': unzip_half('unziphi', simd_ext, from_typ)
     }
@@ -2859,3 +2927,4 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         return common.NOT_IMPLEMENTED
     else:
         return impls[func]
+

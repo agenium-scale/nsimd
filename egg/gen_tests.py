@@ -939,7 +939,7 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                             lang)
     if filename == None:
         return
-    logical = 'l' if op.name == 'reinterpretl' else ''
+    logical = 'l' if op.name == 'reinterpretl' or op.name == 'to_mask' else ''
     if lang == 'c_base':
         if op.name == 'upcvt':
             comp = '''{{
@@ -951,6 +951,9 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                             {from_typ});
                       }}'''.format(op_name=op.name, from_typ=from_typ,
                                    to_typ=to_typ, logical=logical)
+        elif op.name == 'to_mask':
+            comp = '''vstorela(out, vto_logical(vto_mask(vloadla(in, {typ}),
+                               {typ}), {typ}), {typ});'''.format(typ=from_typ)
         else:
             comp = '''vstore{logical}a(out, v{op_name}(v{op_name}(
                         vload{logical}a(in, {from_typ}), {from_typ}, {to_typ}),
@@ -967,13 +970,17 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                             {from_typ}());'''. \
                             format(op_name=op.name, from_typ=from_typ,
                             to_typ=to_typ, logical=logical)
+        elif op.name == 'to_mask':
+            comp = '''nsimd::storela(out, nsimd::to_logical(nsimd::to_mask(
+                        nsimd::loadla(in, {typ}()), {typ}()), {typ}()),
+                          {typ}());'''.format(typ=from_typ)
         else:
             comp = '''nsimd::store{logical}a(out, nsimd::{op_name}(
                         nsimd::{op_name}(nsimd::load{logical}a(
                           in, {from_typ}()), {from_typ}(), {to_typ}()),
                             {to_typ}(), {from_typ}()), {from_typ}());'''. \
-                          format(op_name=op.name, from_typ=from_typ,
-                                 to_typ=to_typ, logical=logical)
+                            format(op_name=op.name, from_typ=from_typ,
+                                   to_typ=to_typ, logical=logical)
     else:
         if op.name == 'upcvt':
             comp = \
@@ -984,6 +991,10 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
                  nsimd::pack{logical}<{from_typ}> >(tmp.v0, tmp.v1));'''. \
                  format(op_name=op.name, from_typ=from_typ,
                         to_typ=to_typ, logical=logical)
+        elif op.name == 'to_mask':
+            comp = '''nsimd::storela(out, nsimd::to_logical(nsimd::to_mask(
+                        nsimd::loadla<nsimd::packl<{}> >(in))));'''. \
+                        format(from_typ)
         else:
             comp = \
             '''nsimd::store{logical}a(out, nsimd::{op_name}<
@@ -1156,7 +1167,7 @@ def gen_unpack(opts, op, typ, lang):
     else:
       left = 'mpfr_out'
       right = 'nsimd_out'
-      
+
     if lang == 'c_base':
       extra_code = relative_distance_c
       typ_nsimd = 'vec({typ})'.format(typ=typ)
@@ -1213,11 +1224,11 @@ def gen_unpack(opts, op, typ, lang):
       
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     head = '''#define _POSIX_C_SOURCE 200112L
-    
+
               {includes}
               #include <float.h>
               #include <math.h>
-              
+
               #define SIZE (2048 / {sizeof})
 
               #define CHECK(a) {{ \\
@@ -1268,14 +1279,14 @@ def gen_unpack(opts, op, typ, lang):
               fprintf(stdout, "test of {op_name} over {typ}...\\n");
 
               /* Fill input vector(s) with random */
-              for (i = 0; i < SIZE; i++)  
+              for (i = 0; i < SIZE; i++)
               {{
                 vin1[i] = {rand};
                 vin2[i] = {rand};
               }}
 
               /* Fill output vector with computed values */
-              for (i = 0; i < SIZE; i += step) 
+              for (i = 0; i < SIZE; i += step)
               {{
                 {vout1_comp}
               }}
@@ -1294,14 +1305,14 @@ def gen_unpack(opts, op, typ, lang):
                   }}
                 }}
               }}
-              
+  
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
               fflush(stdout);
               return EXIT_SUCCESS;
             }}
         '''.format(includes=get_includes(lang), op_name=op.name,
-            typ=typ, year=date.today().year,sizeof=common.sizeof(typ), 
-            rand=rand, head=head, comp_unpack=comp_unpack, 
+            typ=typ, year=date.today().year,sizeof=common.sizeof(typ),
+            rand=rand, head=head, comp_unpack=comp_unpack,
             vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
             offset=offset,
             cond='vi + step' if op.name in['ziplo', 'ziphi'] else 'vi + step / 2',
@@ -1325,7 +1336,7 @@ def doit(opts):
         if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
-                        'store4a', 'store4u', 'downcvt']:
+                        'store4a', 'store4u', 'downcvt', 'to_logical']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
@@ -1344,7 +1355,7 @@ def doit(opts):
                 gen_all_any(opts, operator, typ, 'cxx_base')
                 gen_all_any(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['reinterpret', 'reinterpretl', 'cvt',
-                                   'upcvt']:
+                                   'upcvt', 'to_mask']:
                 for to_typ in common.get_output_types(typ, operator.output_to):
                     gen_reinterpret_convert(opts, operator, typ, to_typ,
                                             'c_base')

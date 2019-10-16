@@ -994,23 +994,15 @@ class Ziplo(Operator):
     types = common.types
     domain = Domain('R')
     categories = [DocMisc]
-    tests_ulps = True
-
+    do_bench = False
+    
 class Ziphi(Operator):
     full_name = 'ziphi'
     signature = 'v ziphi v v'
     types = common.types
     domain = Domain('R')
     categories = [DocMisc]
-    tests_ulps = True
-
-# class Zip(Operator):
-#     full_name = 'zip'
-#     signature = 'vx2 zip v v'
-#     types = common.types
-#     domain = Domain('R')
-#     categories = [DocMisc]
-#     tests_ulps = True
+    do_bench = False
     
 class Unziplo(Operator):
     full_name = 'unziplo'
@@ -1018,15 +1010,27 @@ class Unziplo(Operator):
     types = common.types
     domain = Domain('R')
     categories = [DocMisc]
-    tests_ulps = True
-
+    do_bench = False
+    
 class Unziphi(Operator):
     full_name = 'unziphi'
     signature = 'v unziphi v v'
     types = common.types
     domain = Domain('R')
     categories = [DocMisc]
-    tests_ulps = True
+    do_bench = False
+    
+class ToMask(Operator):
+    full_name = 'square root'
+    signature = 'v to_mask l'
+    categories = [DocLogicalOperators]
+    do_bench = False
+
+class ToLogical(Operator):
+    full_name = 'square root'
+    signature = 'l to_logical v'
+    categories = [DocLogicalOperators]
+    do_bench = False
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was

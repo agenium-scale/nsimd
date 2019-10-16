@@ -92,6 +92,9 @@ def get_additional_include(func, platform, simd_ext):
                   #else
                     #include <math.h>
                   #endif'''
+    elif func in ['']:
+        return '''#include <nsimd/cpu/cpu/reinterpret.h>
+                  '''
     return ''
 
 # -----------------------------------------------------------------------------
@@ -620,6 +623,46 @@ def len1(typ):
 
 # -----------------------------------------------------------------------------
 
+def to_logical1(typ):
+    unsigned_to_logical = \
+        'ret.v{{i}} = ({in0}.v{{i}} == ({utyp})0 ? (u32)0 : (u32)-1);'. \
+        format(**fmtspec)
+    if typ in common.utypes:
+        return func_body(unsigned_to_logical, typ, True)
+    else:
+        return '''nsimd_cpu_vl{typ} ret;
+                  nsimd_cpu_vu{typnbits} buf;
+                  buf = nsimd_reinterpret_cpu_u{typnbits}_{typ}({in0});
+                  {unsigned_to_logical}
+                  return ret;'''. \
+                  format(unsigned_to_logical=repeat_stmt(unsigned_to_logical,
+                                                         typ), **fmtspec)
+
+# -----------------------------------------------------------------------------
+
+def to_mask1(typ):
+    logical_to_unsigned = \
+        'ret.v{{i}} = ({in0}.v{{i}} ? ({utyp})-1 : ({utyp})0);'. \
+        format(**fmtspec)
+    if typ in common.utypes:
+        return func_body(logical_to_unsigned, typ)
+    elif typ == 'f16':
+        return '''union {{ f32 f; u32 u; }} buf;
+                  nsimd_cpu_vf16 ret;
+                  {u32_to_f32}
+                  return ret;'''. \
+                  format(u32_to_f32=repeat_stmt(
+                      'buf.u = {in0}.v{{i}}; ret.v{{i}} = buf.f;'. \
+                      format(**fmtspec), 'f16'), **fmtspec)
+    else:
+        return '''nsimd_cpu_vu{typnbits} ret;
+                  {logical_to_unsigned}
+                  return nsimd_reinterpret_cpu_{typ}_u{typnbits}(ret);'''. \
+                  format(logical_to_unsigned=repeat_stmt(logical_to_unsigned,
+                                                         typ), **fmtspec)
+
+# -----------------------------------------------------------------------------
+
 def zip_half(func, typ):
     n = get_nb_el(typ)
     if typ in ['i64', 'u64', 'f64']:
@@ -659,7 +702,7 @@ def unzip(func, typ):
       content = content + '\n'.join('ret.v{i} = {in1}.v{j}; '. \
                   format(i=i, j=2*(i-int(n/2))+1, **fmtspec)\
                   for i in range(int(n/2), n))
-    
+
     return '''nsimd_cpu_v{typ} ret;
             {content}
             return ret;'''.format(content=content, **fmtspec)
@@ -667,7 +710,7 @@ def unzip(func, typ):
     return '''(void)({in1});
               return {in0};'''.format(**fmtspec)
 
-  
+
 # -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
@@ -759,6 +802,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'addv': addv1(from_typ),
         'upcvt': upcvt1(from_typ, to_typ),
         'downcvt': downcvt2(from_typ, to_typ),
+        'to_logical': to_logical1(from_typ),
+        'to_mask': to_mask1(from_typ),
         'ziplo': zip_half('ziplo', from_typ),
         'ziphi': zip_half('ziphi', from_typ),
         'unziplo': unzip('unziplo', from_typ),
