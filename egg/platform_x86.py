@@ -2478,12 +2478,12 @@ def to_mask1(simd_ext, typ):
                                format(**fmtspec)
     else:
         if typ in ['i32', 'u32', 'i64', 'u64']:
-            return '''return _mm512_mask_mov{suf}(_mm512_setzeros(),
+            return '''return _mm512_mask_mov{suf}(_mm512_setzero_si512(),
                                  {in0}, _mm512_set1_epi32(-1));'''. \
                                  format(**fmtspec)
         elif typ in ['f32', 'f64']:
             return '''return _mm512_mask_mov{suf}(_mm512_castsi512{suf}(
-                               _mm512_setzeros()), {in0},
+                               _mm512_setzero_si512()), {in0},
                                  _mm512_castsi512{suf}(
                                    _mm512_set1_epi32(-1)));'''. \
                                    format(**fmtspec)
@@ -2510,9 +2510,10 @@ def to_logical1(simd_ext, typ):
     elif typ in ['f32', 'f64']:
         return '''return nsimd_reinterpretl_{simd_ext}_{typ}_{utyp}(
                            nsimd_ne_{simd_ext}_{utyp}(
-                             {pre}castsi{nbits}{sufsi}({in0}),
+                             {pre}cast{suf2}_si{nbits}({in0}),
                                {pre}setzero_si{nbits}()));'''. \
-                               format(utyp='u{}'.format(fmtspec['typnbits']),
+                               format(suf2=suf_si(simd_ext, typ)[1:],
+                                      utyp='u{}'.format(fmtspec['typnbits']),
                                       **fmtspec)
     else:
         return '''nsimd_{simd_ext}_vlf16 ret;
