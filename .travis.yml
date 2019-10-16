@@ -145,7 +145,8 @@ matrix:
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-        choco install -y python3 ninja;
+        choco install -y python3 --params "/InstallDir:C:\python3";
+        choco install -y ninja;
       fi
     - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         HOMEBREW_NO_AUTO_UPDATE=1 brew install ninja clang-format;
@@ -160,8 +161,8 @@ before_script:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
         scripts/travis-windows-env.bat;
         source _env.sh;
-        export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python37\\python";
-        export PYTHON="C:\\Python37\\python";
+        export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python3\\python";
+        export PYTHON="C:\\Python3\\python";
       else
         export PYTHON="python3";
       fi
