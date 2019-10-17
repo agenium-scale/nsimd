@@ -630,6 +630,9 @@ def to_logical1(typ):
     if typ in common.utypes:
         return func_body(unsigned_to_logical, typ, True)
     else:
+        unsigned_to_logical = \
+            'ret.v{{i}} = (buf.v{{i}} == ({utyp})0 ? (u32)0 : (u32)-1);'. \
+            format(**fmtspec)
         return '''nsimd_cpu_vl{typ} ret;
                   nsimd_cpu_vu{typnbits} buf;
                   buf = nsimd_reinterpret_cpu_u{typnbits}_{typ}({in0});
