@@ -2811,9 +2811,31 @@ def unzip_half(func, simd_ext, typ):
         ## AVX 512 --------------------------------------------------     
     else:
         if typ == 'f16':
-            return loop
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m512 v_res;
+            __m256 v_tmp0, v_tmp1, v_res_lo, v_res_hi;
+            v_tmp0 = _mm512_castps512_ps256({in0}.v0);
+            v_tmp1 = _mm512_extractf32x8_ps({in0}.v0, 0x01);
+            v_res_lo = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_tmp0 = _mm512_castps512_ps256({in0}.v1);
+            v_tmp1 = _mm512_extractf32x8_ps({in0}.v1, 0x01);
+            v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_res = _mm512_castps256_ps512(v_res_lo);
+            _mm512_insertf32x8(v_res, v_res_hi, 0x01);
+            ret.v0 = v_res;
+            v_tmp0 = _mm512_castps512_ps256({in1}.v0);
+            v_tmp1 = _mm512_extractf32x8_ps({in1}.v0, 0x01);
+            v_res_lo = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_tmp0 = _mm512_castps512_ps256({in1}.v1);
+            v_tmp1 = _mm512_extractf32x8_ps({in1}.v1, 0x01);
+            v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_res = _mm512_castps256_ps512(v_res_lo);
+            _mm512_insertf32x8(v_res, v_res_hi, 0x01);
+            ret.v1 = v_res;
+            '''.format(func=func, **fmtspec)
         else:
-            return split_opn(func, simd_ext, typ, 1)
+            return split_opn(func, simd_ext, typ, 2)
         
 # -----------------------------------------------------------------------------
 ## get_impl function
