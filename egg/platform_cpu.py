@@ -666,7 +666,7 @@ def to_mask1(typ):
 
 # -----------------------------------------------------------------------------
 
-def zip(func, typ):
+def zip_half(func, typ):
     n = get_nb_el(typ)
     if typ in ['i64', 'u64', 'f64']:
       return '''(void)({in1});
@@ -807,8 +807,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'downcvt': downcvt2(from_typ, to_typ),
         'to_logical': to_logical1(from_typ),
         'to_mask': to_mask1(from_typ),
-        'ziplo': zip('ziplo', from_typ),
-        'ziphi': zip('ziphi', from_typ),
+        'ziplo': zip_half('ziplo', from_typ),
+        'ziphi': zip_half('ziphi', from_typ),
         'unziplo': unzip('unziplo', from_typ),
         'unziphi': unzip('unziphi', from_typ)
     }

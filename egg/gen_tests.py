@@ -1196,21 +1196,33 @@ def gen_unpack(opts, op, typ, lang):
                       nsimd::storeu(&vout[i], vc);'''. \
                       format(typ=typ, op_name=op.name)
 
-
     op_test =  'step/(2*nb_lane)'
-
-    if op.name in ['unziplo', 'unziphi']:
-      comp_unpack =  \
-        '''comp_function(vout[j + add_lane], vin1[{index} + add_lane]) ||
-          comp_function(vout[j + step/(2*nb_lane) + add_lane], vin2[{index} + add_lane])'''. \
-          format(index='i' if op.name == 'unziplo' else 'i+1')
+    if op.name in['ziphi', 'ziplo']:
+        offset = 'int offset = {val};'.\
+            format(val= '0' if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
     else:
-      comp_unpack ='''comp_function(vout[i + add_lane], vin1[j + add_lane]) ||
-                    comp_function(vout[i+1 + add_lane], vin2[j + add_lane])'''
-
+        offset = ''
+        
+    if op.name in ['unziplo', 'unziphi']:
+        if typ == 'f16':
+            comp_unpack = '''\
+            (nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[vi + 2 * j + {i}]))
+            || (nsimd_f16_to_f32(vout[i + step / 2]) != nsimd_f16_to_f32(vin2[vi + 2 * j + {i}]))
+            '''.format(i = '0' if op.name == 'unziplo' else '1')
+        else:
+             comp_unpack =  '''\
+             (vout[i] != vin1[vi + 2 * j + {i}]) 
+             || (vout[i + step / 2] != vin2[vi + 2 * j + {i}])
+             '''.format(i = '0' if op.name == 'unziplo' else '1')
+    else:
+        if typ == 'f16':
+            comp_unpack ='''(nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[j])) || 
+            (nsimd_f16_to_f32(vout[i + 1]) != nsimd_f16_to_f32(vin2[j]))'''
+        else:
+            comp_unpack ='''(vout[i] != vin1[j]) || 
+            (vout[i + 1] != vin2[j])'''
+      
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
-    comp = 'return ({} - {}) > get_2th_power(-{nbits})'. \
-            format(left, right, nbits='11' if typ != 'f16' else '9')
     head = '''#define _POSIX_C_SOURCE 200112L
 
               {includes}
@@ -1232,25 +1244,25 @@ def gen_unpack(opts, op, typ, lang):
               {extra_code}
 
               // {simd}
-
-              int comp_function({typ} mpfr_out, {typ} nsimd_out)
-            {{
-              {comp};
-            }}
             ''' .format(year=date.today().year, typ=typ,
-                          includes=get_includes(lang), comp=comp,
-                          extra_code=extra_code,
-                          comp_unpack=comp_unpack,
+                          includes=get_includes(lang),
+                          extra_code=extra_code, 
+                          comp_unpack=comp_unpack, 
                           sizeof=common.sizeof(typ), simd= opts.simd)
+    if typ == 'f16':
+        rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
+        (f32)(1 << (rand() % 4)) /
+        (f32)(1 << (rand() % 4)))'''
+    else:
+        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
+        / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
 
-    rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
-                / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
     with common.open_utf8(filename) as out:
         out.write(
         '''{head}
 
            int main(void) {{
-              int vi, i, j, k, step, nb_lane, add_lane;
+              int vi, i, j, step, nb_lane;
               {typ} *vin1, *vin2;
               {typ} *vout;
 
@@ -1281,26 +1293,19 @@ def gen_unpack(opts, op, typ, lang):
 
               /* Compare results */
               if (step != 1) {{
-                for (vi = 0; vi < SIZE; vi += step)
-                {{
-                  for (i = vi, j = vi + {pos}; i < vi+ {op_test};
-                  i= i + 2, j++)
-                  {{
-                    for (k = 0; k < nb_lane; k++)
-                    {{
-                      add_lane = (step*k)/nb_lane;
-                      if ({comp_unpack})
-                      {{
-                        fprintf(stdout, "test of {op_name} over {typ}... FAIL\\n");
-                        fflush(stdout);
-                        return -1;
-                      }}
-                    }}
+                {offset}
+                for (vi = 0; vi < SIZE; vi += step){{
+                 j = {init_j};
+                 for (i = vi; i < {cond}; {inc}) {{
+                   if({comp_unpack}) {{
+                     fprintf(stderr, "test of {op_name} over {typ}... FAIL\\n");
+                     exit(EXIT_FAILURE);
+                   }}
+                   j++;
                   }}
                 }}
               }}
-
-
+  
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
               fflush(stdout);
               return EXIT_SUCCESS;
@@ -1309,6 +1314,10 @@ def gen_unpack(opts, op, typ, lang):
             typ=typ, year=date.today().year,sizeof=common.sizeof(typ),
             rand=rand, head=head, comp_unpack=comp_unpack,
             vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
+            offset=offset,
+            cond='vi + step' if op.name in['ziplo', 'ziphi'] else 'vi + step / 2',
+            init_j='vi + offset' if op.name in['ziplo', 'ziphi'] else '0',
+            inc='i += 2' if op.name in['ziphi', 'ziplo'] else 'i++',
             pos='0' if op.name in ['ziplo', 'unziplo', 'unziphi'] else op_test))
 
     common.clang_format(opts, filename)
