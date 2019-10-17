@@ -2822,7 +2822,7 @@ def unzip_half(func, simd_ext, typ):
             v_tmp1 = _mm512_extractf32x8_ps({in0}.v1, 0x01);
             v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
             v_res = _mm512_castps256_ps512(v_res_lo);
-            _mm512_insertf32x8(v_res, v_res_hi, 0x01);
+            v_res = _mm512_insertf32x8(v_res, v_res_hi, 0x01);
             ret.v0 = v_res;
             v_tmp0 = _mm512_castps512_ps256({in1}.v0);
             v_tmp1 = _mm512_extractf32x8_ps({in1}.v0, 0x01);
@@ -2831,11 +2831,26 @@ def unzip_half(func, simd_ext, typ):
             v_tmp1 = _mm512_extractf32x8_ps({in1}.v1, 0x01);
             v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
             v_res = _mm512_castps256_ps512(v_res_lo);
-            _mm512_insertf32x8(v_res, v_res_hi, 0x01);
+            v_res = _mm512_insertf32x8(v_res, v_res_hi, 0x01);
             ret.v1 = v_res;
+            return ret;
             '''.format(func=func, **fmtspec)
         else:
-            return split_opn(func, simd_ext, typ, 2)
+            # return split_opn(func, simd_ext, typ, 2)
+            return '''\
+            nsimd_avx2_v{typ} v00 = {extract_lo0};
+            nsimd_avx2_v{typ} v01 = {extract_hi0};
+            nsimd_avx2_v{typ} v10 = {extract_lo1};
+            nsimd_avx2_v{typ} v11 = {extract_hi1};
+            v00 = nsimd_{func}_avx2_{typ}(v00, v01);
+            v01 = nsimd_{func}_avx2_{typ}(v10, v11);
+            return {merge};
+            '''.format(func=func,
+                extract_lo0=extract(simd_ext, typ, LO, common.in0),
+                extract_lo1=extract(simd_ext, typ, LO, common.in1),
+                extract_hi0=extract(simd_ext, typ, HI, common.in0),
+                extract_hi1=extract(simd_ext, typ, HI, common.in1),
+                merge=setr(simd_ext, typ, 'v00', 'v01'), **fmtspec)
         
 # -----------------------------------------------------------------------------
 ## get_impl function
