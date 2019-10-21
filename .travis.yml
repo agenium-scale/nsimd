@@ -1,6 +1,7 @@
 language: cpp
 
 ## Install deps
+dist: bionic
 addons:
     apt:
         sources:
@@ -153,7 +154,7 @@ install:
       fi
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         sudo apt update;
-        sudo apt install gcc-8 g++-8 clang-6.0 libmpfr-dev ninja-build -y;
+        sudo apt install gcc-8 g++-8 clang-7.0 libmpfr-dev ninja-build -y;
       fi
 
 ## Prepare build
