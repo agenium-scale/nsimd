@@ -38,6 +38,10 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/simd/storelu.hpp"
 #include "nsimd/modules/fixed_point/function/simd/storeu.hpp"
 
+// Breaking pieces apart
+#include "nsimd/modules/fixed_point/function/simd/decompress.hpp"
+#include "nsimd/modules/fixed_point/function/simd/compress.hpp"
+
 // Constants
 #include "nsimd/modules/fixed_point/constants.hpp"
 
