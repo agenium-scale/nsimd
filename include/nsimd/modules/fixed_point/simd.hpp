@@ -77,6 +77,18 @@ template <uint8_t _lf, uint8_t _rt> struct fpsimd_uc {
     _v2 = nsimd::set1(cp._raw, base_type());
   }
 
+  fpsimd_uc( const fpsimd_t<_lf, _rt> &cp1
+           , const fpsimd_t<_lf, _rt> &cp2 ) {
+    _v1 = cp1._raw;
+    _v2 = cp2._raw;
+  }
+
+  fpsimd_uc( const value_up &cp1
+           , const value_up &cp2 ) {
+    _v1 = cp1;
+    _v2 = cp2;
+  }
+
   fpsimd_uc &operator=(const fpsimd_uc<_lf, _rt> &cp) {
     _v1 = cp._v1;
     _v2 = cp._v2;
