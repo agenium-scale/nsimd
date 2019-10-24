@@ -61,6 +61,29 @@ template <uint8_t _lf, uint8_t _rt> struct fpsimd_t {
   }
 };
 
+// Uncompressed type containing two registers of higher precision
+template <uint8_t _lf, uint8_t _rt> struct fpsimd_uc {
+  typedef typename fp_t<_lf, _rt>::value_type base_type;
+  typedef typename fp_t<_lf, _rt>::simd_type value_type;
+  typedef typename fp_t<_lf, _rt>::simd_up value_up;
+  typedef typename fp_t<_lf, _rt>::simd_logical logic;
+  value_up _v1;
+  value_up _v2;
+
+  fpsimd_uc() {}
+
+  fpsimd_uc(const fp_t<_lf, _rt> &cp) {
+    _v1 = nsimd::set1(cp._raw, base_type());
+    _v2 = nsimd::set1(cp._raw, base_type());
+  }
+
+  fpsimd_uc &operator=(const fpsimd_uc<_lf, _rt> &cp) {
+    _v1 = cp._v1;
+    _v2 = cp._v2;
+    return *this;
+  }
+};
+
 template <uint8_t _lf, uint8_t _rt> struct fpsimdl_t {
   typedef typename fp_t<_lf, _rt>::logical_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
