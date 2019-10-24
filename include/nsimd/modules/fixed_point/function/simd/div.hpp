@@ -30,6 +30,21 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
+
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_uc<_lf,_rt> simd_div_uc( const fpsimd_uc<_lf,_rt> &a,
+                                             const fpsimd_uc<_lf,_rt> &b ) {
+  typedef typename fp_t<_lf, _rt>::value_up up_t;
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
+  const int n_bits = 8 * sizeof(val_t);
+  const int shift = n_bits - _lf;
+
+  return fpsimd_uc<_lf,_rt>(
+        nsimd::div(nsimd::shl(a._v1, shift, up_t()), b._v1, up_t())
+      , nsimd::div(nsimd::shl(a._v2, shift, up_t()), b._v2, up_t())
+      );
+}
+
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_div(const fpsimd_t<_lf, _rt> &a,
                                          const fpsimd_t<_lf, _rt> &b) {
@@ -39,19 +54,12 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_div(const fpsimd_t<_lf, _rt> &a,
   const int n_bits = 8 * sizeof(val_t);
   const int shift = n_bits - _lf;
 
-  simd_up_t a_big0 = nsimd::upcvt(a._raw, val_t(), up_t()).v0;
-  simd_up_t a_big1 = nsimd::upcvt(a._raw, val_t(), up_t()).v1;
-  simd_up_t b_big0 = nsimd::upcvt(b._raw, val_t(), up_t()).v0;
-  simd_up_t b_big1 = nsimd::upcvt(b._raw, val_t(), up_t()).v1;
+  fpsimd_uc<_lf,_rt> aa = simd_decompress( a );
+  fpsimd_uc<_lf,_rt> bb = simd_decompress( b );
 
-  a_big0 = nsimd::shl(a_big0, shift, up_t());
-  a_big0 = nsimd::div(a_big0, b_big0, up_t());
-  a_big1 = nsimd::shl(a_big1, shift, up_t());
-  a_big1 = nsimd::div(a_big1, b_big1, up_t());
+  aa = simd_div_uc( aa , bb );
 
-  fpsimd_t<_lf, _rt> res;
-  res._raw = nsimd::downcvt(a_big0, a_big1, up_t(), val_t());
-
+  fpsimd_t<_lf,_rt> res = simd_compress( aa );
   return res;
 }
 
@@ -61,6 +69,13 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> operator/(const fpsimd_t<_lf, _rt> &a,
                                           const fpsimd_t<_lf, _rt> &b) {
   return simd_div(a, b);
 }
+
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_uc<_lf, _rt> operator/(const fpsimd_uc<_lf, _rt> &a,
+                                           const fpsimd_uc<_lf, _rt> &b) {
+  return simd_div_uc(a, b);
+}
+
 
 } // namespace fixed_point
 } // namespace nsimd
