@@ -30,6 +30,17 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
+
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_uc<_lf,_rt> simd_add_uc( const fpsimd_uc<_lf,_rt> &a,
+                                             const fpsimd_uc<_lf,_rt> &b ) {
+  typedef typename fp_t<_lf, _rt>::value_up up_t;
+  return fpsimd_uc<_lf,_rt>(
+        nsimd::add(a._v1, b._v1, up_t())
+      , nsimd::add(a._v2, b._v2, up_t())
+      );
+}
+
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_add(const fpsimd_t<_lf, _rt> &a,
                                          const fpsimd_t<_lf, _rt> &b) {
@@ -44,6 +55,12 @@ template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> operator+(const fpsimd_t<_lf, _rt> &a,
                                           const fpsimd_t<_lf, _rt> &b) {
   return simd_add(a, b);
+}
+
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_uc<_lf, _rt> operator+(const fpsimd_uc<_lf, _rt> &a,
+                                           const fpsimd_uc<_lf, _rt> &b) {
+  return simd_add_uc(a, b);
 }
 
 } // namespace fixed_point
