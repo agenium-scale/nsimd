@@ -97,7 +97,10 @@ def doit(opts):
 
                      '''.format(year=date.today().year))
         for op_name, operator in operators.operators.items():
-            if operator.load_store or op_name == 'set1':
+            # Ignore operators that don't take vector arguments
+            if operator.load_store or \
+                    op_name in ['set1', 'iota',
+                                'trueb', 'falseb', 'truel', 'falsel']:
                 continue
             out.write('''{hbar}
 

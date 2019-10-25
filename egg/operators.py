@@ -441,9 +441,10 @@ class Set1(Operator):
 
 class Iota(Operator):
     signature = 'v iota'
+    domain = Domain('')
     categories = [DocMisc]
-    desc = 'Set the elements to sequentially increasing values ' + \
-           'starting from zero.'
+    desc = 'Set each element to its lane index, ' + \
+           'i.e. sequentially increasing starting from zero.'
 
 class Loadu(Operator):
     full_name = 'loadu'
