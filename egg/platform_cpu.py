@@ -172,12 +172,6 @@ def landnot2(typ):
 
 # -----------------------------------------------------------------------------
 
-def lnot1(typ):
-    return func_body('ret.v{{i}} = ~{in0}.v{{i}};'.\
-                     format(**fmtspec), typ, True)
-
-# -----------------------------------------------------------------------------
-
 def not1(typ):
     if typ in common.utypes:
         return func_body('ret.v{{i}} = ({typ})(~{in0}.v{{i}});'. \
@@ -192,6 +186,36 @@ def not1(typ):
                  buf0.u = ({utyp2})(~buf0.u);
                  ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
                  utyp2=utyp2, typ2=typ2, **fmtspec)
+
+# -----------------------------------------------------------------------------
+
+def lnot1(typ):
+    return func_body('ret.v{{i}} = ~{in0}.v{{i}};'.\
+                     format(**fmtspec), typ, True)
+
+# -----------------------------------------------------------------------------
+
+def true0(typ):
+    return func_body('ret.v{{i}} = -1;'.\
+                     format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
+def ltrue0(typ):
+    return func_body('ret.v{{i}} = -1;'.\
+                     format(**fmtspec), typ, True)
+
+# -----------------------------------------------------------------------------
+
+def false0(typ):
+    return func_body('ret.v{{i}} = 0;'.\
+                     format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
+def lfalse0(typ):
+    return func_body('ret.v{{i}} = 0;'.\
+                     format(**fmtspec), typ, True)
 
 # -----------------------------------------------------------------------------
 
@@ -359,6 +383,14 @@ def set1(typ):
                               format(**fmtspec), typ)
     else:
         content = repeat_stmt('ret.v{{i}} = {in0};'.format(**fmtspec), typ)
+    return '''nsimd_cpu_v{typ} ret;
+              {content}
+              return ret;'''.format(content=content, **fmtspec)
+
+# -----------------------------------------------------------------------------
+
+def iota0(typ):
+    content = repeat_stmt('ret.v{{i}} = {{i}};'.format(**fmtspec), typ)
     return '''nsimd_cpu_v{typ} ret;
               {content}
               return ret;'''.format(content=content, **fmtspec)
@@ -770,8 +802,13 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'max': minmax2('max', from_typ),
         'notb': not1(from_typ),
         'notl': lnot1(from_typ),
+        'trueb': true0(from_typ),
+        'truel': ltrue0(from_typ),
+        'falseb': false0(from_typ),
+        'falsel': lfalse0(from_typ),
         'sqrt': sqrt1(from_typ),
         'set1': set1(from_typ),
+        'iota': iota0(from_typ),
         'shr': bitwise1_param('>>', from_typ),
         'shl': bitwise1_param('<<', from_typ),
         'eq': cmp2('==', from_typ),

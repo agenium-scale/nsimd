@@ -439,6 +439,12 @@ class Set1(Operator):
     categories = [DocMisc]
     desc = 'Set all elements in the vector to the given value.'
 
+class Iota(Operator):
+    signature = 'v iota'
+    categories = [DocMisc]
+    desc = 'Set the elements to sequentially increasing values ' + \
+           'starting from zero.'
+
 class Loadu(Operator):
     full_name = 'loadu'
     signature = 'v loadu c*'
@@ -597,6 +603,14 @@ class Storela(Operator):
     desc = 'Store SIMD vector of booleans into aligned memory. True is ' + \
            'stored as 1 and False as 0.'
 
+class Storeu_masked(Operator):
+    full_name = 'storeu_masked'
+    signature = '_ storeu_masked * v l'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Store SIMD vector into unaligned memory. ' + \
+           'Store only the elements where the mask is true, ignore the others.'
+
 class Orb(Operator):
     full_name = 'bitwise or'
     signature = 'v orb v v'
@@ -625,6 +639,15 @@ class Andnotb(Operator):
     def bench_mipp_name(self, typ):
         return 'mipp::andnb<{}>'.format(typ)
 
+class Xorb(Operator):
+    full_name = 'bitwise xor'
+    signature = 'v xorb v v'
+    cxx_operator = 'operator^'
+    domain = Domain('RxR')
+    categories = [DocBitsOperators]
+    #bench_auto_against_std = True ## TODO: Add check to floating-types
+    bench_auto_against_mipp = True
+
 class Notb(Operator):
     full_name = 'bitwise not'
     signature = 'v notb v'
@@ -634,14 +657,19 @@ class Notb(Operator):
     #bench_auto_against_std = True ## TODO: Add check to floating-types
     bench_auto_against_mipp = True
 
-class Xorb(Operator):
-    full_name = 'bitwise xor'
-    signature = 'v xorb v v'
-    cxx_operator = 'operator^'
-    domain = Domain('RxR')
+class Trueb(Operator):
+    full_name = 'bitwise true'
+    signature = 'v trueb'
+    domain = Domain('')
     categories = [DocBitsOperators]
-    #bench_auto_against_std = True ## TODO: Add check to floating-types
-    bench_auto_against_mipp = True
+    bench_auto_against_std = True
+
+class Falseb(Operator):
+    full_name = 'bitwise false'
+    signature = 'v falseb'
+    domain = Domain('')
+    categories = [DocBitsOperators]
+    bench_auto_against_std = True
 
 class Orl(Operator):
     full_name = 'logical or'
@@ -676,6 +704,20 @@ class Notl(Operator):
     signature = 'l notl l'
     cxx_operator = 'operator!'
     domain = Domain('B')
+    categories = [DocLogicalOperators]
+    bench_auto_against_std = True
+
+class Truel(Operator):
+    full_name = 'logical true'
+    signature = 'l truel'
+    domain = Domain('')
+    categories = [DocLogicalOperators]
+    bench_auto_against_std = True
+
+class Falsel(Operator):
+    full_name = 'logical false'
+    signature = 'l falsel'
+    domain = Domain('')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
 

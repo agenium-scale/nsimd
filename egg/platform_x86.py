@@ -679,6 +679,29 @@ def store(simd_ext, typ, aligned):
                format(align=align, cast=cast, **fmtspec)
 
 # -----------------------------------------------------------------------------
+## Masked store
+
+def store_masked(simd_ext, typ, aligned):
+    if typ in ['f16', 'i16', 'i8', 'u16', 'u8']:
+        return common.NOT_IMPLEMENTED
+    if typ in ['i64', 'u64']:
+        cast = '(long long*)'
+    elif typ == 'u32':
+        cast = '(int*)'
+    else:
+        cast = ''
+    if typ == 'f64':
+        maskcast = '{pre}castpd_si{nbits}'.format(**fmtspec)
+    elif typ == 'f32':
+        maskcast = '{pre}castps_si{nbits}'.format(**fmtspec)
+    else:
+        maskcast = ''
+    if simd_ext == 'avx2':
+        return '{pre}maskstore{suf}({cast}{in0}, {maskcast}({in2}), {in1});'. \
+               format(cast=cast, maskcast=maskcast, **fmtspec)
+    return common.NOT_IMPLEMENTED
+
+# -----------------------------------------------------------------------------
 ## Code for binary operators: and, or, xor
 
 def binop2(func, simd_ext, typ, logical=False):
@@ -828,6 +851,69 @@ def lnot1(simd_ext, typ):
         else:
             return 'return (__mmask{le})(~{in0});'.format(**fmtspec)
     return not1(simd_ext, typ, True)
+
+# -----------------------------------------------------------------------------
+## Code for constant true
+
+def true0(simd_ext, typ, logical=False):
+    if typ == 'f16':
+        return \
+        '''nsimd_{simd_ext}_v{logi}f16 ret;
+           nsimd_{simd_ext}_vf32 cte =
+             {pre}castsi{nbits}_ps({pre}set1_epi8(-1));
+           ret.v0 = cte;
+           ret.v1 = cte;
+           return ret;'''.format(logi='l' if logical else '', **fmtspec)
+    elif typ in ['f32', 'f64']:
+        return '''return {pre}castsi{nbits}{suf}(
+                           {pre}set1_epi8(-1));'''.format(**fmtspec)
+    else:
+        return '''return {pre}set1_epi8(-1);'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## Code for constant logical true
+
+def ltrue0(simd_ext, typ):
+    if simd_ext in avx512:
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_vlf16 ret;
+                      ret.v0 = (__mmask16)~0;
+                      ret.v1 = (__mmask16)~0;
+                      return ret;'''.format(**fmtspec)
+        else:
+            return 'return (__mmask{le})~0;'.format(**fmtspec)
+    return true0(simd_ext, typ, True)
+
+# -----------------------------------------------------------------------------
+## Code for constant false
+
+def false0(simd_ext, typ, logical=False):
+    if typ == 'f16':
+        return \
+        '''nsimd_{simd_ext}_v{logi}f16 ret;
+           nsimd_{simd_ext}_vf32 cte = {pre}castsi{nbits}_ps({pre}set1_epi8(0));
+           ret.v0 = cte;
+           ret.v1 = cte;
+           return ret;'''.format(logi='l' if logical else '', **fmtspec)
+    elif typ in ['f32', 'f64']:
+        return '''return {pre}castsi{nbits}{suf}(
+                           {pre}set1_epi8(0));'''.format(**fmtspec)
+    else:
+        return '''return {pre}set1_epi8(0);'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## Code for constant logical false
+
+def lfalse0(simd_ext, typ):
+    if simd_ext in avx512:
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_vlf16 ret;
+                      ret.v0 = (__mmask16)0;
+                      ret.v1 = (__mmask16)0;
+                      return ret;'''.format(**fmtspec)
+        else:
+            return 'return (__mmask{le})0;'.format(**fmtspec)
+    return false0(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
 ## Addition and substraction
@@ -1005,6 +1091,25 @@ def set1(simd_ext, typ):
                   buf.u = {in0};
                   return {pre}set1{suf}(buf.i);'''.format(**fmtspec)
     return 'return {pre}set1{suf}({in0});'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## iota
+
+def iota0(simd_ext, typ):
+    nelts = int(nbits(simd_ext)) // int(typ[1:])
+    if typ == 'f16':
+        elts0 = ', '.join([str(i) for i in range(nelts//2-1, -1, -1)])
+        elts1 = ', '.join([str(i) for i in range(nelts-1, nelts//2-1, -1)])
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  ret.v0 = {pre}set_ps({elts0});
+                  ret.v1 = {pre}set_ps({elts1});
+                  return ret;'''.format(elts0=elts0, elts1=elts1, **fmtspec)
+    else:
+        suf = fmtspec['suf']
+        sufx = suf + ('x' if suf == '_epi64' else '')
+        elts = ', '.join([str(i) for i in range(nelts-1, -1, -1)])
+        return 'return {pre}set{sufx}({elts});'.\
+               format(elts=elts, sufx=sufx, **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## Equality
@@ -2895,6 +3000,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'store2u': store_deg234(simd_ext, from_typ, False, 2),
         'store3u': store_deg234(simd_ext, from_typ, False, 3),
         'store4u': store_deg234(simd_ext, from_typ, False, 4),
+        'storeu_masked': store_masked(simd_ext, from_typ, False),
         'andb': binop2('andb', simd_ext, from_typ),
         'xorb': binop2('xorb', simd_ext, from_typ),
         'orb': binop2('orb', simd_ext, from_typ),
@@ -2905,6 +3011,10 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'notl': lnot1(simd_ext, from_typ),
         'andnotb': andnot2(simd_ext, from_typ),
         'andnotl': landnot2(simd_ext, from_typ),
+        'trueb': true0(simd_ext, from_typ),
+        'truel': ltrue0(simd_ext, from_typ),
+        'falseb': false0(simd_ext, from_typ),
+        'falsel': lfalse0(simd_ext, from_typ),
         'add': addsub('add', simd_ext, from_typ),
         'sub': addsub('sub', simd_ext, from_typ),
         'div': div2(simd_ext, from_typ),
@@ -2914,6 +3024,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'shl': shl_shr('shl', simd_ext, from_typ),
         'shr': shl_shr('shr', simd_ext, from_typ),
         'set1': set1(simd_ext, from_typ),
+        'iota': iota0(simd_ext, from_typ),
         'eq': eq2(simd_ext, from_typ),
         'ne': neq2(simd_ext, from_typ),
         'gt': gt2(simd_ext, from_typ),

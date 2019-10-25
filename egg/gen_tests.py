@@ -1334,6 +1334,7 @@ def doit(opts):
         if opts.match and not opts.match.match(op_name):
             continue
         if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
+                        'storeu_masked',
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
                         'store4a', 'store4u', 'downcvt', 'to_logical']:
