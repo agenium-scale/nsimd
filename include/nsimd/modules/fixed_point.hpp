@@ -44,6 +44,14 @@ template <typename T> struct pack {
   fpsimd_t<lf, rt> val;
 };
 
+template <typename T> struct pack_uc {
+  static const uint8_t lf = T::lf;
+  static const uint8_t rt = T::rt;
+  typedef fp_t<lf, rt> value_type;
+  typedef typename fp_t<lf, rt>::simd_up simd_type;
+  fpsimd_uc<lf,rt> val;
+};
+
 template <typename T> struct packl {
   static const uint8_t lf = T::lf;
   static const uint8_t rt = T::rt;
@@ -56,6 +64,25 @@ template <typename T> size_t len(const T &) { return fpsimd_n(T()); }
 template <typename T> size_t len(const pack<T> &) {
   return fpsimd_n(fpsimd_t<T::lf, T::rt>());
 }
+
+// -----------------------------------------------------------------------------
+// ---------------- Convert between normal and uncompressed  -------------------
+// -----------------------------------------------------------------------------
+
+template <typename T>
+NSIMD_INLINE pack<T> compress( const pack_uc<T> &a ) {
+  pack<T> res;
+  res.val = simd_compress<T::lf,T::rt>( a.val );
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> decompress( const pack<T> &a ) {
+  pack_uc<T> res;
+  res.val = simd_decompress<T::lf,T::rt>( a.val );
+  return res;
+}
+
 
 // -----------------------------------------------------------------------------
 // ------------------- Basic arithmetic operators ------------------------------
@@ -129,6 +156,58 @@ NSIMD_INLINE pack<T> max(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_max(a0.val, a1.val);
   return res;
+}
+
+// -----------------------------------------------------------------------------
+// ------------------- Uncompressed arithmetic operators -----------------------
+// -----------------------------------------------------------------------------
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> add(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  pack_uc<T> res;
+  res.val = simd_add_uc<T::lf, T::rt>(a0.val, a1.val);
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> operator+(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  return add( a0 , a1 );
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> sub(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  pack_uc<T> res;
+  res.val = simd_sub_uc<T::lf, T::rt>(a0.val, a1.val);
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> operator-(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  return sub( a0 , a1 );
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> mul(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  pack_uc<T> res;
+  res.val = simd_mul_uc<T::lf, T::rt>(a0.val, a1.val);
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> operator*(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  return mul( a0 , a1 );
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> div(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  pack_uc<T> res;
+  res.val = simd_div_uc<T::lf, T::rt>(a0.val, a1.val);
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> operator/(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  return div( a0 , a1 );
 }
 
 // -----------------------------------------------------------------------------
