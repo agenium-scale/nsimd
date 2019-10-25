@@ -938,19 +938,24 @@ def gen_code(f, simd, typ, category):
     if f.match_sig('v * v v') or f.match_sig('v * v v v') \
         or f.match_sig('l * v v') or f.match_sig('l * l l') \
         or f.match_sig('l * l') or f.match_sig('v * v') \
+        or f.match_sig('v *') or f.match_sig('l *') \
         or f.match_sig('s * s') \
         or f.match_sig('s * s s') \
         or f.match_sig('s * s s s') \
+        or f.match_sig('vcpu *') \
         or f.match_sig('vcpu * vcpu') \
         or f.match_sig('vcpu * vcpu vcpu') \
         or f.match_sig('vcpu * vcpu vcpu vcpu') \
+        or f.match_sig('lcpu *') \
         or f.match_sig('lcpu * lcpu') \
         or f.match_sig('lcpu * lcpu lcpu') \
         or f.match_sig('lcpu * vcpu vcpu') \
         or f.match_sig('vcpu * lcpu vcpu vcpu') \
+        or f.match_sig('volatile-s *') \
         or f.match_sig('volatile-s * volatile-s') \
         or f.match_sig('volatile-s * volatile-s volatile-s') \
         or f.match_sig('volatile-s * volatile-s volatile-s volatile-s') \
+        or f.match_sig('volatile-ls *') \
         or f.match_sig('volatile-ls * volatile-s') \
         or f.match_sig('volatile-ls * volatile-s volatile-s') \
         or f.match_sig('volatile-ls * volatile-ls') \
