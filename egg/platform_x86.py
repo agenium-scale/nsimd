@@ -1106,7 +1106,7 @@ def iota0(simd_ext, typ):
                   return ret;'''.format(elts0=elts0, elts1=elts1, **fmtspec)
     else:
         suf = fmtspec['suf']
-        sufx = suf + ('x' if suf == '_epi64' else '')
+        sufx = suf + ('x' if simd_ext in sse + avx and suf == '_epi64' else '')
         elts = ', '.join([str(i) for i in range(nelts-1, -1, -1)])
         return 'return {pre}set{sufx}({elts});'.\
                format(elts=elts, sufx=sufx, **fmtspec)

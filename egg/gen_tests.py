@@ -328,7 +328,8 @@ def get_content(op, typ, lang):
                       mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
         else:
             args = ', '.join(['va{}'.format(i) for i in nargs])
-            code = ['nsimd_cpu_v{}{} {}, vc;'.format(logical, typ, args)]
+            comma = ', ' if nargs else ''
+            code = ['nsimd_cpu_v{}{} {}{}vc;'.format(logical, typ, args, comma)]
             code += ['va{} = nsimd_load{}u_cpu_{}(&vin{}[i]);'. \
                      format(i, logical, typ, i) for i in nargs]
             code += ['vc = nsimd_{}_cpu_{}({});'.format(op.name, typ, args)]
@@ -338,23 +339,26 @@ def get_content(op, typ, lang):
 
         # Make vout1_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
+        comma = ', ' if nargs else ''
         if lang == 'c_base':
-            code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]
+            code = ['vec{}({}) {}{}vc;'.format(logical, typ, args, comma)]
             code += ['va{} = vload{}u(&vin{}[i], {});'. \
                      format(i, logical, i, typ) for i in nargs]
-            code += ['vc = v{}({}, {});'.format(op.name, args, typ)]
+            code += ['vc = v{}({}{}{});'.format(op.name, args, comma, typ)]
             code += ['vstore{}u(&vout1[i], vc, {});'.format(logical, typ)]
             vout1_comp = '\n'.join(code)
         if lang == 'cxx_base':
-            code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]
+            code = ['vec{}({}) {}{}vc;'.format(logical, typ, args, comma)]
             code += ['va{} = nsimd::load{}u(&vin{}[i], {}());'. \
                      format(i, logical, i, typ) for i in nargs]
-            code += ['vc = nsimd::{}({}, {}());'.format(op.name, args, typ)]
+            code += ['vc = nsimd::{}({}{}{}());'.\
+                     format(op.name, args, comma, typ)]
             code += ['nsimd::store{}u(&vout1[i], vc, {}());'. \
                      format(logical, typ)]
             vout1_comp = '\n'.join(code)
         if lang == 'cxx_adv':
-            code = ['nsimd::pack{}<{}> {}, vc;'.format(logical, typ, args)]
+            code = ['nsimd::pack{}<{}> {}{}vc;'.\
+                    format(logical, typ, args, comma)]
             code += ['''va{i} = nsimd::load{logical}u<
                                   nsimd::pack{logical}<{typ}> >(
                                       &vin{i}[i]);'''. \
@@ -366,6 +370,9 @@ def get_content(op, typ, lang):
                 if len(op.params[1:]) == 2:
                     code += ['vc = va1 {} va2;'. \
                              format(op.cxx_operator[8:])]
+            elif len(op.params[1:]) == 0:
+                code += ['vc = nsimd::{}<nsimd::pack{}<{}> >({});'. \
+                         format(op.name, logical, typ, args)]
             else:
                 code += ['vc = nsimd::{}({});'.format(op.name, args)]
             code += ['nsimd::store{}u(&vout1[i], vc);'.format(logical, typ)]
