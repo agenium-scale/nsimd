@@ -196,8 +196,17 @@ def lnot1(typ):
 # -----------------------------------------------------------------------------
 
 def true0(typ):
-    return func_body('ret.v{{i}} = -1;'.\
-                     format(**fmtspec), typ)
+    if typ in common.utypes:
+        return func_body('ret.v{{i}} = ~({typ})(0);'.format(**fmtspec), typ)
+    utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
+    typ2 = 'f32' if typ == 'f16' else typ
+    return '''nsimd_cpu_v{typ} ret;
+              union {{ {utyp2} u; {typ2} f; }} buf0;
+              {content}
+              return ret;'''.format(content=repeat_stmt(
+              '''buf0.u = ~({utyp2})(0);
+                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
+                 utyp2=utyp2, typ2=typ2, **fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -208,8 +217,17 @@ def ltrue0(typ):
 # -----------------------------------------------------------------------------
 
 def false0(typ):
-    return func_body('ret.v{{i}} = 0;'.\
-                     format(**fmtspec), typ)
+    if typ in common.utypes:
+        return func_body('ret.v{{i}} = ({typ})(0);'.format(**fmtspec), typ)
+    utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
+    typ2 = 'f32' if typ == 'f16' else typ
+    return '''nsimd_cpu_v{typ} ret;
+              union {{ {utyp2} u; {typ2} f; }} buf0;
+              {content}
+              return ret;'''.format(content=repeat_stmt(
+              '''buf0.u = ({utyp2})(0);
+                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
+                 utyp2=utyp2, typ2=typ2, **fmtspec)
 
 # -----------------------------------------------------------------------------
 

@@ -326,6 +326,16 @@ def get_content(op, typ, lang):
                format(variables=variables, mpfr_sets=mpfr_sets,
                       mpfr_clears=mpfr_clears, vout0_set=vout0_set,
                       mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
+        elif op.name == 'iota':
+            conv = 'nsimd_f32_to_f16' if typ == 'f16' else ''
+            code = ['{',
+                    '  int j;',
+                    '  for (j = i; j < i + {cpu_step}; ++j) {{'. \
+                    format(cpu_step=cpu_step),
+                    '    vout0[j] = {conv}(j % step);'.format(conv=conv),
+                    '  }',
+                    '}']
+            vout0_comp = '\n'.join(code)
         else:
             args = ', '.join(['va{}'.format(i) for i in nargs])
             comma = ', ' if nargs else ''
@@ -481,9 +491,10 @@ def gen_test(opts, op, typ, lang, ulps):
 
     content = get_content(op, typ, lang)
 
-    if op.name in ['not', 'and', 'or', 'xor', 'andnot']:
+    if op.name in ['trueb', 'falseb', 'notb', 'andb', 'orb', 'xorb', 'andnotb']:
         comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
                format(uT=common.bitfield_type[typ])
+        extra_code = ''
     else:
         if typ == 'f16':
             left = '(double)nsimd_f16_to_f32(mpfr_out)'
