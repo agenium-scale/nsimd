@@ -1104,6 +1104,18 @@ def iota0(simd_ext, typ):
                   ret.v0 = {pre}set_ps({elts0});
                   ret.v1 = {pre}set_ps({elts1});
                   return ret;'''.format(elts0=elts0, elts1=elts1, **fmtspec)
+    elif simd_ext == 'avx512_knl' and typ in ['i16', 'u16']:
+        return '''return _mm512_set_epi32(
+                      0x001f001e, 0x001d001c, 0x001b001a, 0x00190018,
+                      0x00170016, 0x00150014, 0x00130012, 0x00110010,
+                      0x000f000e, 0x000d000c, 0x000b000a, 0x00090008,
+                      0x00070006, 0x00050004, 0x00030002, 0x00010000);'''
+    elif simd_ext == 'avx512_knl' and typ in ['i8', 'u8']:
+        return '''return _mm512_set_epi32(
+                      0x3f3e3d3c, 0x3b3a3938, 0x37363534, 0x33323130,
+                      0x2f2e0d2c, 0x2b2a0928, 0x27260524, 0x23222120,
+                      0x1f1e1d1c, 0x1b1a1918, 0x17161514, 0x13121110,
+                      0x0f1e0d1c, 0x0b1a0918, 0x07160514, 0x03120110);'''
     else:
         suf = fmtspec['suf']
         sufx = suf + ('x' if simd_ext in sse + avx and suf == '_epi64' else '')
