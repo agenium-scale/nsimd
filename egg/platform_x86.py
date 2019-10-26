@@ -754,22 +754,13 @@ def binlop2(func, simd_ext, typ):
                       ret.v1 = (__mmask16)({in0}.v1 {op} {in1}.v1);
                       return ret;'''. \
                       format(op=op[func], op_fct=op_fct[func], **fmtspec)
+        elif simd_ext == 'avx512_knl' and fmtspec['le'] != 16:
+            # KNL only has the 'mask16' variant
+            return 'return (__mmask{le})({in0} {op} {in1});'. \
+                format(op=op[func], op_fct=op_fct[func], **fmtspec)
         else:
-            # gcc:  error: inlining failed in call to always_inline
-            #              ‘__mmask8 _kor_mask8(__mmask8, __mmask8)’:
-            #              target specific option mismatch
-            # icc: tests fail with _{op_fct}_mask8 for f64, u64 and i64
-            r = ''
-            if fmtspec['le'] == 8:
-                r += '#if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_GCC) || defined(NSIMD_IS_ICC)'
-                r += '\n'
-            else:
-                r += '#if defined(NSIMD_IS_CLANG)' + '\n'
-            r += '  return (__mmask{le})({in0} {op} {in1});' + '\n'
-            r += '#else' + '\n'
-            r += '  return _{op_fct}_mask{le}({in0}, {in1});' + '\n'
-            r += '#endif' + '\n'
-            return r.format(op=op[func], op_fct=op_fct[func], **fmtspec)
+            return 'return _{op_fct}_mask{le}({in0}, {in1});'. \
+                   format(op=op[func], op_fct=op_fct[func], **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## andnot
@@ -1113,9 +1104,9 @@ def iota0(simd_ext, typ):
     elif simd_ext == 'avx512_knl' and typ in ['i8', 'u8']:
         return '''return _mm512_set_epi32(
                       0x3f3e3d3c, 0x3b3a3938, 0x37363534, 0x33323130,
-                      0x2f2e0d2c, 0x2b2a0928, 0x27260524, 0x23222120,
+                      0x2f2e2d2c, 0x2b2a2928, 0x27262524, 0x23222120,
                       0x1f1e1d1c, 0x1b1a1918, 0x17161514, 0x13121110,
-                      0x0f1e0d1c, 0x0b1a0918, 0x07160514, 0x03120110);'''
+                      0x0f0e0d0c, 0x0b0a0908, 0x07060504, 0x03020100);'''
     else:
         suf = fmtspec['suf']
         sufx = suf + ('x' if simd_ext in sse + avx and suf == '_epi64' else '')
@@ -2725,13 +2716,90 @@ def zip_half(func, simd_ext, typ):
                            cast_low=cast_low, extract=extract, **fmtspec),
                        cast_low=cast_low, cast_high=cast_high,
                        extract=extract, epi=epi, insert=insert, i=i,**fmtspec)
+    elif simd_ext == 'avx512_knl':
+        if typ in common.iutypes:
+            i = 'i'
+            cast_low = '_mm512_castsi512_si256'
+            cast_high = '_mm512_castsi256_si512'
+            extract = '_mm512_extracti64x4_epi64'
+            insert = '_mm512_inserti64x4'
+        elif typ in ['f32', 'f16']:
+            if func == 'ziplo':
+                get_half0 = '{cast_low}({in0})'
+                get_half1 = '{cast_low}({in1})'
+            else:
+                get_half0 = '''_mm256_castpd_ps(
+                                   _mm512_extractf64x4_pd(
+                                       _mm512_castps_pd({in0}), 0x01))'''
+                get_half1 = '''_mm256_castpd_ps(
+                                   _mm512_extractf64x4_pd(
+                                       _mm512_castps_pd({in1}), 0x01))'''
+            i = ''
+            cast_low = '_mm512_castps512_ps256'
+            cast_high = '_mm512_castps256_ps512'
+            extract = '_mm512_extractf64x4_pd'
+            insert = '_mm512_insertf64x4'
+        elif typ == 'f64':
+            i = 'd'
+            cast_low = '_mm512_castpd512_pd256'
+            cast_high = '_mm512_castpd256_pd512'
+            extract = '_mm512_extractf64x4_pd'
+            insert = '_mm512_insertf64x4'
+            
+        if typ == 'f16':
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m512 v0 = {in0}.v{k};
+            __m512 v1 = {in1}.v{k};
+            __m512 vres;
+            __m256 v_tmp0, v_tmp1, vres_lo, vres_hi;
+            // Low part
+            v_tmp0 = _mm512_castps512_ps256(v0);
+            v_tmp1 = _mm512_castps512_ps256(v1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v0 = _mm512_castpd_ps(_mm512_insertf64x4(_mm512_castps_pd(vres), _mm256_castps_pd(vres_hi), 1));
+            // High part
+            v_tmp0 = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd(v0), 0x1));
+            v_tmp1 = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd(v1), 0x1));
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v1 = _mm512_castpd_ps(_mm512_insertf64x4(_mm512_castps_pd(vres), _mm256_castps_pd(vres_hi), 1));
+            return ret;
+            '''.format(**fmtspec, k = '0' if func == 'ziplo' else '1')
+        else:
+            if typ in ['f32', 'f16']:
+                insertexpr = '''_mm512_castpd_ps(
+                                    _mm512_insertf64x4(
+                                        _mm512_castps_pd(vres),
+                                        _mm256_castps_pd(vres_hi), 1))'''
+            else:
+                insertexpr = '{insert}(vres, vres_hi, 1)'
+            return '''\
+            __m256{i} v_tmp0 = {get_half0};
+            __m256{i} v_tmp1 = {get_half1};
+            __m256{i} vres_lo = nsimd_ziplo_avx2_{typ}(v_tmp0, v_tmp1);
+            __m256{i} vres_hi = nsimd_ziphi_avx2_{typ}(v_tmp0, v_tmp1);
+            __m512{i} vres = {cast_high}(vres_lo);
+            return {insertexpr};
+            '''.format(extract=extract,
+                       get_half0=get_half0.format(
+                           cast_low=cast_low, extract=extract, **fmtspec),
+                       get_half1=get_half1.format(
+                           cast_low=cast_low, extract=extract, **fmtspec),
+                       cast_high=cast_high,
+                       cast_low=cast_low,
+                       insertexpr=insertexpr.format(insert=insert, **fmtspec),
+                       i=i, **fmtspec) 
     else:
         if typ in common.iutypes:
             i = 'i'
             cast_low = '_mm512_castsi512_si256'
             cast_high = '_mm512_castsi256_si512'
-            extract = '_mm512_extracti32x8_epi32'
-            insert = '_mm512_inserti32x8'
+            extract = '_mm512_extracti64x4_epi64'
+            insert = '_mm512_inserti64x4'
         elif typ in ['f32', 'f16']:
             i = ''
             cast_low = '_mm512_castps512_ps256'
@@ -2770,9 +2838,8 @@ def zip_half(func, simd_ext, typ):
             '''.format(**fmtspec,  k = '0' if func == 'ziplo' else '1')
         else:
             return '''\
-            __m256{i} v_tmp0, v_tmp1;
-            v_tmp0 = {get_half0};
-            v_tmp1 = {get_half1};
+            __m256{i} v_tmp0 = {get_half0};
+            __m256{i} v_tmp1 = {get_half1};
             __m256{i} vres_lo = nsimd_ziplo_avx2_{typ}(v_tmp0, v_tmp1);
             __m256{i} vres_hi = nsimd_ziphi_avx2_{typ}(v_tmp0, v_tmp1);
             __m512{i} vres = {cast_high}(vres_lo);
@@ -2925,7 +2992,50 @@ def unzip_half(func, simd_ext, typ):
             '''.format(func=func, **fmtspec)
         else:
             return loop
-        ## AVX 512 --------------------------------------------------     
+        ## AVX 512 KNL --------------------------------------------------
+    elif simd_ext == 'avx512_knl':
+        if typ == 'f16':
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m512 v_res;
+            __m256 v_tmp0, v_tmp1, v_res_lo, v_res_hi;
+            v_tmp0 = _mm512_castps512_ps256({in0}.v0);
+            v_tmp1 = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd({in0}.v0), 0x01));
+            v_res_lo = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_tmp0 = _mm512_castps512_ps256({in0}.v1);
+            v_tmp1 = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd({in0}.v1), 0x01));
+            v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_res = _mm512_castps256_ps512(v_res_lo);
+            v_res = _mm512_castpd_ps(_mm512_insertf64x4(_mm512_castps_pd(v_res), _mm256_castps_pd(v_res_hi), 0x01));
+            ret.v0 = v_res;
+            v_tmp0 = _mm512_castps512_ps256({in1}.v0);
+            v_tmp1 = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd({in1}.v0), 0x01));
+            v_res_lo = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_tmp0 = _mm512_castps512_ps256({in1}.v1);
+            v_tmp1 = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd({in1}.v1), 0x01));
+            v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_res = _mm512_castps256_ps512(v_res_lo);
+            v_res = _mm512_castpd_ps(_mm512_insertf64x4(_mm512_castps_pd(v_res), _mm256_castps_pd(v_res_hi), 0x01));
+            ret.v1 = v_res;
+            return ret;
+            '''.format(func=func, **fmtspec)
+        else:
+            # return split_opn(func, simd_ext, typ, 2)
+            return '''\
+            nsimd_avx2_v{typ} v00 = {extract_lo0};
+            nsimd_avx2_v{typ} v01 = {extract_hi0};
+            nsimd_avx2_v{typ} v10 = {extract_lo1};
+            nsimd_avx2_v{typ} v11 = {extract_hi1};
+            v00 = nsimd_{func}_avx2_{typ}(v00, v01);
+            v01 = nsimd_{func}_avx2_{typ}(v10, v11);
+            return {merge};
+            '''.format(func=func,
+                extract_lo0=extract(simd_ext, typ, LO, common.in0),
+                extract_lo1=extract(simd_ext, typ, LO, common.in1),
+                extract_hi0=extract(simd_ext, typ, HI, common.in0),
+                extract_hi1=extract(simd_ext, typ, HI, common.in1),
+                merge=setr(simd_ext, typ, 'v00', 'v01'), **fmtspec)
+        ## AVX 512 Skylake --------------------------------------------------
     else:
         if typ == 'f16':
             return '''\
