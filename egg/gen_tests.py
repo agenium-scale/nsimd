@@ -209,7 +209,7 @@ int main(void) {{
   fprintf(stdout, STATUS "...\\n");
   fflush(stdout);
 
-  /* Fill input vector(s) with random */
+  /* Fill input vector(s) with random values */
   for (i = 0; i < SIZE; i++) {{
     {vin_rand}
   }}

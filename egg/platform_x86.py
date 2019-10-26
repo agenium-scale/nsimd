@@ -414,10 +414,10 @@ def split_cmp2(func, simd_ext, typ):
                             format(fsuf=suf_ep(ftyp), leo2=leo2, **fmtspec)
         else:
             merge = \
-            '''v00 = _mm256_permute4x64_epi64(v00, 216); /* exchange middles qwords */
+            '''v00 = _mm256_permute4x64_epi64(v00, 216); /* exchange middle qwords */
                nsimd_avx2_vi16 lo1 = _mm256_unpacklo_epi16(v00, v00);
                nsimd_avx2_vi16 hi1 = _mm256_unpackhi_epi16(v00, v00);
-               v01 = _mm256_permute4x64_epi64(v01, 216); /* exchange middles qwords */
+               v01 = _mm256_permute4x64_epi64(v01, 216); /* exchange middle qwords */
                nsimd_avx2_vi16 lo2 = _mm256_unpacklo_epi16(v01, v01);
                nsimd_avx2_vi16 hi2 = _mm256_unpackhi_epi16(v01, v01);
                return (__mmask32)(u32)_mm256_movemask_ps(
@@ -2649,7 +2649,7 @@ def zip_half(func, simd_ext, typ):
             vres = _mm512_castps256_ps512(vres_lo);
             ret.v1 = _mm512_insertf32x8(vres, vres_hi, 1);
             return ret;
-            '''.format(**fmtspec,  k = '0' if func == 'ziplo' else '1')
+            '''.format(**fmtspec, k = '0' if func == 'ziplo' else '1')
         else:
             return '''\
             __m256{i} v_tmp0, v_tmp1;
