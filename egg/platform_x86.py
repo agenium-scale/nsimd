@@ -2606,8 +2606,7 @@ def to_mask1(simd_ext, typ):
                                    _mm512_set1_epi32(-1)));'''. \
                                    format(**fmtspec)
         else:
-            return '''nsimd_avx512_knl_v{typ} ret;
-                      {typ} buf[{le}];
+            return '''{typ} buf[{le}];
                       int i;
                       for (i = 0; i < {le}; i++) {{
                         if (({in0} >> i) & 1) {{
@@ -2649,7 +2648,7 @@ def zip_half(func, simd_ext, typ):
     else:
         get_half0 = '{extract}({in0}, 0x01)'
         get_half1 = '{extract}({in1}, 0x01)'
-        
+
     if simd_ext in ['sse2', 'sse42']:
         if typ == 'f16':
             return '''nsimd_{simd_ext}_v{typ} ret;
@@ -2812,7 +2811,7 @@ def zip_half(func, simd_ext, typ):
             cast_high = '_mm512_castpd256_pd512'
             extract = '_mm512_extractf64x4_pd'
             insert = '_mm512_insertf64x4'
-            
+
         if typ == 'f16':
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
@@ -2851,11 +2850,11 @@ def zip_half(func, simd_ext, typ):
                            cast_low=cast_low, extract=extract, **fmtspec),
                        cast_high=cast_high,
                        cast_low=cast_low,
-                       insert=insert, i=i, **fmtspec) 
+                       insert=insert, i=i, **fmtspec)
 
 def zip(simd_ext, typ):
     return '// Not implemented yet'
-    
+
 # -----------------------------------------------------------------------------
 ## unzip functions
 
@@ -2937,7 +2936,7 @@ def unzip_half(func, simd_ext, typ):
             v0 = '_mm256_castsi256_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
             v1 = '_mm256_castsi256_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
             v_res = '_mm256_castps_si256(v_res)' if typ in ['i32', 'u32'] else 'v_res'
-            ret = 'ret' 
+            ret = 'ret'
             src = ret_template .\
                 format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
                        else '_MM_SHUFFLE(3, 1, 3, 1)',
@@ -3078,7 +3077,7 @@ def unzip_half(func, simd_ext, typ):
                 extract_hi0=extract(simd_ext, typ, HI, common.in0),
                 extract_hi1=extract(simd_ext, typ, HI, common.in1),
                 merge=setr(simd_ext, typ, 'v00', 'v01'), **fmtspec)
-        
+
 # -----------------------------------------------------------------------------
 ## get_impl function
 
