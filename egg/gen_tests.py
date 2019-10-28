@@ -740,7 +740,7 @@ def gen_all_any(opts, op, typ, lang):
                exit(EXIT_FAILURE);
              }}
 
-             /* Test with all elements to false */
+             /* Test with all elements set to false */
              for (i = 0; i < len; i++) {{
                buf[i] = {scalar0};
              }}
@@ -748,7 +748,7 @@ def gen_all_any(opts, op, typ, lang):
                exit(EXIT_FAILURE);
              }}
 
-             /* Test with only one element to true */
+             /* Test with only one element set to true */
              if (len > 1) {{
                buf[0] = {scalar1};
                if ({notl}{op_test}) {{

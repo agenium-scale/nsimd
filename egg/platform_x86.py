@@ -1302,7 +1302,7 @@ def loadl(simd_ext, typ, aligned):
         if typ == 'f16':
             return '''/* This can surely be improved but it is not our
                          priority. Note that we take advantage of the fact that
-                         floatting zero is represented as integer zero to
+                         floating zero is represented as integer zero to
                          simplify code. */
                       nsimd_{simd_ext}_vlf16 ret;
                       __mmask32 tmp = nsimd_loadlu_{simd_ext}_u16((u16*){in0});
@@ -1335,7 +1335,7 @@ def storel(simd_ext, typ, aligned):
         if typ == 'f16':
             return '''/* This can surely be improved but it is not our
                          priority. Note that we take advantage of the fact that
-                         floatting zero is represented as integer zero to
+                         floating zero is represented as integer zero to
                          simplify code. */
                       int i;
                       u16 one = 0x3C00; /* FP16 IEEE754 representation of 1 */
