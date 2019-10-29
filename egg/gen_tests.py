@@ -489,9 +489,10 @@ def gen_test(opts, op, typ, lang, ulps):
             right = 'nsimd_out'
         relative_distance = relative_distance_c if lang == 'c_base' \
                             else relative_distance_cpp
-        if op.tests_ulps:
+        if op.tests_ulps != None:
             comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
-                   format(left, right, nbits='11' if typ != 'f16' else '9')
+                   format(left, right, nbits=op.tests_ulps \
+                          if typ != 'f16' else min(9, op.tests_ulps))
             extra_code = relative_distance
         elif op.src:
             if op.name in ulps:
@@ -1202,7 +1203,7 @@ def gen_unpack(opts, op, typ, lang):
             format(val= '0' if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
     else:
         offset = ''
-        
+
     if op.name in ['unziplo', 'unziphi']:
         if typ == 'f16':
             comp_unpack = '''\
@@ -1211,17 +1212,17 @@ def gen_unpack(opts, op, typ, lang):
             '''.format(i = '0' if op.name == 'unziplo' else '1')
         else:
              comp_unpack =  '''\
-             (vout[i] != vin1[vi + 2 * j + {i}]) 
+             (vout[i] != vin1[vi + 2 * j + {i}])
              || (vout[i + step / 2] != vin2[vi + 2 * j + {i}])
              '''.format(i = '0' if op.name == 'unziplo' else '1')
     else:
         if typ == 'f16':
-            comp_unpack ='''(nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[j])) || 
+            comp_unpack ='''(nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[j])) ||
             (nsimd_f16_to_f32(vout[i + 1]) != nsimd_f16_to_f32(vin2[j]))'''
         else:
-            comp_unpack ='''(vout[i] != vin1[j]) || 
+            comp_unpack ='''(vout[i] != vin1[j]) ||
             (vout[i + 1] != vin2[j])'''
-      
+
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     head = '''#define _POSIX_C_SOURCE 200112L
 
@@ -1246,15 +1247,15 @@ def gen_unpack(opts, op, typ, lang):
               // {simd}
             ''' .format(year=date.today().year, typ=typ,
                           includes=get_includes(lang),
-                          extra_code=extra_code, 
-                          comp_unpack=comp_unpack, 
+                          extra_code=extra_code,
+                          comp_unpack=comp_unpack,
                           sizeof=common.sizeof(typ), simd= opts.simd)
     if typ == 'f16':
         rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
         (f32)(1 << (rand() % 4)) /
         (f32)(1 << (rand() % 4)))'''
     else:
-        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
+        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
         / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
 
     with common.open_utf8(filename) as out:
@@ -1305,7 +1306,7 @@ def gen_unpack(opts, op, typ, lang):
                   }}
                 }}
               }}
-  
+
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
               fflush(stdout);
               return EXIT_SUCCESS;
