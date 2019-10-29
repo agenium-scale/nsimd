@@ -222,7 +222,7 @@ NSIMD_INLINE packl<T> eq(const pack<T> &a0, const pack<T> &a1) {
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> operator==(const pack<T> &a0, const pack<T> &a1) {
+NSIMD_INLINE packl<T> operator==(const pack<T> &a0, const pack<T> &a1) {
   return eq( a0 , a1 );
 }
 
@@ -234,7 +234,7 @@ NSIMD_INLINE packl<T> ne(const pack<T> &a0, const pack<T> &a1) {
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> operator!=(const pack<T> &a0, const pack<T> &a1) {
+NSIMD_INLINE packl<T> operator!=(const pack<T> &a0, const pack<T> &a1) {
   return ne( a0 , a1 );
 }
 
@@ -246,7 +246,7 @@ NSIMD_INLINE packl<T> le(const pack<T> &a0, const pack<T> &a1) {
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> operator<=(const pack<T> &a0, const pack<T> &a1) {
+NSIMD_INLINE packl<T> operator<=(const pack<T> &a0, const pack<T> &a1) {
   return le( a0 , a1 );
 }
 
@@ -258,7 +258,7 @@ NSIMD_INLINE packl<T> lt(const pack<T> &a0, const pack<T> &a1) {
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> operator<(const pack<T> &a0, const pack<T> &a1) {
+NSIMD_INLINE packl<T> operator<(const pack<T> &a0, const pack<T> &a1) {
   return lt( a0 , a1 );
 }
 
@@ -270,7 +270,7 @@ NSIMD_INLINE packl<T> ge(const pack<T> &a0, const pack<T> &a1) {
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> operator>=(const pack<T> &a0, const pack<T> &a1) {
+NSIMD_INLINE packl<T> operator>=(const pack<T> &a0, const pack<T> &a1) {
   return ge( a0 , a1 );
 }
 
@@ -282,7 +282,7 @@ NSIMD_INLINE packl<T> gt(const pack<T> &a0, const pack<T> &a1) {
 }
 
 template <typename T>
-NSIMD_INLINE pack<T> operator>(const pack<T> &a0, const pack<T> &a1) {
+NSIMD_INLINE packl<T> operator>(const pack<T> &a0, const pack<T> &a1) {
   return gt( a0 , a1 );
 }
 
