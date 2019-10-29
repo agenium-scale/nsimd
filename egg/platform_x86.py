@@ -74,7 +74,7 @@ def get_logical_type(simd_ext, typ):
         return get_type(simd_ext, typ)
     elif simd_ext in avx512:
         if typ == 'f16':
-            return 'struct { __mmask16 v0; __mmask16 v1; }';
+            return 'struct { __mmask16 v0; __mmask16 v1; }'
         return '__mmask{}'.format(512 // common.bitsize(typ))
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
