@@ -89,8 +89,10 @@ def get_additional_include(func, platform, simd_ext):
     if func in ['sqrt', 'ceil', 'floor', 'trunc']:
         return '''#if NSIMD_CXX > 0
                     #include <cmath>
+                    #include <cstring>
                   #else
                     #include <math.h>
+                    #include <string.h>
                   #endif'''
     elif func in ['']:
         return '''#include <nsimd/cpu/cpu/reinterpret.h>
@@ -134,13 +136,14 @@ def bitwise2(op, typ):
     utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
     typ2 = 'f32' if typ == 'f16' else typ
     return '''nsimd_cpu_v{typ} ret;
-              union {{ {utyp2} u; {typ2} f; }} buf0, buf1;
+              {utyp2} buf0, buf1;
               {content}
               return ret;'''.format(content=repeat_stmt(
-              '''buf0.f = {in0}.v{{i}};
-                 buf1.f = {in1}.v{{i}};
-                 buf0.u = ({utyp2})(buf0.u {op} buf1.u);
-                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, op=op, **fmtspec),
+              '''memcpy(&buf0, &{in0}.v{{i}}, sizeof(buf0));
+                 memcpy(&buf1, &{in1}.v{{i}}, sizeof(buf1));
+                 buf0 = ({utyp2})(buf0 {op} buf1);
+                 memcpy(&ret.v{{i}}, &buf0, sizeof(buf0));
+                 '''.format(utyp2=utyp2, op=op, **fmtspec),
                  typ), utyp2=utyp2, typ2=typ2, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -155,13 +158,14 @@ def andnot2(typ):
     utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
     typ2 = 'f32' if typ == 'f16' else typ
     return '''nsimd_cpu_v{typ} ret;
-              union {{ {utyp2} u; {typ2} f; }} buf0, buf1;
+              {utyp2} buf0, buf1;
               {content}
               return ret;'''.format(content=repeat_stmt(
-              '''buf0.f = {in0}.v{{i}};
-                 buf1.f = {in1}.v{{i}};
-                 buf0.u = ({utyp2})(buf0.u & (~buf1.u));
-                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
+              '''memcpy(&buf0, &{in0}.v{{i}}, sizeof(buf0));
+                 memcpy(&buf1, &{in1}.v{{i}}, sizeof(buf1));
+                 buf0 = ({utyp2})(buf0 & (~buf1));
+                 memcpy(&ret.v{{i}}, &buf0, sizeof(buf0));
+                 '''.format(utyp2=utyp2, **fmtspec), typ),
                  utyp2=utyp2, typ2=typ2, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -185,12 +189,13 @@ def not1(typ):
     utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
     typ2 = 'f32' if typ == 'f16' else typ
     return '''nsimd_cpu_v{typ} ret;
-              union {{ {utyp2} u; {typ2} f; }} buf0;
+              {utyp2} buf0;
               {content}
               return ret;'''.format(content=repeat_stmt(
-              '''buf0.f = {in0}.v{{i}};
-                 buf0.u = ({utyp2})(~buf0.u);
-                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
+              '''memcpy(&buf0, &{in0}.v{{i}}, sizeof(buf0));
+                 buf0 = ({utyp2})(~buf0);
+                 memcpy(&ret.v{{i}}, &buf0, sizeof(buf0));
+                 '''.format(utyp2=utyp2, **fmtspec), typ),
                  utyp2=utyp2, typ2=typ2, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -332,13 +337,14 @@ def bitwise1_param(op, typ):
                          format(op=op, **fmtspec), typ)
     else:
         return '''nsimd_cpu_v{typ} ret;
-                  union {{ {typ} i; {utyp} u; }} buf;
+                  {utyp} buf;
                   {content}
                   return ret;'''. \
                   format(content=repeat_stmt(
-                  '''buf.i = {in0}.v{{i}};
-                     buf.u = ({utyp})(buf.u {op} {in1});
-                     ret.v{{i}} = buf.i;'''.format(op=op, **fmtspec), typ),
+                  '''memcpy(&buf, &{in0}.v{{i}}, sizeof(buf));
+                     buf = ({utyp})(buf {op} {in1});
+                     memcpy(&ret.v{{i}}, &buf, sizeof(buf));
+                     '''.format(op=op, **fmtspec), typ),
                      **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -650,12 +656,12 @@ def to_mask1(typ):
     if typ in common.utypes:
         return func_body(logical_to_unsigned, typ)
     elif typ == 'f16':
-        return '''union {{ f32 f; u32 u; }} buf;
-                  nsimd_cpu_vf16 ret;
+        return '''nsimd_cpu_vf16 ret;
                   {u32_to_f32}
                   return ret;'''. \
                   format(u32_to_f32=repeat_stmt(
-                      'buf.u = {in0}.v{{i}}; ret.v{{i}} = buf.f;'. \
+                      '''memcpy(&ret.v{{i}}, &{in0}.v{{i}}, 4);
+                         '''. \
                       format(**fmtspec), 'f16'), **fmtspec)
     else:
         return '''nsimd_cpu_vu{typnbits} ret;

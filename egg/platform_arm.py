@@ -158,7 +158,8 @@ def has_compatible_SoA_types(simd_ext):
 # -----------------------------------------------------------------------------
 
 def get_additional_include(func, platform, simd_ext):
-    ret = '''#include <nsimd/cpu/cpu/{}.h>
+    ret = '''#include <string.h>
+             #include <nsimd/cpu/cpu/{}.h>
              '''.format(func)
     if simd_ext == 'sve':
         ret += '''#include <nsimd/arm/aarch64/{}.h>
@@ -1405,19 +1406,16 @@ def reinterpret1(simd_ext, from_typ, to_typ):
             return from_f16_with_f32
         elif to_typ == 'f64':
             return '''nsimd_neon128_vf64 ret;
-                      union {{ f64 to; {from_typ} from; }} buf;
-                      buf.from = vgetq_lane_{from_suf}({in0}, 0);
-                      ret.v0 = buf.to;
-                      buf.from = vgetq_lane_{from_suf}({in0}, 1);
-                      ret.v1 = buf.to;
+                      {from_typ} buf;
+                      buf = vgetq_lane_{from_suf}({in0}, 0);
+                      memcpy(&ret.v0, &buf, sizeof(buf));
+                      buf = vgetq_lane_{from_suf}({in0}, 1);
+                      memcpy(&ret.v1, &buf, sizeof(buf));
                       return ret;'''.format(**fmtspec2)
         elif from_typ == 'f64':
-            return '''union {{ f64 from; {to_typ} to; }} buf_;
-                      {to_typ} buf[2];
-                      buf_.from = {in0}.v0;
-                      buf[0] = buf_.to;
-                      buf_.from = {in0}.v1;
-                      buf[1] = buf_.to;
+            return '''{to_typ} buf[2];
+                      memcpy(&buf[0], &{in0}.v0, sizeof(buf[0]));
+                      memcpy(&buf[1], &{in0}.v1, sizeof(buf[1]));
                       return vld1q_{to_suf}(buf);'''.format(**fmtspec2)
         else:
             return 'return vreinterpretq_{to_suf}_{from_suf}({in0});'. \

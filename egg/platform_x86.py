@@ -94,7 +94,8 @@ def has_compatible_SoA_types(simd_ext):
         return False
 
 def get_additional_include(func, platform, simd_ext):
-    ret = ''
+    ret = '''#include <string.h>
+          '''
     if simd_ext == 'sse2':
         ret += '''#include <nsimd/cpu/cpu/{}.h>
                   '''.format(func)
@@ -997,13 +998,13 @@ def set1(simd_ext, typ):
         if typ == 'i64':
             return 'return {pre}set1_epi64x({in0});'.format(**fmtspec)
         if typ == 'u64':
-            return '''union {{ u64 u; i64 i; }} buf;
-                      buf.u = {in0};
-                      return {pre}set1_epi64x(buf.i);'''.format(**fmtspec)
+            return '''i64 buf;
+                      memcpy(&buf, &{in0}, sizeof(buf));
+                      return {pre}set1_epi64x(buf);'''.format(**fmtspec)
     if typ in ['u8', 'u16', 'u32', 'u64']:
-        return '''union {{ {typ} u; i{typnbits} i; }} buf;
-                  buf.u = {in0};
-                  return {pre}set1{suf}(buf.i);'''.format(**fmtspec)
+        return '''i{typnbits} buf;
+                  memcpy(&buf, &{in0}, sizeof(buf));
+                  return {pre}set1{suf}(buf);'''.format(**fmtspec)
     return 'return {pre}set1{suf}({in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
