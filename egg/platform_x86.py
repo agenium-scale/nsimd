@@ -720,17 +720,17 @@ def store_masked(simd_ext, typ, aligned):
     if simd_ext == 'avx512_skylake' and typ == 'f16':
         u = '' if aligned else 'u'
         return '''__m256i buf0 = _mm512_cvt_roundps_ph({in1}.v0,
-                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
                   __m256i buf1 = _mm512_cvt_roundps_ph({in1}.v1,
-                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
-                  _mm256_mask_store{u}_epi32({in0}, {in2}.v0, buf0);
-                  _mm256_mask_store{u}_epi32({in0}+16, {in2}.v1, buf1);'''.\
+                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+                  _mm256_mask_store{u}_epi16({in0}, {in2}.v0, buf0);
+                  _mm256_mask_store{u}_epi16({in0}+16, {in2}.v1, buf1);'''.\
                format(u=u, **fmtspec)
     if simd_ext in avx512 and typ == 'f16':
         return '''__m256i val0 = _mm512_cvt_roundps_ph({in1}.v0,
-                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
                   __m256i val1 = _mm512_cvt_roundps_ph({in1}.v1,
-                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
                   f16 buf0[16], buf1[16];
                   int i;
                   _mm256_store_si256((__m256i*)buf0, val0);
