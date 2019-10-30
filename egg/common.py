@@ -124,7 +124,7 @@ def write_utf8(filename, opts, content):
         os.unlink(tmp_filename)
 
 # -----------------------------------------------------------------------------
-# NOT implemented response
+# Not implemented response
 
 NOT_IMPLEMENTED = 'abort();'
 

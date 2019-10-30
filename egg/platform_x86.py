@@ -74,7 +74,7 @@ def get_logical_type(simd_ext, typ):
         return get_type(simd_ext, typ)
     elif simd_ext in avx512:
         if typ == 'f16':
-            return 'struct { __mmask16 v0; __mmask16 v1; }';
+            return 'struct { __mmask16 v0; __mmask16 v1; }'
         return '__mmask{}'.format(512 // common.bitsize(typ))
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -1531,7 +1531,7 @@ def loadl(simd_ext, typ, aligned):
         if typ == 'f16':
             return '''/* This can surely be improved but it is not our
                          priority. Note that we take advantage of the fact that
-                         floatting zero is represented as integer zero to
+                         floating zero is represented as integer zero to
                          simplify code. */
                       nsimd_{simd_ext}_vlf16 ret;
                       __mmask32 tmp = nsimd_loadlu_{simd_ext}_u16((u16*){in0});
@@ -1564,7 +1564,7 @@ def storel(simd_ext, typ, aligned):
         if typ == 'f16':
             return '''/* This can surely be improved but it is not our
                          priority. Note that we take advantage of the fact that
-                         floatting zero is represented as integer zero to
+                         floating zero is represented as integer zero to
                          simplify code. */
                       int i;
                       u16 one = 0x3C00; /* FP16 IEEE754 representation of 1 */
@@ -3226,92 +3226,92 @@ def get_impl(func, simd_ext, from_typ, to_typ):
     }
 
     impls = {
-        'loada': load(simd_ext, from_typ, True),
-        'load2a': load_deg234(simd_ext, from_typ, True, 2),
-        'load3a': load_deg234(simd_ext, from_typ, True, 3),
-        'load4a': load_deg234(simd_ext, from_typ, True, 4),
-        'loadu': load(simd_ext, from_typ, False),
-        'load2u': load_deg234(simd_ext, from_typ, False, 2),
-        'load3u': load_deg234(simd_ext, from_typ, False, 3),
-        'load4u': load_deg234(simd_ext, from_typ, False, 4),
-        'storea': store(simd_ext, from_typ, True),
-        'store2a': store_deg234(simd_ext, from_typ, True, 2),
-        'store3a': store_deg234(simd_ext, from_typ, True, 3),
-        'store4a': store_deg234(simd_ext, from_typ, True, 4),
-        'storeu': store(simd_ext, from_typ, False),
-        'store2u': store_deg234(simd_ext, from_typ, False, 2),
-        'store3u': store_deg234(simd_ext, from_typ, False, 3),
-        'store4u': store_deg234(simd_ext, from_typ, False, 4),
-        'storea_masked': store_masked(simd_ext, from_typ, True),
-        'storeu_masked': store_masked(simd_ext, from_typ, False),
-        'andb': binop2('andb', simd_ext, from_typ),
-        'xorb': binop2('xorb', simd_ext, from_typ),
-        'orb': binop2('orb', simd_ext, from_typ),
-        'andl': binlop2('andl', simd_ext, from_typ),
-        'xorl': binlop2('xorl', simd_ext, from_typ),
-        'orl': binlop2('orl', simd_ext, from_typ),
-        'notb': not1(simd_ext, from_typ),
-        'notl': lnot1(simd_ext, from_typ),
-        'andnotb': andnot2(simd_ext, from_typ),
-        'andnotl': landnot2(simd_ext, from_typ),
-        'trueb': true0(simd_ext, from_typ),
-        'truel': ltrue0(simd_ext, from_typ),
-        'falseb': false0(simd_ext, from_typ),
-        'falsel': lfalse0(simd_ext, from_typ),
-        'add': addsub('add', simd_ext, from_typ),
-        'sub': addsub('sub', simd_ext, from_typ),
-        'div': div2(simd_ext, from_typ),
-        'sqrt': sqrt1(simd_ext, from_typ),
-        'len': len1(simd_ext, from_typ),
-        'mul': mul2(simd_ext, from_typ),
-        'shl': shl_shr('shl', simd_ext, from_typ),
-        'shr': shl_shr('shr', simd_ext, from_typ),
-        'set1': set1(simd_ext, from_typ),
-        'iota': iota0(simd_ext, from_typ),
-        'eq': eq2(simd_ext, from_typ),
-        'ne': neq2(simd_ext, from_typ),
-        'gt': gt2(simd_ext, from_typ),
-        'lt': lt2(simd_ext, from_typ),
-        'ge': geq2(simd_ext, from_typ),
-        'le': leq2(simd_ext, from_typ),
-        'if_else1': if_else1(simd_ext, from_typ),
-        'min': minmax('min', simd_ext, from_typ),
-        'max': minmax('max', simd_ext, from_typ),
-        'loadla': loadl(simd_ext, from_typ, True),
-        'loadlu': loadl(simd_ext, from_typ, False),
-        'storela': storel(simd_ext, from_typ, True),
-        'storelu': storel(simd_ext, from_typ, False),
-        'abs': abs1(simd_ext, from_typ),
-        'fma': fma_fms('fma', simd_ext, from_typ),
-        'fnma': fma_fms('fnma', simd_ext, from_typ),
-        'fms': fma_fms('fms', simd_ext, from_typ),
-        'fnms': fma_fms('fnms', simd_ext, from_typ),
-        'ceil': round1('ceil', simd_ext, from_typ),
-        'floor': round1('floor', simd_ext, from_typ),
-        'trunc': trunc1(simd_ext, from_typ),
-        'round_to_even': round_to_even1(simd_ext, from_typ),
-        'all': all_any('all', simd_ext, from_typ),
-        'any': all_any('any', simd_ext, from_typ),
-        'reinterpret': reinterpret1(simd_ext, from_typ, to_typ),
-        'reinterpretl': reinterpretl1(simd_ext, from_typ, to_typ),
-        'cvt': convert1(simd_ext, from_typ, to_typ),
-        'rec11': rec11_rsqrt11('rcp', simd_ext, from_typ),
-        'rec8': rec11_rsqrt11('rcp', simd_ext, from_typ),
-        'rsqrt11': rec11_rsqrt11('rsqrt', simd_ext, from_typ),
-        'rsqrt8': rec11_rsqrt11('rsqrt', simd_ext, from_typ),
-        'rec': rec1(simd_ext, from_typ),
-        'neg': neg1(simd_ext, from_typ),
-        'nbtrue': nbtrue1(simd_ext, from_typ),
-        'reverse': reverse1(simd_ext, from_typ),
-        'addv': addv(simd_ext, from_typ),
-        'upcvt': upcvt1(simd_ext, from_typ, to_typ),
-        'downcvt': downcvt1(simd_ext, from_typ, to_typ),
-        'to_mask': to_mask1(simd_ext, from_typ),
-        'to_logical': to_logical1(simd_ext, from_typ),
-        'ziplo': zip_half('ziplo', simd_ext, from_typ),
-        'ziphi': zip_half('ziphi', simd_ext, from_typ),
-        'unziplo': unzip_half('unziplo', simd_ext, from_typ),
-        'unziphi': unzip_half('unziphi', simd_ext, from_typ)
+        'loada': lambda: load(simd_ext, from_typ, True),
+        'load2a': lambda: load_deg234(simd_ext, from_typ, True, 2),
+        'load3a': lambda: load_deg234(simd_ext, from_typ, True, 3),
+        'load4a': lambda: load_deg234(simd_ext, from_typ, True, 4),
+        'loadu': lambda: load(simd_ext, from_typ, False),
+        'load2u': lambda: load_deg234(simd_ext, from_typ, False, 2),
+        'load3u': lambda: load_deg234(simd_ext, from_typ, False, 3),
+        'load4u': lambda: load_deg234(simd_ext, from_typ, False, 4),
+        'storea': lambda: store(simd_ext, from_typ, True),
+        'store2a': lambda: store_deg234(simd_ext, from_typ, True, 2),
+        'store3a': lambda: store_deg234(simd_ext, from_typ, True, 3),
+        'store4a': lambda: store_deg234(simd_ext, from_typ, True, 4),
+        'storeu': lambda: store(simd_ext, from_typ, False),
+        'store2u': lambda: store_deg234(simd_ext, from_typ, False, 2),
+        'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
+        'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
+        'storea_masked': lambda: store_masked(simd_ext, from_typ, True),
+        'storeu_masked': lambda: store_masked(simd_ext, from_typ, False),
+        'andb': lambda: binop2('andb', simd_ext, from_typ),
+        'xorb': lambda: binop2('xorb', simd_ext, from_typ),
+        'orb': lambda: binop2('orb', simd_ext, from_typ),
+        'andl': lambda: binlop2('andl', simd_ext, from_typ),
+        'xorl': lambda: binlop2('xorl', simd_ext, from_typ),
+        'orl': lambda: binlop2('orl', simd_ext, from_typ),
+        'notb': lambda: not1(simd_ext, from_typ),
+        'notl': lambda: lnot1(simd_ext, from_typ),
+        'andnotb': lambda: andnot2(simd_ext, from_typ),
+        'andnotl': lambda: landnot2(simd_ext, from_typ),
+        'trueb': lambda: true0(simd_ext, from_typ),
+        'truel': lambda: ltrue0(simd_ext, from_typ),
+        'falseb': lambda: false0(simd_ext, from_typ),
+        'falsel': lambda: lfalse0(simd_ext, from_typ),
+        'add': lambda: addsub('add', simd_ext, from_typ),
+        'sub': lambda: addsub('sub', simd_ext, from_typ),
+        'div': lambda: div2(simd_ext, from_typ),
+        'sqrt': lambda: sqrt1(simd_ext, from_typ),
+        'len': lambda: len1(simd_ext, from_typ),
+        'mul': lambda: mul2(simd_ext, from_typ),
+        'shl': lambda: shl_shr('shl', simd_ext, from_typ),
+        'shr': lambda: shl_shr('shr', simd_ext, from_typ),
+        'set1': lambda: set1(simd_ext, from_typ),
+        'iota': lambda: iota0(simd_ext, from_typ),
+        'eq': lambda: eq2(simd_ext, from_typ),
+        'ne': lambda: neq2(simd_ext, from_typ),
+        'gt': lambda: gt2(simd_ext, from_typ),
+        'lt': lambda: lt2(simd_ext, from_typ),
+        'ge': lambda: geq2(simd_ext, from_typ),
+        'le': lambda: leq2(simd_ext, from_typ),
+        'if_else1': lambda: if_else1(simd_ext, from_typ),
+        'min': lambda: minmax('min', simd_ext, from_typ),
+        'max': lambda: minmax('max', simd_ext, from_typ),
+        'loadla': lambda: loadl(simd_ext, from_typ, True),
+        'loadlu': lambda: loadl(simd_ext, from_typ, False),
+        'storela': lambda: storel(simd_ext, from_typ, True),
+        'storelu': lambda: storel(simd_ext, from_typ, False),
+        'abs': lambda: abs1(simd_ext, from_typ),
+        'fma': lambda: fma_fms('fma', simd_ext, from_typ),
+        'fnma': lambda: fma_fms('fnma', simd_ext, from_typ),
+        'fms': lambda: fma_fms('fms', simd_ext, from_typ),
+        'fnms': lambda: fma_fms('fnms', simd_ext, from_typ),
+        'ceil': lambda: round1('ceil', simd_ext, from_typ),
+        'floor': lambda: round1('floor', simd_ext, from_typ),
+        'trunc': lambda: trunc1(simd_ext, from_typ),
+        'round_to_even': lambda: round_to_even1(simd_ext, from_typ),
+        'all': lambda: all_any('all', simd_ext, from_typ),
+        'any': lambda: all_any('any', simd_ext, from_typ),
+        'reinterpret': lambda: reinterpret1(simd_ext, from_typ, to_typ),
+        'reinterpretl': lambda: reinterpretl1(simd_ext, from_typ, to_typ),
+        'cvt': lambda: convert1(simd_ext, from_typ, to_typ),
+        'rec11': lambda: rec11_rsqrt11('rcp', simd_ext, from_typ),
+        'rec8': lambda: rec11_rsqrt11('rcp', simd_ext, from_typ),
+        'rsqrt11': lambda: rec11_rsqrt11('rsqrt', simd_ext, from_typ),
+        'rsqrt8': lambda: rec11_rsqrt11('rsqrt', simd_ext, from_typ),
+        'rec': lambda: rec1(simd_ext, from_typ),
+        'neg': lambda: neg1(simd_ext, from_typ),
+        'nbtrue': lambda: nbtrue1(simd_ext, from_typ),
+        'reverse': lambda: reverse1(simd_ext, from_typ),
+        'addv': lambda: addv(simd_ext, from_typ),
+        'upcvt': lambda: upcvt1(simd_ext, from_typ, to_typ),
+        'downcvt': lambda: downcvt1(simd_ext, from_typ, to_typ),
+        'to_mask': lambda: to_mask1(simd_ext, from_typ),
+        'to_logical': lambda: to_logical1(simd_ext, from_typ),
+        'ziplo': lambda: zip_half('ziplo', simd_ext, from_typ),
+        'ziphi': lambda: zip_half('ziphi', simd_ext, from_typ),
+        'unziplo': lambda: unzip_half('unziplo', simd_ext, from_typ),
+        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -3320,5 +3320,4 @@ def get_impl(func, simd_ext, from_typ, to_typ):
     if not func in impls:
         return common.NOT_IMPLEMENTED
     else:
-        return impls[func]
-
+        return impls[func]()

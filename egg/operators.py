@@ -445,6 +445,7 @@ class Iota(Operator):
     categories = [DocMisc]
     desc = 'Set each element to its lane index, ' + \
            'i.e. sequentially increasing starting from zero.'
+    desc = 'Set all elements in the vector to the given value.'
 
 class Loadu(Operator):
     full_name = 'loadu'
@@ -621,6 +622,7 @@ class Storeu_masked(Operator):
     desc = 'Store SIMD vector into unaligned memory. ' + \
            'Store only those elements where the mask is true,' + \
            ' do not write to the others.'
+           'stored as 1 and False as 0.'
 
 class Orb(Operator):
     full_name = 'bitwise or'
