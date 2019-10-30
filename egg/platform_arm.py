@@ -772,9 +772,17 @@ def shl_shr(op, simd_ext, typ):
                              (i{typnbits})(-{in1})));'''.format(**fmtspec)
     else:
         armop = 'lsl' if op == 'shl' else 'lsr'
-        return '''return sv{armop}_{suf}_z({svtrue}, {in0},
-                           svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
-                           format(armop=armop, **fmtspec)
+        if op == 'shr' and typ in common.itypes:
+            return \
+            '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_z({svtrue},
+                          svreinterpret_{suf2}_{suf}({in0}),
+                          svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
+                          format(suf2=common.bitfield_type[typ], armop=armop,
+                                 **fmtspec)
+        else:
+            return '''return sv{armop}_{suf}_z({svtrue}, {in0},
+                               svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
+                               format(armop=armop, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Set1
@@ -1728,10 +1736,9 @@ def to_mask1(simd_ext, typ):
         else:
             utyp = 'u{}'.format(fmtspec['typnbits'])
             return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
-                               svreinterpret_{utyp}_{suf}({in0}),
-                                 svdup_n_{utyp}(({utyp})-1),
-                                   svdup_n_{suf}(({typ})0)));'''. \
-                                   format(utyp=utyp, **fmtspec)
+                               {in0}, svdup_n_{utyp}(({utyp})-1),
+                               svdup_n_{utyp}(({utyp})0)));'''. \
+                               format(utyp=utyp, **fmtspec)
     else:
         return normal
 
