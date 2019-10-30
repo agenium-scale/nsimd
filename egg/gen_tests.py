@@ -877,6 +877,104 @@ def gen_load_store(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
+# Tests for masked load/store operations
+
+def gen_load_store_masked(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+    convert_to = '({})'.format(typ) if typ != 'f16' else 'nsimd_f32_to_f16'
+    convert_from = '' if typ != 'f16' else 'nsimd_f16_to_f32'
+    if lang == 'c_base':
+        vout_comp = '''vecl({typ}) mask = vloadla(vmask, {typ});
+                       vec({typ}) in = vloada(vin, {typ});
+                       v{op_name}(vout, in, mask, {typ});'''.\
+                    format(typ=typ, op_name=op.name)
+    if lang == 'cxx_base':
+        vout_comp = '''vecl({typ}) mask = nsimd::loadla(vmask, {typ}());
+                       vec({typ}) in = nsimd::loada(vin, {typ}());
+                       nsimd::{op_name}(vout, in, mask, {typ}());'''.\
+                    format(typ=typ, op_name=op.name)
+    if lang == 'cxx_adv':
+        vout_comp = '''nsimd::packl<{typ}> mask =
+                           nsimd::loadla<nsimd::packl<{typ}> >(vmask);
+                       nsimd::pack<{typ}> in =
+                           nsimd::loada<nsimd::pack<{typ}> >(vin);
+                       nsimd::{op_name}(vout, in, mask);'''.\
+                    format(typ=typ, op_name=op.name)
+    common.write_utf8(filename, opts,
+        '''{includes}
+
+           #define NMASKS 1024
+
+           #define STATUS "test of {op_name} over {typ}"
+
+           #define CHECK(a) {{ \\
+             errno = 0; \\
+             if (!(a)) {{ \\
+               fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                       __LINE__, strerror(errno)); \\
+               fflush(stderr); \\
+               exit(EXIT_FAILURE); \\
+             }} \\
+           }}
+
+           int main(void) {{
+             int imask;
+             int i, vi;
+             {typ} *vmask, *vin, *vout, *vexp;
+             int len = vlen({typ});
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+             CHECK(vmask = ({typ}*)nsimd_aligned_alloc(len * {sizeof}));
+             CHECK(vin = ({typ}*)nsimd_aligned_alloc(len * {sizeof}));
+             CHECK(vout = ({typ}*)nsimd_aligned_alloc(len * {sizeof}));
+             CHECK(vexp = ({typ}*)nsimd_aligned_alloc(len * {sizeof}));
+
+             /* Test different mask combinations */
+             for (imask = 0; imask < NMASKS; ++imask) {{
+
+               /* Set up the mask */
+               if ((1 << len) <= NMASKS) {{
+                 /* test all masks */
+                 for (i = 0; i < len; ++i) {{
+                   vmask[i] = {convert_to}(imask & (1 << i));
+                 }}
+               }} else {{
+                 /* test some masks */
+                 for (i = 0; i < len; ++i) {{
+                   vmask[i] = {convert_to}(rand() >= RAND_MAX / 2);
+                 }}
+               }}
+
+               /* Fill with random data */
+               for (i = 0; i < len; i++) {{
+                 vin[i] = {convert_to}(rand() / (RAND_MAX / 100));
+                 vout[i] = {convert_to}(rand() / (RAND_MAX / 100));
+                 vexp[i] = {convert_from}(vmask[i]) != 0 ? vin[i] : vout[i];
+               }}
+
+               /* Calculate result */
+               {{
+                 {vout_comp}
+               }}  
+
+               /* Check result */
+               if (memcmp(vout, vexp, len * {sizeof})) {{
+                 fprintf(stdout, STATUS "... FAIL\\n");
+                 fflush(stdout);
+                 exit(EXIT_FAILURE);
+               }}
+
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             return EXIT_SUCCESS;
+           }}'''.format(includes=get_includes(lang), vout_comp=vout_comp,
+                        op_name=op.name, typ=typ, sizeof=common.sizeof(typ),
+                        convert_to=convert_to, convert_from=convert_from))
+
+# -----------------------------------------------------------------------------
 # Tests for nbtrue
 
 def gen_nbtrue(opts, op, typ, lang):
@@ -1353,7 +1451,6 @@ def doit(opts):
         if opts.match and not opts.match.match(op_name):
             continue
         if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
-                        'storeu_masked',
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
                         'store4a', 'store4u', 'downcvt', 'to_logical']:
@@ -1388,6 +1485,10 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'c_base')
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
+            elif operator.name in ['storea_masked', 'storeu_masked']:
+                gen_load_store_masked(opts, operator, typ, 'c_base')
+                gen_load_store_masked(opts, operator, typ, 'cxx_base')
+                gen_load_store_masked(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'reverse':
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');

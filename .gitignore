@@ -1,5 +1,5 @@
 ## Build system
-build
+build*
 
 ## Auto-generated
 *.o

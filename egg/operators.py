@@ -604,13 +604,23 @@ class Storela(Operator):
     desc = 'Store SIMD vector of booleans into aligned memory. True is ' + \
            'stored as 1 and False as 0.'
 
+class Storea_masked(Operator):
+    full_name = 'storea_masked'
+    signature = '_ storea_masked * v l'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Store SIMD vector into aligned memory. ' + \
+           'Store only those elements where the mask is true, ' + \
+           'do not write to the others.'
+
 class Storeu_masked(Operator):
     full_name = 'storeu_masked'
     signature = '_ storeu_masked * v l'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into unaligned memory. ' + \
-           'Store only the elements where the mask is true, ignore the others.'
+           'Store only those elements where the mask is true,' + \
+           ' do not write to the others.'
 
 class Orb(Operator):
     full_name = 'bitwise or'

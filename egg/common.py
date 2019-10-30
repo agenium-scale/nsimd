@@ -104,6 +104,26 @@ def clang_format(opts, filename):
         fout.write('\n')
 
 # -----------------------------------------------------------------------------
+# write with UTF8 encoding and run clang-format
+
+def write_utf8(filename, opts, content):
+    tmp_filename = filename + '.tmp'
+    # TODO: use clang-format as pipeline instead of writing and then
+    # reading the file
+    with open_utf8(tmp_filename) as fout:
+        fout.write(content)
+    clang_format(opts, tmp_filename)
+    newfile = open(tmp_filename).read()
+    try:
+        oldfile = open(filename).read()
+    except:
+        oldfile = None
+    if oldfile != newfile:
+        os.replace(tmp_filename, filename)
+    else:
+        os.unlink(tmp_filename)
+
+# -----------------------------------------------------------------------------
 # NOT implemented response
 
 NOT_IMPLEMENTED = 'abort();'

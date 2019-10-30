@@ -509,6 +509,21 @@ def storel(typ):
 
 # -----------------------------------------------------------------------------
 
+def store_masked(typ):
+    if typ == 'f16':
+        content = repeat_stmt(
+            '''if ({in2}.v{{i}}) {{{{
+                 {in0}[{{i}}] = nsimd_f32_to_f16({in1}.v{{i}});
+               }}}}'''.format(**fmtspec), typ)
+    else:
+        content = repeat_stmt(
+            '''if ({in2}.v{{i}}) {{{{
+                 {in0}[{{i}}] = {in1}.v{{i}};
+               }}}}'''.format(**fmtspec), typ)
+    return content
+
+# -----------------------------------------------------------------------------
+
 def if_else1(typ):
     return func_body('''ret.v{{i}} = {in0}.v{{i}} != (u32)0
                                    ? {in1}.v{{i}} : {in2}.v{{i}};'''. \
@@ -800,6 +815,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'store2u': store_deg234(from_typ, 2),
         'store3u': store_deg234(from_typ, 3),
         'store4u': store_deg234(from_typ, 4),
+        'storea_masked': store_masked(from_typ),
+        'storeu_masked': store_masked(from_typ),
         'loadla': loadl(from_typ),
         'loadlu': loadl(from_typ),
         'storela': storel(from_typ),
