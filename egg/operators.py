@@ -622,7 +622,6 @@ class Storeu_masked(Operator):
     desc = 'Store SIMD vector into unaligned memory. ' + \
            'Store only those elements where the mask is true,' + \
            ' do not write to the others.'
-           'stored as 1 and False as 0.'
 
 class Orb(Operator):
     full_name = 'bitwise or'
