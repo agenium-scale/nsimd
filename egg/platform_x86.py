@@ -732,8 +732,8 @@ def store_masked(simd_ext, typ, aligned):
                       _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
                   f16 buf0[16], buf1[16];
                   int i;
-                  _mm256_store_si256((__m256i*)buf0, val0);
-                  _mm256_store_si256((__m256i*)buf1, val1);
+                  _mm256_storeu_si256((__m256i*)buf0, val0);
+                  _mm256_storeu_si256((__m256i*)buf1, val1);
                   for (i=0; i<16; ++i) {{
                     if ({in2}.v0 & (1U << i)) {{
                       {in0}[i] = buf0[i];
@@ -757,8 +757,8 @@ def store_masked(simd_ext, typ, aligned):
                   unsigned mask1 = {pre}movemask_ps({in2}.v1);
                   f32 buf0[{nelts2}], buf1[{nelts2}];
                   int i;
-                  {pre}store_ps(buf0, {in1}.v0);
-                  {pre}store_ps(buf1, {in1}.v1);
+                  {pre}storeu_ps(buf0, {in1}.v0);
+                  {pre}storeu_ps(buf1, {in1}.v1);
                   for (i=0; i<{nelts2}; ++i) {{
                     if (mask0 & (1U << i)) {{
                       {in0}[i] = nsimd_f32_to_f16(buf0[i]);
@@ -772,7 +772,7 @@ def store_masked(simd_ext, typ, aligned):
     if simd_ext in sse + avx and typ[0] == 'f':
         r = ['''unsigned mask = {pre}movemask{suf}({in2});
                 {typ} buf[{nelts}];
-                {pre}store{suf}(buf, {in1});'''.format(nelts=nelts, **fmtspec)]
+                {pre}storeu{suf}(buf, {in1});'''.format(nelts=nelts, **fmtspec)]
         r += ['''if (mask & {mask}U) {{
                    {in0}[{i}] = buf[{i}];
                  }}'''.format(i=i, mask=1<<i, **fmtspec)
@@ -783,7 +783,7 @@ def store_masked(simd_ext, typ, aligned):
         return '''unsigned mask = {pre}movemask_epi8({in2});
                   {typ} buf[{nelts}];
                   int i;
-                  {pre}store_si{nbits}((__m{nbits}i*)buf, {in1});
+                  {pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
                   for (i=0; i<{nelts}; ++i) {{
                     if (mask & (1U << ({bitratio}*i+{bitratio}-1))) {{
                       {in0}[i] = buf[i];
@@ -791,9 +791,9 @@ def store_masked(simd_ext, typ, aligned):
                   }}'''.format(nelts=nelts, bitratio=bitratio, **fmtspec)
     if simd_ext in avx512:
         if typ[0] == 'f':
-            store_buf = '{pre}store{suf}(buf, {in1});'.format(**fmtspec)
+            store_buf = '{pre}storeu{suf}(buf, {in1});'.format(**fmtspec)
         else:
-            store_buf = '{pre}store_si{nbits}(buf, {in1});'.format(**fmtspec)
+            store_buf = '{pre}storeu_si{nbits}(buf, {in1});'.format(**fmtspec)
         return '''{typ} buf[{nelts}];
                   {store_buf}
                   int i;
@@ -805,13 +805,14 @@ def store_masked(simd_ext, typ, aligned):
     # integer mask is not available
     if simd_ext in sse + avx:
         if typ[0] == 'f':
-            store_buf = '''{pre}store{suf}(buf, {in1});
-                           {pre}store{suf}(mask, {in2});'''.\
+            store_buf = '''{pre}storeu{suf}(buf, {in1});
+                           {pre}storeu{suf}(mask, {in2});'''.\
                         format(**fmtspec)
         else:
-            store_buf = '''{pre}store_si{nbits}((__m{nbits}i*)buf, {in1});
-                           {pre}store_si{nbits}((__m{nbits}i*)mask, {in2});'''.\
-                        format(**fmtspec)
+            store_buf = \
+                '''{pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
+                   {pre}storeu_si{nbits}((__m{nbits}i*)mask, {in2});'''.\
+                format(**fmtspec)
         return '''{typ} buf[{nelts}], mask[{nelts}];
                   int i;
                   {store_buf}
