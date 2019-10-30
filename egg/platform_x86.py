@@ -720,17 +720,17 @@ def store_masked(simd_ext, typ, aligned):
     if simd_ext == 'avx512_skylake' and typ == 'f16':
         u = '' if aligned else 'u'
         return '''__m256i buf0 = _mm512_cvt_roundps_ph({in1}.v0,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
                   __m256i buf1 = _mm512_cvt_roundps_ph({in1}.v1,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
                   _mm256_mask_store{u}_epi32({in0}, {in2}.v0, buf0);
                   _mm256_mask_store{u}_epi32({in0}+16, {in2}.v1, buf1);'''.\
                format(u=u, **fmtspec)
     if simd_ext in avx512 and typ == 'f16':
         return '''__m256i val0 = _mm512_cvt_roundps_ph({in1}.v0,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
                   __m256i val1 = _mm512_cvt_roundps_ph({in1}.v1,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+                      _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC);
                   f16 buf0[16], buf1[16];
                   int i;
                   _mm256_store_si256((__m256i*)buf0, val0);
@@ -1217,15 +1217,13 @@ def iota0(simd_ext, typ):
                   ret.v0 = {pre}set_ps({elts0});
                   ret.v1 = {pre}set_ps({elts1});
                   return ret;'''.format(elts0=elts0, elts1=elts1, **fmtspec)
-    elif simd_ext in avx512 and typ in ['i16', 'u16']:
-        # GCC 8.2 does not have _mm512_set_epi16
+    elif simd_ext == 'avx512_knl' and typ in ['i16', 'u16']:
         return '''return _mm512_set_epi32(
                       0x001f001e, 0x001d001c, 0x001b001a, 0x00190018,
                       0x00170016, 0x00150014, 0x00130012, 0x00110010,
                       0x000f000e, 0x000d000c, 0x000b000a, 0x00090008,
                       0x00070006, 0x00050004, 0x00030002, 0x00010000);'''
-    elif simd_ext in avx512 and typ in ['i8', 'u8']:
-        # GCC 8.2 does not have _mm512_set_epi8
+    elif simd_ext == 'avx512_knl' and typ in ['i8', 'u8']:
         return '''return _mm512_set_epi32(
                       0x3f3e3d3c, 0x3b3a3938, 0x37363534, 0x33323130,
                       0x2f2e2d2c, 0x2b2a2928, 0x27262524, 0x23222120,
