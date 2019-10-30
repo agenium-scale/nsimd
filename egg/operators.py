@@ -437,7 +437,7 @@ class Len(Operator):
 class Set1(Operator):
     signature = 'v set1 s'
     categories = [DocMisc]
-    desc = 'Set all the element in the vector to the given value.'
+    desc = 'Set all elements in the vector to the given value.'
 
 class Loadu(Operator):
     full_name = 'loadu'
@@ -586,7 +586,7 @@ class Storelu(Operator):
     categories = [DocLoadStore]
     domain = Domain('R')
     desc = 'Store SIMD vector of booleans into unaligned memory. True is ' + \
-           'store as 1 and False as 0.'
+           'stored as 1 and False as 0.'
 
 class Storela(Operator):
     full_name = 'storela'
@@ -595,7 +595,7 @@ class Storela(Operator):
     categories = [DocLoadStore]
     domain = Domain('R')
     desc = 'Store SIMD vector of booleans into aligned memory. True is ' + \
-           'store as 1 and False as 0.'
+           'stored as 1 and False as 0.'
 
 class Orb(Operator):
     full_name = 'bitwise or'

@@ -104,7 +104,7 @@ def clang_format(opts, filename):
         fout.write('\n')
 
 # -----------------------------------------------------------------------------
-# NOT implemented response
+# Not implemented response
 
 NOT_IMPLEMENTED = 'abort();'
 

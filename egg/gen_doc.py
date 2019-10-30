@@ -217,7 +217,7 @@ The C++ advanced API is called advanced not because it requires C++11 or above
 but because it makes use of the particular implementation of ARM SVE by ARM
 in their compiler. We do not know if GCC (and possibly MSVC in the distant
 future) will use the same approach. Anyway the current implementation allows
-us to put SVE SIMD vectors inside some kinf of structs that behave like
+us to put SVE SIMD vectors inside some kind of structs that behave like
 standard structs. If you want to be sure to write portable code do *not* use
 this API. Two new types are available.
 
