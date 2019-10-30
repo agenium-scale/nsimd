@@ -543,6 +543,22 @@ def store1234(simd_ext, typ, deg):
                       range(1, deg + 1)]), **fmtspec)
 
 # -----------------------------------------------------------------------------
+## Masked store
+
+def store_masked(simd_ext, from_typ):
+    nbits = 128
+    nelts = nbits // int(from_typ[1:])
+    return '''{typ} buf[{nelts}], mask[{nelts}];
+              int i;
+              nsimd_{simd_ext}_storeu_{typ}(buf, {in1});
+              nsimd_{simd_ext}_storeu_{typ}(mask, {in2});
+              for (i=0; i<nelts; ++i) {{
+                if (mask[i]) {{
+                  {in0}[i] = buf[i];
+                }}
+              }}'''.format(nelts=nelts, **fmtspec)
+
+# -----------------------------------------------------------------------------
 ## Length
 
 def len1(simd_ext, typ):
@@ -738,6 +754,36 @@ def lnot1(simd_ext, typ):
         'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+## Code for constant false
+
+def false0(simd_ext, typ):
+    return 'return nsimd_{simd_ext}_set1_{typ}(0);'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## Code for constant true
+
+def true0(simd_ext, typ):
+    return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
+              return nsimd_{simd_ext}_notb_{typ}(f);'''.\
+           format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## Code for constant false
+
+def lfalse0(simd_ext, typ):
+    return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
+              return nsimd_{simd_ext}_to_logical_{typ}(f);'''.\
+           format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+## Code for constant true
+
+def ltrue0(simd_ext, typ):
+    return '''nsimd_{simd_ext}_lv{typ} f = nsimd_{simd_ext}_falsel_{typ}();
+              return nsimd_{simd_ext}_notl_{typ}(f);'''.\
+           format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 ## Square root
 
 def sqrt1(simd_ext, typ):
@@ -800,6 +846,17 @@ def set1(simd_ext, typ):
             return 'return vdupq_n_{suf}({in0});'.format(**fmtspec)
     else:
         return 'return svdup_n_{suf}({in0});'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# Iota
+
+def iota0(simd_ext, typ):
+    nbits = 128
+    nelts = nbits // int(typ[1:])
+    values = ', '.join([str(i) for i in range(0, nelts)])
+    return '''const {typ} buf[{nelts}] = {{{values}}};
+              return nsimd_{simd_ext}_loada_{typ}(buf);'''.\
+           format(nelts=nelts, values=values, **fmtspec)
 
 # -----------------------------------------------------------------------------
 ## Comparison operators: ==, <, <=, >, >=
@@ -1945,6 +2002,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'store2u': lambda: store1234(simd_ext, from_typ, 2),
         'store3u': lambda: store1234(simd_ext, from_typ, 3),
         'store4u': lambda: store1234(simd_ext, from_typ, 4),
+        'storea_masked': lambda: store_masked(simd_ext, from_typ),
+        'storeu_masked': lambda: store_masked(simd_ext, from_typ),
         'andb': lambda: binop2("andb", simd_ext, from_typ),
         'xorb': lambda: binop2("xorb", simd_ext, from_typ),
         'orb': lambda: binop2("orb", simd_ext, from_typ),
@@ -1955,6 +2014,10 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'notl': lambda: lnot1(simd_ext, from_typ),
         'andnotb': lambda: binop2("andnotb", simd_ext, from_typ),
         'andnotl': lambda: lop2("andnotl", simd_ext, from_typ),
+        'trueb': lambda: true0(simd_ext, from_typ),
+        'truel': lambda: ltrue0(simd_ext, from_typ),
+        'falseb': lambda: false0(simd_ext, from_typ),
+        'falsel': lambda: lfalse0(simd_ext, from_typ),
         'add': lambda: addsub("add", simd_ext, from_typ),
         'sub': lambda: addsub("sub", simd_ext, from_typ),
         'div': lambda: div2(simd_ext, from_typ),
@@ -1964,6 +2027,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'shl': lambda: shl_shr("shl", simd_ext, from_typ),
         'shr': lambda: shl_shr("shr", simd_ext, from_typ),
         'set1': lambda: set1(simd_ext, from_typ),
+        'iota': lambda: iota0(simd_ext, from_typ),
         'eq': lambda: cmp2("eq", simd_ext, from_typ),
         'lt': lambda: cmp2("lt", simd_ext, from_typ),
         'le': lambda: cmp2("le", simd_ext, from_typ),
