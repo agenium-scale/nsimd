@@ -526,12 +526,13 @@ def gen_html(opts):
 
     # run md2html on all markdown files
     for filename in md_files:
+        print('DEBUG: {}'.format(filename))
         i = filename.rfind('markdown')
         if i == -1:
             continue
         output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
-        #print('DEBUG: {} -> {}'.format(filename, output))
-        os.system('{} {} {}'.format(full_path_md2html, filename, output))
+        common.mkdir_p(os.path.dirname(output))
+        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, output))
 
 # -----------------------------------------------------------------------------
 
