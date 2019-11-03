@@ -67,7 +67,7 @@ def open_utf8(filename):
     if ext.lower() in ['c', 'h', 'cpp', 'hpp', 'cc', 'cxx', 'hxx', 'hpp']:
         begin_comment = '/*'
         end_comment = '*/'
-    else if ext.lower() in ['md', 'htm', 'html']:
+    elif ext.lower() in ['md', 'htm', 'html']:
         begin_comment = '<!--'
         end_comment = '-->'
     else:
