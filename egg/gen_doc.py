@@ -22,6 +22,7 @@
 # SOFTWARE.
 
 import os
+import platform
 import io
 import sys
 import subprocess
@@ -490,7 +491,43 @@ def gen_doc(opts):
 # -----------------------------------------------------------------------------
 
 def gen_html(opts):
-    # First, search the ns2 library at the same level as nsimd
+    print('-- Generating HTML documentation')
+
+    # check if md2html exists
+    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+    full_path_md2html = os.path.join(doc_dir, md2html)
+    if not os.path.isfile(full_path_md2html):
+        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
+        if platform.system() == 'Windows':
+            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+        else:
+            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
+        print(msg)
+        return
+
+    # get all markdown files
+    md_dir = os.path.join(doc_dir, 'markdown')
+    html_dir = os.path.join(doc_dir, 'html')
+    common.mkdir_p(html_dir)
+    dirs = [md_dir]
+    md_files = []
+    while len(dirs) > 0:
+        entries = os.listdir(dirs.pop())
+        for entry in entries:
+            full_path_entry = os.path.join(md_dir, entry)
+            if os.path.isdir(full_path_entry):
+                dirs.append(full_path_entry)
+            elif entry.endswith('.md'):
+                md_files.append(full_path_entry)
+
+    # run md2html on all markdown files
+    for filename in md_files:
+        i = filename.rfind('markdown')
+        if i == -1:
+            continue
+        output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
+        os.system('{} {} {}'.format(full_path_md2html, filename, output))
 
 # -----------------------------------------------------------------------------
 
@@ -498,3 +535,4 @@ def doit(opts):
     #gen_readme(opts)
     #gen_doc_json(opts)
     gen_doc(opts)
+    gen_html(opts)

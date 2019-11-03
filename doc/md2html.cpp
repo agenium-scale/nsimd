@@ -22,8 +22,12 @@ SOFTWARE.
 
 */
 
-#include <stdexcept>
 #include <ns2.hpp>
+
+#include <stdexcept>
+#include <utility>
+#include <string>
+#include <vector>
 
 // ----------------------------------------------------------------------------
 
