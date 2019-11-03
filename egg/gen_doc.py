@@ -513,11 +513,14 @@ def gen_html(opts):
     dirs = [md_dir]
     md_files = []
     while len(dirs) > 0:
-        entries = os.listdir(dirs.pop())
+        curr_dir = dirs.pop()
+        entries = os.listdir(curr_dir)
         for entry in entries:
-            full_path_entry = os.path.join(md_dir, entry)
-            if os.path.isdir(full_path_entry):
-                dirs.append(full_path_entry)
+            full_path_entry = os.path.join(curr_dir, entry)
+            if full_path_entry == '..' or full_path_entry == '.':
+                continue
+            elif os.path.isdir(full_path_entry):
+                dirs.append(os.path.join(full_path_entry))
             elif entry.endswith('.md'):
                 md_files.append(full_path_entry)
 
@@ -527,6 +530,7 @@ def gen_html(opts):
         if i == -1:
             continue
         output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
+        #print('DEBUG: {} -> {}'.format(filename, output))
         os.system('{} {} {}'.format(full_path_md2html, filename, output))
 
 # -----------------------------------------------------------------------------
