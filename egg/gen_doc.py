@@ -402,7 +402,7 @@ def gen_doc_json(opts):
 # -----------------------------------------------------------------------------
 
 def gen_doc(opts):
-    sys.stdout.write('-- Generating doc for each functions\n')
+    sys.stdout.write('-- Generating doc for each function\n')
 
     # Build tree for api.md
     api = dict()
@@ -422,7 +422,7 @@ def gen_doc(opts):
         return ret
 
     # api.md
-    filename = os.path.join(opts.script_dir, '..','doc', 'api.md')
+    filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
     if common.can_create_filename(opts, filename):
         with common.open_utf8(filename) as fout:
             fout.write('# API\n')
@@ -443,7 +443,7 @@ def gen_doc(opts):
         return '\n'.join(sigs)
 
     # Operators (one file per operator)
-    dirname = os.path.join(opts.script_dir, '..','doc', 'api')
+    dirname = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api')
     common.mkdir_p(dirname)
     for op_name, operator in operators.items():
         # Skip non-matching doc
@@ -475,7 +475,7 @@ def gen_doc(opts):
                 fout.write('```c\n')
                 for typ in operator.types:
                     fout.write(operator.get_signature(typ, 'c_base', simd_ext))
-                    fout.write('\n')
+                    fout.write(';\n')
                 fout.write('```')
             fout.write('\n\n## C++ base API (architecture specifics)')
             for simd_ext in opts.simd:
@@ -484,8 +484,13 @@ def gen_doc(opts):
                 for typ in operator.types:
                     fout.write(operator.get_signature(typ, 'cxx_base',
                                                       simd_ext))
-                    fout.write('\n')
+                    fout.write(';\n')
                 fout.write('```')
+
+# -----------------------------------------------------------------------------
+
+def gen_html(opts):
+    # First, search the ns2 library at the same level as nsimd
 
 # -----------------------------------------------------------------------------
 
