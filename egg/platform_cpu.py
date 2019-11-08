@@ -197,9 +197,11 @@ def not1(typ):
 
 def minmax2(minmax, typ):
     op = '<' if minmax == 'min' else '>'
-    return func_body('''ret.v{{i}} = {in0}.v{{i}} {op} {in1}.v{{i}} ?
-                                     {in0}.v{{i}} : {in1}.v{{i}};'''. \
-                                     format(op=op, **fmtspec), typ)
+    typ2 = 'f32' if typ == 'f16' else typ
+    return func_body(
+           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} {op} {in1}.v{{i}} ?
+                                    {in0}.v{{i}} : {in1}.v{{i}});'''. \
+                                    format(typ2=typ2, op=op, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -347,9 +349,9 @@ def cmp2(op, typ):
     return '''nsimd_cpu_vl{typ} ret;
               {content}
               return ret;'''.format(content=repeat_stmt(
-              '''ret.v{{i}} = ({in0}.v{{i}} {op} {in1}.v{{i}}
-                            ? (u32)-1 : (u32)0);'''. \
-                            format(op=op, **fmtspec), typ), **fmtspec)
+              '''ret.v{{i}} = (u32)({in0}.v{{i}} {op} {in1}.v{{i}}
+                                    ? -1 : 0);'''. \
+                                    format(op=op, **fmtspec), typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -418,14 +420,14 @@ def store_deg234(typ, deg):
 def loadl(typ):
     if typ == 'f16':
         content = repeat_stmt(
-                  '''ret.v{{i}} = nsimd_u16_to_f32(
+                  '''ret.v{{i}} = (u32)nsimd_u16_to_f32(
                                     ((u16 *){in0})[{{i}}]) == 0.0f
-                                ? (u32)0 : (u32)-1;'''.format(**fmtspec), typ)
+                                ? 0 : -1;'''.format(**fmtspec), typ)
     else:
         content = repeat_stmt(
-                  '''ret.v{{i}} = {in0}[{{i}}] == ({typ})0
-                                ? (u32)0 : (u32)-1;'''. \
-                                format(**fmtspec), typ)
+                  '''ret.v{{i}} = (u32)({in0}[{{i}}] == ({typ})0
+                                        ? 0 : -1);'''. \
+                                        format(**fmtspec), typ)
     return '''nsimd_cpu_vl{typ} ret;
               {content}
               return ret;'''.format(content=content, **fmtspec)
@@ -447,22 +449,25 @@ def store(typ):
 def storel(typ):
     if typ == 'f16':
         content = repeat_stmt(
-                  '''((u16*){in0})[{{i}}] = {in1}.v{{i}} == (u32)0
-                                          ? nsimd_f32_to_u16(0.0f)
-                                          : nsimd_f32_to_u16(1.0f);'''. \
-                                          format(**fmtspec), typ)
+                  '''((u16*){in0})[{{i}}] = (u16)({in1}.v{{i}} == (u32)0
+                                            ? nsimd_f32_to_u16(0.0f)
+                                            : nsimd_f32_to_u16(1.0f));'''. \
+                                            format(**fmtspec), typ)
     else:
-        content = repeat_stmt('''{in0}[{{i}}] = {in1}.v{{i}} == (u32)0
-                                              ? ({typ})0 : ({typ})1;'''. \
-                                              format(**fmtspec), typ)
+        content = repeat_stmt(
+                  '''{in0}[{{i}}] = ({typ})({in1}.v{{i}} == (u32)0
+                                  ? ({typ})0 : ({typ})1);'''. \
+                                  format(**fmtspec), typ)
     return content
 
 # -----------------------------------------------------------------------------
 
 def if_else1(typ):
-    return func_body('''ret.v{{i}} = {in0}.v{{i}} != (u32)0
-                                   ? {in1}.v{{i}} : {in2}.v{{i}};'''. \
-                                   format(**fmtspec), typ)
+    typ2 = 'f32' if typ == 'f16' else typ
+    return func_body(
+           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} != (u32)0
+                                    ? {in1}.v{{i}} : {in2}.v{{i}});'''. \
+                                    format(typ2=typ2, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -470,9 +475,10 @@ def abs1(typ):
     if typ in common.utypes:
         return func_body('ret.v{{i}} = {in0}.v{{i}};'.format(**fmtspec), typ)
     typ2 = 'f32' if typ == 'f16' else typ
-    return func_body('''ret.v{{i}} = ({typ2})({in0}.v{{i}} < ({typ2})0
-                                   ? -{in0}.v{{i}} : {in0}.v{{i}});'''. \
-                                   format(typ2=typ2, **fmtspec), typ)
+    return func_body(
+           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} < ({typ2})0
+                                    ? -{in0}.v{{i}} : {in0}.v{{i}});'''. \
+                                    format(typ2=typ2, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -645,7 +651,7 @@ def to_logical1(typ):
 
 def to_mask1(typ):
     logical_to_unsigned = \
-        'ret.v{{i}} = ({in0}.v{{i}} ? ({utyp})-1 : ({utyp})0);'. \
+        'ret.v{{i}} = ({utyp})({in0}.v{{i}} ? -1 : 0);'. \
         format(**fmtspec)
     if typ in common.utypes:
         return func_body(logical_to_unsigned, typ)
