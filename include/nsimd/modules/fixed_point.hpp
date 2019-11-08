@@ -225,6 +225,20 @@ NSIMD_INLINE pack_uc<T> operator/(const pack_uc<T> &a0, const pack_uc<T> &a1) {
   return div( a0 , a1 );
 }
 
+template <typename T>
+NSIMD_INLINE pack_uc<T> min(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  pack_uc<T> res;
+  res.val = simd_min_uc<T::lf, T::rt>(a0.val, a1.val);
+  return res;
+}
+
+template <typename T>
+NSIMD_INLINE pack_uc<T> max(const pack_uc<T> &a0, const pack_uc<T> &a1) {
+  pack_uc<T> res;
+  res.val = simd_max_uc<T::lf, T::rt>(a0.val, a1.val);
+  return res;
+}
+
 // -----------------------------------------------------------------------------
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------

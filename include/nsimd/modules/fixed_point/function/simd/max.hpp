@@ -27,6 +27,17 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
+
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_uc<_lf, _rt> simd_max_uc(const fpsimd_uc<_lf, _rt> &a,
+                                             const fpsimd_uc<_lf, _rt> &b) {
+  typedef typename fp_t<_lf, _rt>::value_up up_t;
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
+
+  return fpsimd_uc<_lf, _rt>(nsimd::max(a._v1, b._v1, up_t()),
+                             nsimd::max(a._v2, b._v2, up_t()));
+}
+
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_max(const fpsimd_t<_lf, _rt> &a0,
                                          const fpsimd_t<_lf, _rt> &a1) {
