@@ -1343,17 +1343,17 @@ def storel(simd_ext, typ, aligned):
                       int i;
                       u16 one = 0x3C00; /* FP16 IEEE754 representation of 1 */
                       for (i = 0; i < 16; i++) {{
-                        ((u16*){in0})[i] = (({in1}.v0 >> i) & 1) ? one
-                                                                 : (u16)0;
+                        ((u16*){in0})[i] = (u16)((({in1}.v0 >> i) & 1) ? one
+                                                                       : 0);
                       }}
                       for (i = 0; i < 16; i++) {{
-                        ((u16*){in0})[i + 16] = (({in1}.v1 >> i) & 1) ? one
-                                                                      : (u16)0;
+                        ((u16*){in0})[i + 16] = (u16)((({in1}.v1 >> i) & 1)
+                                                      ? one : 0);
                       }}'''.format(**fmtspec)
         return '''/* This can surely be improved but it is not our priority. */
                   int i;
                   for (i = 0; i < {le}; i++) {{
-                    {in0}[i] = (({in1} >> i) & 1) ? ({typ})1 : ({typ})0;
+                    {in0}[i] = ({typ})((({in1} >> i) & 1) ? 1 : 0);
                   }}'''.format(**fmtspec)
     return \
     '''/* This can surely be improved but it is not our priority. */
