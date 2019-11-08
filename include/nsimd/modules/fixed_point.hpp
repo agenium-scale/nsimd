@@ -152,6 +152,14 @@ NSIMD_INLINE pack<T> fma(const pack<T> &a0, const pack<T> &a1,
 }
 
 template <typename T>
+NSIMD_INLINE pack_uc<T> fma(const pack_uc<T> &a0, const pack_uc<T> &a1,
+                            const pack_uc<T> &a2) {
+  pack_uc<T> res;
+  res.val = simd_fma_uc<T::lf, T::rt>(a0.val, a1.val, a2.val);
+  return res;
+}
+
+template <typename T>
 NSIMD_INLINE pack<T> min(const pack<T> &a0, const pack<T> &a1) {
   pack<T> res;
   res.val = simd_min(a0.val, a1.val);

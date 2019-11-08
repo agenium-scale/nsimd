@@ -32,7 +32,15 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
+
 // FMA emulation for FP type
+template <uint8_t _lf, uint8_t _rt>
+NSIMD_INLINE fpsimd_uc<_lf,_rt> simd_fma_uc( const fpsimd_uc<_lf,_rt> &a0,
+                                             const fpsimd_uc<_lf,_rt> &a1,
+                                             const fpsimd_uc<_lf,_rt> &a2 ) {
+  return fpsimd_uc<_lf,_rt>( simd_add_uc(a2 , simd_mul_uc(a0, a1) ) );
+}
+
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_fma(const fpsimd_t<_lf, _rt> &a0,
                                          const fpsimd_t<_lf, _rt> &a1,
