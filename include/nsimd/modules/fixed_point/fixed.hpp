@@ -104,9 +104,11 @@ struct fp_types<
   typedef int8_t value_type;
   typedef int16_t value_up;
   typedef int8_t logical_type;
+  typedef int16_t logical_up;
   typedef vi8 simd_type;
   typedef vi16 simd_up;
   typedef vli8 simd_logical;
+  typedef vli16 simd_logical_up;
 };
 
 //  9-16 total bits = char
@@ -117,9 +119,11 @@ struct fp_types<
   typedef int16_t value_type;
   typedef int32_t value_up;
   typedef int16_t logical_type;
+  typedef int32_t logical_up;
   typedef vi16 simd_type;
   typedef vi32 simd_up;
   typedef vli16 simd_logical;
+  typedef vli32 simd_logical_up;
 };
 
 //  17-32 total bits = char
@@ -130,9 +134,11 @@ struct fp_types<
   typedef int32_t value_type;
   typedef int64_t value_up;
   typedef int32_t logical_type;
+  typedef int64_t logical_up;
   typedef vi32 simd_type;
   typedef vi64 simd_up;
   typedef vli32 simd_logical;
+  typedef vli64 simd_logical_up;
 };
 
 //------------------------------------------------------------------------------
@@ -152,10 +158,12 @@ template <uint8_t _lf, uint8_t _rt> struct fp_t {
   static const uint8_t rt = _rt;
   typedef typename fp_types<_lf, _rt>::value_type value_type;
   typedef typename fp_types<_lf, _rt>::logical_type logical_type;
+  typedef typename fp_types<_lf, _rt>::logical_up logical_up;
   typedef typename fp_types<_lf, _rt>::value_up value_up;
   typedef typename fp_types<_lf, _rt>::simd_type simd_type;
   typedef typename fp_types<_lf, _rt>::simd_up simd_up;
   typedef typename fp_types<_lf, _rt>::simd_logical simd_logical;
+  typedef typename fp_types<_lf, _rt>::simd_logical_up simd_logical_up;
   value_type _raw;
 
   fp_t() {}

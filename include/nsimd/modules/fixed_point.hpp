@@ -59,6 +59,13 @@ template <typename T> struct packl {
   fpsimdl_t<lf, rt> val;
 };
 
+template <typename T> struct packl_uc {
+  static const uint8_t lf = T::lf;
+  static const uint8_t rt = T::rt;
+  typedef typename fp_t<lf, rt>::logical_up value_type;
+  fpsimdl_uc<lf, rt> val;
+};
+
 template <typename T> size_t len(const T &) { return fpsimd_n(T()); }
 
 template <typename T> size_t len(const pack<T> &) {

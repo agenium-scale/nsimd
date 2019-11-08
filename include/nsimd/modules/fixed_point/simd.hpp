@@ -111,6 +111,36 @@ template <uint8_t _lf, uint8_t _rt> struct fpsimdl_t {
   }
 };
 
+template <uint8_t _lf, uint8_t _rt> struct fpsimdl_uc {
+  typedef typename fp_t<_lf, _rt>::logical_type base_type;
+  typedef typename fp_t<_lf, _rt>::simd_type value_type;
+  typedef typename fp_t<_lf, _rt>::simd_up value_up;
+  typedef typename fp_t<_lf, _rt>::simd_logical logic;
+  typedef typename fp_t<_lf, _rt>::simd_logical_up logic_up;
+  logic _v1;
+  logic _v2;
+
+  fpsimdl_uc() {}
+
+  fpsimdl_uc( const fpsimdl_t<_lf, _rt> &cp1
+            , const fpsimdl_t<_lf, _rt> &cp2 ) {
+    _v1 = cp1._raw;
+    _v2 = cp2._raw;
+  }
+
+  fpsimdl_uc( const logic_up &cp1
+            , const logic_up &cp2 ) {
+    _v1 = cp1;
+    _v2 = cp2;
+  }
+
+  fpsimdl_uc &operator=(const fpsimdl_t<_lf, _rt> &cp) {
+    _v1 = cp._v1;
+    _v2 = cp._v2;
+    return *this;
+  }
+};
+
 // Number of elements that fit into a SIMD register
 template <uint8_t _lf, uint8_t _rt> size_t fpsimd_n() {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
