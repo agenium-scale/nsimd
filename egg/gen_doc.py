@@ -526,7 +526,6 @@ def gen_html(opts):
 
     # run md2html on all markdown files
     for filename in md_files:
-        print('DEBUG: {}'.format(filename))
         i = filename.rfind('markdown')
         if i == -1:
             continue
