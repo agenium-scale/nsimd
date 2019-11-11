@@ -265,9 +265,9 @@ def get_content(op, typ, lang):
                  format(cast=cast)
 
     # For signed types, make some positive and negative inputs
-    if op.name not in ['sqrt', 'rsqrt11'] and typ in common.itypes:
+    if op.name not in ['sqrt', 'rsqrt11', 'rsqrt8'] and typ in common.itypes:
         rand = '(2 * (rand() % 2) - 1) * {}'.format(rand)
-    if op.name not in ['sqrt', 'rsqrt11'] and typ in common.ftypes:
+    if op.name not in ['sqrt', 'rsqrt11', 'rsqrt8'] and typ in common.ftypes:
         rand = '({})(2 * (rand() % 2) - 1) * {}'.format(cast, rand)
 
     # Depending on function parameters, generate specific input, ...
