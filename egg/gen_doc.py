@@ -408,10 +408,9 @@ def gen_doc(opts):
     # Build tree for api.md
     api = dict()
     for _, operator in operators.items():
-        print('DEBUG: considering {}'.format(operator.full_name))
         for c in operator.categories:
             if c not in api:
-                api[c] = []
+                api[c] = [operator]
             else:
                 api[c].append(operator)
 
@@ -429,12 +428,10 @@ def gen_doc(opts):
         with common.open_utf8(filename) as fout:
             fout.write('# API\n')
             for c, ops in api.items():
-                #print('DEBUG: considering {}'.format(c.title))
                 if len(ops) == 0:
                     continue
                 fout.write('\n## {}\n\n'.format(c.title))
                 for op in ops:
-                    #print('DEBUG:   considering {}'.format(op.full_name))
                     fout.write('- [{}](api/{}.md)\n'.format(op.full_name,
                                to_filename(op.full_name)))
 
