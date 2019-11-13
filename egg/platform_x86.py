@@ -2266,11 +2266,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
     # compute upper half
     if simd_ext in sse:
         if from_typ in common.iutypes:
-            upper_half = \
-            '''{pre}castpd_si{nbits}({pre}shuffle_pd(
-                   {pre}castsi{nbits}_pd({in0}),
-                   {pre}castsi{nbits}_pd({in0}), 1))'''. \
-                   format(**fmtspec)
+            upper_half = '_mm_shuffle_epi32({in0}, 14 /* 2 | 3 */)'. \
+                         format(**fmtspec)
         else:
             upper_half = '''{pre}castpd_ps({pre}shuffle_pd(
                                 {pre}castps_pd({in0}),
@@ -2351,7 +2348,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
     if (from_typ in common.ftypes and to_typ in common.iutypes) or \
        (from_typ in common.iutypes and to_typ in common.ftypes):
         return int_float
-    if simd_ext == 'sse2':
+    #if simd_ext == 'sse2':
+    if simd_ext in sse:
         if from_typ in common.itypes and to_typ in common.iutypes:
             return \
             '''nsimd_{simd_ext}_v{to_typ}x2 ret;
@@ -2367,8 +2365,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
                return ret;'''.format(**fmtspec)
         else:
             return with_intrinsic
-    elif simd_ext == 'sse42':
-        return with_intrinsic
+    #elif simd_ext == 'sse42':
+    #    return with_intrinsic
     elif simd_ext == 'avx':
         if from_typ == 'i32' and to_typ == 'f64':
             return with_intrinsic

@@ -420,9 +420,9 @@ def store_deg234(typ, deg):
 def loadl(typ):
     if typ == 'f16':
         content = repeat_stmt(
-                  '''ret.v{{i}} = (u32)nsimd_u16_to_f32(
-                                    ((u16 *){in0})[{{i}}]) == 0.0f
-                                ? 0 : -1;'''.format(**fmtspec), typ)
+                  '''ret.v{{i}} = (u32)(nsimd_u16_to_f32(((u16 *){in0})[{{i}}])
+                                      == 0.0f ? 0 : -1);'''. \
+                                      format(**fmtspec), typ)
     else:
         content = repeat_stmt(
                   '''ret.v{{i}} = (u32)({in0}[{{i}}] == ({typ})0
