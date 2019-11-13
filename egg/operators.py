@@ -200,7 +200,7 @@ class Operator(object, metaclass=MAddToOperators):
 
     # Defaults values (for tests)
     tests_mpfr = False
-    tests_ulps = None
+    tests_ulps = {}
 
     @property
     def returns(self):
@@ -700,11 +700,11 @@ class Sub(Operator):
 class Addv(Operator):
     full_name = 'horizontal sum'
     signature = 's addv v'
-    types = common.ftypes
     domain = Domain('R')
     categories = [DocMisc]
     desc = 'Returns the sum of all the elements contained in v'
     do_bench = False
+    types = common.ftypes
 
 class Mul(Operator):
     full_name = 'product'
@@ -855,21 +855,25 @@ class Fma(Operator):
     signature = 'v fma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Fnma(Operator):
     signature = 'v fnma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Fms(Operator):
     signature = 'v fms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Fnms(Operator):
     signature = 'v fnms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
 
 class Ceil(Operator):
     signature = 'v ceil v'
@@ -967,7 +971,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = 11
+    tests_ulps = {'f16':'11', 'f32':'11', 'f64':'11'}
 
 class Rec8(Operator):
     full_name = 'reciprocal with relative error at most 2^{-8}'
@@ -975,7 +979,7 @@ class Rec8(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = 8
+    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -994,7 +998,7 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = 11
+    tests_ulps = {'f16':'11', 'f32':'11', 'f64':'11'}
 
 class Rsqrt8(Operator):
     full_name = 'square root'
@@ -1002,7 +1006,7 @@ class Rsqrt8(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = 8
+    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
 
 class Ziplo(Operator):
     full_name = 'ziplo'
