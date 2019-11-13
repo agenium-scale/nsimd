@@ -524,14 +524,30 @@ def gen_html(opts):
             elif entry.endswith('.md'):
                 md_files.append(full_path_entry)
 
-    # run md2html on all markdown files
+    # get footer and header
+    header = ''
+    with io.open(os.path.join(doc_dir, 'header.html'), mode='r',
+                 encoding='utf-8') as fin:
+        header = fin.read()
+    footer = ''
+    with io.open(os.path.join(doc_dir, 'footer.html'), mode='r',
+                 encoding='utf-8') as fin:
+        footer = fin.read()
+
+    # run md2html on all markdown files and build final htmls
+    tmp_file = os.path.join(doc_dir, 'tmp.html')
     for filename in md_files:
         i = filename.rfind('markdown')
         if i == -1:
             continue
         output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
         common.mkdir_p(os.path.dirname(output))
-        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, output))
+        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
+        with common.open_utf8(output) as fout:
+            fout.write(header)
+            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                fout.write(fin.read())
+            fout.write(footer)
 
 # -----------------------------------------------------------------------------
 
