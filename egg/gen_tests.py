@@ -347,7 +347,7 @@ def get_content(op, typ, lang):
                      format(logical, typ)]
             vout_ref_comp = '\n'.join(code)
 
-            if op.name[-2:] == '11':
+            if op.name[-2:] == '11' or op.name[-1:] == '8':
                 vout_ref_comp += '''
                     /* Intel 11 bit precision intrinsics force denormalized output to 0. */
                     #ifdef NSIMD_X86
@@ -558,7 +558,7 @@ def gen_test(opts, op, typ, lang, ulps):
         relative_distance = relative_distance_c if lang == 'c_base' \
                             else relative_distance_cpp
         if op.tests_ulps and typ in common.ftypes:
-            comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
+            comp = 'return relative_distance((double){}, (double){}) > get_2th_power(-{nbits})'. \
                    format(left, right, nbits=op.tests_ulps[typ])
             extra_code += relative_distance
         elif op.src:

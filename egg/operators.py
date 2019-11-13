@@ -971,7 +971,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = {'f16':'11', 'f32':'11', 'f64':'11'}
+    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
 
 class Rec8(Operator):
     full_name = 'reciprocal with relative error at most 2^{-8}'
@@ -998,7 +998,7 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'11', 'f32':'11', 'f64':'11'}
+    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
 
 class Rsqrt8(Operator):
     full_name = 'square root'
