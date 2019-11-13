@@ -845,7 +845,7 @@ class Domain(object):
 
             product = ' × '
 
-        return ret
+        return '$' + ret + '$'
 
     @property
     def intervals(self):

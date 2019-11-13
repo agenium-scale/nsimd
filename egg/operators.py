@@ -356,7 +356,7 @@ class Operator(object, metaclass=MAddToOperators):
             args1 = ', '.join(args1)
             argsN = ', '.join(argsN)
 
-            # Compute return type
+#Compute return type
             ret1 = 'ToPackType' if not self.closed \
                    else common.get_one_type_generic_adv_cxx(self.params[0],
                                                             'T', '1')
@@ -401,7 +401,7 @@ class Operator(object, metaclass=MAddToOperators):
             raise Exception('Lang must be one of c_base, cxx_base, cxx_adv')
 
     def get_signature(self, typename, lang, simd_ext):
-        # Check that the type is available for this function
+# Check that the type is available for this function
         if typename not in self.types:
             raise Exception('Type {} not supported for function {}'. \
                             format(typename, self.name))
@@ -429,32 +429,30 @@ class SrcOperator(Operator):
 # List of functions/operators
 
 class Len(Operator):
+    full_name = 'vector length'
     signature = 'p len'
     domain = Domain('')
-    desc = 'Returns the length of the nsimd vector.'
     categories = [DocMisc]
 
 class Set1(Operator):
+    full_name = 'value broadcast'
     signature = 'v set1 s'
     categories = [DocMisc]
-    desc = 'Set all the element in the vector to the given value.'
+    desc = 'Returns a vector whose all elements are set to the given value.'
 
 class Loadu(Operator):
-    full_name = 'loadu'
     signature = 'v loadu c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from unaligned memory.'
 
 class Load2u(Operator):
-    full_name = 'load2u'
     signature = 'vx2 load2u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 2 members from unaligned memory.'
 
 class Load3u(Operator):
-    full_name = 'load3u'
     signature = 'vx3 load3u c*'
     load_store = True
     categories = [DocLoadStore]
@@ -616,7 +614,7 @@ class Andb(Operator):
     bench_auto_against_mipp = True
 
 class Andnotb(Operator):
-    full_name = 'bitwise and not'
+    full_name = 'bitwise andnot'
     signature = 'v andnotb v v'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
@@ -660,7 +658,7 @@ class Andl(Operator):
     bench_auto_against_std = True
 
 class Andnotl(Operator):
-    full_name = 'logical and not'
+    full_name = 'logical andnot'
     signature = 'l andnotl l l'
     domain = Domain('BxB')
     categories = [DocLogicalOperators]
@@ -707,7 +705,7 @@ class Addv(Operator):
     do_bench = False
 
 class Mul(Operator):
-    full_name = 'product'
+    full_name = 'multiplication'
     signature = 'v mul v v'
     cxx_operator = 'operator*'
     domain = Domain('RxR')
@@ -725,7 +723,7 @@ class Div(Operator):
     bench_auto_against_mipp = True
 
 class Neg(Operator):
-    full_name = 'negation'
+    full_name = 'opposite'
     signature = 'v neg v'
     cxx_operator = 'operator-'
     domain = Domain('R')
@@ -733,20 +731,20 @@ class Neg(Operator):
     bench_auto_against_std = True
 
 class Min(Operator):
-    full_name = 'min'
+    full_name = 'minimum'
     signature = 'v min v v'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
 
 class Max(Operator):
-    full_name = 'max'
+    full_name = 'maximum'
     signature = 'v max v v'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_mipp = True
 
 class Shr(Operator):
-    full_name = 'right shift'
+    full_name = 'right shift in zeros'
     signature = 'v shr v p'
     types = common.iutypes
     cxx_operator = 'operator>>'
@@ -770,77 +768,95 @@ class Shl(Operator):
         return 'mipp::lshift<{}>'.format(typ)
 
 class Eq(Operator):
+    full_name = 'compare for equality'
     signature = 'l eq v v'
     cxx_operator = 'operator=='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for equality.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpeq<{}>'.format(typ)
 
 class Ne(Operator):
+    full_name = 'compare for inequality'
     signature = 'l ne v v'
     cxx_operator = 'operator!='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for inequality.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpneq<{}>'.format(typ)
 
 class Gt(Operator):
+    full_name = 'compare for greater-than'
     signature = 'l gt v v'
     cxx_operator = 'operator>'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for greater-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpgt<{}>'.format(typ)
 
 class Ge(Operator):
+    full_name = 'compare for greater-or-equal-than'
     signature = 'l ge v v'
     cxx_operator = 'operator>='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for greater-or-equal-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpge<{}>'.format(typ)
 
 class Lt(Operator):
+    full_name = 'compare for lesser-than'
     signature = 'l lt v v'
     cxx_operator = 'operator<'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for lesser-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmplt<{}>'.format(typ)
 
 class Le(Operator):
+    full_name = 'compare for lesser-or-equal-than'
     signature = 'l le v v'
     cxx_operator = 'operator<='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for lesser-or-equal-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmple<{}>'.format(typ)
 
 class If_else1(Operator):
+    full_name = 'blend'
     signature = 'v if_else1 l v v'
     domain = Domain('BxRxR')
     categories = [DocMisc]
+    desc = 'Blend the inputs using the vector of logical as a first ' + \
+           'argument. Elements of the second input is taken when the ' + \
+           'corresponding elements from the vector of logicals is true, ' + \
+           'otherwise elements of the second input are taken.'
 
 class Abs(Operator):
+    full_name = 'absolute value'
     signature = 'v abs v'
     domain = Domain('R')
     categories = [DocBasicArithmetic]
@@ -852,26 +868,40 @@ class Abs(Operator):
         return common.sleef_name('fabs', simd, typ)
 
 class Fma(Operator):
+    full_name = 'fused multiply-add'
     signature = 'v fma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Multiply the first and second inputs and then adds the third ' + \
+           'input.'
 
 class Fnma(Operator):
+    full_name = 'fused negate-multiply-add'
     signature = 'v fnma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Multiply the first and second inputs, negate the intermediate ' + \
+           'result and then adds the third input.'
 
 class Fms(Operator):
+    full_name = 'fused multiply-substract'
     signature = 'v fms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Substracts the third input to multiplication the first and ' + \
+           'second inputs.'
 
 class Fnms(Operator):
+    full_name = 'fused negate-multiply-substract'
     signature = 'v fnms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Multiply the first and second inputs, negate the intermediate ' + \
+           'result and then substracts the third input to the ' + \
+           'intermediate result.'
 
 class Ceil(Operator):
+    full_name = 'rounding up to integer value'
     signature = 'v ceil v'
     domain = Domain('R')
     categories = [DocRounding]
@@ -879,6 +909,7 @@ class Ceil(Operator):
     bench_auto_against_std = True
 
 class Floor(Operator):
+    full_name = 'rounding down to integer value'
     signature = 'v floor v'
     domain = Domain('R')
     categories = [DocRounding]
@@ -886,6 +917,7 @@ class Floor(Operator):
     bench_auto_against_std = True
 
 class Trunc(Operator):
+    full_name = 'rounding towards zero to integer value'
     signature = 'v trunc v'
     domain = Domain('R')
     categories = [DocRounding]
@@ -893,64 +925,88 @@ class Trunc(Operator):
     bench_auto_against_std = True
 
 class Round_to_even(Operator):
+    full_name = 'rounding to nearest integer value, tie to even'
     signature = 'v round_to_even v'
     domain = Domain('R')
     categories = [DocRounding]
 
 class All(Operator):
+    full_name = 'check all elements'
     signature = 'p all l'
     domain = Domain('B')
     categories = [DocMisc]
+    desc = 'Return true if and only if all elements of the inputs are true.'
 
 class Any(Operator):
+    full_name = 'check for one true elements'
     signature = 'p any l'
     domain = Domain('B')
     categories = [DocMisc]
+    desc = 'Return true if and only if at least one element of the inputs ' + \
+           'is true.'
 
 class Nbtrue(Operator):
+    full_name = 'count true elements'
     signature = 'p nbtrue l'
     domain = Domain('B')
     categories = [DocMisc]
+    desc = 'Return the number of true elements in the input.'
 
 class Reinterpret(Operator):
+    full_name = 'reinterpret vector'
     signature = 'v reinterpret v'
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     domain = Domain('R')
     categories = [DocConversion]
     ## Disable bench
     do_bench = False
+    desc = 'Reinterpret input vector into a different vector type ' + \
+           'preserving all bits.'
 
 class Reinterpretl(Operator):
+    full_name = 'reinterpret vector of logicals'
     signature = 'l reinterpretl l'
     domain = Domain('B')
     categories = [DocConversion]
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     ## Disable bench
     do_bench = False
+    desc = 'Reinterpret input vector of logicals into a different vector ' + \
+           'type of logicals preserving all elements values. The output ' + \
+           'type must have same length as input type.'
 
 class Cvt(Operator):
+    full_name = 'convert vector'
     signature = 'v cvt v'
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     domain = Domain('R')
     categories = [DocConversion]
+    desc = 'Convert input vector into a different vector type. The output ' + \
+           'type must have same length as input type.'
     ## Disable bench
     do_bench = False
 
 class Upcvt(Operator):
+    full_name = 'convert vector to larger type'
     signature = 'vx2 upcvt v'
     output_to = common.OUTPUT_TO_UP_TYPES
     domain = Domain('R')
     types = ['i8', 'u8', 'i16', 'u16', 'f16', 'i32', 'u32', 'f32']
     categories = [DocConversion]
+    desc = 'Convert input vector into a different larger vector type. The ' + \
+           'output type must be twice as large as the input type.'
     ## Disable bench
     do_bench = False
 
 class Downcvt(Operator):
+    full_name = 'convert vector to narrow type'
     signature = 'v downcvt v v'
     output_to = common.OUTPUT_TO_DOWN_TYPES
     domain = Domain('R')
     types = ['i16', 'u16', 'f16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
     categories = [DocConversion]
+    desc = 'Convert input vector into a different narrow vector type. The ' + \
+           'output type must be twice as less as the input type.'
     ## Disable bench
     do_bench = False
 
@@ -962,7 +1018,7 @@ class Rec(Operator):
     categories = [DocBasicArithmetic]
 
 class Rec11(Operator):
-    full_name = 'reciprocal with relative error at most 2^{-11}'
+    full_name = 'reciprocal with relative error at most $2^{-11}$'
     signature = 'v rec11 v'
     types = common.ftypes
     categories = [DocBasicArithmetic]
@@ -981,44 +1037,44 @@ class Sqrt(Operator):
     tests_mpfr = True
 
 class Rsqrt11(Operator):
-    full_name = 'square root'
+    full_name = 'square root with relative error at most $2^{-11}$'
     signature = 'v rsqrt11 v'
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
     tests_ulps = True
 
-class Ziplo(Operator):
-    full_name = 'ziplo'
-    signature = 'v ziplo v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
-
-class Ziphi(Operator):
-    full_name = 'ziphi'
-    signature = 'v ziphi v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
-
-class Unziplo(Operator):
-    full_name = 'unziplo'
-    signature = 'v unziplo v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
-
-class Unziphi(Operator):
-    full_name = 'unziphi'
-    signature = 'v unziphi v v'
-    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-    domain = Domain('R')
-    categories = [DocMisc]
-    tests_ulps = True
+#class Ziplo(Operator):
+#    full_name = 'ziplo'
+#    signature = 'v ziplo v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
+#
+#class Ziphi(Operator):
+#    full_name = 'ziphi'
+#    signature = 'v ziphi v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
+#
+#class Unziplo(Operator):
+#    full_name = 'unziplo'
+#    signature = 'v unziplo v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
+#
+#class Unziphi(Operator):
+#    full_name = 'unziphi'
+#    signature = 'v unziphi v v'
+#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
+#    domain = Domain('R')
+#    categories = [DocMisc]
+#    tests_ulps = True
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was

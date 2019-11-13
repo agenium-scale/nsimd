@@ -432,8 +432,13 @@ def gen_doc(opts):
                     continue
                 fout.write('\n## {}\n\n'.format(c.title))
                 for op in ops:
-                    fout.write('- [{}](api/{}.md)\n'.format(op.full_name,
-                               to_filename(op.full_name)))
+                    Full_name = op.full_name[0].upper() + op.full_name[1:]
+                    if op.full_name == op.name:
+                        fout.write('- [{}](api_{}.md)\n'.format(
+                            Full_name, op.name, to_filename(op.name)))
+                    else:
+                        fout.write('- [{} ({})](api_{}.md)\n'.format(
+                            Full_name, op.name, to_filename(op.name)))
 
     # helper to get list of function signatures
     def to_string(var):
@@ -444,17 +449,18 @@ def gen_doc(opts):
         return '\n'.join(sigs)
 
     # Operators (one file per operator)
-    dirname = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api')
+    dirname = os.path.join(opts.script_dir, '..','doc', 'markdown')
     common.mkdir_p(dirname)
     for op_name, operator in operators.items():
         # Skip non-matching doc
         if opts.match and not opts.match.match(op_name):
             continue
-        filename = os.path.join(dirname, '{}.md'.format(to_filename(op_name)))
+        filename = os.path.join(dirname, 'api_{}.md'.format(to_filename(
+                       operator.name)))
         if not common.can_create_filename(opts, filename):
             continue
         with common.open_utf8(filename) as fout:
-            fout.write('# {}\n\n'.format(op_name))
+            fout.write('# {}\n\n'.format(operator.full_name))
             fout.write('## Description\n\n')
             fout.write(operator.desc)
             fout.write('\n\n## C base API (generic)\n\n')
