@@ -200,7 +200,7 @@ class Operator(object, metaclass=MAddToOperators):
 
     # Defaults values (for tests)
     tests_mpfr = False
-    tests_ulps = False
+    tests_ulps = None
 
     @property
     def returns(self):
@@ -583,7 +583,7 @@ class Storelu(Operator):
     categories = [DocLoadStore]
     domain = Domain('R')
     desc = 'Store SIMD vector of booleans into unaligned memory. True is ' + \
-           'store as 1 and False as 0.'
+           'stored as 1 and False as 0.'
 
 class Storela(Operator):
     full_name = 'store vector of logicals'
@@ -592,7 +592,7 @@ class Storela(Operator):
     categories = [DocLoadStore]
     domain = Domain('R')
     desc = 'Store SIMD vector of booleans into aligned memory. True is ' + \
-           'store as 1 and False as 0.'
+           'stored as 1 and False as 0.'
 
 class Orb(Operator):
     full_name = 'bitwise or'
@@ -1022,7 +1022,15 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = True
+    tests_ulps = 11
+
+class Rec8(Operator):
+    full_name = 'reciprocal with relative error at most 2^{-8}'
+    signature = 'v rec8 v'
+    types = common.ftypes
+    categories = [DocBasicArithmetic]
+    domain = Domain('R\{0}')
+    tests_ulps = 8
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -1041,39 +1049,70 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = True
+    tests_ulps = 11
 
-#class Ziplo(Operator):
-#    full_name = 'ziplo'
-#    signature = 'v ziplo v v'
-#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-#    domain = Domain('R')
-#    categories = [DocMisc]
-#    tests_ulps = True
-#
-#class Ziphi(Operator):
-#    full_name = 'ziphi'
-#    signature = 'v ziphi v v'
-#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-#    domain = Domain('R')
-#    categories = [DocMisc]
-#    tests_ulps = True
-#
-#class Unziplo(Operator):
-#    full_name = 'unziplo'
-#    signature = 'v unziplo v v'
-#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-#    domain = Domain('R')
-#    categories = [DocMisc]
-#    tests_ulps = True
-#
-#class Unziphi(Operator):
-#    full_name = 'unziphi'
-#    signature = 'v unziphi v v'
-#    types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
-#    domain = Domain('R')
-#    categories = [DocMisc]
-#    tests_ulps = True
+class Rsqrt8(Operator):
+    full_name = 'square root with relative error at most $2^{-8}$'
+    signature = 'v rsqrt8 v'
+    types = common.ftypes
+    domain = Domain('[0,Inf)')
+    categories = [DocBasicArithmetic]
+    tests_ulps = 8
+
+class Ziplo(Operator):
+    full_name = 'zip low halves'
+    signature = 'v ziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Construct a vector where elements of the first low half input ' + \
+           'are followed by the corresponding element of the second low ' + \
+           'half input.'
+
+class Ziphi(Operator):
+    full_name = 'zip high halves'
+    signature = 'v ziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Construct a vector where elements of the first high half ' + \
+           'input are followed by the corresponding element of the second ' + \
+           'high half input.'
+
+class Unziplo(Operator):
+    full_name = 'unziplo'
+    signature = 'v unziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unziphi(Operator):
+    full_name = 'unziphi'
+    signature = 'v unziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class ToMask(Operator):
+    full_name = 'build mask from logicals'
+    signature = 'v to_mask l'
+    categories = [DocLogicalOperators]
+    do_bench = False
+    desc = 'Returns a mask consisting of all ones for true elements and ' + \
+           'all zeros for false elements.'
+
+class ToLogical(Operator):
+    full_name = 'build logicals from data'
+    signature = 'l to_logical v'
+    categories = [DocLogicalOperators]
+    do_bench = False
+    desc = 'Returns a vector of logicals. Set true when the corresponding ' + \
+           'elements are non zero (at least one bit to 1) and false ' + \
+           'otherwise.'
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
