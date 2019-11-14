@@ -433,12 +433,8 @@ def gen_doc(opts):
                 fout.write('\n## {}\n\n'.format(c.title))
                 for op in ops:
                     Full_name = op.full_name[0].upper() + op.full_name[1:]
-                    if op.full_name == op.name:
-                        fout.write('- [{}](api_{}.md)\n'.format(
-                            Full_name, op.name, to_filename(op.name)))
-                    else:
-                        fout.write('- [{} ({})](api_{}.md)\n'.format(
-                            Full_name, op.name, to_filename(op.name)))
+                    fout.write('- [{} ({})](api_{}.md)\n'.format(
+                        Full_name, op.name, to_filename(op.name)))
 
     # helper to get list of function signatures
     def to_string(var):
@@ -459,8 +455,9 @@ def gen_doc(opts):
                        operator.name)))
         if not common.can_create_filename(opts, filename):
             continue
+        Full_name = operator.full_name[0].upper() + operator.full_name[1:]
         with common.open_utf8(filename) as fout:
-            fout.write('# {}\n\n'.format(operator.full_name))
+            fout.write('# {}\n\n'.format(Full_name))
             fout.write('## Description\n\n')
             fout.write(operator.desc)
             fout.write('\n\n## C base API (generic)\n\n')

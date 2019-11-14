@@ -253,4 +253,3 @@ You can now:
 If you encounter any problems or think you found bug, you can:
 - [Consult the FAQ](faq.md)
 - [Consult our Issues Tracker on GitHub](https://github.com/agenium-scale/nsimd/issues)
-- [Ask a question on our Q&A Forum](https://groups.google.com/forum/#!forum/boost-simd)

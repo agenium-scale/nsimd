@@ -356,7 +356,7 @@ class Operator(object, metaclass=MAddToOperators):
             args1 = ', '.join(args1)
             argsN = ', '.join(argsN)
 
-#Compute return type
+            # Compute return type
             ret1 = 'ToPackType' if not self.closed \
                    else common.get_one_type_generic_adv_cxx(self.params[0],
                                                             'T', '1')
@@ -401,7 +401,7 @@ class Operator(object, metaclass=MAddToOperators):
             raise Exception('Lang must be one of c_base, cxx_base, cxx_adv')
 
     def get_signature(self, typename, lang, simd_ext):
-# Check that the type is available for this function
+        # Check that the type is available for this function
         if typename not in self.types:
             raise Exception('Type {} not supported for function {}'. \
                             format(typename, self.name))
@@ -447,54 +447,55 @@ class Loadu(Operator):
     desc = 'Load data from unaligned memory.'
 
 class Load2u(Operator):
+    full_name = 'load array of structure'
     signature = 'vx2 load2u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 2 members from unaligned memory.'
 
 class Load3u(Operator):
+    full_name = 'load array of structure'
     signature = 'vx3 load3u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 3 members from unaligned memory.'
 
 class Load4u(Operator):
-    full_name = 'load4u'
+    full_name = 'load array of structure'
     signature = 'vx4 load4u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 4 members from unaligned memory.'
 
 class Loada(Operator):
-    full_name = 'loada'
     signature = 'v loada c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from aligned memory.'
 
 class Load2a(Operator):
-    full_name = 'load2a'
+    full_name = 'load array of structure'
     signature = 'vx2 load2a c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 2 members from aligned memory.'
 
 class Load3a(Operator):
-    full_name = 'load3a'
+    full_name = 'load array of structure'
     signature = 'vx3 load3a c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 3 members from aligned memory.'
 
 class Load4a(Operator):
-    full_name = 'load4a'
+    full_name = 'load array of structure'
     signature = 'vx4 load4a c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 4 members from aligned memory.'
 
 class Loadlu(Operator):
-    full_name = 'loadlu'
+    full_name = 'load vector of logicals'
     signature = 'l loadlu c*'
     load_store = True
     categories = [DocLoadStore]
@@ -502,7 +503,7 @@ class Loadlu(Operator):
            'Zero is interpreted as False and nonzero as True.'
 
 class Loadla(Operator):
-    full_name = 'loadla'
+    full_name = 'load vector of logicals'
     signature = 'l loadla c*'
     load_store = True
     categories = [DocLoadStore]
@@ -510,14 +511,13 @@ class Loadla(Operator):
            'Zero is interpreted as False and nonzero as True.'
 
 class Storeu(Operator):
-    full_name = 'storeu'
     signature = '_ storeu * v'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into unaligned memory.'
 
 class Store2u(Operator):
-    full_name = 'store2u'
+    full_name = 'store into array of structures'
     signature = '_ store2u * v v'
     load_store = True
     domain = Domain('RxR')
@@ -526,7 +526,7 @@ class Store2u(Operator):
            'unaligned memory.'
 
 class Store3u(Operator):
-    full_name = 'store3u'
+    full_name = 'store into array of structures'
     signature = '_ store3u * v v v'
     load_store = True
     domain = Domain('RxRxR')
@@ -535,7 +535,7 @@ class Store3u(Operator):
            'unaligned memory.'
 
 class Store4u(Operator):
-    full_name = 'store4u'
+    full_name = 'store into array of structures'
     signature = '_ store4u * v v v v'
     load_store = True
     domain = Domain('RxRxRxR')
@@ -544,14 +544,13 @@ class Store4u(Operator):
            'unaligned memory.'
 
 class Storea(Operator):
-    full_name = 'storea'
     signature = '_ storea * v'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into aligned memory.'
 
 class Store2a(Operator):
-    full_name = 'store2a'
+    full_name = 'store into array of structures'
     signature = '_ store2a * v v'
     load_store = True
     domain = Domain('RxR')
@@ -560,7 +559,7 @@ class Store2a(Operator):
            'aligned memory.'
 
 class Store3a(Operator):
-    full_name = 'store3a'
+    full_name = 'store into array of structures'
     signature = '_ store3a * v v v'
     load_store = True
     domain = Domain('RxRxR')
@@ -569,7 +568,7 @@ class Store3a(Operator):
            'aligned memory.'
 
 class Store4a(Operator):
-    full_name = 'store4a'
+    full_name = 'store into array of structures'
     signature = '_ store4a * v v v v'
     load_store = True
     domain = Domain('RxRxRxR')
@@ -578,7 +577,7 @@ class Store4a(Operator):
            'aligned memory.'
 
 class Storelu(Operator):
-    full_name = 'storelu'
+    full_name = 'store vector of logicals'
     signature = '_ storelu * l'
     load_store = True
     categories = [DocLoadStore]
@@ -587,7 +586,7 @@ class Storelu(Operator):
            'store as 1 and False as 0.'
 
 class Storela(Operator):
-    full_name = 'storela'
+    full_name = 'store vector of logicals'
     signature = '_ storela * l'
     load_store = True
     categories = [DocLoadStore]

@@ -169,14 +169,13 @@ Download full source code:
 
 ## Supported Compilers and Hardware by `nsimd`
 
-`nsimd` includes support for some Intel, ARM and IBM processors. The support of
+`nsimd` includes support for some Intel and ARM processors. The support of
 IBM processors is ongoing and will be available soon.
 
 **Architecture** | **Extensions**
 ---------------- | --------------
 Intel            | `SSE2`, `SSE4.2`, `AVX`, `AVX2`, `AVX-512` (`KNL` and `SKYLAKE`)
 ARM              | `Aarch64`, `NEON` (`ARMv7`), `SVE`
-IBM              | `POWER7`, `POWER8`
 
 @[INCLUDE](compilers_and_versions.md)
 
