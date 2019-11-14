@@ -22,17 +22,17 @@ NS2_ROOT         = ..\..\..\_install
 NS2_INCLUDE_DIR  = $(NS2_ROOT)\include
 NS2_LIBRARY_DIR  = $(NS2_ROOT)\lib
 CXX              = cl
-CXX_FLAGS        = /Ox /Z3 /EHsc /FoNUL /I$(NS2_INCLUDE_DIR) 
+CXX_FLAGS        = /Ox /W3 /EHsc /Fotemp\ /I$(NS2_INCLUDE_DIR) 
 CXX_LDFLAGS      = libns2.lib
 
 all: md2html.exe
 
 md2html.exe: libns2.dll libns2.lib md2html.cpp Makefile.win
-	if not exists temp md temp
+	if not exist temp md temp
 	$(CXX) $(CXX_FLAGS) $(CXX_LDFLAGS) md2html.cpp /Fe$@
 
 libns2.lib: $(NS2_LIBRARY_DIR)\libns2.lib Makefile.win
-	copy "$?" "$@"
+	copy "$(NS2_LIBRARY_DIR)\libns2.lib" "$@"
 
 libns2.dll: $(NS2_LIBRARY_DIR)\libns2.dll Makefile.win
-	copy "$?" "$@"
+	copy "$(NS2_LIBRARY_DIR)\libns2.dll" "$@"
