@@ -300,7 +300,7 @@ def doit(opts):
             if not common.can_create_filename(opts, filename):
                 continue
 
-            with common.open_utf8(filename) as out:
+            with common.open_utf8(opts, filename) as out:
                 out.write(includes)
                 out.write(gen_tests.relative_distance_cpp)
                 out.write(code.format(
