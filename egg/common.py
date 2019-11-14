@@ -758,12 +758,12 @@ class Interval(object):
             raise ValueError ('Trying to print invalid interval')
 
         if self.removed_:
-            ret += '∖{'
+            ret += '∖\\{'
             comma = ''
             for removed in self.removed_:
                 ret+=comma+str(removed)
                 comma = ', '
-            ret += '}'
+            ret += '\\}'
 
         return ret
 
