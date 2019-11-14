@@ -1096,7 +1096,7 @@ def gen_bench_against_with_timestamp(f, simd, typ, against):
                 code += gen_bench_with_timestamp(f, simd, typ, category)
     return code
 
-def gen_bench(f, simd, typ):
+def gen_bench(opts, f, simd, typ):
     ## TODO
     path = gen_filename(f, simd, typ)
     ## Check if we need to create the file
@@ -1186,4 +1186,4 @@ def doit(opts):
                 if f.name in ['gamma', 'lgamma', 'ziplo', 'ziphi',
                               'unziphi', 'unziplo']:
                     continue
-                gen_bench(f, simd, typ)
+                gen_bench(opts, f, simd, typ)
