@@ -95,7 +95,7 @@ def doit(opts):
     filename = os.path.join(opts.include_dir, 'functions.h')
     if not common.can_create_filename(opts, filename):
         return
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_FUNCTIONS_H
                      #define NSIMD_FUNCTIONS_H
 

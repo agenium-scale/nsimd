@@ -62,20 +62,29 @@ def can_create_filename(opts, filename):
 # -----------------------------------------------------------------------------
 # open with UTF8 encoding
 
-def open_utf8(filename):
+def open_utf8(opts, filename):
     dummy, ext = os.path.splitext(filename)
-    if ext.lower() in ['c', 'h', 'cpp', 'hpp', 'cc', 'cxx', 'hxx', 'hpp']:
+    if ext.lower() in ['.c', '.h', '.cpp', '.hpp', '.cc', '.cxx', '.hxx',
+                       '.hpp']:
         begin_comment = '/*'
         end_comment = '*/'
-    elif ext.lower() in ['md', 'htm', 'html']:
+    elif ext.lower() in ['.md', '.htm', '.html']:
         begin_comment = '<!--'
         end_comment = '-->'
     else:
         begin_comment = None
     with io.open(filename, mode='w', encoding='utf-8') as fout:
+        if begin_comment is not None:
+            if opts.simple_license:
+                fout.write('''{}
 
-        if begin_comment != None:
-            fout.write('''{}
+Copyright (c) 2019 Agenium Scale
+
+{}
+
+'''.format(begin_comment, end_comment))
+            else:
+                fout.write('''{}
 
 Copyright (c) 2019 Agenium Scale
 

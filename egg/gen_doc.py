@@ -46,12 +46,11 @@ def get_command_output(args):
 # -----------------------------------------------------------------------------
 
 def gen_overview(opts):
-    print('-- Generating documentation in DOC.md')
     filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
                             'overview.md')
     if not common.can_create_filename(opts, filename):
         return
-    with common.open_utf8(filename) as fout:
+    with common.open_utf8(opts, filename) as fout:
         fout.write('''# Overview
 
 ## NSIMD scalar types
@@ -427,7 +426,7 @@ def gen_doc(opts):
     # api.md
     filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
     if common.can_create_filename(opts, filename):
-        with common.open_utf8(filename) as fout:
+        with common.open_utf8(opts, filename) as fout:
             fout.write('# API\n')
             for c, ops in api.items():
                 if len(ops) == 0:
@@ -458,7 +457,7 @@ def gen_doc(opts):
         if not common.can_create_filename(opts, filename):
             continue
         Full_name = operator.full_name[0].upper() + operator.full_name[1:]
-        with common.open_utf8(filename) as fout:
+        with common.open_utf8(opts, filename) as fout:
             fout.write('# {}\n\n'.format(Full_name))
             fout.write('## Description\n\n')
             fout.write(operator.desc)
@@ -548,7 +547,7 @@ def gen_html(opts):
         output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
         common.mkdir_p(os.path.dirname(output))
         os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
-        with common.open_utf8(output) as fout:
+        with common.open_utf8(opts, output) as fout:
             fout.write(header)
             with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
                 fout.write(fin.read())

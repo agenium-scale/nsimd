@@ -86,7 +86,7 @@ def doit(opts):
     filename = os.path.join(opts.include_dir, 'friendly_but_not_optimized.hpp')
     if not common.can_create_filename(opts, filename):
         return
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_FRIENDLY_BUT_NOT_OPTIMIZED_HPP
                      #define NSIMD_FRIENDLY_BUT_NOT_OPTIMIZED_HPP
 

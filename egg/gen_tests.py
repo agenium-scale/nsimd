@@ -581,7 +581,7 @@ def gen_test(opts, op, typ, lang, ulps):
             #pragma GCC diagnostic pop
             '''
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(template.format( \
             includes=includes, sizeof=common.sizeof(typ), typ=typ,
             op_name=op.name, year=date.today().year, comp=comp,
@@ -654,7 +654,7 @@ def gen_addv(opts, op, typ, lang):
                       (double)res) > get_2th_power(-{nbits})) {{
                     return EXIT_FAILURE;
                   }}'''.format(nbits=nbits[typ])
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
             ''' \
             {head}
@@ -711,7 +711,7 @@ def gen_all_any(opts, op, typ, lang):
     else:
         scalar0 = '({})0'.format(typ)
         scalar1 = '({})1'.format(typ)
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -801,7 +801,7 @@ def gen_load_store(opts, op, typ, lang):
     else:
         rand = 'vin[i] = ({})(rand() % 10);'.format(typ)
         comp = 'vin[i] != vout[i]'
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -880,7 +880,7 @@ def gen_nbtrue(opts, op, typ, lang):
     else:
         scalar0 = '({})0'.format(typ)
         scalar1 = '({})1'.format(typ)
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -1021,7 +1021,7 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
     else:
         rand = '({}){}'.format(from_typ, rand)
         neq_test = 'in[j] != out[j]'
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -1089,7 +1089,7 @@ def gen_reverse(opts, op, typ, lang):
         init = 'in[ i ] = ({typ})(i + 1);'.format( typ=typ )
         comp = 'ok &= out[len - 1 - i] == in[i];'
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -1258,7 +1258,7 @@ def gen_unpack(opts, op, typ, lang):
         rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
         / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{head}
 
