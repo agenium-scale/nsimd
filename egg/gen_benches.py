@@ -1186,4 +1186,4 @@ def doit(opts):
                 if f.name in ['gamma', 'lgamma', 'ziplo', 'ziphi',
                               'unziphi', 'unziplo']:
                     continue
-                gen_bench(opts, f, simd, typ)
+                gen_bench(f, simd, typ)
