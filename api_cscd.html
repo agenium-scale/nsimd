@@ -1,0 +1,121 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Cosecant with input in degrees</h1>
+<h2>Description</h2>
+<p>Returns the cosecant with input in degrees of the argument. Defined over \(ℝ∖\{z∈ℤ:π⋅z\}\).</p>
+<h2>C base API (generic)</h2>
+<pre class="c"><code>#define vcscd(a0, type)
+#define vcscd_e(a0, type, simd_ext)</code></pre>
+<h2>C++ base API (generic)</h2>
+<pre class="c++"><code>template &lt;typename A0, typename T&gt; typename simd_traits&lt;T, NSIMD_SIMD&gt;::simd_vector cscd(A0 a0, T);</code></pre>
+<h2>C++ advanced API</h2>
+<pre class="c++"><code>template &lt;typename T, typename SimdExt&gt; pack&lt;T, 1, SimdExt&gt; cscd(pack&lt;T, 1, SimdExt&gt; const&amp; a0);
+template &lt;typename T, int N, typename SimdExt&gt; pack&lt;T, N, SimdExt&gt; cscd(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code></pre>
+<h2>C base API (architecture specifics)</h2>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vf64 nsimd_cscd_sse42_f64(nsimd_sse42_vf64 a0);
+nsimd_sse42_vf32 nsimd_cscd_sse42_f32(nsimd_sse42_vf32 a0);
+nsimd_sse42_vf16 nsimd_cscd_sse42_f16(nsimd_sse42_vf16 a0);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vf64 nsimd_cscd_cpu_f64(nsimd_cpu_vf64 a0);
+nsimd_cpu_vf32 nsimd_cscd_cpu_f32(nsimd_cpu_vf32 a0);
+nsimd_cpu_vf16 nsimd_cscd_cpu_f16(nsimd_cpu_vf16 a0);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vf64 nsimd_cscd_sse2_f64(nsimd_sse2_vf64 a0);
+nsimd_sse2_vf32 nsimd_cscd_sse2_f32(nsimd_sse2_vf32 a0);
+nsimd_sse2_vf16 nsimd_cscd_sse2_f16(nsimd_sse2_vf16 a0);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vf64 nsimd_cscd_avx_f64(nsimd_avx_vf64 a0);
+nsimd_avx_vf32 nsimd_cscd_avx_f32(nsimd_avx_vf32 a0);
+nsimd_avx_vf16 nsimd_cscd_avx_f16(nsimd_avx_vf16 a0);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vf64 cscd(nsimd_sse42_vf64 a0, f64, sse42);
+nsimd_sse42_vf32 cscd(nsimd_sse42_vf32 a0, f32, sse42);
+nsimd_sse42_vf16 cscd(nsimd_sse42_vf16 a0, f16, sse42);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vf64 cscd(nsimd_cpu_vf64 a0, f64, cpu);
+nsimd_cpu_vf32 cscd(nsimd_cpu_vf32 a0, f32, cpu);
+nsimd_cpu_vf16 cscd(nsimd_cpu_vf16 a0, f16, cpu);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vf64 cscd(nsimd_sse2_vf64 a0, f64, sse2);
+nsimd_sse2_vf32 cscd(nsimd_sse2_vf32 a0, f32, sse2);
+nsimd_sse2_vf16 cscd(nsimd_sse2_vf16 a0, f16, sse2);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vf64 cscd(nsimd_avx_vf64 a0, f64, avx);
+nsimd_avx_vf32 cscd(nsimd_avx_vf32 a0, f32, avx);
+nsimd_avx_vf16 cscd(nsimd_avx_vf16 a0, f16, avx);</code></pre>
+  </body>
+</html>

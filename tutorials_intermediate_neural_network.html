@@ -1,0 +1,114 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Intermediate Tutorial: Evaluation of a Neural Network</h1>
+<p>In this tutorial we will demonstrate how the evaluation of neural network can be
+significantly accelerated using <code>nsimd</code>.</p>
+<h2>Neural Network Activation Function</h2>
+<p>The activation function of a neural network is typically a <em>ElliotSig</em> function
+of the form:</p>
+<p>This is a function that could significantly benefit from vectorization.</p>
+<p>The following scalar code is used for this calculation:</p>
+<pre class="C++"><code>template &lt;typename T&gt; void fct(T *first0, T *last0, T *first1) {
+  for (; first0 &lt; last0; ++first0, ++first1) {
+    *first1 = T(1) / (T(1) + std::abs(*first0));
+  }
+}</code></pre>
+
+<h2>Vectorization of Neural Network Activation Function</h2>
+<p>The above code is vectorized as follows:</p>
+<pre class="C++"><code>template &lt;typename T&gt; void fct_nsimd(T *first0, T *last0, T *first1) {
+  nsimd::pack&lt;float&gt; pack_1(T(1));
+
+  size_t len = size_t(nsimd::len(nsimd::pack&lt;T&gt;()));
+  for (; first0 + len &lt; last0; first0 += len, first1 += len) {
+    // Load current values
+    auto pack = nsimd::loada&lt;nsimd::pack&lt;T&gt; &gt;(first0);
+    // Computation
+    pack = pack_1 / (pack_1 + nsimd::abs(pack));
+    // Store
+    nsimd::storea(first1, pack);
+  }
+
+  for (; first0 &lt; last0; ++first0, ++first1) {
+    *first1 = T(1) / (T(1) + std::abs(*first0));
+  }
+}</code></pre>
+
+<p>Download full source code:</p>
+<ul>
+<li><p><a href="../src/neural_network.cpp">neural_network.cpp</a></p></li>
+</ul>
+  </body>
+</html>

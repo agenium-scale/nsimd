@@ -1,0 +1,142 @@
+<!-- Inspired from http://bettermotherfuckingwebsite.com/ -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><code>nsimd</code> Documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.0/es5/tex-mml-chtml.js"></script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="license.html">License</a> |
+  <a href="api.html">API</a>
+</center>
+<h1>gamma function</h1>
+<h2>Description</h2>
+<p>Returns the gamma function of the argument. Defined over ℝ∖{n∈ℕ:-n}.</p>
+<h2>C base API (generic)</h2>
+<pre class="c"><code>#define vgamma(a0, type)
+#define vgamma_e(a0, type, simd_ext)</code></pre>
+<h2>C++ base API (generic)</h2>
+<pre class="c++"><code>template &lt;typename A0, typename T&gt; typename simd_traits&lt;T, NSIMD_SIMD&gt;::simd_vector gamma(A0 a0, T);</code></pre>
+<h2>C++ advanced API</h2>
+<pre class="c++"><code>template &lt;typename T, typename SimdExt&gt; pack&lt;T, 1, SimdExt&gt; gamma(pack&lt;T, 1, SimdExt&gt; const&amp; a0);
+template &lt;typename T, int N, typename SimdExt&gt; pack&lt;T, N, SimdExt&gt; gamma(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code></pre>
+<h2>C base API (architecture specifics)</h2>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vf64 nsimd_gamma_sse2_f64(nsimd_sse2_vf64 a0);
+nsimd_sse2_vf32 nsimd_gamma_sse2_f32(nsimd_sse2_vf32 a0);
+nsimd_sse2_vf16 nsimd_gamma_sse2_f16(nsimd_sse2_vf16 a0);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vf64 nsimd_gamma_cpu_f64(nsimd_cpu_vf64 a0);
+nsimd_cpu_vf32 nsimd_gamma_cpu_f32(nsimd_cpu_vf32 a0);
+nsimd_cpu_vf16 nsimd_gamma_cpu_f16(nsimd_cpu_vf16 a0);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vf64 nsimd_gamma_avx512_skylake_f64(nsimd_avx512_skylake_vf64 a0);
+nsimd_avx512_skylake_vf32 nsimd_gamma_avx512_skylake_f32(nsimd_avx512_skylake_vf32 a0);
+nsimd_avx512_skylake_vf16 nsimd_gamma_avx512_skylake_f16(nsimd_avx512_skylake_vf16 a0);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vf64 nsimd_gamma_aarch64_f64(nsimd_aarch64_vf64 a0);
+nsimd_aarch64_vf32 nsimd_gamma_aarch64_f32(nsimd_aarch64_vf32 a0);
+nsimd_aarch64_vf16 nsimd_gamma_aarch64_f16(nsimd_aarch64_vf16 a0);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vf64 nsimd_gamma_neon128_f64(nsimd_neon128_vf64 a0);
+nsimd_neon128_vf32 nsimd_gamma_neon128_f32(nsimd_neon128_vf32 a0);
+nsimd_neon128_vf16 nsimd_gamma_neon128_f16(nsimd_neon128_vf16 a0);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>nsimd_sve_vf64 nsimd_gamma_sve_f64(nsimd_sve_vf64 a0);
+nsimd_sve_vf32 nsimd_gamma_sve_f32(nsimd_sve_vf32 a0);
+nsimd_sve_vf16 nsimd_gamma_sve_f16(nsimd_sve_vf16 a0);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vf64 nsimd_gamma_avx512_knl_f64(nsimd_avx512_knl_vf64 a0);
+nsimd_avx512_knl_vf32 nsimd_gamma_avx512_knl_f32(nsimd_avx512_knl_vf32 a0);
+nsimd_avx512_knl_vf16 nsimd_gamma_avx512_knl_f16(nsimd_avx512_knl_vf16 a0);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vf64 nsimd_gamma_sse42_f64(nsimd_sse42_vf64 a0);
+nsimd_sse42_vf32 nsimd_gamma_sse42_f32(nsimd_sse42_vf32 a0);
+nsimd_sse42_vf16 nsimd_gamma_sse42_f16(nsimd_sse42_vf16 a0);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>nsimd_avx2_vf64 nsimd_gamma_avx2_f64(nsimd_avx2_vf64 a0);
+nsimd_avx2_vf32 nsimd_gamma_avx2_f32(nsimd_avx2_vf32 a0);
+nsimd_avx2_vf16 nsimd_gamma_avx2_f16(nsimd_avx2_vf16 a0);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vf64 nsimd_gamma_avx_f64(nsimd_avx_vf64 a0);
+nsimd_avx_vf32 nsimd_gamma_avx_f32(nsimd_avx_vf32 a0);
+nsimd_avx_vf16 nsimd_gamma_avx_f16(nsimd_avx_vf16 a0);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vf64 gamma(nsimd_sse2_vf64 a0, f64, sse2);
+nsimd_sse2_vf32 gamma(nsimd_sse2_vf32 a0, f32, sse2);
+nsimd_sse2_vf16 gamma(nsimd_sse2_vf16 a0, f16, sse2);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vf64 gamma(nsimd_cpu_vf64 a0, f64, cpu);
+nsimd_cpu_vf32 gamma(nsimd_cpu_vf32 a0, f32, cpu);
+nsimd_cpu_vf16 gamma(nsimd_cpu_vf16 a0, f16, cpu);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vf64 gamma(nsimd_avx512_skylake_vf64 a0, f64, avx512_skylake);
+nsimd_avx512_skylake_vf32 gamma(nsimd_avx512_skylake_vf32 a0, f32, avx512_skylake);
+nsimd_avx512_skylake_vf16 gamma(nsimd_avx512_skylake_vf16 a0, f16, avx512_skylake);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vf64 gamma(nsimd_aarch64_vf64 a0, f64, aarch64);
+nsimd_aarch64_vf32 gamma(nsimd_aarch64_vf32 a0, f32, aarch64);
+nsimd_aarch64_vf16 gamma(nsimd_aarch64_vf16 a0, f16, aarch64);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vf64 gamma(nsimd_neon128_vf64 a0, f64, neon128);
+nsimd_neon128_vf32 gamma(nsimd_neon128_vf32 a0, f32, neon128);
+nsimd_neon128_vf16 gamma(nsimd_neon128_vf16 a0, f16, neon128);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>nsimd_sve_vf64 gamma(nsimd_sve_vf64 a0, f64, sve);
+nsimd_sve_vf32 gamma(nsimd_sve_vf32 a0, f32, sve);
+nsimd_sve_vf16 gamma(nsimd_sve_vf16 a0, f16, sve);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vf64 gamma(nsimd_avx512_knl_vf64 a0, f64, avx512_knl);
+nsimd_avx512_knl_vf32 gamma(nsimd_avx512_knl_vf32 a0, f32, avx512_knl);
+nsimd_avx512_knl_vf16 gamma(nsimd_avx512_knl_vf16 a0, f16, avx512_knl);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vf64 gamma(nsimd_sse42_vf64 a0, f64, sse42);
+nsimd_sse42_vf32 gamma(nsimd_sse42_vf32 a0, f32, sse42);
+nsimd_sse42_vf16 gamma(nsimd_sse42_vf16 a0, f16, sse42);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>nsimd_avx2_vf64 gamma(nsimd_avx2_vf64 a0, f64, avx2);
+nsimd_avx2_vf32 gamma(nsimd_avx2_vf32 a0, f32, avx2);
+nsimd_avx2_vf16 gamma(nsimd_avx2_vf16 a0, f16, avx2);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vf64 gamma(nsimd_avx_vf64 a0, f64, avx);
+nsimd_avx_vf32 gamma(nsimd_avx_vf32 a0, f32, avx);
+nsimd_avx_vf16 gamma(nsimd_avx_vf16 a0, f16, avx);</code></pre>
+  </body>
+</html>

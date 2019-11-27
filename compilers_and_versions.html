@@ -1,0 +1,129 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<p><code>nsimd</code> is tested with GCC, Clang and MSVC. As a C89 and a C++98 API are
+provided, other compilers should work fine. Old compiler versions should work as
+long as they support the targeted SIMD extension. For instance, <code>nsimd</code> can
+compile on MSVC 2010 <code>SSE4.2</code> code.</p>
+<p><code>nsimd</code> requires a C or a C++ compiler and is actually daily tested on the
+following compilers for the following hardware:</p>
+<table>
+<thead>
+<tr>
+<td style="text-align: left;"><b>Compiler</b></td>
+<td style="text-align: left;"><b>Version</b></td>
+<td style="text-align: left;"><b>Architecture</b></td>
+<td style="text-align: left;"><b>Extensions</b></td>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;">GCC</td>
+<td style="text-align: left;">8.3.0</td>
+<td style="text-align: left;">Intel</td>
+<td style="text-align: left;"><code>SSE2</code>, <code>SSE4.2</code>, <code>AVX</code>, <code>AVX2</code>, <code>AVX-512</code> (<code>KNL</code> and <code>SKYLAKE</code>)</td>
+</tr>
+<tr>
+<td style="text-align: left;">Clang</td>
+<td style="text-align: left;">7.0.1</td>
+<td style="text-align: left;">Intel</td>
+<td style="text-align: left;"><code>SSE2</code>, <code>SSE4.2</code>, <code>AVX</code>, <code>AVX2</code>, <code>AVX-512</code> (<code>KNL</code> and <code>SKYLAKE</code>)</td>
+</tr>
+<tr>
+<td style="text-align: left;">GCC</td>
+<td style="text-align: left;">8.3.0</td>
+<td style="text-align: left;">ARM</td>
+<td style="text-align: left;"><code>Aarch64</code>, <code>NEON</code> (<code>ARMv7</code>), <code>SVE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Clang</td>
+<td style="text-align: left;">7.0.1</td>
+<td style="text-align: left;">ARM</td>
+<td style="text-align: left;"><code>Aarch64</code>, <code>NEON</code> (<code>ARMv7</code>), <code>SVE</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Microsoft Visual Studio</td>
+<td style="text-align: left;">2017</td>
+<td style="text-align: left;">Intel</td>
+<td style="text-align: left;"><code>SSE4.2</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Intel C++ Compiler</td>
+<td style="text-align: left;">19.0.4.243</td>
+<td style="text-align: left;">Intel</td>
+<td style="text-align: left;"><code>SSE2</code>, <code>SSE4.2</code>, <code>AVX</code>, <code>AVX2</code>, <code>AVX-512</code> (<code>SKYLAKE</code>)</td>
+</tr>
+</tbody>
+</table>
+  </body>
+</html>

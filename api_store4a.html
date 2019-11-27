@@ -1,0 +1,329 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Store into array of structures</h1>
+<h2>Description</h2>
+<p>Store 4 SIMD vectors as array of structures of 4 members into aligned memory.</p>
+<h2>C base API (generic)</h2>
+<pre class="c"><code>#define vstore4a(a0, a1, a2, a3, a4, type)
+#define vstore4a_e(a0, a1, a2, a3, a4, type, simd_ext)</code></pre>
+<h2>C++ base API (generic)</h2>
+<pre class="c++"><code>template &lt;typename A0, typename A1, typename A2, typename A3, typename A4, typename T&gt; void store4a(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, T);</code></pre>
+<h2>C++ advanced API</h2>
+<pre class="c++"><code>template &lt;typename T, typename SimdExt, typename A0&gt; void store4a(A0 a0, pack&lt;T, 1, SimdExt&gt; const&amp; a1, pack&lt;T, 1, SimdExt&gt; const&amp; a2, pack&lt;T, 1, SimdExt&gt; const&amp; a3, pack&lt;T, 1, SimdExt&gt; const&amp; a4);
+template &lt;typename T, int N, typename SimdExt, typename A0&gt; void store4a(A0 a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3, pack&lt;T, N, SimdExt&gt; const&amp; a4);</code></pre>
+<h2>C base API (architecture specifics)</h2>
+<h3>AVX</h3>
+<pre class="c"><code>void nsimd_store4a_avx_f64(f64* a0, nsimd_avx_vf64 a1, nsimd_avx_vf64 a2, nsimd_avx_vf64 a3, nsimd_avx_vf64 a4);
+void nsimd_store4a_avx_f32(f32* a0, nsimd_avx_vf32 a1, nsimd_avx_vf32 a2, nsimd_avx_vf32 a3, nsimd_avx_vf32 a4);
+void nsimd_store4a_avx_f16(f16* a0, nsimd_avx_vf16 a1, nsimd_avx_vf16 a2, nsimd_avx_vf16 a3, nsimd_avx_vf16 a4);
+void nsimd_store4a_avx_i64(i64* a0, nsimd_avx_vi64 a1, nsimd_avx_vi64 a2, nsimd_avx_vi64 a3, nsimd_avx_vi64 a4);
+void nsimd_store4a_avx_i32(i32* a0, nsimd_avx_vi32 a1, nsimd_avx_vi32 a2, nsimd_avx_vi32 a3, nsimd_avx_vi32 a4);
+void nsimd_store4a_avx_i16(i16* a0, nsimd_avx_vi16 a1, nsimd_avx_vi16 a2, nsimd_avx_vi16 a3, nsimd_avx_vi16 a4);
+void nsimd_store4a_avx_i8(i8* a0, nsimd_avx_vi8 a1, nsimd_avx_vi8 a2, nsimd_avx_vi8 a3, nsimd_avx_vi8 a4);
+void nsimd_store4a_avx_u64(u64* a0, nsimd_avx_vu64 a1, nsimd_avx_vu64 a2, nsimd_avx_vu64 a3, nsimd_avx_vu64 a4);
+void nsimd_store4a_avx_u32(u32* a0, nsimd_avx_vu32 a1, nsimd_avx_vu32 a2, nsimd_avx_vu32 a3, nsimd_avx_vu32 a4);
+void nsimd_store4a_avx_u16(u16* a0, nsimd_avx_vu16 a1, nsimd_avx_vu16 a2, nsimd_avx_vu16 a3, nsimd_avx_vu16 a4);
+void nsimd_store4a_avx_u8(u8* a0, nsimd_avx_vu8 a1, nsimd_avx_vu8 a2, nsimd_avx_vu8 a3, nsimd_avx_vu8 a4);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>void nsimd_store4a_neon128_f64(f64* a0, nsimd_neon128_vf64 a1, nsimd_neon128_vf64 a2, nsimd_neon128_vf64 a3, nsimd_neon128_vf64 a4);
+void nsimd_store4a_neon128_f32(f32* a0, nsimd_neon128_vf32 a1, nsimd_neon128_vf32 a2, nsimd_neon128_vf32 a3, nsimd_neon128_vf32 a4);
+void nsimd_store4a_neon128_f16(f16* a0, nsimd_neon128_vf16 a1, nsimd_neon128_vf16 a2, nsimd_neon128_vf16 a3, nsimd_neon128_vf16 a4);
+void nsimd_store4a_neon128_i64(i64* a0, nsimd_neon128_vi64 a1, nsimd_neon128_vi64 a2, nsimd_neon128_vi64 a3, nsimd_neon128_vi64 a4);
+void nsimd_store4a_neon128_i32(i32* a0, nsimd_neon128_vi32 a1, nsimd_neon128_vi32 a2, nsimd_neon128_vi32 a3, nsimd_neon128_vi32 a4);
+void nsimd_store4a_neon128_i16(i16* a0, nsimd_neon128_vi16 a1, nsimd_neon128_vi16 a2, nsimd_neon128_vi16 a3, nsimd_neon128_vi16 a4);
+void nsimd_store4a_neon128_i8(i8* a0, nsimd_neon128_vi8 a1, nsimd_neon128_vi8 a2, nsimd_neon128_vi8 a3, nsimd_neon128_vi8 a4);
+void nsimd_store4a_neon128_u64(u64* a0, nsimd_neon128_vu64 a1, nsimd_neon128_vu64 a2, nsimd_neon128_vu64 a3, nsimd_neon128_vu64 a4);
+void nsimd_store4a_neon128_u32(u32* a0, nsimd_neon128_vu32 a1, nsimd_neon128_vu32 a2, nsimd_neon128_vu32 a3, nsimd_neon128_vu32 a4);
+void nsimd_store4a_neon128_u16(u16* a0, nsimd_neon128_vu16 a1, nsimd_neon128_vu16 a2, nsimd_neon128_vu16 a3, nsimd_neon128_vu16 a4);
+void nsimd_store4a_neon128_u8(u8* a0, nsimd_neon128_vu8 a1, nsimd_neon128_vu8 a2, nsimd_neon128_vu8 a3, nsimd_neon128_vu8 a4);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>void nsimd_store4a_sse42_f64(f64* a0, nsimd_sse42_vf64 a1, nsimd_sse42_vf64 a2, nsimd_sse42_vf64 a3, nsimd_sse42_vf64 a4);
+void nsimd_store4a_sse42_f32(f32* a0, nsimd_sse42_vf32 a1, nsimd_sse42_vf32 a2, nsimd_sse42_vf32 a3, nsimd_sse42_vf32 a4);
+void nsimd_store4a_sse42_f16(f16* a0, nsimd_sse42_vf16 a1, nsimd_sse42_vf16 a2, nsimd_sse42_vf16 a3, nsimd_sse42_vf16 a4);
+void nsimd_store4a_sse42_i64(i64* a0, nsimd_sse42_vi64 a1, nsimd_sse42_vi64 a2, nsimd_sse42_vi64 a3, nsimd_sse42_vi64 a4);
+void nsimd_store4a_sse42_i32(i32* a0, nsimd_sse42_vi32 a1, nsimd_sse42_vi32 a2, nsimd_sse42_vi32 a3, nsimd_sse42_vi32 a4);
+void nsimd_store4a_sse42_i16(i16* a0, nsimd_sse42_vi16 a1, nsimd_sse42_vi16 a2, nsimd_sse42_vi16 a3, nsimd_sse42_vi16 a4);
+void nsimd_store4a_sse42_i8(i8* a0, nsimd_sse42_vi8 a1, nsimd_sse42_vi8 a2, nsimd_sse42_vi8 a3, nsimd_sse42_vi8 a4);
+void nsimd_store4a_sse42_u64(u64* a0, nsimd_sse42_vu64 a1, nsimd_sse42_vu64 a2, nsimd_sse42_vu64 a3, nsimd_sse42_vu64 a4);
+void nsimd_store4a_sse42_u32(u32* a0, nsimd_sse42_vu32 a1, nsimd_sse42_vu32 a2, nsimd_sse42_vu32 a3, nsimd_sse42_vu32 a4);
+void nsimd_store4a_sse42_u16(u16* a0, nsimd_sse42_vu16 a1, nsimd_sse42_vu16 a2, nsimd_sse42_vu16 a3, nsimd_sse42_vu16 a4);
+void nsimd_store4a_sse42_u8(u8* a0, nsimd_sse42_vu8 a1, nsimd_sse42_vu8 a2, nsimd_sse42_vu8 a3, nsimd_sse42_vu8 a4);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>void nsimd_store4a_sse2_f64(f64* a0, nsimd_sse2_vf64 a1, nsimd_sse2_vf64 a2, nsimd_sse2_vf64 a3, nsimd_sse2_vf64 a4);
+void nsimd_store4a_sse2_f32(f32* a0, nsimd_sse2_vf32 a1, nsimd_sse2_vf32 a2, nsimd_sse2_vf32 a3, nsimd_sse2_vf32 a4);
+void nsimd_store4a_sse2_f16(f16* a0, nsimd_sse2_vf16 a1, nsimd_sse2_vf16 a2, nsimd_sse2_vf16 a3, nsimd_sse2_vf16 a4);
+void nsimd_store4a_sse2_i64(i64* a0, nsimd_sse2_vi64 a1, nsimd_sse2_vi64 a2, nsimd_sse2_vi64 a3, nsimd_sse2_vi64 a4);
+void nsimd_store4a_sse2_i32(i32* a0, nsimd_sse2_vi32 a1, nsimd_sse2_vi32 a2, nsimd_sse2_vi32 a3, nsimd_sse2_vi32 a4);
+void nsimd_store4a_sse2_i16(i16* a0, nsimd_sse2_vi16 a1, nsimd_sse2_vi16 a2, nsimd_sse2_vi16 a3, nsimd_sse2_vi16 a4);
+void nsimd_store4a_sse2_i8(i8* a0, nsimd_sse2_vi8 a1, nsimd_sse2_vi8 a2, nsimd_sse2_vi8 a3, nsimd_sse2_vi8 a4);
+void nsimd_store4a_sse2_u64(u64* a0, nsimd_sse2_vu64 a1, nsimd_sse2_vu64 a2, nsimd_sse2_vu64 a3, nsimd_sse2_vu64 a4);
+void nsimd_store4a_sse2_u32(u32* a0, nsimd_sse2_vu32 a1, nsimd_sse2_vu32 a2, nsimd_sse2_vu32 a3, nsimd_sse2_vu32 a4);
+void nsimd_store4a_sse2_u16(u16* a0, nsimd_sse2_vu16 a1, nsimd_sse2_vu16 a2, nsimd_sse2_vu16 a3, nsimd_sse2_vu16 a4);
+void nsimd_store4a_sse2_u8(u8* a0, nsimd_sse2_vu8 a1, nsimd_sse2_vu8 a2, nsimd_sse2_vu8 a3, nsimd_sse2_vu8 a4);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>void nsimd_store4a_avx512_knl_f64(f64* a0, nsimd_avx512_knl_vf64 a1, nsimd_avx512_knl_vf64 a2, nsimd_avx512_knl_vf64 a3, nsimd_avx512_knl_vf64 a4);
+void nsimd_store4a_avx512_knl_f32(f32* a0, nsimd_avx512_knl_vf32 a1, nsimd_avx512_knl_vf32 a2, nsimd_avx512_knl_vf32 a3, nsimd_avx512_knl_vf32 a4);
+void nsimd_store4a_avx512_knl_f16(f16* a0, nsimd_avx512_knl_vf16 a1, nsimd_avx512_knl_vf16 a2, nsimd_avx512_knl_vf16 a3, nsimd_avx512_knl_vf16 a4);
+void nsimd_store4a_avx512_knl_i64(i64* a0, nsimd_avx512_knl_vi64 a1, nsimd_avx512_knl_vi64 a2, nsimd_avx512_knl_vi64 a3, nsimd_avx512_knl_vi64 a4);
+void nsimd_store4a_avx512_knl_i32(i32* a0, nsimd_avx512_knl_vi32 a1, nsimd_avx512_knl_vi32 a2, nsimd_avx512_knl_vi32 a3, nsimd_avx512_knl_vi32 a4);
+void nsimd_store4a_avx512_knl_i16(i16* a0, nsimd_avx512_knl_vi16 a1, nsimd_avx512_knl_vi16 a2, nsimd_avx512_knl_vi16 a3, nsimd_avx512_knl_vi16 a4);
+void nsimd_store4a_avx512_knl_i8(i8* a0, nsimd_avx512_knl_vi8 a1, nsimd_avx512_knl_vi8 a2, nsimd_avx512_knl_vi8 a3, nsimd_avx512_knl_vi8 a4);
+void nsimd_store4a_avx512_knl_u64(u64* a0, nsimd_avx512_knl_vu64 a1, nsimd_avx512_knl_vu64 a2, nsimd_avx512_knl_vu64 a3, nsimd_avx512_knl_vu64 a4);
+void nsimd_store4a_avx512_knl_u32(u32* a0, nsimd_avx512_knl_vu32 a1, nsimd_avx512_knl_vu32 a2, nsimd_avx512_knl_vu32 a3, nsimd_avx512_knl_vu32 a4);
+void nsimd_store4a_avx512_knl_u16(u16* a0, nsimd_avx512_knl_vu16 a1, nsimd_avx512_knl_vu16 a2, nsimd_avx512_knl_vu16 a3, nsimd_avx512_knl_vu16 a4);
+void nsimd_store4a_avx512_knl_u8(u8* a0, nsimd_avx512_knl_vu8 a1, nsimd_avx512_knl_vu8 a2, nsimd_avx512_knl_vu8 a3, nsimd_avx512_knl_vu8 a4);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>void nsimd_store4a_avx512_skylake_f64(f64* a0, nsimd_avx512_skylake_vf64 a1, nsimd_avx512_skylake_vf64 a2, nsimd_avx512_skylake_vf64 a3, nsimd_avx512_skylake_vf64 a4);
+void nsimd_store4a_avx512_skylake_f32(f32* a0, nsimd_avx512_skylake_vf32 a1, nsimd_avx512_skylake_vf32 a2, nsimd_avx512_skylake_vf32 a3, nsimd_avx512_skylake_vf32 a4);
+void nsimd_store4a_avx512_skylake_f16(f16* a0, nsimd_avx512_skylake_vf16 a1, nsimd_avx512_skylake_vf16 a2, nsimd_avx512_skylake_vf16 a3, nsimd_avx512_skylake_vf16 a4);
+void nsimd_store4a_avx512_skylake_i64(i64* a0, nsimd_avx512_skylake_vi64 a1, nsimd_avx512_skylake_vi64 a2, nsimd_avx512_skylake_vi64 a3, nsimd_avx512_skylake_vi64 a4);
+void nsimd_store4a_avx512_skylake_i32(i32* a0, nsimd_avx512_skylake_vi32 a1, nsimd_avx512_skylake_vi32 a2, nsimd_avx512_skylake_vi32 a3, nsimd_avx512_skylake_vi32 a4);
+void nsimd_store4a_avx512_skylake_i16(i16* a0, nsimd_avx512_skylake_vi16 a1, nsimd_avx512_skylake_vi16 a2, nsimd_avx512_skylake_vi16 a3, nsimd_avx512_skylake_vi16 a4);
+void nsimd_store4a_avx512_skylake_i8(i8* a0, nsimd_avx512_skylake_vi8 a1, nsimd_avx512_skylake_vi8 a2, nsimd_avx512_skylake_vi8 a3, nsimd_avx512_skylake_vi8 a4);
+void nsimd_store4a_avx512_skylake_u64(u64* a0, nsimd_avx512_skylake_vu64 a1, nsimd_avx512_skylake_vu64 a2, nsimd_avx512_skylake_vu64 a3, nsimd_avx512_skylake_vu64 a4);
+void nsimd_store4a_avx512_skylake_u32(u32* a0, nsimd_avx512_skylake_vu32 a1, nsimd_avx512_skylake_vu32 a2, nsimd_avx512_skylake_vu32 a3, nsimd_avx512_skylake_vu32 a4);
+void nsimd_store4a_avx512_skylake_u16(u16* a0, nsimd_avx512_skylake_vu16 a1, nsimd_avx512_skylake_vu16 a2, nsimd_avx512_skylake_vu16 a3, nsimd_avx512_skylake_vu16 a4);
+void nsimd_store4a_avx512_skylake_u8(u8* a0, nsimd_avx512_skylake_vu8 a1, nsimd_avx512_skylake_vu8 a2, nsimd_avx512_skylake_vu8 a3, nsimd_avx512_skylake_vu8 a4);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>void nsimd_store4a_aarch64_f64(f64* a0, nsimd_aarch64_vf64 a1, nsimd_aarch64_vf64 a2, nsimd_aarch64_vf64 a3, nsimd_aarch64_vf64 a4);
+void nsimd_store4a_aarch64_f32(f32* a0, nsimd_aarch64_vf32 a1, nsimd_aarch64_vf32 a2, nsimd_aarch64_vf32 a3, nsimd_aarch64_vf32 a4);
+void nsimd_store4a_aarch64_f16(f16* a0, nsimd_aarch64_vf16 a1, nsimd_aarch64_vf16 a2, nsimd_aarch64_vf16 a3, nsimd_aarch64_vf16 a4);
+void nsimd_store4a_aarch64_i64(i64* a0, nsimd_aarch64_vi64 a1, nsimd_aarch64_vi64 a2, nsimd_aarch64_vi64 a3, nsimd_aarch64_vi64 a4);
+void nsimd_store4a_aarch64_i32(i32* a0, nsimd_aarch64_vi32 a1, nsimd_aarch64_vi32 a2, nsimd_aarch64_vi32 a3, nsimd_aarch64_vi32 a4);
+void nsimd_store4a_aarch64_i16(i16* a0, nsimd_aarch64_vi16 a1, nsimd_aarch64_vi16 a2, nsimd_aarch64_vi16 a3, nsimd_aarch64_vi16 a4);
+void nsimd_store4a_aarch64_i8(i8* a0, nsimd_aarch64_vi8 a1, nsimd_aarch64_vi8 a2, nsimd_aarch64_vi8 a3, nsimd_aarch64_vi8 a4);
+void nsimd_store4a_aarch64_u64(u64* a0, nsimd_aarch64_vu64 a1, nsimd_aarch64_vu64 a2, nsimd_aarch64_vu64 a3, nsimd_aarch64_vu64 a4);
+void nsimd_store4a_aarch64_u32(u32* a0, nsimd_aarch64_vu32 a1, nsimd_aarch64_vu32 a2, nsimd_aarch64_vu32 a3, nsimd_aarch64_vu32 a4);
+void nsimd_store4a_aarch64_u16(u16* a0, nsimd_aarch64_vu16 a1, nsimd_aarch64_vu16 a2, nsimd_aarch64_vu16 a3, nsimd_aarch64_vu16 a4);
+void nsimd_store4a_aarch64_u8(u8* a0, nsimd_aarch64_vu8 a1, nsimd_aarch64_vu8 a2, nsimd_aarch64_vu8 a3, nsimd_aarch64_vu8 a4);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>void nsimd_store4a_cpu_f64(f64* a0, nsimd_cpu_vf64 a1, nsimd_cpu_vf64 a2, nsimd_cpu_vf64 a3, nsimd_cpu_vf64 a4);
+void nsimd_store4a_cpu_f32(f32* a0, nsimd_cpu_vf32 a1, nsimd_cpu_vf32 a2, nsimd_cpu_vf32 a3, nsimd_cpu_vf32 a4);
+void nsimd_store4a_cpu_f16(f16* a0, nsimd_cpu_vf16 a1, nsimd_cpu_vf16 a2, nsimd_cpu_vf16 a3, nsimd_cpu_vf16 a4);
+void nsimd_store4a_cpu_i64(i64* a0, nsimd_cpu_vi64 a1, nsimd_cpu_vi64 a2, nsimd_cpu_vi64 a3, nsimd_cpu_vi64 a4);
+void nsimd_store4a_cpu_i32(i32* a0, nsimd_cpu_vi32 a1, nsimd_cpu_vi32 a2, nsimd_cpu_vi32 a3, nsimd_cpu_vi32 a4);
+void nsimd_store4a_cpu_i16(i16* a0, nsimd_cpu_vi16 a1, nsimd_cpu_vi16 a2, nsimd_cpu_vi16 a3, nsimd_cpu_vi16 a4);
+void nsimd_store4a_cpu_i8(i8* a0, nsimd_cpu_vi8 a1, nsimd_cpu_vi8 a2, nsimd_cpu_vi8 a3, nsimd_cpu_vi8 a4);
+void nsimd_store4a_cpu_u64(u64* a0, nsimd_cpu_vu64 a1, nsimd_cpu_vu64 a2, nsimd_cpu_vu64 a3, nsimd_cpu_vu64 a4);
+void nsimd_store4a_cpu_u32(u32* a0, nsimd_cpu_vu32 a1, nsimd_cpu_vu32 a2, nsimd_cpu_vu32 a3, nsimd_cpu_vu32 a4);
+void nsimd_store4a_cpu_u16(u16* a0, nsimd_cpu_vu16 a1, nsimd_cpu_vu16 a2, nsimd_cpu_vu16 a3, nsimd_cpu_vu16 a4);
+void nsimd_store4a_cpu_u8(u8* a0, nsimd_cpu_vu8 a1, nsimd_cpu_vu8 a2, nsimd_cpu_vu8 a3, nsimd_cpu_vu8 a4);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>void nsimd_store4a_avx2_f64(f64* a0, nsimd_avx2_vf64 a1, nsimd_avx2_vf64 a2, nsimd_avx2_vf64 a3, nsimd_avx2_vf64 a4);
+void nsimd_store4a_avx2_f32(f32* a0, nsimd_avx2_vf32 a1, nsimd_avx2_vf32 a2, nsimd_avx2_vf32 a3, nsimd_avx2_vf32 a4);
+void nsimd_store4a_avx2_f16(f16* a0, nsimd_avx2_vf16 a1, nsimd_avx2_vf16 a2, nsimd_avx2_vf16 a3, nsimd_avx2_vf16 a4);
+void nsimd_store4a_avx2_i64(i64* a0, nsimd_avx2_vi64 a1, nsimd_avx2_vi64 a2, nsimd_avx2_vi64 a3, nsimd_avx2_vi64 a4);
+void nsimd_store4a_avx2_i32(i32* a0, nsimd_avx2_vi32 a1, nsimd_avx2_vi32 a2, nsimd_avx2_vi32 a3, nsimd_avx2_vi32 a4);
+void nsimd_store4a_avx2_i16(i16* a0, nsimd_avx2_vi16 a1, nsimd_avx2_vi16 a2, nsimd_avx2_vi16 a3, nsimd_avx2_vi16 a4);
+void nsimd_store4a_avx2_i8(i8* a0, nsimd_avx2_vi8 a1, nsimd_avx2_vi8 a2, nsimd_avx2_vi8 a3, nsimd_avx2_vi8 a4);
+void nsimd_store4a_avx2_u64(u64* a0, nsimd_avx2_vu64 a1, nsimd_avx2_vu64 a2, nsimd_avx2_vu64 a3, nsimd_avx2_vu64 a4);
+void nsimd_store4a_avx2_u32(u32* a0, nsimd_avx2_vu32 a1, nsimd_avx2_vu32 a2, nsimd_avx2_vu32 a3, nsimd_avx2_vu32 a4);
+void nsimd_store4a_avx2_u16(u16* a0, nsimd_avx2_vu16 a1, nsimd_avx2_vu16 a2, nsimd_avx2_vu16 a3, nsimd_avx2_vu16 a4);
+void nsimd_store4a_avx2_u8(u8* a0, nsimd_avx2_vu8 a1, nsimd_avx2_vu8 a2, nsimd_avx2_vu8 a3, nsimd_avx2_vu8 a4);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>void nsimd_store4a_sve_f64(f64* a0, nsimd_sve_vf64 a1, nsimd_sve_vf64 a2, nsimd_sve_vf64 a3, nsimd_sve_vf64 a4);
+void nsimd_store4a_sve_f32(f32* a0, nsimd_sve_vf32 a1, nsimd_sve_vf32 a2, nsimd_sve_vf32 a3, nsimd_sve_vf32 a4);
+void nsimd_store4a_sve_f16(f16* a0, nsimd_sve_vf16 a1, nsimd_sve_vf16 a2, nsimd_sve_vf16 a3, nsimd_sve_vf16 a4);
+void nsimd_store4a_sve_i64(i64* a0, nsimd_sve_vi64 a1, nsimd_sve_vi64 a2, nsimd_sve_vi64 a3, nsimd_sve_vi64 a4);
+void nsimd_store4a_sve_i32(i32* a0, nsimd_sve_vi32 a1, nsimd_sve_vi32 a2, nsimd_sve_vi32 a3, nsimd_sve_vi32 a4);
+void nsimd_store4a_sve_i16(i16* a0, nsimd_sve_vi16 a1, nsimd_sve_vi16 a2, nsimd_sve_vi16 a3, nsimd_sve_vi16 a4);
+void nsimd_store4a_sve_i8(i8* a0, nsimd_sve_vi8 a1, nsimd_sve_vi8 a2, nsimd_sve_vi8 a3, nsimd_sve_vi8 a4);
+void nsimd_store4a_sve_u64(u64* a0, nsimd_sve_vu64 a1, nsimd_sve_vu64 a2, nsimd_sve_vu64 a3, nsimd_sve_vu64 a4);
+void nsimd_store4a_sve_u32(u32* a0, nsimd_sve_vu32 a1, nsimd_sve_vu32 a2, nsimd_sve_vu32 a3, nsimd_sve_vu32 a4);
+void nsimd_store4a_sve_u16(u16* a0, nsimd_sve_vu16 a1, nsimd_sve_vu16 a2, nsimd_sve_vu16 a3, nsimd_sve_vu16 a4);
+void nsimd_store4a_sve_u8(u8* a0, nsimd_sve_vu8 a1, nsimd_sve_vu8 a2, nsimd_sve_vu8 a3, nsimd_sve_vu8 a4);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
+<h3>AVX</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_avx_vf64 a1, nsimd_avx_vf64 a2, nsimd_avx_vf64 a3, nsimd_avx_vf64 a4, f64, avx);
+void store4a(f32* a0, nsimd_avx_vf32 a1, nsimd_avx_vf32 a2, nsimd_avx_vf32 a3, nsimd_avx_vf32 a4, f32, avx);
+void store4a(f16* a0, nsimd_avx_vf16 a1, nsimd_avx_vf16 a2, nsimd_avx_vf16 a3, nsimd_avx_vf16 a4, f16, avx);
+void store4a(i64* a0, nsimd_avx_vi64 a1, nsimd_avx_vi64 a2, nsimd_avx_vi64 a3, nsimd_avx_vi64 a4, i64, avx);
+void store4a(i32* a0, nsimd_avx_vi32 a1, nsimd_avx_vi32 a2, nsimd_avx_vi32 a3, nsimd_avx_vi32 a4, i32, avx);
+void store4a(i16* a0, nsimd_avx_vi16 a1, nsimd_avx_vi16 a2, nsimd_avx_vi16 a3, nsimd_avx_vi16 a4, i16, avx);
+void store4a(i8* a0, nsimd_avx_vi8 a1, nsimd_avx_vi8 a2, nsimd_avx_vi8 a3, nsimd_avx_vi8 a4, i8, avx);
+void store4a(u64* a0, nsimd_avx_vu64 a1, nsimd_avx_vu64 a2, nsimd_avx_vu64 a3, nsimd_avx_vu64 a4, u64, avx);
+void store4a(u32* a0, nsimd_avx_vu32 a1, nsimd_avx_vu32 a2, nsimd_avx_vu32 a3, nsimd_avx_vu32 a4, u32, avx);
+void store4a(u16* a0, nsimd_avx_vu16 a1, nsimd_avx_vu16 a2, nsimd_avx_vu16 a3, nsimd_avx_vu16 a4, u16, avx);
+void store4a(u8* a0, nsimd_avx_vu8 a1, nsimd_avx_vu8 a2, nsimd_avx_vu8 a3, nsimd_avx_vu8 a4, u8, avx);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_neon128_vf64 a1, nsimd_neon128_vf64 a2, nsimd_neon128_vf64 a3, nsimd_neon128_vf64 a4, f64, neon128);
+void store4a(f32* a0, nsimd_neon128_vf32 a1, nsimd_neon128_vf32 a2, nsimd_neon128_vf32 a3, nsimd_neon128_vf32 a4, f32, neon128);
+void store4a(f16* a0, nsimd_neon128_vf16 a1, nsimd_neon128_vf16 a2, nsimd_neon128_vf16 a3, nsimd_neon128_vf16 a4, f16, neon128);
+void store4a(i64* a0, nsimd_neon128_vi64 a1, nsimd_neon128_vi64 a2, nsimd_neon128_vi64 a3, nsimd_neon128_vi64 a4, i64, neon128);
+void store4a(i32* a0, nsimd_neon128_vi32 a1, nsimd_neon128_vi32 a2, nsimd_neon128_vi32 a3, nsimd_neon128_vi32 a4, i32, neon128);
+void store4a(i16* a0, nsimd_neon128_vi16 a1, nsimd_neon128_vi16 a2, nsimd_neon128_vi16 a3, nsimd_neon128_vi16 a4, i16, neon128);
+void store4a(i8* a0, nsimd_neon128_vi8 a1, nsimd_neon128_vi8 a2, nsimd_neon128_vi8 a3, nsimd_neon128_vi8 a4, i8, neon128);
+void store4a(u64* a0, nsimd_neon128_vu64 a1, nsimd_neon128_vu64 a2, nsimd_neon128_vu64 a3, nsimd_neon128_vu64 a4, u64, neon128);
+void store4a(u32* a0, nsimd_neon128_vu32 a1, nsimd_neon128_vu32 a2, nsimd_neon128_vu32 a3, nsimd_neon128_vu32 a4, u32, neon128);
+void store4a(u16* a0, nsimd_neon128_vu16 a1, nsimd_neon128_vu16 a2, nsimd_neon128_vu16 a3, nsimd_neon128_vu16 a4, u16, neon128);
+void store4a(u8* a0, nsimd_neon128_vu8 a1, nsimd_neon128_vu8 a2, nsimd_neon128_vu8 a3, nsimd_neon128_vu8 a4, u8, neon128);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_sse42_vf64 a1, nsimd_sse42_vf64 a2, nsimd_sse42_vf64 a3, nsimd_sse42_vf64 a4, f64, sse42);
+void store4a(f32* a0, nsimd_sse42_vf32 a1, nsimd_sse42_vf32 a2, nsimd_sse42_vf32 a3, nsimd_sse42_vf32 a4, f32, sse42);
+void store4a(f16* a0, nsimd_sse42_vf16 a1, nsimd_sse42_vf16 a2, nsimd_sse42_vf16 a3, nsimd_sse42_vf16 a4, f16, sse42);
+void store4a(i64* a0, nsimd_sse42_vi64 a1, nsimd_sse42_vi64 a2, nsimd_sse42_vi64 a3, nsimd_sse42_vi64 a4, i64, sse42);
+void store4a(i32* a0, nsimd_sse42_vi32 a1, nsimd_sse42_vi32 a2, nsimd_sse42_vi32 a3, nsimd_sse42_vi32 a4, i32, sse42);
+void store4a(i16* a0, nsimd_sse42_vi16 a1, nsimd_sse42_vi16 a2, nsimd_sse42_vi16 a3, nsimd_sse42_vi16 a4, i16, sse42);
+void store4a(i8* a0, nsimd_sse42_vi8 a1, nsimd_sse42_vi8 a2, nsimd_sse42_vi8 a3, nsimd_sse42_vi8 a4, i8, sse42);
+void store4a(u64* a0, nsimd_sse42_vu64 a1, nsimd_sse42_vu64 a2, nsimd_sse42_vu64 a3, nsimd_sse42_vu64 a4, u64, sse42);
+void store4a(u32* a0, nsimd_sse42_vu32 a1, nsimd_sse42_vu32 a2, nsimd_sse42_vu32 a3, nsimd_sse42_vu32 a4, u32, sse42);
+void store4a(u16* a0, nsimd_sse42_vu16 a1, nsimd_sse42_vu16 a2, nsimd_sse42_vu16 a3, nsimd_sse42_vu16 a4, u16, sse42);
+void store4a(u8* a0, nsimd_sse42_vu8 a1, nsimd_sse42_vu8 a2, nsimd_sse42_vu8 a3, nsimd_sse42_vu8 a4, u8, sse42);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_sse2_vf64 a1, nsimd_sse2_vf64 a2, nsimd_sse2_vf64 a3, nsimd_sse2_vf64 a4, f64, sse2);
+void store4a(f32* a0, nsimd_sse2_vf32 a1, nsimd_sse2_vf32 a2, nsimd_sse2_vf32 a3, nsimd_sse2_vf32 a4, f32, sse2);
+void store4a(f16* a0, nsimd_sse2_vf16 a1, nsimd_sse2_vf16 a2, nsimd_sse2_vf16 a3, nsimd_sse2_vf16 a4, f16, sse2);
+void store4a(i64* a0, nsimd_sse2_vi64 a1, nsimd_sse2_vi64 a2, nsimd_sse2_vi64 a3, nsimd_sse2_vi64 a4, i64, sse2);
+void store4a(i32* a0, nsimd_sse2_vi32 a1, nsimd_sse2_vi32 a2, nsimd_sse2_vi32 a3, nsimd_sse2_vi32 a4, i32, sse2);
+void store4a(i16* a0, nsimd_sse2_vi16 a1, nsimd_sse2_vi16 a2, nsimd_sse2_vi16 a3, nsimd_sse2_vi16 a4, i16, sse2);
+void store4a(i8* a0, nsimd_sse2_vi8 a1, nsimd_sse2_vi8 a2, nsimd_sse2_vi8 a3, nsimd_sse2_vi8 a4, i8, sse2);
+void store4a(u64* a0, nsimd_sse2_vu64 a1, nsimd_sse2_vu64 a2, nsimd_sse2_vu64 a3, nsimd_sse2_vu64 a4, u64, sse2);
+void store4a(u32* a0, nsimd_sse2_vu32 a1, nsimd_sse2_vu32 a2, nsimd_sse2_vu32 a3, nsimd_sse2_vu32 a4, u32, sse2);
+void store4a(u16* a0, nsimd_sse2_vu16 a1, nsimd_sse2_vu16 a2, nsimd_sse2_vu16 a3, nsimd_sse2_vu16 a4, u16, sse2);
+void store4a(u8* a0, nsimd_sse2_vu8 a1, nsimd_sse2_vu8 a2, nsimd_sse2_vu8 a3, nsimd_sse2_vu8 a4, u8, sse2);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_avx512_knl_vf64 a1, nsimd_avx512_knl_vf64 a2, nsimd_avx512_knl_vf64 a3, nsimd_avx512_knl_vf64 a4, f64, avx512_knl);
+void store4a(f32* a0, nsimd_avx512_knl_vf32 a1, nsimd_avx512_knl_vf32 a2, nsimd_avx512_knl_vf32 a3, nsimd_avx512_knl_vf32 a4, f32, avx512_knl);
+void store4a(f16* a0, nsimd_avx512_knl_vf16 a1, nsimd_avx512_knl_vf16 a2, nsimd_avx512_knl_vf16 a3, nsimd_avx512_knl_vf16 a4, f16, avx512_knl);
+void store4a(i64* a0, nsimd_avx512_knl_vi64 a1, nsimd_avx512_knl_vi64 a2, nsimd_avx512_knl_vi64 a3, nsimd_avx512_knl_vi64 a4, i64, avx512_knl);
+void store4a(i32* a0, nsimd_avx512_knl_vi32 a1, nsimd_avx512_knl_vi32 a2, nsimd_avx512_knl_vi32 a3, nsimd_avx512_knl_vi32 a4, i32, avx512_knl);
+void store4a(i16* a0, nsimd_avx512_knl_vi16 a1, nsimd_avx512_knl_vi16 a2, nsimd_avx512_knl_vi16 a3, nsimd_avx512_knl_vi16 a4, i16, avx512_knl);
+void store4a(i8* a0, nsimd_avx512_knl_vi8 a1, nsimd_avx512_knl_vi8 a2, nsimd_avx512_knl_vi8 a3, nsimd_avx512_knl_vi8 a4, i8, avx512_knl);
+void store4a(u64* a0, nsimd_avx512_knl_vu64 a1, nsimd_avx512_knl_vu64 a2, nsimd_avx512_knl_vu64 a3, nsimd_avx512_knl_vu64 a4, u64, avx512_knl);
+void store4a(u32* a0, nsimd_avx512_knl_vu32 a1, nsimd_avx512_knl_vu32 a2, nsimd_avx512_knl_vu32 a3, nsimd_avx512_knl_vu32 a4, u32, avx512_knl);
+void store4a(u16* a0, nsimd_avx512_knl_vu16 a1, nsimd_avx512_knl_vu16 a2, nsimd_avx512_knl_vu16 a3, nsimd_avx512_knl_vu16 a4, u16, avx512_knl);
+void store4a(u8* a0, nsimd_avx512_knl_vu8 a1, nsimd_avx512_knl_vu8 a2, nsimd_avx512_knl_vu8 a3, nsimd_avx512_knl_vu8 a4, u8, avx512_knl);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_avx512_skylake_vf64 a1, nsimd_avx512_skylake_vf64 a2, nsimd_avx512_skylake_vf64 a3, nsimd_avx512_skylake_vf64 a4, f64, avx512_skylake);
+void store4a(f32* a0, nsimd_avx512_skylake_vf32 a1, nsimd_avx512_skylake_vf32 a2, nsimd_avx512_skylake_vf32 a3, nsimd_avx512_skylake_vf32 a4, f32, avx512_skylake);
+void store4a(f16* a0, nsimd_avx512_skylake_vf16 a1, nsimd_avx512_skylake_vf16 a2, nsimd_avx512_skylake_vf16 a3, nsimd_avx512_skylake_vf16 a4, f16, avx512_skylake);
+void store4a(i64* a0, nsimd_avx512_skylake_vi64 a1, nsimd_avx512_skylake_vi64 a2, nsimd_avx512_skylake_vi64 a3, nsimd_avx512_skylake_vi64 a4, i64, avx512_skylake);
+void store4a(i32* a0, nsimd_avx512_skylake_vi32 a1, nsimd_avx512_skylake_vi32 a2, nsimd_avx512_skylake_vi32 a3, nsimd_avx512_skylake_vi32 a4, i32, avx512_skylake);
+void store4a(i16* a0, nsimd_avx512_skylake_vi16 a1, nsimd_avx512_skylake_vi16 a2, nsimd_avx512_skylake_vi16 a3, nsimd_avx512_skylake_vi16 a4, i16, avx512_skylake);
+void store4a(i8* a0, nsimd_avx512_skylake_vi8 a1, nsimd_avx512_skylake_vi8 a2, nsimd_avx512_skylake_vi8 a3, nsimd_avx512_skylake_vi8 a4, i8, avx512_skylake);
+void store4a(u64* a0, nsimd_avx512_skylake_vu64 a1, nsimd_avx512_skylake_vu64 a2, nsimd_avx512_skylake_vu64 a3, nsimd_avx512_skylake_vu64 a4, u64, avx512_skylake);
+void store4a(u32* a0, nsimd_avx512_skylake_vu32 a1, nsimd_avx512_skylake_vu32 a2, nsimd_avx512_skylake_vu32 a3, nsimd_avx512_skylake_vu32 a4, u32, avx512_skylake);
+void store4a(u16* a0, nsimd_avx512_skylake_vu16 a1, nsimd_avx512_skylake_vu16 a2, nsimd_avx512_skylake_vu16 a3, nsimd_avx512_skylake_vu16 a4, u16, avx512_skylake);
+void store4a(u8* a0, nsimd_avx512_skylake_vu8 a1, nsimd_avx512_skylake_vu8 a2, nsimd_avx512_skylake_vu8 a3, nsimd_avx512_skylake_vu8 a4, u8, avx512_skylake);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_aarch64_vf64 a1, nsimd_aarch64_vf64 a2, nsimd_aarch64_vf64 a3, nsimd_aarch64_vf64 a4, f64, aarch64);
+void store4a(f32* a0, nsimd_aarch64_vf32 a1, nsimd_aarch64_vf32 a2, nsimd_aarch64_vf32 a3, nsimd_aarch64_vf32 a4, f32, aarch64);
+void store4a(f16* a0, nsimd_aarch64_vf16 a1, nsimd_aarch64_vf16 a2, nsimd_aarch64_vf16 a3, nsimd_aarch64_vf16 a4, f16, aarch64);
+void store4a(i64* a0, nsimd_aarch64_vi64 a1, nsimd_aarch64_vi64 a2, nsimd_aarch64_vi64 a3, nsimd_aarch64_vi64 a4, i64, aarch64);
+void store4a(i32* a0, nsimd_aarch64_vi32 a1, nsimd_aarch64_vi32 a2, nsimd_aarch64_vi32 a3, nsimd_aarch64_vi32 a4, i32, aarch64);
+void store4a(i16* a0, nsimd_aarch64_vi16 a1, nsimd_aarch64_vi16 a2, nsimd_aarch64_vi16 a3, nsimd_aarch64_vi16 a4, i16, aarch64);
+void store4a(i8* a0, nsimd_aarch64_vi8 a1, nsimd_aarch64_vi8 a2, nsimd_aarch64_vi8 a3, nsimd_aarch64_vi8 a4, i8, aarch64);
+void store4a(u64* a0, nsimd_aarch64_vu64 a1, nsimd_aarch64_vu64 a2, nsimd_aarch64_vu64 a3, nsimd_aarch64_vu64 a4, u64, aarch64);
+void store4a(u32* a0, nsimd_aarch64_vu32 a1, nsimd_aarch64_vu32 a2, nsimd_aarch64_vu32 a3, nsimd_aarch64_vu32 a4, u32, aarch64);
+void store4a(u16* a0, nsimd_aarch64_vu16 a1, nsimd_aarch64_vu16 a2, nsimd_aarch64_vu16 a3, nsimd_aarch64_vu16 a4, u16, aarch64);
+void store4a(u8* a0, nsimd_aarch64_vu8 a1, nsimd_aarch64_vu8 a2, nsimd_aarch64_vu8 a3, nsimd_aarch64_vu8 a4, u8, aarch64);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_cpu_vf64 a1, nsimd_cpu_vf64 a2, nsimd_cpu_vf64 a3, nsimd_cpu_vf64 a4, f64, cpu);
+void store4a(f32* a0, nsimd_cpu_vf32 a1, nsimd_cpu_vf32 a2, nsimd_cpu_vf32 a3, nsimd_cpu_vf32 a4, f32, cpu);
+void store4a(f16* a0, nsimd_cpu_vf16 a1, nsimd_cpu_vf16 a2, nsimd_cpu_vf16 a3, nsimd_cpu_vf16 a4, f16, cpu);
+void store4a(i64* a0, nsimd_cpu_vi64 a1, nsimd_cpu_vi64 a2, nsimd_cpu_vi64 a3, nsimd_cpu_vi64 a4, i64, cpu);
+void store4a(i32* a0, nsimd_cpu_vi32 a1, nsimd_cpu_vi32 a2, nsimd_cpu_vi32 a3, nsimd_cpu_vi32 a4, i32, cpu);
+void store4a(i16* a0, nsimd_cpu_vi16 a1, nsimd_cpu_vi16 a2, nsimd_cpu_vi16 a3, nsimd_cpu_vi16 a4, i16, cpu);
+void store4a(i8* a0, nsimd_cpu_vi8 a1, nsimd_cpu_vi8 a2, nsimd_cpu_vi8 a3, nsimd_cpu_vi8 a4, i8, cpu);
+void store4a(u64* a0, nsimd_cpu_vu64 a1, nsimd_cpu_vu64 a2, nsimd_cpu_vu64 a3, nsimd_cpu_vu64 a4, u64, cpu);
+void store4a(u32* a0, nsimd_cpu_vu32 a1, nsimd_cpu_vu32 a2, nsimd_cpu_vu32 a3, nsimd_cpu_vu32 a4, u32, cpu);
+void store4a(u16* a0, nsimd_cpu_vu16 a1, nsimd_cpu_vu16 a2, nsimd_cpu_vu16 a3, nsimd_cpu_vu16 a4, u16, cpu);
+void store4a(u8* a0, nsimd_cpu_vu8 a1, nsimd_cpu_vu8 a2, nsimd_cpu_vu8 a3, nsimd_cpu_vu8 a4, u8, cpu);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_avx2_vf64 a1, nsimd_avx2_vf64 a2, nsimd_avx2_vf64 a3, nsimd_avx2_vf64 a4, f64, avx2);
+void store4a(f32* a0, nsimd_avx2_vf32 a1, nsimd_avx2_vf32 a2, nsimd_avx2_vf32 a3, nsimd_avx2_vf32 a4, f32, avx2);
+void store4a(f16* a0, nsimd_avx2_vf16 a1, nsimd_avx2_vf16 a2, nsimd_avx2_vf16 a3, nsimd_avx2_vf16 a4, f16, avx2);
+void store4a(i64* a0, nsimd_avx2_vi64 a1, nsimd_avx2_vi64 a2, nsimd_avx2_vi64 a3, nsimd_avx2_vi64 a4, i64, avx2);
+void store4a(i32* a0, nsimd_avx2_vi32 a1, nsimd_avx2_vi32 a2, nsimd_avx2_vi32 a3, nsimd_avx2_vi32 a4, i32, avx2);
+void store4a(i16* a0, nsimd_avx2_vi16 a1, nsimd_avx2_vi16 a2, nsimd_avx2_vi16 a3, nsimd_avx2_vi16 a4, i16, avx2);
+void store4a(i8* a0, nsimd_avx2_vi8 a1, nsimd_avx2_vi8 a2, nsimd_avx2_vi8 a3, nsimd_avx2_vi8 a4, i8, avx2);
+void store4a(u64* a0, nsimd_avx2_vu64 a1, nsimd_avx2_vu64 a2, nsimd_avx2_vu64 a3, nsimd_avx2_vu64 a4, u64, avx2);
+void store4a(u32* a0, nsimd_avx2_vu32 a1, nsimd_avx2_vu32 a2, nsimd_avx2_vu32 a3, nsimd_avx2_vu32 a4, u32, avx2);
+void store4a(u16* a0, nsimd_avx2_vu16 a1, nsimd_avx2_vu16 a2, nsimd_avx2_vu16 a3, nsimd_avx2_vu16 a4, u16, avx2);
+void store4a(u8* a0, nsimd_avx2_vu8 a1, nsimd_avx2_vu8 a2, nsimd_avx2_vu8 a3, nsimd_avx2_vu8 a4, u8, avx2);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>void store4a(f64* a0, nsimd_sve_vf64 a1, nsimd_sve_vf64 a2, nsimd_sve_vf64 a3, nsimd_sve_vf64 a4, f64, sve);
+void store4a(f32* a0, nsimd_sve_vf32 a1, nsimd_sve_vf32 a2, nsimd_sve_vf32 a3, nsimd_sve_vf32 a4, f32, sve);
+void store4a(f16* a0, nsimd_sve_vf16 a1, nsimd_sve_vf16 a2, nsimd_sve_vf16 a3, nsimd_sve_vf16 a4, f16, sve);
+void store4a(i64* a0, nsimd_sve_vi64 a1, nsimd_sve_vi64 a2, nsimd_sve_vi64 a3, nsimd_sve_vi64 a4, i64, sve);
+void store4a(i32* a0, nsimd_sve_vi32 a1, nsimd_sve_vi32 a2, nsimd_sve_vi32 a3, nsimd_sve_vi32 a4, i32, sve);
+void store4a(i16* a0, nsimd_sve_vi16 a1, nsimd_sve_vi16 a2, nsimd_sve_vi16 a3, nsimd_sve_vi16 a4, i16, sve);
+void store4a(i8* a0, nsimd_sve_vi8 a1, nsimd_sve_vi8 a2, nsimd_sve_vi8 a3, nsimd_sve_vi8 a4, i8, sve);
+void store4a(u64* a0, nsimd_sve_vu64 a1, nsimd_sve_vu64 a2, nsimd_sve_vu64 a3, nsimd_sve_vu64 a4, u64, sve);
+void store4a(u32* a0, nsimd_sve_vu32 a1, nsimd_sve_vu32 a2, nsimd_sve_vu32 a3, nsimd_sve_vu32 a4, u32, sve);
+void store4a(u16* a0, nsimd_sve_vu16 a1, nsimd_sve_vu16 a2, nsimd_sve_vu16 a3, nsimd_sve_vu16 a4, u16, sve);
+void store4a(u8* a0, nsimd_sve_vu8 a1, nsimd_sve_vu8 a2, nsimd_sve_vu8 a3, nsimd_sve_vu8 a4, u8, sve);</code></pre>
+  </body>
+</html>

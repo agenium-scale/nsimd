@@ -1,0 +1,605 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Overview</h1>
+<h2>NSIMD scalar types</h2>
+<p>Their names follows the following pattern: <code>Sxx</code> where</p>
+<ul>
+<li><p><code>S</code> is <code>i</code> for signed integers, <code>u</code> for unsigned integer and <code>f</code> for
+floatting point number.</p></li>
+<li><p><code>xx</code> is the number of bits taken to represent the number.</p></li>
+</ul>
+<p>Full list of scalar types:</p>
+<ul>
+<li><p><code>f64</code></p></li>
+<li><p><code>f32</code></p></li>
+<li><p><code>f16</code></p></li>
+<li><p><code>i64</code></p></li>
+<li><p><code>i32</code></p></li>
+<li><p><code>i16</code></p></li>
+<li><p><code>i8</code></p></li>
+<li><p><code>u64</code></p></li>
+<li><p><code>u32</code></p></li>
+<li><p><code>u16</code></p></li>
+<li><p><code>u8</code></p></li>
+</ul>
+<h2>NSIMD SIMD vector types</h2>
+<p>Their names follows the following pattern: <code>vSCALAR</code> where <code>SCALAR</code> is a
+one of scalar type listed above. For example <code>vi8</code> means a SIMD vector
+containing <code>i8</code>&apos;s.</p>
+<p>Full list of SIMD vector types:</p>
+<ul>
+<li><p><code>vf64</code></p></li>
+<li><p><code>vf32</code></p></li>
+<li><p><code>vf16</code></p></li>
+<li><p><code>vi64</code></p></li>
+<li><p><code>vi32</code></p></li>
+<li><p><code>vi16</code></p></li>
+<li><p><code>vi8</code></p></li>
+<li><p><code>vu64</code></p></li>
+<li><p><code>vu32</code></p></li>
+<li><p><code>vu16</code></p></li>
+<li><p><code>vu8</code></p></li>
+</ul>
+<h2>C/C++ base APIs</h2>
+<p>These come automatically when you include <code>nsimd/nsimd.h</code>. You do <em>not</em> need
+to include a header file for having a function. In NSIMD, we call a platform
+an architecture e.g. Intel, ARM, POWERPC. We call SIMD extension a set of
+low-level functions and types provided to access a given SIDM extension.
+Examples include SSE2, SSE42, AVX, ...</p>
+<p>Here is a list of supported platforms and their corresponding SIMD extensions.</p>
+<ul>
+<li><p>Platform <code>arm</code></p><ul>
+<li><p><code>neon128</code></p></li>
+<li><p><code>aarch64</code></p></li>
+<li><p><code>sve</code></p></li>
+</ul>
+</li>
+<li><p>Platform <code>x86</code></p><ul>
+<li><p><code>sse2</code></p></li>
+<li><p><code>sse42</code></p></li>
+<li><p><code>avx</code></p></li>
+<li><p><code>avx2</code></p></li>
+<li><p><code>avx512_knl</code></p></li>
+<li><p><code>avx512_skylake</code></p></li>
+</ul>
+</li>
+<li><p>Platform <code>cpu</code></p><ul>
+<li><p><code>cpu</code></p></li>
+</ul>
+</li>
+</ul>
+<p>Each simd extension has its own set of SIMD types and functions. Types follow
+the following pattern: <code>nsimd_SIMDEXT_vSCALAR</code> where</p>
+<ul>
+<li><p><code>SIMDEXT</code> is the SIMD extensions.</p></li>
+<li><p><code>SCALAR</code> is one of scalar types listed above.</p></li>
+</ul>
+<p>There are also logical types associated to each SIMD vector type. These types
+are used to represent the result of a comparison of SIMD vectors. They are
+usually bit masks. Their name follow the following pattern:
+<code>nsimd_SIMDEXT_vlSCALAR</code> where</p>
+<ul>
+<li><p><code>SIMDEXT</code> is the SIMD extensions.</p></li>
+<li><p><code>SCALAR</code> is one of scalar types listed above.</p></li>
+</ul>
+<p>Note 1: Platform <code>cpu</code> is scalar fallback when no SIMD extension has been
+specified.</p>
+<p>Note 2: as all SIMD extensions of all platforms are different there is no
+need to put the name of the platform in each identifier.</p>
+<p>Function names follow the following pattern: <code>nsimd_SIMDEXT_FUNCNAME_SCALAR</code>
+where</p>
+<ul>
+<li><p><code>SIMDEXT</code> is the SIMD extensions.</p></li>
+<li><p><code>FUNCNAME</code> is the name of a function e.g. <code>add</code> or <code>sub</code>.</p></li>
+<li><p><code>SCALAR</code> is one of scalar types listed above.</p></li>
+</ul>
+<h3>Generic identifier</h3>
+<p>In C, genericity is achieved using macros.</p>
+<ul>
+<li><p><code>vec(SCALAR)</code> represents the SIMD vector type containing SCALAR elements.
+SCALAR must be one of scalar types listed above.</p></li>
+<li><p><code>vecl(SCALAR)</code> represents the SIMD vector of logicals type containing SCALAR
+elements. SCALAR must be one of scalar types listed above.</p></li>
+<li><p><code>vec_e(SCALAR)</code> represents the SIMD vector type containing SCALAR elements.
+SCALAR must be one of scalar types listed above.</p></li>
+<li><p><code>vecl_e(SCALAR)</code> represents the SIMD vector of logicals type containing
+SCALAR elements. SCALAR must be one of scalar types listed above.</p></li>
+<li><p><code>vFUNCNAME</code> is the macro name to access the function FUNCNAME e.g. <code>vadd</code>,
+<code>vsub</code>.</p></li>
+<li><p><code>vFUNCNAME_e</code> is the macro name to access the function FUNCNAME e.g.
+<code>vadd_e</code>, <code>vsub_e</code>.</p></li>
+</ul>
+<p>In C++98 and C++03, type traits are available.</p>
+<ul>
+<li><p><code>nsimd::simd_traits&lt;SCALAR, SIMDEXT&gt;::vector</code> is the SIMD vector type for
+platform SIMDEXT containing SCALAR elements. SIMDEXT is one of SIMD
+extension listed above, SCALAR is one of scalar type listed above.</p></li>
+<li><p><code>nsimd::simd_traits&lt;SCALAR, SIMDEXT&gt;::vectorl</code> is the SIMD vector of logicals
+type for platform SIMDEXT containing SCALAR elements. SIMDEXT is one of
+SIMD extensions listed above, SCALAR is one of scalar type listed above.</p></li>
+</ul>
+<p>In C++11 and beyond, type traits are still available but typedefs are also
+provided.</p>
+<ul>
+<li><p><code>nsimd::vector&lt;SCALAR, SIMDEXT&gt;</code> is a typedef to
+<code>nsimd::simd_traits&lt;SCALAR, SIMDEXT&gt;::vector</code>.</p></li>
+<li><p><code>nsimd::vectorl&lt;SCALAR, SIMDEXT&gt;</code> is a typedef to
+<code>nsimd::simd_traits&lt;SCALAR, SIMDEXT&gt;::vectorl</code>.</p></li>
+</ul>
+<p>Note that all macro and functions available in plain C are still available in
+C++.</p>
+<h3>List of functions available for manipulation of SIMD vectors</h3>
+<p>For each FUNCNAME a C function (also available in C++)
+named <code>nsimd_SIMDEXT_FUNCNAME_SCALAR</code> is available for each SCALAR type unless
+specified otherwise.</p>
+<p>For each FUNCNAME, a C macro (also available in C++) named <code>vFUNCNAME</code> is
+available and takes as its last argument a SCALAR type.</p>
+<p>For each FUNCNAME, a C macro (also available in C++) named <code>vFUNCNAME_a</code> is
+available and takes as its two last argument a SCALAR type and a SIMDEXT.</p>
+<p>For each FUNCNAME, a C++ function in namespace <code>nsimd</code> named <code>FUNCNAME</code> is
+available. It takes as its last argument the SCALAR type and can optionnally
+take the SIMDEXT as its last last argument.</p>
+<p>For example, for the addition of two SIMD vectors <code>a</code> and <code>b</code> here are the
+possibilities:</p>
+<pre><code>c = nsimd_add_avx_f32(a, b); // use AVX
+c = nsimd::add(a, b, f32()); // use detected SIMDEXT
+c = nsimd::add(a, b, f32(), avx()); // force AVX even if detected SIMDEXT is not AVX
+c = vadd(a, b, f32); // use detected SIMDEXT
+c = vadd_e(a, b, f32, avx); // force AVX even if detected SIMDEXT is not AVX</code></pre>
+<p>Here is a list of available FUNCNAME.</p>
+<ul>
+<li><p><code>int len();</code></p></li>
+<li><p><code>vSCALAR set1(SCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR loadu(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx2 load2u(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx3 load3u(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx4 load4u(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR loada(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx2 load2a(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx3 load3a(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx4 load4a(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vlSCALAR loadlu(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vlSCALAR loadla(SCALAR const* a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>void storeu(SCALAR* a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void store2u(SCALAR* a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>void store3u(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3);</code>
+(a0, a1, a2, a3) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void store4u(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3, vSCALAR a4);</code>
+(a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void storea(SCALAR* a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void store2a(SCALAR* a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>void store3a(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3);</code>
+(a0, a1, a2, a3) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void store4a(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3, vSCALAR a4);</code>
+(a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void storelu(SCALAR* a0, vlSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void storela(SCALAR* a0, vlSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR orb(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR andb(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR andnotb(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR notb(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR xorb(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vlSCALAR orl(vlSCALAR a0, vlSCALAR a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)</p></li>
+<li><p><code>vlSCALAR andl(vlSCALAR a0, vlSCALAR a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)</p></li>
+<li><p><code>vlSCALAR andnotl(vlSCALAR a0, vlSCALAR a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)</p></li>
+<li><p><code>vlSCALAR xorl(vlSCALAR a0, vlSCALAR a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)</p></li>
+<li><p><code>vlSCALAR notl(vlSCALAR a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>vSCALAR add(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR sub(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>SCALAR addv(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR mul(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR div(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ∖\{0\}\)</p></li>
+<li><p><code>vSCALAR neg(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR min(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR max(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR shr(vSCALAR a0, int a1);</code>
+(a0, a1) ∈ \(ℝ × ℕ\)
+Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
+<li><p><code>vSCALAR shl(vSCALAR a0, int a1);</code>
+(a0, a1) ∈ \(ℝ × ℕ\)
+Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
+<li><p><code>vlSCALAR eq(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vlSCALAR ne(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vlSCALAR gt(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vlSCALAR ge(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vlSCALAR lt(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vlSCALAR le(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR if_else1(vlSCALAR a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(𝔹 × ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR abs(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR fma(vSCALAR a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR fnma(vSCALAR a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR fms(vSCALAR a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR fnms(vSCALAR a0, vSCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR ceil(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR floor(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR trunc(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR round_to_even(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>int all(vlSCALAR a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>int any(vlSCALAR a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>int nbtrue(vlSCALAR a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>vSCALAR reinterpret(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vlSCALAR reinterpretl(vlSCALAR a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>vSCALAR cvt(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx2 upcvt(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)
+Only available for i8, u8, i16, u16, f16, i32, u32, f32</p></li>
+<li><p><code>vSCALAR downcvt(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)
+Only available for i16, u16, f16, i32, u32, f32, i64, u64, f64</p></li>
+<li><p><code>vSCALAR rec(vSCALAR a0);</code>
+a0 ∈ \(ℝ∖\{0\}\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR rec11(vSCALAR a0);</code>
+a0 ∈ \(ℝ∖\{0\}\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR rec8(vSCALAR a0);</code>
+a0 ∈ \(ℝ∖\{0\}\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR sqrt(vSCALAR a0);</code>
+a0 ∈ \([0, +∞)\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR rsqrt11(vSCALAR a0);</code>
+a0 ∈ \([0, +∞)\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR rsqrt8(vSCALAR a0);</code>
+a0 ∈ \([0, +∞)\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>vSCALAR ziplo(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR ziphi(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR unziplo(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR unziphi(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR to_mask(vlSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vlSCALAR to_logical(vSCALAR a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+</ul>
+<h2>C++ advanced API</h2>
+<p>The C++ advanced API is called advanced not because it requires C++11 or above
+but because it makes use of the particular implementation of ARM SVE by ARM
+in their compiler. We do not know if GCC (and possibly MSVC in the distant
+future) will use the same approach. Anyway the current implementation allows
+us to put SVE SIMD vectors inside some kind of structs that behave like
+standard structs. If you want to be sure to write portable code do <em>not</em> use
+this API. Two new types are available.</p>
+<ul>
+<li><p><code>nsimd::pack&lt;SCALAR, N, SIMDEXT&gt;</code> represents <code>N</code> SIMD vectors containing
+SCALAR elements of SIMD extension SIMDEXT. You can specify only the first
+template argument. The second defaults to 1 while the third defaults to the
+detected SIMDEXT.</p></li>
+<li><p><code>nsimd::packl&lt;SCALAR, N, SIMDEXT&gt;</code> represents <code>N</code> SIMD vectors of logical
+type containing SCALAR elements of SIMD extension SIMDEXT. You can specify
+only the first template argument. The second defaults to 1 while the third
+defaults to the detected SIMDEXT.</p></li>
+</ul>
+<p>Use N &gt; 1 when declaring packs to have an unroll of N. This is particularily
+useful on ARM.</p>
+<p>Functions that takes packs do not take any other argument unless specified
+otherwise e.g. the load family of funtions. It is impossible to determine
+the kind of pack (unroll and SIMDEXT) from the type of a pointer. Therefore
+in this case, the last argument must be a pack and this same type will then
+return. Also some functions are available as C++ operators.</p>
+<p>Here is the list of functions that act on packs.</p>
+<ul>
+<li><p><code>int len(pack&lt;T, N, SimdExt&gt; const&amp;);</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; set1(T a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; loadu(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; load2u(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; load3u(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; load4u(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; loada(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; load2a(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; load3a(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; load4a(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; loadlu(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; loadla(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>void storeu(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void store2u(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>void store3u(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3);</code>
+(a0, a1, a2, a3) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void store4u(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3, pack&lt;T, N, SimdExt&gt; const&amp; a4);</code>
+(a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void storea(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void store2a(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>void store3a(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3);</code>
+(a0, a1, a2, a3) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void store4a(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3, pack&lt;T, N, SimdExt&gt; const&amp; a4);</code>
+(a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>void storelu(T* a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void storela(T* a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; orb(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator|</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; andb(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator&amp;</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; andnotb(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; notb(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)
+Available as <code>operator~</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; xorb(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator^</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; orl(packl&lt;T, N, SimdExt&gt; const&amp; a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)
+Available as <code>operator||</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; andl(packl&lt;T, N, SimdExt&gt; const&amp; a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)
+Available as <code>operator&amp;&amp;</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; andnotl(packl&lt;T, N, SimdExt&gt; const&amp; a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; xorl(packl&lt;T, N, SimdExt&gt; const&amp; a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(𝔹 × 𝔹\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; notl(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(𝔹\)
+Available as <code>operator!</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; add(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator+</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; sub(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator-</code></p></li>
+<li><p><code>T addv(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; mul(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator*</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; div(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ∖\{0\}\)
+Available as <code>operator/</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; neg(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)
+Available as <code>operator-</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; min(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; max(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; shr(pack&lt;T, N, SimdExt&gt; const&amp; a0, int a1);</code>
+(a0, a1) ∈ \(ℝ × ℕ\)
+Available as <code>operator&gt;&gt;</code>
+Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; shl(pack&lt;T, N, SimdExt&gt; const&amp; a0, int a1);</code>
+(a0, a1) ∈ \(ℝ × ℕ\)
+Available as <code>operator&lt;&lt;</code>
+Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; eq(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator==</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; ne(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator!=</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; gt(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator&gt;</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; ge(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator&gt;=</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; lt(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator&lt;</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; le(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)
+Available as <code>operator&lt;=</code></p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; if_else1(packl&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(𝔹 × ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; abs(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; fma(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; fnma(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; fms(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; fnms(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; ceil(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; floor(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; trunc(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; round_to_even(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>int all(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>int any(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>int nbtrue(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; reinterpret(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; reinterpretl(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(𝔹\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; cvt(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; upcvt(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)
+Only available for i8, u8, i16, u16, f16, i32, u32, f32</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; downcvt(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)
+Only available for i16, u16, f16, i32, u32, f32, i64, u64, f64</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; rec(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ∖\{0\}\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; rec11(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ∖\{0\}\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; rec8(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ∖\{0\}\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; sqrt(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \([0, +∞)\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; rsqrt11(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \([0, +∞)\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; rsqrt8(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \([0, +∞)\)
+Only available for f64, f32, f16</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; ziplo(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; ziphi(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; unziplo(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; unziphi(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; to_mask(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; to_logical(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
+a0 ∈ \(ℝ\)</p></li>
+</ul>
+  </body>
+</html>

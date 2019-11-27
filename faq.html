@@ -1,0 +1,178 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Frequently Asked Questions</h1>
+<h2>Why Is the Speed-Up of My Code Not as Expected?</h2>
+<p>There are several factors which can reduce the speed-up obtained using <code>nsimd</code>.</p>
+<ul>
+<li><p>Have you enabled compiler optimizations? You must enable all compiler
+optimizations (like <code>-O3</code>).</p></li>
+<li><p>Have you compiled in 64 bit mode? There is significant performance increase on
+architectures supporting 64 bit binaries.</p></li>
+<li><p>Is you algorithm memory bound? Computational problems can often be classed as
+either compute-bound or memory-bound. Memory bound problems reach the limits
+of the system bandwidth transfering data between the memory and the processor,
+while compute-bound problems are limited by the processor&apos;s calculation
+ability.
+Processors have often several hierarchies of caches. The time taken to
+transfer data from the cache to a register varies depending on the cache.
+When the required data is not in the cache, it is referred to as a cache miss.
+Cache-misses are very expensive. Data is transferred from memory to the cache
+in cache-lines sized chunks. On modern x86 machines, a cache-line is 64 bytes
+or twice the size of an <code>AVX</code> register. It is therefore highly advantageous to
+use all data loaded into cache.
+The following loop is clearly memory bound as all of the time is spent loading
+and storing the data. The cost of the computation is negligible compared to
+that of the memory accesses.</p><pre class="nohighlight"><code>for (int i = 0; i &lt; size; i += pack_t::static_size) {
+  pack_t v0(&amp;data[i]);
+  v0 = v0 * 2;
+  bs::aligned_store(v0, &amp;output[i]);
+}</code></pre><p>The following loop is compute-bound. As most of the time is spent calculating
+exp, significant speed-up is observed when this code is vectorized.</p><pre class="nohighlight"><code>t0 = high_resolution_clock::now();
+for (int i = 0; i &lt; size; i += pack_t::static_size) {
+  pack_t v0(&amp;data[i]);
+  v0 = bs::exp(bs::exp(v0));
+  bs::aligned_store(v0, &amp;output[i]);
+}</code></pre></li>
+<li><p>Is your code trivially vectorizable? Modern compilers can vectorize trivial
+code segments automatically. If you benchmark a trivial scalar code versus a
+vectorized code, the compiler may vectorize the scalar code, thereby giving
+similar performance to the vectorized version.</p></li>
+<li><p>Is your algorithm vectorizable?</p></li>
+</ul>
+<h2>Why Did My Code Seg-Faulted or Crashed?</h2>
+<p>The most common cause of seg-faults in SIMD codes is accessing non-aligned
+memory. For best performance, all memory should be aligned. <code>nsimd</code> includes an
+aligned memory allocation function and an aligned memory allocator to help you
+with this. Please refer to <a href="tutorials.html">tutorials</a> for details on how to
+ensure that you memory is correctly aligned.</p>
+<h2>How to Measure the Speed-Up of SIMD code?</h2>
+<p>There are several ways to measure the speed-up of your code. You may use the
+<a href="https://github.com/google/benchmark"><code>Google Benchmark</code></a> to benchmark your code
+segment. This allows you to measure the execution time of your code.</p>
+<p>Otherwise, you may use standard timing routines. C++11 adds <code>std::chrono</code>. You
+can use
+<a href="https://en.cppreference.com/w/cpp/chrono/high_resolution_clock"><code>std::chrono::high_resolution_clock</code></a>
+if <code>std::chrono::high_resolution_clock::is_steady</code> is true. If not, use
+<a href="https://en.cppreference.com/w/cpp/chrono/steady_clock"><code>std::chrono::steady_clock</code></a> otherwise.
+In C and C++98, use <a href="http://man7.org/linux/man-pages/man2/clock_gettime.2.html"><code>clock_gettime</code></a>
+with <code>CLOCK_MONOTONIC</code> or equivalent for non POSIX.1-2001 system. In order to
+accurately benchmark your code, there are several points to consider.</p>
+<ul>
+<li><p>Your input should be sufficiently large. This is to eliminate cache effects.</p></li>
+<li><p>Your code is compiled in release mode, with all optimizations enabled and
+debug information not included.</p></li>
+<li><p>You should measure several times and use the median (better than the average).</p></li>
+</ul>
+<p>A typical case where a benchmark could give inaccurate results is where the
+input is not large enough to fill the cache and a scalar and SIMD code segment
+are individually benchmarked, one after the other. In this case, all of the data
+will be loaded into the cache during the first bench, and will be available for
+the second bench, therefore decreasing the execution time of the second bench.
+Also, if you measure the code segment multiple times, the data from the first
+execution will already be in the cache.</p>
+<h2>My Code Compiled for <code>AVX</code> Is Not Twice As Fast As for <code>SSE</code></h2>
+<p>Not all <code>SSE</code> instructions have an equivalent <code>AVX</code> instruction. Also, the
+cycles required for certain instructions are not equal on both architectures,
+for example, <code>sqrt</code> on <code>SSE</code> requires 13-14 cycles whereas <code>sqrt</code> on <code>AVX</code>
+requires 21-28 cycles. Please refer
+<a href="https://www.agner.org/optimize/instruction_tables.pdf">here</a> for more
+information.</p>
+<p>Very few integer operations are supported on <code>AVX</code>, <code>AVX2</code> is required for most
+integer operations. If a <code>nsimd</code> function is called on an integer <code>AVX</code>
+register, this register will be split into two <code>SSE</code> registers and the
+equivalent instruction called on both register. In the case, no speed-up will be
+observed compared with <code>SSE</code> code. This is true also on <code>POWER 7</code>, where
+<code>double</code> is not supported.</p>
+<h2>I Disassembled My Code, and the Generated Code Is Less Than Optimal</h2>
+<ul>
+<li><p>Have you compiled in release mode, with full optimizations options?</p></li>
+<li><p>Have you used a 64 bit compiler?</p></li>
+<li><p>There are many SIMD related bugs across all compilers, and some compilers
+generate less than optimal code in some cases. Is it possible to update your
+compiler to a more modern compiler?</p></li>
+<li><p>We provide workarounds for several compiler bugs, however, we may have
+missed some. You may also have found a bug in <code>nsimd</code>. Please report this
+through issues on our github with a minimal code example. We responds quickly
+to bug reports and do our best to patch them as quickly as possible.</p></li>
+</ul>
+<h2>How Can I Use a Certain Intrinsic?</h2>
+<p>If you require a certain intrinsic, you may search inside of <code>nsimd</code> for it and
+then call the relevant function.</p>
+<p>In rare cases, the intrinsic may not be included in <code>nsimd</code> as we map the
+intrinsic wherever it makes sense semantically. If a certain intrinsic does not
+fit inside of this model, if may be excluded. In this case, you may call it
+yourself, however, this will not be portable. </p>
+  </body>
+</html>

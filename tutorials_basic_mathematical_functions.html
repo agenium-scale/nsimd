@@ -1,0 +1,115 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Basic Tutorial: Mathematical Functions</h1>
+<p>In this tutorial we will demonstrate the use of SIMD mathematical functions
+such as <code>nsimd::sin</code> and <code>nsimd::cos</code>.</p>
+<h2>SIMD Mathematical Functions</h2>
+<p>Mathematical functions can be very expensive, so using a vectorized version of
+these functions is of great benefit, especially if you have a large input array.
+<code>nsimd</code> includes vectorized versions of all common mathematical functions. The
+developers of <code>nsimd</code> take numerical precisions very seriously, so all of these
+functions are extremely accurate despite being highly optimized.</p>
+<p>The standard way to calculate the sine or cosine of a vector of data is to loop
+over the data and calculate the sine and cosine of each element:</p>
+<pre class="C++"><code>for (size_t i = 0; i &lt; in.size(); ++i) {
+  sin_seq[i] = std::sin(in[i]);
+  cos_seq[i] = std::cos(in[i]);
+}</code></pre>
+
+<p>This type of calculation is the perfect candidate for vectorization!</p>
+<pre class="C++"><code>size_t len = size_t(nsimd::len(nsimd::pack&lt;float&gt;()));
+for (size_t i = 0; i + len &lt; in.size(); i += len) {
+  auto v = nsimd::loada&lt;nsimd::pack&lt;float&gt; &gt;(&amp;in[0]);
+  auto v_sin = nsimd::sin(v);
+  auto v_cos = nsimd::cos(v);
+  nsimd::storea(&amp;sin_nsimd[i], v_sin);
+  nsimd::storea(&amp;cos_nsimd[i], v_cos);
+}</code></pre>
+
+<p>In this example we are calculating the sine and the cosine of the same input vector X. The calculations of a sine and cosine contain many common steps, so it is possible to calculate them both simultaneously and thus save precious cpu cycles!</p>
+<pre class="C++"><code>size_t len = size_t(nsimd::len(nsimd::pack&lt;float&gt;()));
+for (size_t i = 0; i + len &lt; in.size(); i += len) {
+  auto v = nsimd::loada&lt;nsimd::pack&lt;float&gt; &gt;(&amp;in[0]);
+  auto v_sincos = nsimd::sincos(v);
+  nsimd::storea(&amp;sin_nsimd[i], v_sincos.first);
+  nsimd::storea(&amp;cos_nsimd[i], v_sincos.second);
+}</code></pre>
+
+<p>Download full source code:</p>
+<ul>
+<li><p><a href="../src/sin_cos.cpp">sin_cos.cpp</a></p></li>
+</ul>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Basic Tutorial: The SIMD Pack</h1>
+<p>In this tutorial we will write and compile a very simple SIMD kernel to become
+familiar with the basics of <code>nsimd</code>.</p>
+<h2>Getting Started</h2>
+<p>All <code>nsimd</code> library is available with this include:</p>
+<pre class="C++"><code>#include &lt;nsimd/nsimd-all.hpp&gt;</code></pre>
+
+<h2>Basic Building Block</h2>
+<h3><code>nsimd::pack&lt;T&gt;</code></h3>
+<p><code>nsimd::pack&lt;T&gt;</code> can be considered analogous to an SIMD register on your (or any
+other) machine. Operations performed on packs - from elementary operations such
+as addition to complicated functions such as <code>nsimd::sin(x)</code> - will be performed
+using SIMD registers and operations if supported by your hardware. As shown in
+the following example, data must be manually loaded into and stored from these
+registers.</p>
+<h3>Loading Data into a <code>nsimd::pack&lt;T&gt;</code></h3>
+<p>One way to construct a <code>nsimd::pack&lt;T&gt;</code> is to simply declare (default-construct)
+it. Such a pack may <em>not</em> zero-initialized and thus may <em>contain arbitrary
+values</em>.</p>
+<pre class="C++"><code>nsimd::pack&lt;float&gt; pack;
+std::cout &lt;&lt; pack &lt;&lt; std::endl;
+// Possible output: { 5.88449e-39, 0, 5.88353e-39, 0 }</code></pre>
+
+<p>Another way to construct a <code>nsimd::pack&lt;T&gt;</code> is to fill it with a single value.
+This so-called splatting constructor takes one scalar value and replicates it in
+all elements of the pack.</p>
+<pre class="C++"><code>nsimd::pack&lt;float&gt; pack(42);
+std::cout &lt;&lt; pack &lt;&lt; std::endl;
+// Output for SSE2: { 42, 42, 42, 42 }</code></pre>
+
+<p>Most common usage to construct a <code>nsimd::pack&lt;T&gt;</code> is by passing a pointer to a
+block of contiguous, aligned memory.</p>
+<pre class="C++"><code>    size_t N = size_t(nsimd::len(nsimd::pack&lt;float&gt;()));
+    std::vector&lt;float, nsimd::allocator&lt;float&gt; &gt; data(N);
+    for (size_t i = 0; i &lt; N; ++i) {
+      data[i] = float(i);
+    }
+
+    nsimd::pack&lt;float&gt; pack = nsimd::loada&lt;nsimd::pack&lt;float&gt; &gt;(&amp;data[0]);
+    std::cout &lt;&lt; pack &lt;&lt; std::endl;
+    // Output for SSE2: { 0, 1, 2, 3 }</code></pre>
+
+<p>If the memory is not aligned, not recommented, you can use <code>nsimd::loadu</code>:</p>
+<pre class="C++"><code>    size_t N = size_t(nsimd::len(nsimd::pack&lt;float&gt;()));
+    std::vector&lt;float&gt; data(N);
+    for (size_t i = 0; i &lt; N; ++i) {
+      data[i] = float(i);
+    }
+
+    nsimd::pack&lt;float&gt; pack = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;data[0]);
+    std::cout &lt;&lt; pack &lt;&lt; std::endl;
+    // Output for SSE2: { 0, 1, 2, 3 }</code></pre>
+
+<p>NOTE:<br>
+This vector uses a custom memory allocator to ensure that the memory used for
+storage of the data is correctly aligned for the target architecture. Please see
+<a href="tutorials_basic_memory_alignment.html">Memory Alignment</a> for a detailed
+explanation of this. </p>
+<p>When constructing a <code>nsimd::pack&lt;T&gt;</code> in this manner, you must ensure that there
+is sufficient data in the block of memory to fill the <code>nsimd::pack&lt;T&gt;</code>. For
+example, on an <code>AVX</code> enabled machine, a SIMD vector of <code>float</code> (32 bits)
+contains <code>8</code> elements. Therefore, there must be at least <code>8</code> elements in the 
+block of memory pointed to by this pointer. This same code compiled for the
+<code>AVX-512</code>, would require that the block of memory contain <code>16</code> elements,
+otherwise there would be undefined behaviour at runtime. When writing vectorized
+code, care should be taken to write the code in as generic a manner as possible
+to ensure portability across architectures.</p>
+<p>NOTE:<br>
+Other functions exist to explicitly load data from unaligned memory,
+non-contiguous data and other more complex scenarios. These functions are
+presented in later tutorials.</p>
+<h3>Operations on <code>nsimd::pack&lt;T&gt;</code></h3>
+<p>Once initialized, operations on <code>nsimd::pack&lt;T&gt;</code> instances are similar to scalar
+operations as all operators and standard library math functions are provided.</p>
+<pre class="C++"><code>nsimd::pack&lt;float&gt; pack0(7);
+nsimd::pack&lt;float&gt; pack1(21);
+nsimd::pack&lt;float&gt; r = (pack0 + pack1) * 2.0f;
+std::cout &lt;&lt; &quot;(&quot; &lt;&lt; pack0 &lt;&lt; &quot; + &quot; &lt;&lt; pack1 &lt;&lt; &quot;) * 2.0f = &quot; &lt;&lt; r
+          &lt;&lt; std::endl;
+// Output for SSE2:
+// ({ 7, 7, 7, 7 } + { 21, 21, 21, 21 }) * 2.0f = { 56, 56, 56, 56 }</code></pre>
+
+<h3>Storing the Result In Memory</h3>
+<p>The result may be saved to memory as follows:</p>
+<pre class="C++"><code>    size_t N = size_t(nsimd::len(nsimd::pack&lt;float&gt;()));
+    std::vector&lt;float, nsimd::allocator&lt;float&gt; &gt; data(N);
+
+    nsimd::pack&lt;float&gt; pack(42);
+    nsimd::storea(&amp;data[0], pack);
+
+    std::cout &lt;&lt; &quot;{&quot;;
+    for (size_t i = 0; i &lt; N; ++i) {
+      std::cout &lt;&lt; (i == 0 ? &quot; &quot; : &quot;, &quot;) &lt;&lt; data[i];
+    }
+    std::cout &lt;&lt; &quot; }&quot; &lt;&lt; std::endl;
+    // Output for SSE2: { 42, 42, 42, 42 }</code></pre>
+
+<p>If the memory is not aligned, not recommented, you can use <code>nsimd::loadu</code>:</p>
+<pre class="C++"><code>    size_t N = size_t(nsimd::len(nsimd::pack&lt;float&gt;()));
+    std::vector&lt;float&gt; data(N);
+
+    nsimd::pack&lt;float&gt; pack(42);
+    nsimd::storeu(&amp;data[0], pack);
+
+    std::cout &lt;&lt; &quot;{&quot;;
+    for (size_t i = 0; i &lt; N; ++i) {
+      std::cout &lt;&lt; (i == 0 ? &quot; &quot; : &quot;, &quot;) &lt;&lt; data[i];
+    }
+    std::cout &lt;&lt; &quot; }&quot; &lt;&lt; std::endl;
+    // Output for SSE2: { 42, 42, 42, 42 }</code></pre>
+
+<p>Download full source code:</p>
+<ul>
+<li><p><a href="../src/pack.cpp">pack.cpp</a></p></li>
+</ul>
+<h2>Compiling the Code</h2>
+<p>The compilation of a program using <code>nsimd</code> should be like using any other
+external library. With compilers like <code>GCC</code>, you must specify the include
+directory with <code>-I /path/of/nsimd/nsimd-all.hpp</code> if this header file is not in
+one directory of the default include directories. You also must specif
+<code>-lsimd_ARCH</code> (for example, <code>-lnsimd_x86_64</code>) to link with <code>nsimd</code> library. If
+the library is not in one directory of the default library directories, you must
+specify it with <code>-L /path/of/libsimd_ARCH.so</code>. If you have to use <code>-L</code> option,
+you will need set <code>LD_LIBRARY_PATH</code> before running the program. An alternative
+is to add <code>-rpath /path/of/libsimd_ARCH.so</code> option during the compilation.</p>
+<p>It is strongly recommended that you enable all of your compiler optimizations,
+for example, <code>-O3</code> for compilers like <code>GCC</code>, to exploit the full performance
+potential of <code>nsimd</code>. You should also pass the required compiler flag for your
+target architecture to enable the SIMD extensions, especially if you are
+cross-compiling. The exhaustive list of all compiler flags for all supported
+compilers is provided in the <a href="index.html">index page</a>.</p>
+<p>We can find an example of <code>Makefile</code> to compile programs using <code>nsimd</code> in the
+sources of this documentation. Future tutorials will explain how to compile a
+program using <code>nsimd</code> with <code>CMake</code> and with <code>nsconfig</code>, our alternative to
+<code>CMake</code>.</p>
+  </body>
+</html>

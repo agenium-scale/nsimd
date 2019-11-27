@@ -1,0 +1,257 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h1>Intermediate Tutorial: N-Body Problem</h1>
+<p>In this tutorial we will show you how to optimize an n-body simulation using
+<code>nsimd</code>.</p>
+<h2>N-Body Problem</h2>
+<p>This problem is concerned with the calculation of the individual motion of
+celestial objects caused by gravity. This is an example of a problem of
+complexity. The formula to calculate the gravitational force between two objects
+is:</p>
+<p>Where:</p>
+<ul>
+<li><p>\(q_{i}\) is the position vector of object <em>i</em></p></li>
+<li><p>\(m_{i}\) is the mass of object <em>i</em></p></li>
+<li><p>\(G\) is the gravitational constant</p></li>
+</ul>
+<h2>Calculation</h2>
+<p>The scalar calculation of this problem is done as follows:</p>
+<pre class="C++"><code>template &lt;typename T&gt; void nbody_step_scalar(particles_t&lt;T&gt; &amp;particles) {
+  T epsilon = 0.00125f;
+  for (std::size_t i = 0; i &lt; particles.size(); ++i) {
+    T ax{0};
+    T ay{0};
+    T az{0};
+
+    T pix = particles.x[i];
+    T piy = particles.y[i];
+    T piz = particles.z[i];
+
+    T pim = particles.m[i];
+
+    for (size_t j = i + 1; j &lt; particles.size(); ++j) {
+      T pjx = particles.x[j];
+      T pjy = particles.y[j];
+      T pjz = particles.z[j];
+
+      T dx = pjx - pix;
+      T dy = pjy - piy;
+      T dz = pjz - piz;
+
+      T inorm =
+          T(6.667408e-11) / std::sqrt(dx * dx + dy * dy + dz * dz + epsilon);
+
+      T fi = particles.m[j] * inorm * inorm * inorm;
+      T fj = pim * inorm * inorm * inorm;
+
+      ax += dx * fi;
+      ay += dy * fi;
+      az += dz * fi;
+
+      particles.vx[j] -= dx * fj;
+      particles.vy[j] -= dy * fj;
+      particles.vz[j] -= dz * fj;
+    }
+
+    T pivx = particles.vx[i];
+    T pivy = particles.vy[i];
+    T pivz = particles.vz[i];
+
+    pivx += ax;
+    pivy += ay;
+    pivz += az;
+
+    pix += pivx;
+    piy += pivy;
+    piz += pivz;
+
+    particles.vx[i] = pivx;
+    particles.vy[i] = pivy;
+    particles.vz[i] = pivz;
+
+    particles.x[i] = pix;
+    particles.y[i] = piy;
+    particles.z[i] = piz;
+  }
+}</code></pre>
+
+<p>The <code>particules_t</code> structure is:</p>
+<pre class="C++"><code>template &lt;typename T&gt; struct particles_t {
+  size_t N;
+
+  std::vector&lt;T&gt; x;
+  std::vector&lt;T&gt; y;
+  std::vector&lt;T&gt; z;
+
+  std::vector&lt;T&gt; m;
+
+  std::vector&lt;T&gt; vx;
+  std::vector&lt;T&gt; vy;
+  std::vector&lt;T&gt; vz;
+
+  particles_t(size_t N = 0)
+      : N(N), x(N), y(N), z(N), m(N), vx(N), vy(N), vz(N) {}
+
+  size_t size() const { return N; }
+};</code></pre>
+
+<p>Note the use of a small constant, \(\epsilon\). This is referred to as
+<em>softening</em>, a numerical trick to prevent division by zero if two particles are
+too close together.</p>
+<p>This calculation is trivially vectorizable as follows:</p>
+<pre class="C++"><code>template &lt;typename T&gt; void nbody_step(particles_t&lt;T&gt; &amp;particles) {
+  nsimd::pack&lt;T&gt; grav_con(T(6.67408e-11));
+  nsimd::pack&lt;T&gt; epsilon(T(0.00125));
+
+  size_t len = size_t(nsimd::len(nsimd::pack&lt;T&gt;()));
+  for (size_t i = 0; i &lt; particles.size(); i += len) {
+    nsimd::pack&lt;T&gt; ax(T(0));
+    nsimd::pack&lt;T&gt; ay(T(0));
+    nsimd::pack&lt;T&gt; az(T(0));
+
+    nsimd::pack&lt;T&gt; pix = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.x[i]);
+    nsimd::pack&lt;T&gt; piy = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.y[i]);
+    nsimd::pack&lt;T&gt; piz = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.z[i]);
+
+    nsimd::pack&lt;T&gt; pim = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.m[i]);
+
+    for (size_t j = i + 1; j &lt; particles.size(); ++j) {
+      nsimd::pack&lt;T&gt; pjx = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.x[j]);
+      nsimd::pack&lt;T&gt; pjy = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.y[j]);
+      nsimd::pack&lt;T&gt; pjz = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.z[j]);
+
+      nsimd::pack&lt;T&gt; dx = pjx - pix;
+      nsimd::pack&lt;T&gt; dy = pjy - piy;
+      nsimd::pack&lt;T&gt; dz = pjz - piz;
+
+      nsimd::pack&lt;T&gt; inorm =
+          grav_con / nsimd::sqrt(dx * dx + dy * dy + dz * dz + epsilon);
+      nsimd::pack&lt;T&gt; inorm3 = inorm * inorm * inorm;
+
+      nsimd::pack&lt;T&gt; fi =
+          nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.m[j]) * inorm3;
+      nsimd::pack&lt;T&gt; fj = pim * inorm3;
+
+      ax = ax + dx * fi;
+      ay = ay + dy * fi;
+      az = az + dz * fi;
+
+      nsimd::pack&lt;T&gt; pjvx =
+          nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.vx[j]);
+      pjvx = pjvx - dx * fj;
+      nsimd::storeu(&amp;particles.vx[j], pjvx);
+      nsimd::pack&lt;T&gt; pjvy =
+          nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.vy[j]);
+      pjvy = pjvy - dy * fj;
+      nsimd::storeu(&amp;particles.vy[j], pjvy);
+      nsimd::pack&lt;T&gt; pjvz =
+          nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.vz[j]);
+      pjvz = pjvz - dz * fj;
+      nsimd::storeu(&amp;particles.vz[j], pjvz);
+    }
+
+    nsimd::pack&lt;T&gt; pivx = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.vx[i]);
+    nsimd::pack&lt;T&gt; pivy = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.vy[i]);
+    nsimd::pack&lt;T&gt; pivz = nsimd::loadu&lt;nsimd::pack&lt;float&gt; &gt;(&amp;particles.vz[i]);
+
+    pivx = pivx + ax;
+    pivy = pivy + ay;
+    pivz = pivz + az;
+
+    pix = pix + pivx;
+    piy = piy + pivy;
+    piz = piz + pivz;
+
+    nsimd::storeu(&amp;particles.vx[i], pivx);
+    nsimd::storeu(&amp;particles.vy[i], pivy);
+    nsimd::storeu(&amp;particles.vz[i], pivz);
+
+    nsimd::storeu(&amp;particles.x[i], pix);
+    nsimd::storeu(&amp;particles.y[i], piy);
+    nsimd::storeu(&amp;particles.z[i], piz);
+  }
+}</code></pre>
+
+<p>NOTE:<br>
+All constants are loaded into SIMD vectors outside of the main loop, so that
+these vectors are not generated each iteration of the calculation.</p>
+<p>It is not possible to use aligned stores in the interior loop as these stores
+will not be aligned for each store.</p>
+<p>Download full source code:</p>
+<ul>
+<li><p><a href="../src/nbody.cpp">nbody.cpp</a></p></li>
+</ul>
+  </body>
+</html>

@@ -1,0 +1,523 @@
+<!--
+
+Copyright (c) 2019 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a>
+</center>
+<h2>How to Contribute to <code>nsimd</code>?</h2>
+<p>You are welcome to contribute to <code>nsimd</code>. This document gives some details on
+how to add/wrap new intrinsics. When you have finished fixing some bugs or
+adding some new features, please make a pull request. One of our repository
+maintainer will then merge or comment the pull request.</p>
+<h2> Prerequisites</h2>
+<ul>
+<li><p>Respect the philosophy of the library (see <a href="index.html">index</a>.)</p></li>
+<li><p>Basic knowledge of Python 3.</p></li>
+<li><p>Good knowledge of C.</p></li>
+<li><p>Good knowledge of C++.</p></li>
+<li><p>Good knowledge of SIMD programming.</p></li>
+</ul>
+<h2>How Do I Add Support for a New Intrinsic?</h2>
+<h3>Introduction</h3>
+<p><code>nsimd</code> currently supports the following architectures:</p>
+<ul>
+<li><p><code>CPU</code>:</p><ul>
+<li><p><code>CPU</code> called <code>CPU</code> in source code. This &quot;extension&quot; is not really one as it
+is only present so that code written with <code>nsimd</code> can compile and run on
+targets not supported by <code>nsimd</code> or with no SIMD.</p></li>
+</ul>
+</li>
+<li><p>Intel:</p><ul>
+<li><p><code>SSE2</code> called <code>SSE2</code> in source code.</p></li>
+<li><p><code>SSE4.2</code> called <code>SSE42</code> in source code.</p></li>
+<li><p><code>AVX</code> called <code>AVX</code> in source code.</p></li>
+<li><p><code>AVX2</code> called <code>AVX2</code> in source code.</p></li>
+<li><p><code>AVX-512</code> as found on KNLs called <code>AVX512_KNL</code> in source code.</p></li>
+<li><p><code>AVX-512</code> as found on Xeon Skylake CPUs called <code>AVX512_SKYLAKE</code> in source code.</p></li>
+</ul>
+</li>
+<li><p>Arm</p><ul>
+<li><p><code>NEON</code> 128 bits as found on ARMv7 CPUs called <code>NEON128</code> in source code.</p></li>
+<li><p><code>NEON</code> 128 bits as found on Aarch64 CPUs called <code>AARCH64</code> in source code.</p></li>
+<li><p><code>SVE</code> called <code>SVE</code> in source code.</p></li>
+</ul>
+</li>
+</ul>
+<p><code>nsimd</code> currently supports the following types:</p>
+<ul>
+<li><p><code>i8</code>: signed integers over 8 bits (usually <code>signed char</code>),</p></li>
+<li><p><code>u8</code>: unsigned integers over 8 bits (usually <code>unsigned char</code>),</p></li>
+<li><p><code>i16</code>: signed integers over 16 bits (usually <code>short</code>),</p></li>
+<li><p><code>u16</code>: unsigned integers over 16 bits (usually <code>unsigned short</code>),</p></li>
+<li><p><code>i32</code>: signed integers over 32 bits (usually <code>int</code>),</p></li>
+<li><p><code>u32</code>: unsigned integers over 32 bits (usually <code>unsigned int</code>),</p></li>
+<li><p><code>i64</code>: signed integers over 64 bits (usually <code>long</code>),</p></li>
+<li><p><code>u64</code>: unsigned integers over 64 bits (usually <code>unsigned long</code>),</p></li>
+<li><p><code>f16</code>: floating point numbers over 16 bits in IEEE format called <code>float16</code>
+in the rest of this document
+(<a href="https://en.wikipedia.org/wiki/Half-precision_floating-point_format">https://en.wikipedia.org/wiki/Half-precision_floating-point_format</a>),</p></li>
+<li><p><code>f32</code>: floating point numbers over 32 bits (usually <code>float</code>)</p></li>
+<li><p><code>f64</code>: floating point numbers over 64 bits (usually <code>double</code>),</p></li>
+</ul>
+<p>As C and C++ do not support <code>float16</code>, <code>nsimd</code> provides its own types to handle
+them. Therefore special care has to be taken when implementing
+intrinsics/operators on architecures that do not natively supports them.</p>
+<p>We will make the following misuse of language in the rest of this document.
+The type taken by intrinsics is of course a SIMD vector and more precisely a
+SIMD vector of chars or a SIMD vector of <code>short</code>s or a SIMD vector of <code>int</code>s…
+Therefore when we will talk about an intrinsic, we will say that it takes
+type <code>T</code> as arguments when it takes in fact a SIMD vector of <code>T</code>.</p>
+<h3>Our imaginary intrinsic</h3>
+<p>We will add support to the library for the following imaginary intrinsic: given
+a SIMD vector, suppose that this intrisic called <code>foo</code> takes each element <code>x</code>
+of the vector and compute <code>1 / (1 - x) + 1 / (1 - x)^2</code>. Moreover suppose that
+hardware vendors all propose this intrisic only for floatting point numbers as
+follows:</p>
+<ul>
+<li><p>CPU (no intrinsics is given of course in standard C and C++)</p></li>
+<li><p>Intel (no intrinsics is given for <code>float16</code>s)</p><ul>
+<li><p><code>SSE2</code>: no intrinsics is provided.</p></li>
+<li><p><code>SSE42</code>: <code>_mm_foo_ps</code> for <code>float</code>s and <code>_mm_foo_pd</code> for <code>double</code>s.</p></li>
+<li><p><code>AVX</code>: no intrinsics is provided.</p></li>
+<li><p><code>AVX2</code>: <code>_mm256_foo_ps</code> for <code>float</code>s and <code>_mm256_foo_pd</code> for <code>double</code>s.</p></li>
+<li><p><code>AVX512_KNL</code>: no intrinsics is provided.</p></li>
+<li><p><code>AVX512_SKYLAKE</code>: <code>_mm512_foo_ps</code> for <code>float</code>s and <code>_mm512_foo_pd</code> for
+<code>double</code>s.</p></li>
+</ul>
+</li>
+<li><p>ARM</p><ul>
+<li><p><code>NEON128</code>: <code>vfooq_f16</code> for <code>float16</code>s, <code>vfooq_f32</code> for <code>float</code>s and no
+intrinsics for <code>double</code>s.</p></li>
+<li><p><code>AARCH64</code>: same as <code>NEON128</code> but <code>vfooq_f64</code> for doubles.</p></li>
+<li><p><code>SVE</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively <code>float16</code>s,
+<code>float</code>s and <code>double</code>s.</p></li>
+</ul>
+</li>
+</ul>
+<p>First thing to do is to declare this new intrinsic to the generation system.
+A lot of work is done by the generation system such as generating all functions
+signatures for C and C++ APIs, tests, benchmarks and documentation. Of course
+the default documentation does not say much but you can add a better
+description.</p>
+<h3>Registering the intrinsic (or operator)</h3>
+<p>A function or an intrinsic is called an operator in the generation system.
+Go at the bottom of <code>egg/operators.py</code> and add the following just after
+the <code>Rsqrt11</code> class.</p>
+<pre class="python"><code>class Foo(Operator):
+    full_name = &apos;foo&apos;
+    signature = &apos;v foo v&apos;
+    types = common.ftypes
+    domain = Domain(&apos;R\{1}&apos;)
+    categories = [DocBasicArithmetic]</code></pre>
+<p>This little class will be processed by the generation system so that operator
+<code>foo</code> will be available for the end-user of the library in both C and C++ APIs.
+Each member of this class controls how the generation is be done:</p>
+<ul>
+<li><p><code>full_name</code> is a string containing the human readable name of the operator.
+If not given, the class name will be taken for it.</p></li>
+<li><p><code>signature</code> is a string describing what kind of arguments and how many takes
+the operator. This member is mandatory and must respect the following syntax:
+<code>return_type name_of_operator arg1_type arg2_type ...</code> where <code>return_type</code>
+and the <code>arg*_type</code> can be taken from the following list:</p><ul>
+<li><p><code>v   </code> SIMD vector parameter</p></li>
+<li><p><code>vx2 </code> Structure of 2 SIMD vector parameters</p></li>
+<li><p><code>vx3 </code> Structure of 3 SIMD vector parameters</p></li>
+<li><p><code>vx4 </code> Structure of 4 SIMD vector parameters</p></li>
+<li><p><code>l   </code> SIMD vector of logicals parameter</p></li>
+<li><p><code>s   </code> Scalar parameter</p></li>
+<li><p><code>*   </code> Pointer to scalar parameter</p></li>
+<li><p><code>c*  </code> Pointer to const scalar parameter</p></li>
+<li><p><code>_   </code> void (only for return type)</p></li>
+<li><p><code>p   </code> Parameter (integer)</p></li>
+</ul>
+</li>
+</ul>
+<p>In our case <code>v foo v</code> means that <code>foo</code> takes one SIMD vector as argument and
+returns a SIMD vector as output. Several signatures will be generated for this
+intrinsic according to the types it can supports. In our case the intrinsic
+only support floatting point types.</p>
+<ul>
+<li><p><code>types</code> is a Python list indicating which types are supported by the
+intrinsic. If not given, the intrinsic is supposed to support all types.
+Some Python lists are predefined to help the programmer:</p><ul>
+<li><p><code>ftypes = [&apos;f64&apos;, &apos;f32&apos;, &apos;f16&apos;]       </code> All floatting point types</p></li>
+<li><p><code>ftypes_no_f16 = [&apos;f64&apos;, &apos;f32&apos;]       </code></p></li>
+<li><p><code>itypes = [&apos;i64&apos;, &apos;i32&apos;, &apos;i16&apos;, &apos;i8&apos;] </code> All signed integer types</p></li>
+<li><p><code>utypes = [&apos;u64&apos;, &apos;u32&apos;, &apos;u16&apos;, &apos;u8&apos;] </code> All unsigned integer types</p></li>
+<li><p><code>iutypes = itypes + utypes</code></p></li>
+<li><p><code>types = ftypes + iutypes</code></p></li>
+</ul>
+</li>
+<li><p><code>domain</code> is a string indicating the mathematical domain of definition of the
+operator. This helps for benchmarks and tests for generating random numbers
+as inputs in the correct interval. In our case <code>R\{1}</code> means all real numbers
+(of course all floating point numbers) expect <code>-1</code> for which the operator
+cannot be computed. For examples see how other operators are defined in
+<code>egg/operators.py</code>.</p></li>
+<li><p><code>categories</code> is a list of Python classes that indicates the generation
+system to which categories <code>foo</code> belongs. The list of available categories
+is as follow:</p><ul>
+<li><p><code>DocShuffle          </code> for Shuffle functions</p></li>
+<li><p><code>DocTrigo            </code> for Trigonometric functions</p></li>
+<li><p><code>DocHyper            </code> for Hyperbolic functions</p></li>
+<li><p><code>DocExpLog           </code> for Exponential and logarithmic functions</p></li>
+<li><p><code>DocBasicArithmetic  </code> for Basic arithmetic operators</p></li>
+<li><p><code>DocBitsOperators    </code> for Bits manipulation operators</p></li>
+<li><p><code>DocLogicalOperators </code> for Logicals operators</p></li>
+<li><p><code>DocMisc             </code> for Miscellaneous</p></li>
+<li><p><code>DocLoadStore        </code> for Loads &amp; stores</p></li>
+<li><p><code>DocComparison       </code> for Comparison operators</p></li>
+<li><p><code>DocRounding         </code> for Rounding functions</p></li>
+<li><p><code>DocConversion       </code> for Conversion operators</p></li>
+</ul>
+<p>If no category corresponds to the operator you want to add to <code>nsimd</code> then feel
+free to create a new category (see the bottom of this document)</p></li>
+</ul>
+<p>Many other members are supported by the generation system. We describe them
+quickly here and will give more details in a later version of this document.
+Default values are given in square brakets:</p>
+<ul>
+<li><p><code>cxx_operator [= None]</code> in case the operator has a corresponding C++ operator.</p></li>
+<li><p><code>autogen_cxx_adv [= True]</code> in case the C++ advanced API signatures for this
+operator must not be auto-generated.</p></li>
+<li><p><code>output_to [= common.OUTPUT_TO_SAME_TYPE]</code> in case the operator output type
+differs from its input type. Possible values are:</p><ul>
+<li><p><code>OUTPUT_TO_SAME_TYPE</code>: output is of same type as input.</p></li>
+<li><p><code>OUTPUT_TO_SAME_SIZE_TYPES</code>: output can be any type of same bit size.</p></li>
+<li><p><code>OUTPUT_TO_UP_TYPES</code>: output can be any type of bit size twice the bit
+bit size of the input. In this case the input type will never be a 64-bits
+type.</p></li>
+<li><p><code>OUTPUT_TO_DOWN_TYPES</code>: output can be any type of bit size half the bit
+bit size of the input. In this case the input type will never be a 8-bits
+type.</p></li>
+</ul>
+</li>
+<li><p><code>src [= False]</code> in case the code must be compiled in the library.</p></li>
+<li><p><code>load_store [= False]</code> in case the operator loads/store data from/to
+memory.</p></li>
+<li><p><code>do_bench [= True]</code> in case benchmarks for the operator must not be
+auto-generated.</p></li>
+<li><p><code>desc [= &apos;&apos;]</code> description (in Markdown format) that will appear in the
+documentation for the operator.</p></li>
+<li><p><code>bench_auto_against_cpu [= True]</code> for auto-generation of benchmark against
+<code>nsimd</code> CPU implementation.</p></li>
+<li><p><code>bench_auto_against_mipp [= False]</code> for auto-generation of benchmark against
+the MIPP library.</p></li>
+<li><p><code>bench_auto_against_sleef [= False]</code> for auto-generation of benchmark against
+the Sleef library.</p></li>
+<li><p><code>bench_auto_against_std [= False]</code> for auto-generation of benchmark against
+the standard library.</p></li>
+<li><p><code>tests_mpfr [= False]</code> in case the operator has an MPFR counterpart for
+comparison, then test the correctness of the operator against it.</p></li>
+<li><p><code>tests_ulps [= False]</code> in case the auto-generated tests has to compare ULPs
+(<a href="https://en.wikipedia.org/wiki/Unit_in_the_last_place">https://en.wikipedia.org/wiki/Unit_in_the_last_place</a>).</p></li>
+</ul>
+<h3>Implementing the operator</h3>
+<p>Now that the operator is registered, all signatures will be generated but
+the implemenatations will be missing. Type</p>
+<pre class="sh"><code>python3 egg/hatch.py -Af</code></pre>
+<p>and the following files (among many other) should appear:</p>
+<ul>
+<li><p><code>include/nsimd/cpu/cpu/foo.h</code></p></li>
+<li><p><code>include/nsimd/x86/sse2/foo.h</code></p></li>
+<li><p><code>include/nsimd/x86/sse42/foo.h</code></p></li>
+<li><p><code>include/nsimd/x86/avx/foo.h</code></p></li>
+<li><p><code>include/nsimd/x86/avx2/foo.h</code></p></li>
+<li><p><code>include/nsimd/x86/avx512_knl/foo.h</code></p></li>
+<li><p><code>include/nsimd/x86/avx512_skylake/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/neon128/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/aarch64/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/sve/foo.h</code></p></li>
+</ul>
+<p>They each correspond to the implementations of the operator for each supported
+architectures. When openening one of these files the implementations in plain
+C and then in C++ (falling back to the C function) should be there but all the
+C implementations are reduced to <code>abort();</code>. This is the default when none is
+provided. Note that the &quot;cpu&quot; architecture is just a fallback involving no
+SIMD at all. This is used on architectures not supported by <code>nsimd</code> or when the
+architectures does not offer any SIMD.</p>
+<p>Providing implementations for <code>foo</code> is done by completing the following Python
+files:</p>
+<ul>
+<li><p><code>egg/platform_cpu.py</code></p></li>
+<li><p><code>egg/platform_x86.py</code></p></li>
+<li><p><code>egg/platform_arm.py</code></p></li>
+</ul>
+<p>The idea is to produce plain C (not C++) code using Python string format. Each
+<code>platform_*.py</code> file provides some helper functions to ease as much as
+possible the programmer&apos;s job. But every <code>platform_*.py</code> file provides the
+same &quot;global&quot; variables available in every functions and is designed in the
+same way:</p>
+<ol>
+<li><p>At the bottom of the file is the <code>get_impl</code> function taking the following
+arguments:</p><ul>
+<li><p><code>func     </code> the name of the operator the system is currently
+auto-generating.</p></li>
+<li><p><code>simd_ext </code> the SIMD extension for which the system wants the
+implemetation.</p></li>
+<li><p><code>from_typ </code> the input type of the argument that will be passed to the
+operator.</p></li>
+<li><p><code>to_typ   </code> the output type produced by the operator.</p></li>
+</ul>
+</li>
+<li><p>Inside this function lies a Python dictionary that provides functions
+implementing each operator. The string containing the C code for the
+implementations can be put here directly but usually the string is
+returned by a Python function that is written above in the same file.</p></li>
+<li><p>At the top of the file lies helper functions that helps generating code.
+This is specific to each architecture. Do not hesitate to look at it.</p></li>
+</ol>
+<p>Let&apos;s begin by the <code>cpu</code> implementations. It turns out that there is no SIMD
+extension in this case, and by convention, <code>simd_ext == &apos;cpu&apos;</code> and this
+argument can therefore be ignored. So we first add an entry to the <code>impls</code>
+Python dictionary of the <code>get_impl</code> function:</p>
+<pre class="python"><code>    impls = {
+
+        ...
+
+        &apos;reverse&apos;: reverse1(from_typ),
+        &apos;addv&apos;: addv(from_typ),
+        &apos;foo&apos;: foo1(from_typ) # Added at the bottom of the dictionary
+    }
+    if simd_ext != &apos;cpu&apos;:
+        raise ValueError(&apos;Unknown SIMD extension &quot;{}&quot;&apos;.format(simd_ext))
+
+    ...</code></pre>
+<p>Then, above in the file we write the Python function <code>foo1</code> that will provide
+the C implementation of operator <code>foo</code>:</p>
+<pre class="python"><code>def foo1(typ):
+    return func_body(
+           &apos;&apos;&apos;ret.v{{i}} = ({typ})1 / (({typ})1 - {in0}.v{{i}}) +
+                           ({typ})1 / ((({typ})1 - {in0}.v{{i}}) *
+                                       (({typ})1 - {in0}.v{{i}}));&apos;&apos;&apos;. \
+                                       format(**fmtspec), typ)</code></pre>
+<p>First note that the arguments names passed to the operator in its C
+implementation are not known in the Python side. Several other parameters
+are not known or are cumbersome to find out. Therefore each function has access
+to the <code>fmtspec</code> Python dictionary that hold some of these values:</p>
+<ul>
+<li><p><code>in0</code>: name of the first parameter for the C implementation.</p></li>
+<li><p><code>in1</code>: name of the second parameter for the C implementation.</p></li>
+<li><p><code>in2</code>: name of the third parameter for the C implementation.</p></li>
+<li><p><code>simd_ext</code>: name of the SIMD extension (for the cpu architecture, this is
+equal to <code>&quot;cpu&quot;</code>).</p></li>
+<li><p><code>from_typ</code>: type of the input.</p></li>
+<li><p><code>to_typ</code>: type of the output.</p></li>
+<li><p><code>typ</code>: equals <code>from_typ</code>, shorter to write as usually <code>from_typ == to_typ</code>.</p></li>
+<li><p><code>utyp</code>: bitfield type of the same size of <code>typ</code>.</p></li>
+<li><p><code>typnbits</code>: number of bits in <code>typ</code>.</p></li>
+</ul>
+<p>The CPU extension can emulate 64-bits or 128-bits wide SIMD vectors. Each type
+is a struct containing as much members as necessary so that <code>sizeof(T) *
+(number of members) == 64 or 128</code>. In order to avoid the developper to write
+two cases (64-bits wide and 128-bits wide) the <code>func_body</code> function is provided
+as a helper. Note that the index <code>{{i}}</code> is in double curly brackets to go
+through two Python string formats:</p>
+<ol>
+<li><p>The first pass is done within the <code>foo1</code> Python function and replaces
+<code>{typ}</code> and <code>{in0}</code>. In this pass <code>{{i}}</code> is formatted into <code>{i}</code>.</p></li>
+<li><p>The second pass is done by the <code>func_body</code> function which unrolls the string
+to the necessary number and replace <code>{i}</code> by the corresponding number. The
+produced C code will look like one would written the same statement for each
+members of the input struct.</p></li>
+</ol>
+<p>Then note that as plain C (and C++) does not support native 16-bits wide
+floating point types <code>nsimd</code> emulates it with a C struct containing 4 floats
+(32-bits swide floatting point numbers). In some cases extra care has to be
+taken to handle this type.</p>
+<p>For each SIMD extension one can find a <code>types.h</code> file (for <code>cpu</code> the files can
+be found in <code>include/nsimd/cpu/cpu/types.h</code>) that declares all SIMD types. If
+you have any doubt on a given type do not hesitate to take a look at this file.
+Note also that this file is auto-generated and is therefore readable only after
+a successfull first <code>python3 egg/hatch -Af</code>.</p>
+<p>Now that the <code>cpu</code> implementation is written, you should be able to write the
+implementation of <code>foo</code> for other architectures. Each architecture has its
+particularities. We will cover them now by providing directly the Python
+implementations and explaining in less details.</p>
+<p>Finally note that <code>clang-format</code> is called by the generation system to
+autoformat produced C/C++ code. Therefore prefer indenting C code strings within
+the Python according to Python indentations, do not write C code beginning at
+column 0 in Python files.</p>
+<h3>For Intel</h3>
+<pre class="python"><code>def foo1(simd_ext, typ):
+    if typ == &apos;f16&apos;:
+        return &apos;&apos;&apos;nsimd_{simd_ext}_vf16 ret;
+                  ret.v1 = {pre}foo_ps({in0}.v1);
+                  ret.v2 = {pre}foo_ps({in0}.v2);
+                  return ret;&apos;&apos;&apos;.format(**fmtspec)
+    if simd_ext == &apos;sse2&apos;:
+        return emulate_op1(&apos;foo&apos;, &apos;sse2&apos;, typ)
+    if simd_ext in [&apos;avx&apos;, &apos;avx512_knl&apos;]:
+        return split_opn(&apos;foo&apos;, simd_ext, typ, 1)
+    return &apos;return {pre}foo{suf}({in0});&apos;.format(**fmtspec)</code></pre>
+<p>Here are some notes concerning the Intel implementation:</p>
+<ol>
+<li><p><code>float16</code>s are emulated with two SIMD vectors of <code>float</code>s.</p></li>
+<li><p>When the intrinsic is provided by Intel one can access it easily by
+constructing it with <code>{pre}</code> and <code>{suf}</code>. Indeed all Intel intrinsics
+names follow a pattern with a prefix indicating the SIMD extension and a
+suffix indicating the type of data. As for <code>{in0}</code>,  <code>{pre}</code> and
+<code>{suf}</code> are provided and contain the correct values with respect to
+<code>simd_ext</code> and <code>typ</code>, you do not need to compute them yourself.</p></li>
+<li><p>When the intrinsic is not provided by Intel then one has to use tricks.</p><ul>
+<li><p>For <code>SSE2</code> one can use complete emulation, that is, putting the content of
+the SIMD vector into a C-array, working on it with a simple for loop and
+loading back the result into the resulting SIMD vector. As said before a
+lot of helper functions are provided and the <code>emulate_op1</code> Python function
+avoid writing by hand this for-loop emulation.</p></li>
+<li><p>For <code>AVX</code> and <code>AVX512_KNL</code>, one can fallback to the &quot;lower&quot; SIMD extension
+(<code>SSE42</code> for <code>AVX</code> and <code>AVX2</code> for <code>AVX512_KNL</code>) by splitting the input
+vector into two smaller vectors belonging to the &quot;lower&quot; SIMD extension. In
+this case again the tedious and cumbersome work is done by the <code>split_opn</code>
+Python function.</p></li>
+</ul>
+</li>
+<li><p>Do not forget to add the <code>foo</code> entry to the <code>impls</code> dictionary in the <code>get_impl</code>
+Python function.</p></li>
+</ol>
+<h3>For ARM</h3>
+<pre class="python"><code>def foo1(simd_ext, typ):
+    ret = f16f64(simd_ext, typ, &apos;foo&apos;, &apos;foo&apos;, 1)
+    if ret != &apos;&apos;:
+        return ret
+    if simd_ext in neon:
+        return &apos;return vfooq_{suf}({in0});&apos;.format(**fmtspec)
+    else:
+        return &apos;return svfoo_{suf}_z({svtrue}, {in0});&apos;.format(**fmtspec)</code></pre>
+<p>Here are some notes concerning the ARM implementation:</p>
+<ol>
+<li><p><code>float16</code>s can be natively supported but this is not mandatory.</p></li>
+<li><p>On 32-bits ARM chips, intrinsics on <code>double</code> almost never exist.</p></li>
+<li><p>The Python helper function <code>f16f64</code> hides a lot of details concerning the
+above two points. If the function returns a non empty string then it means
+that the returned string contains C code to handle the case given by the
+pair <code>(simd_ext, typ)</code>. We advise you to look at the generated C code. You
+will see the <code>nsimd_FP16</code> macro used. When defined it indicates that <code>nsimd</code>
+is compiled with native <code>float16</code> support. This also affect SIMD types (see
+<code>nsimd/include/arm/*/types.h</code>.)</p></li>
+<li><p>Do not forget to add the <code>foo</code> entry to the <code>impls</code> dictionary in the
+<code>get_impl</code> Python function.</p></li>
+</ol>
+<h3>Implementing the test for the operator</h3>
+<p>Now that we have written the implementations for the <code>foo</code> operator we must
+write the corresponding tests. For tests all generations are done by
+<code>egg/gen_tests.py</code>. Writing tests is more simple. The intrinsic that we just
+implemented can be tested by an already-written test pattern code, namely by
+the <code>gen_test</code> Python function.</p>
+<p>Here is how the <code>egg/gen_tests.py</code> is organized:</p>
+<ol>
+<li><p>The entry point is the <code>doit</code> function located at the bottom of the file.</p></li>
+<li><p>In the <code>doit</code> function a dispatching is done according to the operator that
+is to be tested. All operators cannot be tested by the same C/C++ code. The
+reading of all different kind of tests is rather easy and we are not going
+through all the code in this document.</p></li>
+<li><p>All Python functions generating test code begins with the following:</p><pre class="python"><code>    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return</code></pre><p>This must be the case for newly created function. The <code>get_filename</code> function
+ensures that the file must be created with respect to the command line
+options given to the <code>egg/hatch.py</code> script. Then note that to output to a
+file the Python function <code>open_utf8</code> must be used to handle Windows and to
+automatically put the MIT license at the beginning of generated files.</p></li>
+<li><p>Tests must be written for C base API, the C++ base API and the C++ advanced
+API.</p></li>
+</ol>
+<p>If you need to create a new kind of tests then the best way is to copy-paste
+the Python function that produces the test that resembles the most to the test
+you want. Then modify the newly function to suit your needs. Here is a quick
+overview of Python functions present in the <code>egg/gen_test.py</code> file:</p>
+<ul>
+<li><p><code>gen_nbtrue</code>, <code>gen_adv</code>, <code>gen_all_any</code> generate tests for reduction operators.</p></li>
+<li><p><code>gen_reinterpret_convert</code> generates tests for non closed operators.</p></li>
+<li><p><code>gen_load_store</code> generates tests for load/store operators.</p></li>
+<li><p><code>gen_reverse</code> generates tests for one type of shuffle but can be extended
+for other kind of shuffles.</p></li>
+<li><p><code>gen_test</code> generates tests for &quot;standard&quot; operators, typically those who do
+some computations. This is the kind of tests that can handle our <code>foo</code>
+operator and therefore nothing has to be done on our part.</p></li>
+</ul>
+<h3>Conclusion</h3>
+<p>At first sight the implementation of <code>foo</code> seems complicated because intrinsics
+for all types and all architectures are not provided by vendors. But <code>nsimd</code>
+provides a lot of helper functions and tries to put away details so that
+wrapping intrinsics is quickly done and easy, the goal is that the programmer
+concentrate on the implementation itself. But be aware that more complicated
+tricks can be implemented. Browse through a <code>platform_*.py</code> file to see what
+kind of tricks are used and how they are implemented.</p>
+<h2>How do I add a new category?</h2>
+<p>Adding a category is way much simplier than an operator. It suffices to add
+a class with only one member named <code>title</code> as follows:</p>
+<pre class="python"><code>class DocMyCategoryName(DocCategory):
+    title = &apos;My category name functions&apos;</code></pre>
+<p>The class must inherit from the <code>DocCategory</code> class and its name must begin
+with <code>Doc</code>. The system will then take it into account, generate the entry
+in the documentation and so on.</p>
+  </body>
+</html>

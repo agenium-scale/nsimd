@@ -1,0 +1,244 @@
+<!-- Inspired from http://bettermotherfuckingwebsite.com/ -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><code>nsimd</code> Documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }
+      h1,h2,h3 {
+        line-height:1.2
+      }
+      table,th, td {
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3.0.0/es5/tex-mml-chtml.js"></script>
+  </head>
+<body>
+
+<center>
+  <img src="img/logo.svg"><br>
+  <br>
+  <a href="index.html">Index</a> |
+  <a href="quick_start.html">Quick Start</a> |
+  <a href="tutorials.html">Tutorials</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="license.html">License</a> |
+  <a href="api.html">API</a>
+</center>
+<h1>left shift</h1>
+<h2>Description</h2>
+<p>Returns the left shift of the arguments. Defined over ℝ × ℕ.</p>
+<h2>C base API (generic)</h2>
+<pre class="c"><code>#define vshl(a0, a1, type)
+#define vshl_e(a0, a1, type, simd_ext)</code></pre>
+<h2>C++ base API (generic)</h2>
+<pre class="c++"><code>template &lt;typename A0, typename A1, typename T&gt; typename simd_traits&lt;T, NSIMD_SIMD&gt;::simd_vector shl(A0 a0, A1 a1, T);</code></pre>
+<h2>C++ advanced API</h2>
+<pre class="c++"><code>template &lt;typename T, typename SimdExt, typename A1&gt; pack&lt;T, 1, SimdExt&gt; shl(pack&lt;T, 1, SimdExt&gt; const&amp; a0, A1 a1);
+template &lt;typename T, int N, typename SimdExt, typename A1&gt; pack&lt;T, N, SimdExt&gt; shl(pack&lt;T, N, SimdExt&gt; const&amp; a0, A1 a1);
+template &lt;typename T, typename SimdExt, typename A1&gt; pack&lt;T, 1, SimdExt&gt; operator&lt;&lt;(pack&lt;T, 1, SimdExt&gt; const&amp; a0, A1 a1);
+template &lt;typename T, int N, typename SimdExt, typename A1&gt; pack&lt;T, N, SimdExt&gt; operator&lt;&lt;(pack&lt;T, N, SimdExt&gt; const&amp; a0, A1 a1);</code></pre>
+<h2>C base API (architecture specifics)</h2>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vi64 nsimd_shl_sse2_i64(nsimd_sse2_vi64 a0, int a1);
+nsimd_sse2_vi32 nsimd_shl_sse2_i32(nsimd_sse2_vi32 a0, int a1);
+nsimd_sse2_vi16 nsimd_shl_sse2_i16(nsimd_sse2_vi16 a0, int a1);
+nsimd_sse2_vi8 nsimd_shl_sse2_i8(nsimd_sse2_vi8 a0, int a1);
+nsimd_sse2_vu64 nsimd_shl_sse2_u64(nsimd_sse2_vu64 a0, int a1);
+nsimd_sse2_vu32 nsimd_shl_sse2_u32(nsimd_sse2_vu32 a0, int a1);
+nsimd_sse2_vu16 nsimd_shl_sse2_u16(nsimd_sse2_vu16 a0, int a1);
+nsimd_sse2_vu8 nsimd_shl_sse2_u8(nsimd_sse2_vu8 a0, int a1);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vi64 nsimd_shl_cpu_i64(nsimd_cpu_vi64 a0, int a1);
+nsimd_cpu_vi32 nsimd_shl_cpu_i32(nsimd_cpu_vi32 a0, int a1);
+nsimd_cpu_vi16 nsimd_shl_cpu_i16(nsimd_cpu_vi16 a0, int a1);
+nsimd_cpu_vi8 nsimd_shl_cpu_i8(nsimd_cpu_vi8 a0, int a1);
+nsimd_cpu_vu64 nsimd_shl_cpu_u64(nsimd_cpu_vu64 a0, int a1);
+nsimd_cpu_vu32 nsimd_shl_cpu_u32(nsimd_cpu_vu32 a0, int a1);
+nsimd_cpu_vu16 nsimd_shl_cpu_u16(nsimd_cpu_vu16 a0, int a1);
+nsimd_cpu_vu8 nsimd_shl_cpu_u8(nsimd_cpu_vu8 a0, int a1);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vi64 nsimd_shl_avx512_skylake_i64(nsimd_avx512_skylake_vi64 a0, int a1);
+nsimd_avx512_skylake_vi32 nsimd_shl_avx512_skylake_i32(nsimd_avx512_skylake_vi32 a0, int a1);
+nsimd_avx512_skylake_vi16 nsimd_shl_avx512_skylake_i16(nsimd_avx512_skylake_vi16 a0, int a1);
+nsimd_avx512_skylake_vi8 nsimd_shl_avx512_skylake_i8(nsimd_avx512_skylake_vi8 a0, int a1);
+nsimd_avx512_skylake_vu64 nsimd_shl_avx512_skylake_u64(nsimd_avx512_skylake_vu64 a0, int a1);
+nsimd_avx512_skylake_vu32 nsimd_shl_avx512_skylake_u32(nsimd_avx512_skylake_vu32 a0, int a1);
+nsimd_avx512_skylake_vu16 nsimd_shl_avx512_skylake_u16(nsimd_avx512_skylake_vu16 a0, int a1);
+nsimd_avx512_skylake_vu8 nsimd_shl_avx512_skylake_u8(nsimd_avx512_skylake_vu8 a0, int a1);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vi64 nsimd_shl_aarch64_i64(nsimd_aarch64_vi64 a0, int a1);
+nsimd_aarch64_vi32 nsimd_shl_aarch64_i32(nsimd_aarch64_vi32 a0, int a1);
+nsimd_aarch64_vi16 nsimd_shl_aarch64_i16(nsimd_aarch64_vi16 a0, int a1);
+nsimd_aarch64_vi8 nsimd_shl_aarch64_i8(nsimd_aarch64_vi8 a0, int a1);
+nsimd_aarch64_vu64 nsimd_shl_aarch64_u64(nsimd_aarch64_vu64 a0, int a1);
+nsimd_aarch64_vu32 nsimd_shl_aarch64_u32(nsimd_aarch64_vu32 a0, int a1);
+nsimd_aarch64_vu16 nsimd_shl_aarch64_u16(nsimd_aarch64_vu16 a0, int a1);
+nsimd_aarch64_vu8 nsimd_shl_aarch64_u8(nsimd_aarch64_vu8 a0, int a1);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vi64 nsimd_shl_neon128_i64(nsimd_neon128_vi64 a0, int a1);
+nsimd_neon128_vi32 nsimd_shl_neon128_i32(nsimd_neon128_vi32 a0, int a1);
+nsimd_neon128_vi16 nsimd_shl_neon128_i16(nsimd_neon128_vi16 a0, int a1);
+nsimd_neon128_vi8 nsimd_shl_neon128_i8(nsimd_neon128_vi8 a0, int a1);
+nsimd_neon128_vu64 nsimd_shl_neon128_u64(nsimd_neon128_vu64 a0, int a1);
+nsimd_neon128_vu32 nsimd_shl_neon128_u32(nsimd_neon128_vu32 a0, int a1);
+nsimd_neon128_vu16 nsimd_shl_neon128_u16(nsimd_neon128_vu16 a0, int a1);
+nsimd_neon128_vu8 nsimd_shl_neon128_u8(nsimd_neon128_vu8 a0, int a1);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>nsimd_sve_vi64 nsimd_shl_sve_i64(nsimd_sve_vi64 a0, int a1);
+nsimd_sve_vi32 nsimd_shl_sve_i32(nsimd_sve_vi32 a0, int a1);
+nsimd_sve_vi16 nsimd_shl_sve_i16(nsimd_sve_vi16 a0, int a1);
+nsimd_sve_vi8 nsimd_shl_sve_i8(nsimd_sve_vi8 a0, int a1);
+nsimd_sve_vu64 nsimd_shl_sve_u64(nsimd_sve_vu64 a0, int a1);
+nsimd_sve_vu32 nsimd_shl_sve_u32(nsimd_sve_vu32 a0, int a1);
+nsimd_sve_vu16 nsimd_shl_sve_u16(nsimd_sve_vu16 a0, int a1);
+nsimd_sve_vu8 nsimd_shl_sve_u8(nsimd_sve_vu8 a0, int a1);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vi64 nsimd_shl_avx512_knl_i64(nsimd_avx512_knl_vi64 a0, int a1);
+nsimd_avx512_knl_vi32 nsimd_shl_avx512_knl_i32(nsimd_avx512_knl_vi32 a0, int a1);
+nsimd_avx512_knl_vi16 nsimd_shl_avx512_knl_i16(nsimd_avx512_knl_vi16 a0, int a1);
+nsimd_avx512_knl_vi8 nsimd_shl_avx512_knl_i8(nsimd_avx512_knl_vi8 a0, int a1);
+nsimd_avx512_knl_vu64 nsimd_shl_avx512_knl_u64(nsimd_avx512_knl_vu64 a0, int a1);
+nsimd_avx512_knl_vu32 nsimd_shl_avx512_knl_u32(nsimd_avx512_knl_vu32 a0, int a1);
+nsimd_avx512_knl_vu16 nsimd_shl_avx512_knl_u16(nsimd_avx512_knl_vu16 a0, int a1);
+nsimd_avx512_knl_vu8 nsimd_shl_avx512_knl_u8(nsimd_avx512_knl_vu8 a0, int a1);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vi64 nsimd_shl_sse42_i64(nsimd_sse42_vi64 a0, int a1);
+nsimd_sse42_vi32 nsimd_shl_sse42_i32(nsimd_sse42_vi32 a0, int a1);
+nsimd_sse42_vi16 nsimd_shl_sse42_i16(nsimd_sse42_vi16 a0, int a1);
+nsimd_sse42_vi8 nsimd_shl_sse42_i8(nsimd_sse42_vi8 a0, int a1);
+nsimd_sse42_vu64 nsimd_shl_sse42_u64(nsimd_sse42_vu64 a0, int a1);
+nsimd_sse42_vu32 nsimd_shl_sse42_u32(nsimd_sse42_vu32 a0, int a1);
+nsimd_sse42_vu16 nsimd_shl_sse42_u16(nsimd_sse42_vu16 a0, int a1);
+nsimd_sse42_vu8 nsimd_shl_sse42_u8(nsimd_sse42_vu8 a0, int a1);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>nsimd_avx2_vi64 nsimd_shl_avx2_i64(nsimd_avx2_vi64 a0, int a1);
+nsimd_avx2_vi32 nsimd_shl_avx2_i32(nsimd_avx2_vi32 a0, int a1);
+nsimd_avx2_vi16 nsimd_shl_avx2_i16(nsimd_avx2_vi16 a0, int a1);
+nsimd_avx2_vi8 nsimd_shl_avx2_i8(nsimd_avx2_vi8 a0, int a1);
+nsimd_avx2_vu64 nsimd_shl_avx2_u64(nsimd_avx2_vu64 a0, int a1);
+nsimd_avx2_vu32 nsimd_shl_avx2_u32(nsimd_avx2_vu32 a0, int a1);
+nsimd_avx2_vu16 nsimd_shl_avx2_u16(nsimd_avx2_vu16 a0, int a1);
+nsimd_avx2_vu8 nsimd_shl_avx2_u8(nsimd_avx2_vu8 a0, int a1);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vi64 nsimd_shl_avx_i64(nsimd_avx_vi64 a0, int a1);
+nsimd_avx_vi32 nsimd_shl_avx_i32(nsimd_avx_vi32 a0, int a1);
+nsimd_avx_vi16 nsimd_shl_avx_i16(nsimd_avx_vi16 a0, int a1);
+nsimd_avx_vi8 nsimd_shl_avx_i8(nsimd_avx_vi8 a0, int a1);
+nsimd_avx_vu64 nsimd_shl_avx_u64(nsimd_avx_vu64 a0, int a1);
+nsimd_avx_vu32 nsimd_shl_avx_u32(nsimd_avx_vu32 a0, int a1);
+nsimd_avx_vu16 nsimd_shl_avx_u16(nsimd_avx_vu16 a0, int a1);
+nsimd_avx_vu8 nsimd_shl_avx_u8(nsimd_avx_vu8 a0, int a1);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vi64 shl(nsimd_sse2_vi64 a0, int a1, i64, sse2);
+nsimd_sse2_vi32 shl(nsimd_sse2_vi32 a0, int a1, i32, sse2);
+nsimd_sse2_vi16 shl(nsimd_sse2_vi16 a0, int a1, i16, sse2);
+nsimd_sse2_vi8 shl(nsimd_sse2_vi8 a0, int a1, i8, sse2);
+nsimd_sse2_vu64 shl(nsimd_sse2_vu64 a0, int a1, u64, sse2);
+nsimd_sse2_vu32 shl(nsimd_sse2_vu32 a0, int a1, u32, sse2);
+nsimd_sse2_vu16 shl(nsimd_sse2_vu16 a0, int a1, u16, sse2);
+nsimd_sse2_vu8 shl(nsimd_sse2_vu8 a0, int a1, u8, sse2);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vi64 shl(nsimd_cpu_vi64 a0, int a1, i64, cpu);
+nsimd_cpu_vi32 shl(nsimd_cpu_vi32 a0, int a1, i32, cpu);
+nsimd_cpu_vi16 shl(nsimd_cpu_vi16 a0, int a1, i16, cpu);
+nsimd_cpu_vi8 shl(nsimd_cpu_vi8 a0, int a1, i8, cpu);
+nsimd_cpu_vu64 shl(nsimd_cpu_vu64 a0, int a1, u64, cpu);
+nsimd_cpu_vu32 shl(nsimd_cpu_vu32 a0, int a1, u32, cpu);
+nsimd_cpu_vu16 shl(nsimd_cpu_vu16 a0, int a1, u16, cpu);
+nsimd_cpu_vu8 shl(nsimd_cpu_vu8 a0, int a1, u8, cpu);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vi64 shl(nsimd_avx512_skylake_vi64 a0, int a1, i64, avx512_skylake);
+nsimd_avx512_skylake_vi32 shl(nsimd_avx512_skylake_vi32 a0, int a1, i32, avx512_skylake);
+nsimd_avx512_skylake_vi16 shl(nsimd_avx512_skylake_vi16 a0, int a1, i16, avx512_skylake);
+nsimd_avx512_skylake_vi8 shl(nsimd_avx512_skylake_vi8 a0, int a1, i8, avx512_skylake);
+nsimd_avx512_skylake_vu64 shl(nsimd_avx512_skylake_vu64 a0, int a1, u64, avx512_skylake);
+nsimd_avx512_skylake_vu32 shl(nsimd_avx512_skylake_vu32 a0, int a1, u32, avx512_skylake);
+nsimd_avx512_skylake_vu16 shl(nsimd_avx512_skylake_vu16 a0, int a1, u16, avx512_skylake);
+nsimd_avx512_skylake_vu8 shl(nsimd_avx512_skylake_vu8 a0, int a1, u8, avx512_skylake);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vi64 shl(nsimd_aarch64_vi64 a0, int a1, i64, aarch64);
+nsimd_aarch64_vi32 shl(nsimd_aarch64_vi32 a0, int a1, i32, aarch64);
+nsimd_aarch64_vi16 shl(nsimd_aarch64_vi16 a0, int a1, i16, aarch64);
+nsimd_aarch64_vi8 shl(nsimd_aarch64_vi8 a0, int a1, i8, aarch64);
+nsimd_aarch64_vu64 shl(nsimd_aarch64_vu64 a0, int a1, u64, aarch64);
+nsimd_aarch64_vu32 shl(nsimd_aarch64_vu32 a0, int a1, u32, aarch64);
+nsimd_aarch64_vu16 shl(nsimd_aarch64_vu16 a0, int a1, u16, aarch64);
+nsimd_aarch64_vu8 shl(nsimd_aarch64_vu8 a0, int a1, u8, aarch64);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vi64 shl(nsimd_neon128_vi64 a0, int a1, i64, neon128);
+nsimd_neon128_vi32 shl(nsimd_neon128_vi32 a0, int a1, i32, neon128);
+nsimd_neon128_vi16 shl(nsimd_neon128_vi16 a0, int a1, i16, neon128);
+nsimd_neon128_vi8 shl(nsimd_neon128_vi8 a0, int a1, i8, neon128);
+nsimd_neon128_vu64 shl(nsimd_neon128_vu64 a0, int a1, u64, neon128);
+nsimd_neon128_vu32 shl(nsimd_neon128_vu32 a0, int a1, u32, neon128);
+nsimd_neon128_vu16 shl(nsimd_neon128_vu16 a0, int a1, u16, neon128);
+nsimd_neon128_vu8 shl(nsimd_neon128_vu8 a0, int a1, u8, neon128);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>nsimd_sve_vi64 shl(nsimd_sve_vi64 a0, int a1, i64, sve);
+nsimd_sve_vi32 shl(nsimd_sve_vi32 a0, int a1, i32, sve);
+nsimd_sve_vi16 shl(nsimd_sve_vi16 a0, int a1, i16, sve);
+nsimd_sve_vi8 shl(nsimd_sve_vi8 a0, int a1, i8, sve);
+nsimd_sve_vu64 shl(nsimd_sve_vu64 a0, int a1, u64, sve);
+nsimd_sve_vu32 shl(nsimd_sve_vu32 a0, int a1, u32, sve);
+nsimd_sve_vu16 shl(nsimd_sve_vu16 a0, int a1, u16, sve);
+nsimd_sve_vu8 shl(nsimd_sve_vu8 a0, int a1, u8, sve);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vi64 shl(nsimd_avx512_knl_vi64 a0, int a1, i64, avx512_knl);
+nsimd_avx512_knl_vi32 shl(nsimd_avx512_knl_vi32 a0, int a1, i32, avx512_knl);
+nsimd_avx512_knl_vi16 shl(nsimd_avx512_knl_vi16 a0, int a1, i16, avx512_knl);
+nsimd_avx512_knl_vi8 shl(nsimd_avx512_knl_vi8 a0, int a1, i8, avx512_knl);
+nsimd_avx512_knl_vu64 shl(nsimd_avx512_knl_vu64 a0, int a1, u64, avx512_knl);
+nsimd_avx512_knl_vu32 shl(nsimd_avx512_knl_vu32 a0, int a1, u32, avx512_knl);
+nsimd_avx512_knl_vu16 shl(nsimd_avx512_knl_vu16 a0, int a1, u16, avx512_knl);
+nsimd_avx512_knl_vu8 shl(nsimd_avx512_knl_vu8 a0, int a1, u8, avx512_knl);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vi64 shl(nsimd_sse42_vi64 a0, int a1, i64, sse42);
+nsimd_sse42_vi32 shl(nsimd_sse42_vi32 a0, int a1, i32, sse42);
+nsimd_sse42_vi16 shl(nsimd_sse42_vi16 a0, int a1, i16, sse42);
+nsimd_sse42_vi8 shl(nsimd_sse42_vi8 a0, int a1, i8, sse42);
+nsimd_sse42_vu64 shl(nsimd_sse42_vu64 a0, int a1, u64, sse42);
+nsimd_sse42_vu32 shl(nsimd_sse42_vu32 a0, int a1, u32, sse42);
+nsimd_sse42_vu16 shl(nsimd_sse42_vu16 a0, int a1, u16, sse42);
+nsimd_sse42_vu8 shl(nsimd_sse42_vu8 a0, int a1, u8, sse42);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>nsimd_avx2_vi64 shl(nsimd_avx2_vi64 a0, int a1, i64, avx2);
+nsimd_avx2_vi32 shl(nsimd_avx2_vi32 a0, int a1, i32, avx2);
+nsimd_avx2_vi16 shl(nsimd_avx2_vi16 a0, int a1, i16, avx2);
+nsimd_avx2_vi8 shl(nsimd_avx2_vi8 a0, int a1, i8, avx2);
+nsimd_avx2_vu64 shl(nsimd_avx2_vu64 a0, int a1, u64, avx2);
+nsimd_avx2_vu32 shl(nsimd_avx2_vu32 a0, int a1, u32, avx2);
+nsimd_avx2_vu16 shl(nsimd_avx2_vu16 a0, int a1, u16, avx2);
+nsimd_avx2_vu8 shl(nsimd_avx2_vu8 a0, int a1, u8, avx2);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vi64 shl(nsimd_avx_vi64 a0, int a1, i64, avx);
+nsimd_avx_vi32 shl(nsimd_avx_vi32 a0, int a1, i32, avx);
+nsimd_avx_vi16 shl(nsimd_avx_vi16 a0, int a1, i16, avx);
+nsimd_avx_vi8 shl(nsimd_avx_vi8 a0, int a1, i8, avx);
+nsimd_avx_vu64 shl(nsimd_avx_vu64 a0, int a1, u64, avx);
+nsimd_avx_vu32 shl(nsimd_avx_vu32 a0, int a1, u32, avx);
+nsimd_avx_vu16 shl(nsimd_avx_vu16 a0, int a1, u16, avx);
+nsimd_avx_vu8 shl(nsimd_avx_vu8 a0, int a1, u8, avx);</code></pre>
+  </body>
+</html>
