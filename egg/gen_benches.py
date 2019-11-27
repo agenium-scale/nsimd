@@ -1096,7 +1096,7 @@ def gen_bench_against_with_timestamp(f, simd, typ, against):
                 code += gen_bench_with_timestamp(f, simd, typ, category)
     return code
 
-def gen_bench(opts, f, simd, typ):
+def gen_bench(f, simd, typ):
     ## TODO
     path = gen_filename(f, simd, typ)
     ## Check if we need to create the file
@@ -1152,7 +1152,7 @@ def gen_bench(opts, f, simd, typ):
     ## Finalize code
     code = gen_bench_from_code(f, typ, bench, '') # bench_with_timestamp
     ## Write file
-    with common.open_utf8(opts, path) as f:
+    with common.open_utf8(_opts, path) as f:
         f.write(code)
     ## Clang-format it!
     common.clang_format(_opts, path)
