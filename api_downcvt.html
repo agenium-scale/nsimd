@@ -85,66 +85,6 @@ SOFTWARE.
 template &lt;typename ToPackType, typename T, int N, typename SimdExt&gt; ToPackType downcvt(ToPackType, pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);
 template &lt;typename ToPackType, typename T, int N, typename SimdExt&gt; ToPackType downcvt(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code></pre>
 <h2>C base API (architecture specifics)</h2>
-<h3>AVX</h3>
-<pre class="c"><code>nsimd_avx_vi16 nsimd_downcvt_avx_i16_i16(nsimd_avx_vi16 a0, nsimd_avx_vi16 a1);
-nsimd_avx_vu16 nsimd_downcvt_avx_u16_u16(nsimd_avx_vu16 a0, nsimd_avx_vu16 a1);
-nsimd_avx_vf16 nsimd_downcvt_avx_f16_f16(nsimd_avx_vf16 a0, nsimd_avx_vf16 a1);
-nsimd_avx_vi32 nsimd_downcvt_avx_i32_i32(nsimd_avx_vi32 a0, nsimd_avx_vi32 a1);
-nsimd_avx_vu32 nsimd_downcvt_avx_u32_u32(nsimd_avx_vu32 a0, nsimd_avx_vu32 a1);
-nsimd_avx_vf32 nsimd_downcvt_avx_f32_f32(nsimd_avx_vf32 a0, nsimd_avx_vf32 a1);
-nsimd_avx_vi64 nsimd_downcvt_avx_i64_i64(nsimd_avx_vi64 a0, nsimd_avx_vi64 a1);
-nsimd_avx_vu64 nsimd_downcvt_avx_u64_u64(nsimd_avx_vu64 a0, nsimd_avx_vu64 a1);
-nsimd_avx_vf64 nsimd_downcvt_avx_f64_f64(nsimd_avx_vf64 a0, nsimd_avx_vf64 a1);</code></pre>
-<h3>NEON128</h3>
-<pre class="c"><code>nsimd_neon128_vi16 nsimd_downcvt_neon128_i16_i16(nsimd_neon128_vi16 a0, nsimd_neon128_vi16 a1);
-nsimd_neon128_vu16 nsimd_downcvt_neon128_u16_u16(nsimd_neon128_vu16 a0, nsimd_neon128_vu16 a1);
-nsimd_neon128_vf16 nsimd_downcvt_neon128_f16_f16(nsimd_neon128_vf16 a0, nsimd_neon128_vf16 a1);
-nsimd_neon128_vi32 nsimd_downcvt_neon128_i32_i32(nsimd_neon128_vi32 a0, nsimd_neon128_vi32 a1);
-nsimd_neon128_vu32 nsimd_downcvt_neon128_u32_u32(nsimd_neon128_vu32 a0, nsimd_neon128_vu32 a1);
-nsimd_neon128_vf32 nsimd_downcvt_neon128_f32_f32(nsimd_neon128_vf32 a0, nsimd_neon128_vf32 a1);
-nsimd_neon128_vi64 nsimd_downcvt_neon128_i64_i64(nsimd_neon128_vi64 a0, nsimd_neon128_vi64 a1);
-nsimd_neon128_vu64 nsimd_downcvt_neon128_u64_u64(nsimd_neon128_vu64 a0, nsimd_neon128_vu64 a1);
-nsimd_neon128_vf64 nsimd_downcvt_neon128_f64_f64(nsimd_neon128_vf64 a0, nsimd_neon128_vf64 a1);</code></pre>
-<h3>SSE42</h3>
-<pre class="c"><code>nsimd_sse42_vi16 nsimd_downcvt_sse42_i16_i16(nsimd_sse42_vi16 a0, nsimd_sse42_vi16 a1);
-nsimd_sse42_vu16 nsimd_downcvt_sse42_u16_u16(nsimd_sse42_vu16 a0, nsimd_sse42_vu16 a1);
-nsimd_sse42_vf16 nsimd_downcvt_sse42_f16_f16(nsimd_sse42_vf16 a0, nsimd_sse42_vf16 a1);
-nsimd_sse42_vi32 nsimd_downcvt_sse42_i32_i32(nsimd_sse42_vi32 a0, nsimd_sse42_vi32 a1);
-nsimd_sse42_vu32 nsimd_downcvt_sse42_u32_u32(nsimd_sse42_vu32 a0, nsimd_sse42_vu32 a1);
-nsimd_sse42_vf32 nsimd_downcvt_sse42_f32_f32(nsimd_sse42_vf32 a0, nsimd_sse42_vf32 a1);
-nsimd_sse42_vi64 nsimd_downcvt_sse42_i64_i64(nsimd_sse42_vi64 a0, nsimd_sse42_vi64 a1);
-nsimd_sse42_vu64 nsimd_downcvt_sse42_u64_u64(nsimd_sse42_vu64 a0, nsimd_sse42_vu64 a1);
-nsimd_sse42_vf64 nsimd_downcvt_sse42_f64_f64(nsimd_sse42_vf64 a0, nsimd_sse42_vf64 a1);</code></pre>
-<h3>SSE2</h3>
-<pre class="c"><code>nsimd_sse2_vi16 nsimd_downcvt_sse2_i16_i16(nsimd_sse2_vi16 a0, nsimd_sse2_vi16 a1);
-nsimd_sse2_vu16 nsimd_downcvt_sse2_u16_u16(nsimd_sse2_vu16 a0, nsimd_sse2_vu16 a1);
-nsimd_sse2_vf16 nsimd_downcvt_sse2_f16_f16(nsimd_sse2_vf16 a0, nsimd_sse2_vf16 a1);
-nsimd_sse2_vi32 nsimd_downcvt_sse2_i32_i32(nsimd_sse2_vi32 a0, nsimd_sse2_vi32 a1);
-nsimd_sse2_vu32 nsimd_downcvt_sse2_u32_u32(nsimd_sse2_vu32 a0, nsimd_sse2_vu32 a1);
-nsimd_sse2_vf32 nsimd_downcvt_sse2_f32_f32(nsimd_sse2_vf32 a0, nsimd_sse2_vf32 a1);
-nsimd_sse2_vi64 nsimd_downcvt_sse2_i64_i64(nsimd_sse2_vi64 a0, nsimd_sse2_vi64 a1);
-nsimd_sse2_vu64 nsimd_downcvt_sse2_u64_u64(nsimd_sse2_vu64 a0, nsimd_sse2_vu64 a1);
-nsimd_sse2_vf64 nsimd_downcvt_sse2_f64_f64(nsimd_sse2_vf64 a0, nsimd_sse2_vf64 a1);</code></pre>
-<h3>AVX512_KNL</h3>
-<pre class="c"><code>nsimd_avx512_knl_vi16 nsimd_downcvt_avx512_knl_i16_i16(nsimd_avx512_knl_vi16 a0, nsimd_avx512_knl_vi16 a1);
-nsimd_avx512_knl_vu16 nsimd_downcvt_avx512_knl_u16_u16(nsimd_avx512_knl_vu16 a0, nsimd_avx512_knl_vu16 a1);
-nsimd_avx512_knl_vf16 nsimd_downcvt_avx512_knl_f16_f16(nsimd_avx512_knl_vf16 a0, nsimd_avx512_knl_vf16 a1);
-nsimd_avx512_knl_vi32 nsimd_downcvt_avx512_knl_i32_i32(nsimd_avx512_knl_vi32 a0, nsimd_avx512_knl_vi32 a1);
-nsimd_avx512_knl_vu32 nsimd_downcvt_avx512_knl_u32_u32(nsimd_avx512_knl_vu32 a0, nsimd_avx512_knl_vu32 a1);
-nsimd_avx512_knl_vf32 nsimd_downcvt_avx512_knl_f32_f32(nsimd_avx512_knl_vf32 a0, nsimd_avx512_knl_vf32 a1);
-nsimd_avx512_knl_vi64 nsimd_downcvt_avx512_knl_i64_i64(nsimd_avx512_knl_vi64 a0, nsimd_avx512_knl_vi64 a1);
-nsimd_avx512_knl_vu64 nsimd_downcvt_avx512_knl_u64_u64(nsimd_avx512_knl_vu64 a0, nsimd_avx512_knl_vu64 a1);
-nsimd_avx512_knl_vf64 nsimd_downcvt_avx512_knl_f64_f64(nsimd_avx512_knl_vf64 a0, nsimd_avx512_knl_vf64 a1);</code></pre>
-<h3>AVX512_SKYLAKE</h3>
-<pre class="c"><code>nsimd_avx512_skylake_vi16 nsimd_downcvt_avx512_skylake_i16_i16(nsimd_avx512_skylake_vi16 a0, nsimd_avx512_skylake_vi16 a1);
-nsimd_avx512_skylake_vu16 nsimd_downcvt_avx512_skylake_u16_u16(nsimd_avx512_skylake_vu16 a0, nsimd_avx512_skylake_vu16 a1);
-nsimd_avx512_skylake_vf16 nsimd_downcvt_avx512_skylake_f16_f16(nsimd_avx512_skylake_vf16 a0, nsimd_avx512_skylake_vf16 a1);
-nsimd_avx512_skylake_vi32 nsimd_downcvt_avx512_skylake_i32_i32(nsimd_avx512_skylake_vi32 a0, nsimd_avx512_skylake_vi32 a1);
-nsimd_avx512_skylake_vu32 nsimd_downcvt_avx512_skylake_u32_u32(nsimd_avx512_skylake_vu32 a0, nsimd_avx512_skylake_vu32 a1);
-nsimd_avx512_skylake_vf32 nsimd_downcvt_avx512_skylake_f32_f32(nsimd_avx512_skylake_vf32 a0, nsimd_avx512_skylake_vf32 a1);
-nsimd_avx512_skylake_vi64 nsimd_downcvt_avx512_skylake_i64_i64(nsimd_avx512_skylake_vi64 a0, nsimd_avx512_skylake_vi64 a1);
-nsimd_avx512_skylake_vu64 nsimd_downcvt_avx512_skylake_u64_u64(nsimd_avx512_skylake_vu64 a0, nsimd_avx512_skylake_vu64 a1);
-nsimd_avx512_skylake_vf64 nsimd_downcvt_avx512_skylake_f64_f64(nsimd_avx512_skylake_vf64 a0, nsimd_avx512_skylake_vf64 a1);</code></pre>
 <h3>AARCH64</h3>
 <pre class="c"><code>nsimd_aarch64_vi16 nsimd_downcvt_aarch64_i16_i16(nsimd_aarch64_vi16 a0, nsimd_aarch64_vi16 a1);
 nsimd_aarch64_vu16 nsimd_downcvt_aarch64_u16_u16(nsimd_aarch64_vu16 a0, nsimd_aarch64_vu16 a1);
@@ -155,16 +95,36 @@ nsimd_aarch64_vf32 nsimd_downcvt_aarch64_f32_f32(nsimd_aarch64_vf32 a0, nsimd_aa
 nsimd_aarch64_vi64 nsimd_downcvt_aarch64_i64_i64(nsimd_aarch64_vi64 a0, nsimd_aarch64_vi64 a1);
 nsimd_aarch64_vu64 nsimd_downcvt_aarch64_u64_u64(nsimd_aarch64_vu64 a0, nsimd_aarch64_vu64 a1);
 nsimd_aarch64_vf64 nsimd_downcvt_aarch64_f64_f64(nsimd_aarch64_vf64 a0, nsimd_aarch64_vf64 a1);</code></pre>
-<h3>CPU</h3>
-<pre class="c"><code>nsimd_cpu_vi16 nsimd_downcvt_cpu_i16_i16(nsimd_cpu_vi16 a0, nsimd_cpu_vi16 a1);
-nsimd_cpu_vu16 nsimd_downcvt_cpu_u16_u16(nsimd_cpu_vu16 a0, nsimd_cpu_vu16 a1);
-nsimd_cpu_vf16 nsimd_downcvt_cpu_f16_f16(nsimd_cpu_vf16 a0, nsimd_cpu_vf16 a1);
-nsimd_cpu_vi32 nsimd_downcvt_cpu_i32_i32(nsimd_cpu_vi32 a0, nsimd_cpu_vi32 a1);
-nsimd_cpu_vu32 nsimd_downcvt_cpu_u32_u32(nsimd_cpu_vu32 a0, nsimd_cpu_vu32 a1);
-nsimd_cpu_vf32 nsimd_downcvt_cpu_f32_f32(nsimd_cpu_vf32 a0, nsimd_cpu_vf32 a1);
-nsimd_cpu_vi64 nsimd_downcvt_cpu_i64_i64(nsimd_cpu_vi64 a0, nsimd_cpu_vi64 a1);
-nsimd_cpu_vu64 nsimd_downcvt_cpu_u64_u64(nsimd_cpu_vu64 a0, nsimd_cpu_vu64 a1);
-nsimd_cpu_vf64 nsimd_downcvt_cpu_f64_f64(nsimd_cpu_vf64 a0, nsimd_cpu_vf64 a1);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vi16 nsimd_downcvt_sse2_i16_i16(nsimd_sse2_vi16 a0, nsimd_sse2_vi16 a1);
+nsimd_sse2_vu16 nsimd_downcvt_sse2_u16_u16(nsimd_sse2_vu16 a0, nsimd_sse2_vu16 a1);
+nsimd_sse2_vf16 nsimd_downcvt_sse2_f16_f16(nsimd_sse2_vf16 a0, nsimd_sse2_vf16 a1);
+nsimd_sse2_vi32 nsimd_downcvt_sse2_i32_i32(nsimd_sse2_vi32 a0, nsimd_sse2_vi32 a1);
+nsimd_sse2_vu32 nsimd_downcvt_sse2_u32_u32(nsimd_sse2_vu32 a0, nsimd_sse2_vu32 a1);
+nsimd_sse2_vf32 nsimd_downcvt_sse2_f32_f32(nsimd_sse2_vf32 a0, nsimd_sse2_vf32 a1);
+nsimd_sse2_vi64 nsimd_downcvt_sse2_i64_i64(nsimd_sse2_vi64 a0, nsimd_sse2_vi64 a1);
+nsimd_sse2_vu64 nsimd_downcvt_sse2_u64_u64(nsimd_sse2_vu64 a0, nsimd_sse2_vu64 a1);
+nsimd_sse2_vf64 nsimd_downcvt_sse2_f64_f64(nsimd_sse2_vf64 a0, nsimd_sse2_vf64 a1);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vi16 nsimd_downcvt_avx512_skylake_i16_i16(nsimd_avx512_skylake_vi16 a0, nsimd_avx512_skylake_vi16 a1);
+nsimd_avx512_skylake_vu16 nsimd_downcvt_avx512_skylake_u16_u16(nsimd_avx512_skylake_vu16 a0, nsimd_avx512_skylake_vu16 a1);
+nsimd_avx512_skylake_vf16 nsimd_downcvt_avx512_skylake_f16_f16(nsimd_avx512_skylake_vf16 a0, nsimd_avx512_skylake_vf16 a1);
+nsimd_avx512_skylake_vi32 nsimd_downcvt_avx512_skylake_i32_i32(nsimd_avx512_skylake_vi32 a0, nsimd_avx512_skylake_vi32 a1);
+nsimd_avx512_skylake_vu32 nsimd_downcvt_avx512_skylake_u32_u32(nsimd_avx512_skylake_vu32 a0, nsimd_avx512_skylake_vu32 a1);
+nsimd_avx512_skylake_vf32 nsimd_downcvt_avx512_skylake_f32_f32(nsimd_avx512_skylake_vf32 a0, nsimd_avx512_skylake_vf32 a1);
+nsimd_avx512_skylake_vi64 nsimd_downcvt_avx512_skylake_i64_i64(nsimd_avx512_skylake_vi64 a0, nsimd_avx512_skylake_vi64 a1);
+nsimd_avx512_skylake_vu64 nsimd_downcvt_avx512_skylake_u64_u64(nsimd_avx512_skylake_vu64 a0, nsimd_avx512_skylake_vu64 a1);
+nsimd_avx512_skylake_vf64 nsimd_downcvt_avx512_skylake_f64_f64(nsimd_avx512_skylake_vf64 a0, nsimd_avx512_skylake_vf64 a1);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vi16 nsimd_downcvt_avx_i16_i16(nsimd_avx_vi16 a0, nsimd_avx_vi16 a1);
+nsimd_avx_vu16 nsimd_downcvt_avx_u16_u16(nsimd_avx_vu16 a0, nsimd_avx_vu16 a1);
+nsimd_avx_vf16 nsimd_downcvt_avx_f16_f16(nsimd_avx_vf16 a0, nsimd_avx_vf16 a1);
+nsimd_avx_vi32 nsimd_downcvt_avx_i32_i32(nsimd_avx_vi32 a0, nsimd_avx_vi32 a1);
+nsimd_avx_vu32 nsimd_downcvt_avx_u32_u32(nsimd_avx_vu32 a0, nsimd_avx_vu32 a1);
+nsimd_avx_vf32 nsimd_downcvt_avx_f32_f32(nsimd_avx_vf32 a0, nsimd_avx_vf32 a1);
+nsimd_avx_vi64 nsimd_downcvt_avx_i64_i64(nsimd_avx_vi64 a0, nsimd_avx_vi64 a1);
+nsimd_avx_vu64 nsimd_downcvt_avx_u64_u64(nsimd_avx_vu64 a0, nsimd_avx_vu64 a1);
+nsimd_avx_vf64 nsimd_downcvt_avx_f64_f64(nsimd_avx_vf64 a0, nsimd_avx_vf64 a1);</code></pre>
 <h3>AVX2</h3>
 <pre class="c"><code>nsimd_avx2_vi16 nsimd_downcvt_avx2_i16_i16(nsimd_avx2_vi16 a0, nsimd_avx2_vi16 a1);
 nsimd_avx2_vu16 nsimd_downcvt_avx2_u16_u16(nsimd_avx2_vu16 a0, nsimd_avx2_vu16 a1);
@@ -185,67 +145,47 @@ nsimd_sve_vf32 nsimd_downcvt_sve_f32_f32(nsimd_sve_vf32 a0, nsimd_sve_vf32 a1);
 nsimd_sve_vi64 nsimd_downcvt_sve_i64_i64(nsimd_sve_vi64 a0, nsimd_sve_vi64 a1);
 nsimd_sve_vu64 nsimd_downcvt_sve_u64_u64(nsimd_sve_vu64 a0, nsimd_sve_vu64 a1);
 nsimd_sve_vf64 nsimd_downcvt_sve_f64_f64(nsimd_sve_vf64 a0, nsimd_sve_vf64 a1);</code></pre>
-<h2>C++ base API (architecture specifics)</h2>
-<h3>AVX</h3>
-<pre class="c"><code>nsimd_avx_vi16 downcvt(nsimd_avx_vi16 a0, nsimd_avx_vi16 a1, i16, i16, avx);
-nsimd_avx_vu16 downcvt(nsimd_avx_vu16 a0, nsimd_avx_vu16 a1, u16, u16, avx);
-nsimd_avx_vf16 downcvt(nsimd_avx_vf16 a0, nsimd_avx_vf16 a1, f16, f16, avx);
-nsimd_avx_vi32 downcvt(nsimd_avx_vi32 a0, nsimd_avx_vi32 a1, i32, i32, avx);
-nsimd_avx_vu32 downcvt(nsimd_avx_vu32 a0, nsimd_avx_vu32 a1, u32, u32, avx);
-nsimd_avx_vf32 downcvt(nsimd_avx_vf32 a0, nsimd_avx_vf32 a1, f32, f32, avx);
-nsimd_avx_vi64 downcvt(nsimd_avx_vi64 a0, nsimd_avx_vi64 a1, i64, i64, avx);
-nsimd_avx_vu64 downcvt(nsimd_avx_vu64 a0, nsimd_avx_vu64 a1, u64, u64, avx);
-nsimd_avx_vf64 downcvt(nsimd_avx_vf64 a0, nsimd_avx_vf64 a1, f64, f64, avx);</code></pre>
-<h3>NEON128</h3>
-<pre class="c"><code>nsimd_neon128_vi16 downcvt(nsimd_neon128_vi16 a0, nsimd_neon128_vi16 a1, i16, i16, neon128);
-nsimd_neon128_vu16 downcvt(nsimd_neon128_vu16 a0, nsimd_neon128_vu16 a1, u16, u16, neon128);
-nsimd_neon128_vf16 downcvt(nsimd_neon128_vf16 a0, nsimd_neon128_vf16 a1, f16, f16, neon128);
-nsimd_neon128_vi32 downcvt(nsimd_neon128_vi32 a0, nsimd_neon128_vi32 a1, i32, i32, neon128);
-nsimd_neon128_vu32 downcvt(nsimd_neon128_vu32 a0, nsimd_neon128_vu32 a1, u32, u32, neon128);
-nsimd_neon128_vf32 downcvt(nsimd_neon128_vf32 a0, nsimd_neon128_vf32 a1, f32, f32, neon128);
-nsimd_neon128_vi64 downcvt(nsimd_neon128_vi64 a0, nsimd_neon128_vi64 a1, i64, i64, neon128);
-nsimd_neon128_vu64 downcvt(nsimd_neon128_vu64 a0, nsimd_neon128_vu64 a1, u64, u64, neon128);
-nsimd_neon128_vf64 downcvt(nsimd_neon128_vf64 a0, nsimd_neon128_vf64 a1, f64, f64, neon128);</code></pre>
-<h3>SSE42</h3>
-<pre class="c"><code>nsimd_sse42_vi16 downcvt(nsimd_sse42_vi16 a0, nsimd_sse42_vi16 a1, i16, i16, sse42);
-nsimd_sse42_vu16 downcvt(nsimd_sse42_vu16 a0, nsimd_sse42_vu16 a1, u16, u16, sse42);
-nsimd_sse42_vf16 downcvt(nsimd_sse42_vf16 a0, nsimd_sse42_vf16 a1, f16, f16, sse42);
-nsimd_sse42_vi32 downcvt(nsimd_sse42_vi32 a0, nsimd_sse42_vi32 a1, i32, i32, sse42);
-nsimd_sse42_vu32 downcvt(nsimd_sse42_vu32 a0, nsimd_sse42_vu32 a1, u32, u32, sse42);
-nsimd_sse42_vf32 downcvt(nsimd_sse42_vf32 a0, nsimd_sse42_vf32 a1, f32, f32, sse42);
-nsimd_sse42_vi64 downcvt(nsimd_sse42_vi64 a0, nsimd_sse42_vi64 a1, i64, i64, sse42);
-nsimd_sse42_vu64 downcvt(nsimd_sse42_vu64 a0, nsimd_sse42_vu64 a1, u64, u64, sse42);
-nsimd_sse42_vf64 downcvt(nsimd_sse42_vf64 a0, nsimd_sse42_vf64 a1, f64, f64, sse42);</code></pre>
-<h3>SSE2</h3>
-<pre class="c"><code>nsimd_sse2_vi16 downcvt(nsimd_sse2_vi16 a0, nsimd_sse2_vi16 a1, i16, i16, sse2);
-nsimd_sse2_vu16 downcvt(nsimd_sse2_vu16 a0, nsimd_sse2_vu16 a1, u16, u16, sse2);
-nsimd_sse2_vf16 downcvt(nsimd_sse2_vf16 a0, nsimd_sse2_vf16 a1, f16, f16, sse2);
-nsimd_sse2_vi32 downcvt(nsimd_sse2_vi32 a0, nsimd_sse2_vi32 a1, i32, i32, sse2);
-nsimd_sse2_vu32 downcvt(nsimd_sse2_vu32 a0, nsimd_sse2_vu32 a1, u32, u32, sse2);
-nsimd_sse2_vf32 downcvt(nsimd_sse2_vf32 a0, nsimd_sse2_vf32 a1, f32, f32, sse2);
-nsimd_sse2_vi64 downcvt(nsimd_sse2_vi64 a0, nsimd_sse2_vi64 a1, i64, i64, sse2);
-nsimd_sse2_vu64 downcvt(nsimd_sse2_vu64 a0, nsimd_sse2_vu64 a1, u64, u64, sse2);
-nsimd_sse2_vf64 downcvt(nsimd_sse2_vf64 a0, nsimd_sse2_vf64 a1, f64, f64, sse2);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vi16 nsimd_downcvt_cpu_i16_i16(nsimd_cpu_vi16 a0, nsimd_cpu_vi16 a1);
+nsimd_cpu_vu16 nsimd_downcvt_cpu_u16_u16(nsimd_cpu_vu16 a0, nsimd_cpu_vu16 a1);
+nsimd_cpu_vf16 nsimd_downcvt_cpu_f16_f16(nsimd_cpu_vf16 a0, nsimd_cpu_vf16 a1);
+nsimd_cpu_vi32 nsimd_downcvt_cpu_i32_i32(nsimd_cpu_vi32 a0, nsimd_cpu_vi32 a1);
+nsimd_cpu_vu32 nsimd_downcvt_cpu_u32_u32(nsimd_cpu_vu32 a0, nsimd_cpu_vu32 a1);
+nsimd_cpu_vf32 nsimd_downcvt_cpu_f32_f32(nsimd_cpu_vf32 a0, nsimd_cpu_vf32 a1);
+nsimd_cpu_vi64 nsimd_downcvt_cpu_i64_i64(nsimd_cpu_vi64 a0, nsimd_cpu_vi64 a1);
+nsimd_cpu_vu64 nsimd_downcvt_cpu_u64_u64(nsimd_cpu_vu64 a0, nsimd_cpu_vu64 a1);
+nsimd_cpu_vf64 nsimd_downcvt_cpu_f64_f64(nsimd_cpu_vf64 a0, nsimd_cpu_vf64 a1);</code></pre>
 <h3>AVX512_KNL</h3>
-<pre class="c"><code>nsimd_avx512_knl_vi16 downcvt(nsimd_avx512_knl_vi16 a0, nsimd_avx512_knl_vi16 a1, i16, i16, avx512_knl);
-nsimd_avx512_knl_vu16 downcvt(nsimd_avx512_knl_vu16 a0, nsimd_avx512_knl_vu16 a1, u16, u16, avx512_knl);
-nsimd_avx512_knl_vf16 downcvt(nsimd_avx512_knl_vf16 a0, nsimd_avx512_knl_vf16 a1, f16, f16, avx512_knl);
-nsimd_avx512_knl_vi32 downcvt(nsimd_avx512_knl_vi32 a0, nsimd_avx512_knl_vi32 a1, i32, i32, avx512_knl);
-nsimd_avx512_knl_vu32 downcvt(nsimd_avx512_knl_vu32 a0, nsimd_avx512_knl_vu32 a1, u32, u32, avx512_knl);
-nsimd_avx512_knl_vf32 downcvt(nsimd_avx512_knl_vf32 a0, nsimd_avx512_knl_vf32 a1, f32, f32, avx512_knl);
-nsimd_avx512_knl_vi64 downcvt(nsimd_avx512_knl_vi64 a0, nsimd_avx512_knl_vi64 a1, i64, i64, avx512_knl);
-nsimd_avx512_knl_vu64 downcvt(nsimd_avx512_knl_vu64 a0, nsimd_avx512_knl_vu64 a1, u64, u64, avx512_knl);
-nsimd_avx512_knl_vf64 downcvt(nsimd_avx512_knl_vf64 a0, nsimd_avx512_knl_vf64 a1, f64, f64, avx512_knl);</code></pre>
-<h3>AVX512_SKYLAKE</h3>
-<pre class="c"><code>nsimd_avx512_skylake_vi16 downcvt(nsimd_avx512_skylake_vi16 a0, nsimd_avx512_skylake_vi16 a1, i16, i16, avx512_skylake);
-nsimd_avx512_skylake_vu16 downcvt(nsimd_avx512_skylake_vu16 a0, nsimd_avx512_skylake_vu16 a1, u16, u16, avx512_skylake);
-nsimd_avx512_skylake_vf16 downcvt(nsimd_avx512_skylake_vf16 a0, nsimd_avx512_skylake_vf16 a1, f16, f16, avx512_skylake);
-nsimd_avx512_skylake_vi32 downcvt(nsimd_avx512_skylake_vi32 a0, nsimd_avx512_skylake_vi32 a1, i32, i32, avx512_skylake);
-nsimd_avx512_skylake_vu32 downcvt(nsimd_avx512_skylake_vu32 a0, nsimd_avx512_skylake_vu32 a1, u32, u32, avx512_skylake);
-nsimd_avx512_skylake_vf32 downcvt(nsimd_avx512_skylake_vf32 a0, nsimd_avx512_skylake_vf32 a1, f32, f32, avx512_skylake);
-nsimd_avx512_skylake_vi64 downcvt(nsimd_avx512_skylake_vi64 a0, nsimd_avx512_skylake_vi64 a1, i64, i64, avx512_skylake);
-nsimd_avx512_skylake_vu64 downcvt(nsimd_avx512_skylake_vu64 a0, nsimd_avx512_skylake_vu64 a1, u64, u64, avx512_skylake);
-nsimd_avx512_skylake_vf64 downcvt(nsimd_avx512_skylake_vf64 a0, nsimd_avx512_skylake_vf64 a1, f64, f64, avx512_skylake);</code></pre>
+<pre class="c"><code>nsimd_avx512_knl_vi16 nsimd_downcvt_avx512_knl_i16_i16(nsimd_avx512_knl_vi16 a0, nsimd_avx512_knl_vi16 a1);
+nsimd_avx512_knl_vu16 nsimd_downcvt_avx512_knl_u16_u16(nsimd_avx512_knl_vu16 a0, nsimd_avx512_knl_vu16 a1);
+nsimd_avx512_knl_vf16 nsimd_downcvt_avx512_knl_f16_f16(nsimd_avx512_knl_vf16 a0, nsimd_avx512_knl_vf16 a1);
+nsimd_avx512_knl_vi32 nsimd_downcvt_avx512_knl_i32_i32(nsimd_avx512_knl_vi32 a0, nsimd_avx512_knl_vi32 a1);
+nsimd_avx512_knl_vu32 nsimd_downcvt_avx512_knl_u32_u32(nsimd_avx512_knl_vu32 a0, nsimd_avx512_knl_vu32 a1);
+nsimd_avx512_knl_vf32 nsimd_downcvt_avx512_knl_f32_f32(nsimd_avx512_knl_vf32 a0, nsimd_avx512_knl_vf32 a1);
+nsimd_avx512_knl_vi64 nsimd_downcvt_avx512_knl_i64_i64(nsimd_avx512_knl_vi64 a0, nsimd_avx512_knl_vi64 a1);
+nsimd_avx512_knl_vu64 nsimd_downcvt_avx512_knl_u64_u64(nsimd_avx512_knl_vu64 a0, nsimd_avx512_knl_vu64 a1);
+nsimd_avx512_knl_vf64 nsimd_downcvt_avx512_knl_f64_f64(nsimd_avx512_knl_vf64 a0, nsimd_avx512_knl_vf64 a1);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vi16 nsimd_downcvt_neon128_i16_i16(nsimd_neon128_vi16 a0, nsimd_neon128_vi16 a1);
+nsimd_neon128_vu16 nsimd_downcvt_neon128_u16_u16(nsimd_neon128_vu16 a0, nsimd_neon128_vu16 a1);
+nsimd_neon128_vf16 nsimd_downcvt_neon128_f16_f16(nsimd_neon128_vf16 a0, nsimd_neon128_vf16 a1);
+nsimd_neon128_vi32 nsimd_downcvt_neon128_i32_i32(nsimd_neon128_vi32 a0, nsimd_neon128_vi32 a1);
+nsimd_neon128_vu32 nsimd_downcvt_neon128_u32_u32(nsimd_neon128_vu32 a0, nsimd_neon128_vu32 a1);
+nsimd_neon128_vf32 nsimd_downcvt_neon128_f32_f32(nsimd_neon128_vf32 a0, nsimd_neon128_vf32 a1);
+nsimd_neon128_vi64 nsimd_downcvt_neon128_i64_i64(nsimd_neon128_vi64 a0, nsimd_neon128_vi64 a1);
+nsimd_neon128_vu64 nsimd_downcvt_neon128_u64_u64(nsimd_neon128_vu64 a0, nsimd_neon128_vu64 a1);
+nsimd_neon128_vf64 nsimd_downcvt_neon128_f64_f64(nsimd_neon128_vf64 a0, nsimd_neon128_vf64 a1);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vi16 nsimd_downcvt_sse42_i16_i16(nsimd_sse42_vi16 a0, nsimd_sse42_vi16 a1);
+nsimd_sse42_vu16 nsimd_downcvt_sse42_u16_u16(nsimd_sse42_vu16 a0, nsimd_sse42_vu16 a1);
+nsimd_sse42_vf16 nsimd_downcvt_sse42_f16_f16(nsimd_sse42_vf16 a0, nsimd_sse42_vf16 a1);
+nsimd_sse42_vi32 nsimd_downcvt_sse42_i32_i32(nsimd_sse42_vi32 a0, nsimd_sse42_vi32 a1);
+nsimd_sse42_vu32 nsimd_downcvt_sse42_u32_u32(nsimd_sse42_vu32 a0, nsimd_sse42_vu32 a1);
+nsimd_sse42_vf32 nsimd_downcvt_sse42_f32_f32(nsimd_sse42_vf32 a0, nsimd_sse42_vf32 a1);
+nsimd_sse42_vi64 nsimd_downcvt_sse42_i64_i64(nsimd_sse42_vi64 a0, nsimd_sse42_vi64 a1);
+nsimd_sse42_vu64 nsimd_downcvt_sse42_u64_u64(nsimd_sse42_vu64 a0, nsimd_sse42_vu64 a1);
+nsimd_sse42_vf64 nsimd_downcvt_sse42_f64_f64(nsimd_sse42_vf64 a0, nsimd_sse42_vf64 a1);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
 <h3>AARCH64</h3>
 <pre class="c"><code>nsimd_aarch64_vi16 downcvt(nsimd_aarch64_vi16 a0, nsimd_aarch64_vi16 a1, i16, i16, aarch64);
 nsimd_aarch64_vu16 downcvt(nsimd_aarch64_vu16 a0, nsimd_aarch64_vu16 a1, u16, u16, aarch64);
@@ -256,16 +196,36 @@ nsimd_aarch64_vf32 downcvt(nsimd_aarch64_vf32 a0, nsimd_aarch64_vf32 a1, f32, f3
 nsimd_aarch64_vi64 downcvt(nsimd_aarch64_vi64 a0, nsimd_aarch64_vi64 a1, i64, i64, aarch64);
 nsimd_aarch64_vu64 downcvt(nsimd_aarch64_vu64 a0, nsimd_aarch64_vu64 a1, u64, u64, aarch64);
 nsimd_aarch64_vf64 downcvt(nsimd_aarch64_vf64 a0, nsimd_aarch64_vf64 a1, f64, f64, aarch64);</code></pre>
-<h3>CPU</h3>
-<pre class="c"><code>nsimd_cpu_vi16 downcvt(nsimd_cpu_vi16 a0, nsimd_cpu_vi16 a1, i16, i16, cpu);
-nsimd_cpu_vu16 downcvt(nsimd_cpu_vu16 a0, nsimd_cpu_vu16 a1, u16, u16, cpu);
-nsimd_cpu_vf16 downcvt(nsimd_cpu_vf16 a0, nsimd_cpu_vf16 a1, f16, f16, cpu);
-nsimd_cpu_vi32 downcvt(nsimd_cpu_vi32 a0, nsimd_cpu_vi32 a1, i32, i32, cpu);
-nsimd_cpu_vu32 downcvt(nsimd_cpu_vu32 a0, nsimd_cpu_vu32 a1, u32, u32, cpu);
-nsimd_cpu_vf32 downcvt(nsimd_cpu_vf32 a0, nsimd_cpu_vf32 a1, f32, f32, cpu);
-nsimd_cpu_vi64 downcvt(nsimd_cpu_vi64 a0, nsimd_cpu_vi64 a1, i64, i64, cpu);
-nsimd_cpu_vu64 downcvt(nsimd_cpu_vu64 a0, nsimd_cpu_vu64 a1, u64, u64, cpu);
-nsimd_cpu_vf64 downcvt(nsimd_cpu_vf64 a0, nsimd_cpu_vf64 a1, f64, f64, cpu);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vi16 downcvt(nsimd_sse2_vi16 a0, nsimd_sse2_vi16 a1, i16, i16, sse2);
+nsimd_sse2_vu16 downcvt(nsimd_sse2_vu16 a0, nsimd_sse2_vu16 a1, u16, u16, sse2);
+nsimd_sse2_vf16 downcvt(nsimd_sse2_vf16 a0, nsimd_sse2_vf16 a1, f16, f16, sse2);
+nsimd_sse2_vi32 downcvt(nsimd_sse2_vi32 a0, nsimd_sse2_vi32 a1, i32, i32, sse2);
+nsimd_sse2_vu32 downcvt(nsimd_sse2_vu32 a0, nsimd_sse2_vu32 a1, u32, u32, sse2);
+nsimd_sse2_vf32 downcvt(nsimd_sse2_vf32 a0, nsimd_sse2_vf32 a1, f32, f32, sse2);
+nsimd_sse2_vi64 downcvt(nsimd_sse2_vi64 a0, nsimd_sse2_vi64 a1, i64, i64, sse2);
+nsimd_sse2_vu64 downcvt(nsimd_sse2_vu64 a0, nsimd_sse2_vu64 a1, u64, u64, sse2);
+nsimd_sse2_vf64 downcvt(nsimd_sse2_vf64 a0, nsimd_sse2_vf64 a1, f64, f64, sse2);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vi16 downcvt(nsimd_avx512_skylake_vi16 a0, nsimd_avx512_skylake_vi16 a1, i16, i16, avx512_skylake);
+nsimd_avx512_skylake_vu16 downcvt(nsimd_avx512_skylake_vu16 a0, nsimd_avx512_skylake_vu16 a1, u16, u16, avx512_skylake);
+nsimd_avx512_skylake_vf16 downcvt(nsimd_avx512_skylake_vf16 a0, nsimd_avx512_skylake_vf16 a1, f16, f16, avx512_skylake);
+nsimd_avx512_skylake_vi32 downcvt(nsimd_avx512_skylake_vi32 a0, nsimd_avx512_skylake_vi32 a1, i32, i32, avx512_skylake);
+nsimd_avx512_skylake_vu32 downcvt(nsimd_avx512_skylake_vu32 a0, nsimd_avx512_skylake_vu32 a1, u32, u32, avx512_skylake);
+nsimd_avx512_skylake_vf32 downcvt(nsimd_avx512_skylake_vf32 a0, nsimd_avx512_skylake_vf32 a1, f32, f32, avx512_skylake);
+nsimd_avx512_skylake_vi64 downcvt(nsimd_avx512_skylake_vi64 a0, nsimd_avx512_skylake_vi64 a1, i64, i64, avx512_skylake);
+nsimd_avx512_skylake_vu64 downcvt(nsimd_avx512_skylake_vu64 a0, nsimd_avx512_skylake_vu64 a1, u64, u64, avx512_skylake);
+nsimd_avx512_skylake_vf64 downcvt(nsimd_avx512_skylake_vf64 a0, nsimd_avx512_skylake_vf64 a1, f64, f64, avx512_skylake);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vi16 downcvt(nsimd_avx_vi16 a0, nsimd_avx_vi16 a1, i16, i16, avx);
+nsimd_avx_vu16 downcvt(nsimd_avx_vu16 a0, nsimd_avx_vu16 a1, u16, u16, avx);
+nsimd_avx_vf16 downcvt(nsimd_avx_vf16 a0, nsimd_avx_vf16 a1, f16, f16, avx);
+nsimd_avx_vi32 downcvt(nsimd_avx_vi32 a0, nsimd_avx_vi32 a1, i32, i32, avx);
+nsimd_avx_vu32 downcvt(nsimd_avx_vu32 a0, nsimd_avx_vu32 a1, u32, u32, avx);
+nsimd_avx_vf32 downcvt(nsimd_avx_vf32 a0, nsimd_avx_vf32 a1, f32, f32, avx);
+nsimd_avx_vi64 downcvt(nsimd_avx_vi64 a0, nsimd_avx_vi64 a1, i64, i64, avx);
+nsimd_avx_vu64 downcvt(nsimd_avx_vu64 a0, nsimd_avx_vu64 a1, u64, u64, avx);
+nsimd_avx_vf64 downcvt(nsimd_avx_vf64 a0, nsimd_avx_vf64 a1, f64, f64, avx);</code></pre>
 <h3>AVX2</h3>
 <pre class="c"><code>nsimd_avx2_vi16 downcvt(nsimd_avx2_vi16 a0, nsimd_avx2_vi16 a1, i16, i16, avx2);
 nsimd_avx2_vu16 downcvt(nsimd_avx2_vu16 a0, nsimd_avx2_vu16 a1, u16, u16, avx2);
@@ -286,5 +246,45 @@ nsimd_sve_vf32 downcvt(nsimd_sve_vf32 a0, nsimd_sve_vf32 a1, f32, f32, sve);
 nsimd_sve_vi64 downcvt(nsimd_sve_vi64 a0, nsimd_sve_vi64 a1, i64, i64, sve);
 nsimd_sve_vu64 downcvt(nsimd_sve_vu64 a0, nsimd_sve_vu64 a1, u64, u64, sve);
 nsimd_sve_vf64 downcvt(nsimd_sve_vf64 a0, nsimd_sve_vf64 a1, f64, f64, sve);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vi16 downcvt(nsimd_cpu_vi16 a0, nsimd_cpu_vi16 a1, i16, i16, cpu);
+nsimd_cpu_vu16 downcvt(nsimd_cpu_vu16 a0, nsimd_cpu_vu16 a1, u16, u16, cpu);
+nsimd_cpu_vf16 downcvt(nsimd_cpu_vf16 a0, nsimd_cpu_vf16 a1, f16, f16, cpu);
+nsimd_cpu_vi32 downcvt(nsimd_cpu_vi32 a0, nsimd_cpu_vi32 a1, i32, i32, cpu);
+nsimd_cpu_vu32 downcvt(nsimd_cpu_vu32 a0, nsimd_cpu_vu32 a1, u32, u32, cpu);
+nsimd_cpu_vf32 downcvt(nsimd_cpu_vf32 a0, nsimd_cpu_vf32 a1, f32, f32, cpu);
+nsimd_cpu_vi64 downcvt(nsimd_cpu_vi64 a0, nsimd_cpu_vi64 a1, i64, i64, cpu);
+nsimd_cpu_vu64 downcvt(nsimd_cpu_vu64 a0, nsimd_cpu_vu64 a1, u64, u64, cpu);
+nsimd_cpu_vf64 downcvt(nsimd_cpu_vf64 a0, nsimd_cpu_vf64 a1, f64, f64, cpu);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vi16 downcvt(nsimd_avx512_knl_vi16 a0, nsimd_avx512_knl_vi16 a1, i16, i16, avx512_knl);
+nsimd_avx512_knl_vu16 downcvt(nsimd_avx512_knl_vu16 a0, nsimd_avx512_knl_vu16 a1, u16, u16, avx512_knl);
+nsimd_avx512_knl_vf16 downcvt(nsimd_avx512_knl_vf16 a0, nsimd_avx512_knl_vf16 a1, f16, f16, avx512_knl);
+nsimd_avx512_knl_vi32 downcvt(nsimd_avx512_knl_vi32 a0, nsimd_avx512_knl_vi32 a1, i32, i32, avx512_knl);
+nsimd_avx512_knl_vu32 downcvt(nsimd_avx512_knl_vu32 a0, nsimd_avx512_knl_vu32 a1, u32, u32, avx512_knl);
+nsimd_avx512_knl_vf32 downcvt(nsimd_avx512_knl_vf32 a0, nsimd_avx512_knl_vf32 a1, f32, f32, avx512_knl);
+nsimd_avx512_knl_vi64 downcvt(nsimd_avx512_knl_vi64 a0, nsimd_avx512_knl_vi64 a1, i64, i64, avx512_knl);
+nsimd_avx512_knl_vu64 downcvt(nsimd_avx512_knl_vu64 a0, nsimd_avx512_knl_vu64 a1, u64, u64, avx512_knl);
+nsimd_avx512_knl_vf64 downcvt(nsimd_avx512_knl_vf64 a0, nsimd_avx512_knl_vf64 a1, f64, f64, avx512_knl);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vi16 downcvt(nsimd_neon128_vi16 a0, nsimd_neon128_vi16 a1, i16, i16, neon128);
+nsimd_neon128_vu16 downcvt(nsimd_neon128_vu16 a0, nsimd_neon128_vu16 a1, u16, u16, neon128);
+nsimd_neon128_vf16 downcvt(nsimd_neon128_vf16 a0, nsimd_neon128_vf16 a1, f16, f16, neon128);
+nsimd_neon128_vi32 downcvt(nsimd_neon128_vi32 a0, nsimd_neon128_vi32 a1, i32, i32, neon128);
+nsimd_neon128_vu32 downcvt(nsimd_neon128_vu32 a0, nsimd_neon128_vu32 a1, u32, u32, neon128);
+nsimd_neon128_vf32 downcvt(nsimd_neon128_vf32 a0, nsimd_neon128_vf32 a1, f32, f32, neon128);
+nsimd_neon128_vi64 downcvt(nsimd_neon128_vi64 a0, nsimd_neon128_vi64 a1, i64, i64, neon128);
+nsimd_neon128_vu64 downcvt(nsimd_neon128_vu64 a0, nsimd_neon128_vu64 a1, u64, u64, neon128);
+nsimd_neon128_vf64 downcvt(nsimd_neon128_vf64 a0, nsimd_neon128_vf64 a1, f64, f64, neon128);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vi16 downcvt(nsimd_sse42_vi16 a0, nsimd_sse42_vi16 a1, i16, i16, sse42);
+nsimd_sse42_vu16 downcvt(nsimd_sse42_vu16 a0, nsimd_sse42_vu16 a1, u16, u16, sse42);
+nsimd_sse42_vf16 downcvt(nsimd_sse42_vf16 a0, nsimd_sse42_vf16 a1, f16, f16, sse42);
+nsimd_sse42_vi32 downcvt(nsimd_sse42_vi32 a0, nsimd_sse42_vi32 a1, i32, i32, sse42);
+nsimd_sse42_vu32 downcvt(nsimd_sse42_vu32 a0, nsimd_sse42_vu32 a1, u32, u32, sse42);
+nsimd_sse42_vf32 downcvt(nsimd_sse42_vf32 a0, nsimd_sse42_vf32 a1, f32, f32, sse42);
+nsimd_sse42_vi64 downcvt(nsimd_sse42_vi64 a0, nsimd_sse42_vi64 a1, i64, i64, sse42);
+nsimd_sse42_vu64 downcvt(nsimd_sse42_vu64 a0, nsimd_sse42_vu64 a1, u64, u64, sse42);
+nsimd_sse42_vf64 downcvt(nsimd_sse42_vf64 a0, nsimd_sse42_vf64 a1, f64, f64, sse42);</code></pre>
   </body>
 </html>
