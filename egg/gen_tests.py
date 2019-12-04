@@ -756,7 +756,7 @@ def gen_adds(opts, op, typ, lang, ulps):
                rand_sign_switch = rand_sign_switch,
                rand_val = rand_val)
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
             ''' \
             {head}
