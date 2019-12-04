@@ -56,14 +56,20 @@ class BenchError(RuntimeError):
 # Markers
 
 def asm_marker(simd, bench_name):
+    r = ''
+    r += '#ifdef ASM_MARKER'
+    r += '\n'
     if simd in common.x86_simds:
-        return '__asm__ __volatile__("callq __asm_marker__{bench_name}");'. \
+        r += '__asm__ __volatile__("callq __asm_marker__{bench_name}");'. \
                format(bench_name=bench_name)
     elif simd in common.arm_simds:
-        return '__asm__ __volatile__("bl __asm_marker__{bench_name}");'. \
+        r += '__asm__ __volatile__("bl __asm_marker__{bench_name}");'. \
                format(bench_name=bench_name)
     else:
         raise BenchError('Unable to write marker for SIMD: {}'.format(simd))
+    r += '\n'
+    r += '#endif'
+    return r
 
 # -----------------------------------------------------------------------------
 # Metaclass
@@ -421,7 +427,7 @@ class TypeMIPPMsk(TypeVectorBase):
         if simd in ['avx512_knl', 'avx512_skylake']:
             return '*({}) = {}'.format(ptr, expr)
         else:
-            return 'mipp::store({}, {})'.format(ptr, expr)
+            return 'mipp::store({}, reinterpret_cast<mipp::reg>({}))'.format(ptr, expr)
 
 # -----------------------------------------------------------------------------
 
@@ -456,7 +462,8 @@ class BenchOperator(object, metaclass=type):
         if lang == 'c_base':
             includes += ['<stdlib.h>', '<stdio.h>', '<errno.h>', '<string.h>']
         else:
-            includes += ['<cstdlib>', '<cstdio>', '<cerrno>', '<cstring>']
+            includes += ['<cstdlib>', '<cstdio>', '<cerrno>', '<cstring>',
+                         '<algorithm>']
         return includes
 
     def match_sig(self, signature):
@@ -546,9 +553,9 @@ class BenchOperator(object, metaclass=type):
         return 'nsimd::{}({}, {}())'.format(self.name,
                                             common.pprint_commas(args), typ)
 
-    def code_ptr_step(self, typ):
+    def code_ptr_step(self, typ, simd):
         if any(p.is_simd() for p in self.typed_params_):
-            return 'vlen({})'.format(typ)
+            return 'vlen_e({}, {})'.format(typ, simd)
         else:
             return '1'
 
@@ -592,8 +599,8 @@ def nsimd_unrolled_fun_from_sig(from_sig, unroll):
         def code_call(self, typ, args):
             return 'nsimd::{}({})'.format(self.name,
                                           common.pprint_commas(args))
-        def code_ptr_step(self, typ):
-            return 'nsimd::len(nsimd::pack<{}, {}>())'.format(typ, unroll)
+        def code_ptr_step(self, typ, simd):
+            return 'nsimd::len(nsimd::pack<{}, {}, nsimd::{}>())'.format(typ, unroll, simd)
     return InlineNSIMDUnrolledFun()
 
 def fun_from_sig(from_sig):
@@ -669,7 +676,7 @@ def gen_bench_name(category, name, unroll=None):
         bench_name += '_unroll{}'.format(unroll)
     return bench_name
 
-def gen_bench_from_code(f, typ, code):
+def gen_bench_from_code(f, typ, code, bench_with_timestamp):
     header = ''
     header += common.pprint_includes(f.gen_includes(_lang))
     header += \
@@ -679,10 +686,22 @@ def gen_bench_from_code(f, typ, code):
     #include "../benches.hpp"
 
     // Google benchmark
+    #ifndef DISABLE_GOOGLE_BENCHMARK
     #include <benchmark/benchmark.h>
+    #endif
+
+    #include <ctime>
+    double timestamp_ns() {
+      timespec ts;
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      return double(ts.tv_sec) * 1000000000.0 + double(ts.tv_nsec);
+    }
 
     // std
     #include <cmath>
+    // #include <map>
+    #include <numeric>
+    // #include <fstream>
 
     // Sleef
     #pragma GCC diagnostic push
@@ -730,18 +749,33 @@ def gen_bench_from_code(f, typ, code):
 
     {random_code}
 
-    // -------------------------------------------------------------------------
-
     {code}
 
-    BENCHMARK_MAIN();
+    int main(int argc, char** argv)
+    {{
+      std::vector<std::string> args(argv, argv + argc);
+
+      if (std::find(args.begin(), args.end(), "--use_timestamp_ns")
+          != args.end()) {{
+        {bench_with_timestamp}
+      }}
+      #ifndef DISABLE_GOOGLE_BENCHMARK
+      else {{
+        ::benchmark::Initialize(&argc, argv);
+        ::benchmark::RunSpecifiedBenchmarks();
+      }}
+      #endif
+
+      return 0;
+    }}
 
     '''.format(
             name=f.name,
             type=typ,
             year=date.today().year,
-            code=code,
             random_code=f.domain.code('rand_param', typ),
+            code=code,
+            bench_with_timestamp=bench_with_timestamp,
             sizeof=common.sizeof(typ),
             header=header,
     )
@@ -780,7 +814,13 @@ def gen_bench_asm_function(f, simd, typ, category):
       __asm__ __volatile__("nop");
       // code:{{
       int n = {step};
-      #pragma clang loop unroll(disable)
+      #if defined(NSIMD_IS_GCC)
+        #pragma GCC unroll 1
+      #elif defined(NSIMD_IS_CLANG)
+        #pragma clang loop unroll(disable)
+      #elif defined(NSIMD_IS_ICC)
+        #pragma unroll(1)
+      #endif
       for (int i = 0; i < sz; i += n) {{
         {bench_call};
       }}
@@ -795,7 +835,7 @@ def gen_bench_asm_function(f, simd, typ, category):
     '''.format(
         bench_name=gen_bench_name(category, f.function_name),
         type=typ,
-        step=f.code_ptr_step(typ),
+        step=f.code_ptr_step(typ, simd),
         bench_call=bench_call,
         bench_args_decl=common.pprint_commas(bench_args_decl)
         )
@@ -804,10 +844,41 @@ def gen_bench_from_basic_fun(f, simd, typ, category, unroll=None):
     bench_args_init, bench_args_decl, bench_args_call, bench_call = \
             gen_bench_info_from(f, simd, typ)
     bench_name = gen_bench_name(category, f.function_name, unroll)
+
+    code_timestamp_ns = \
+    '''
+    void {bench_name}({type}* _r, {bench_args_decl}, int sz) {{
+      // Normalize size depending on the step so that we're not going out of boundaies
+      // (Required when the size is'nt a multiple of `n`, like for unrolling benches)
+      sz = (sz / {step}) * {step};
+      std::cout << "{bench_name}({type}), sz = " << sz << std::endl;
+      {asm_marker}
+      // code: {bench_name}
+      int n = {step};
+      #if defined(NSIMD_IS_GCC)
+        #pragma GCC unroll 1
+      #elif defined(NSIMD_IS_CLANG)
+        #pragma clang loop unroll(disable)
+      #elif defined(NSIMD_IS_ICC)
+        #pragma unroll(1)
+      #endif
+      for (int i = 0; i < sz; i += n) {{
+        {bench_call};
+      }}
+      // code: {bench_name}
+      {asm_marker}
+    }}
+    '''
+
     return \
     '''
+    // -----------------------------------------------------------------------------
+
     {code_before}
+
     extern "C" {{ void __asm_marker__{bench_name}() {{}} }}
+
+    #ifndef DISABLE_GOOGLE_BENCHMARK
 
     void {bench_name}(benchmark::State& state, {type}* _r, {bench_args_decl}, int sz) {{
       // Normalize size depending on the step so that we're not going out of boundaies
@@ -818,8 +889,13 @@ def gen_bench_from_basic_fun(f, simd, typ, category, unroll=None):
           {asm_marker}
           // code: {bench_name}
           int n = {step};
-
-          #pragma clang loop unroll(disable)
+          #if defined(NSIMD_IS_GCC)
+            #pragma GCC unroll 1
+          #elif defined(NSIMD_IS_CLANG)
+            #pragma clang loop unroll(disable)
+          #elif defined(NSIMD_IS_ICC)
+            #pragma unroll(1)
+          #endif
           for (int i = 0; i < sz; i += n) {{
             {bench_call};
           }}
@@ -832,11 +908,14 @@ def gen_bench_from_basic_fun(f, simd, typ, category, unroll=None):
         state.SkipWithError(message.c_str());
       }}
     }}
+
     BENCHMARK_CAPTURE({bench_name}, {type}, make_data(sz), {bench_args_init}, sz);
+
+    #endif
     '''.format(
             bench_name=bench_name,
             type=typ,
-            step=f.code_ptr_step(typ),
+            step=f.code_ptr_step(typ, simd),
             bench_call=bench_call,
             bench_args_init=common.pprint_commas(bench_args_init),
             bench_args_decl=common.pprint_commas(bench_args_decl),
@@ -922,6 +1001,101 @@ def gen_bench_against(f, simd, typ, against):
                 code += gen_code(f, simd, typ, category=category)
     return code
 
+def gen_bench_with_timestamp(f, simd, typ, category, unroll=None):
+    code = ''
+    bench_args_init, bench_args_decl, bench_args_call, bench_call = \
+            gen_bench_info_from(f, simd, typ)
+    bench_name = gen_bench_name(category, f.function_name, unroll)
+    bench_args_decl = ''
+    bench_args_call = ''
+    for i, arg in enumerate(f.args):
+        bench_args_decl += typ + ' * data' + str(i) + ' = make_data(sz, &rand_param' + str(i) + ');' + '\n'
+        if i != 0: bench_args_call += ', '
+        bench_args_call += 'data' + str(i)
+    code += \
+      '''
+      {{
+        // Bench
+        {typ} * r = make_data(sz);
+        {bench_args_decl}
+        double elapsed_times_ns[nb_runs] = {{ }}; // Must be at least 10000
+        {typ} sum = {{ }};
+        for (size_t run = 0; run < nb_runs; ++run) {{
+          double const t0 = timestamp_ns();
+          {bench_name}(r, {bench_args_call}, 1000);
+          double const t1 = timestamp_ns();
+          elapsed_times_ns[run] = (t1 - t0) / double(sz);
+          // Compute sum
+          if (rand() % 2) {{
+            sum += std::accumulate(r, r + sz, {typ}());
+          }} else {{
+            sum -= std::accumulate(r, r + sz, {typ}());
+          }}
+        }}
+        // Save sum and elapsed time
+        std::sort(elapsed_times_ns, elapsed_times_ns + nb_runs);
+        size_t const i_start = nb_runs / 2 - 10;
+        size_t const i_end = nb_runs / 2 + 10;
+        sums["{bench_name}"] =
+          std::make_pair(sum, std::accumulate(elapsed_times_ns + i_start, elapsed_times_ns + i_end, 0.0) / double(i_end - i_start));
+        // Number of elapsed times
+        std::map<double, int> nb_per_elapsed_time;
+        for (size_t run = 0; run < nb_runs; ++run) {{
+          ++nb_per_elapsed_time[(int64_t(elapsed_times_ns[run] * 100)) / 100.0];
+        }}
+        // Draw gnuplot
+        std::system("mkdir -p gnuplot");
+        std::string const dat_filename = "gnuplot/benches.cxx_adv.{bench_name}.dat";
+        std::ofstream dat_file(dat_filename);
+        for (auto const & elapsed_time_nb : nb_per_elapsed_time) {{
+          dat_file << elapsed_time_nb.first << " " << elapsed_time_nb.second << "\\n";
+        }}
+        std::string const gnuplot_filename = "gnuplot/benches.cxx_adv.{bench_name}.gnuplot";
+        std::ofstream gnuplot_file(gnuplot_filename);
+        gnuplot_file << "set term svg" << "\\n";
+        gnuplot_file << "set output \\"benches.cxx_adv.{bench_name}.svg\\"" << "\\n";
+        gnuplot_file << "set xlabel \\"Time in nanoseconds (lower is better)\\"" << "\\n";
+        gnuplot_file << "set ylabel \\"Number of runs\\"" << "\\n";
+        gnuplot_file << "\\n";
+        gnuplot_file << "set style line 1 \\\\" << "\\n";
+        gnuplot_file << "    linecolor rgb '#db284c' \\\\" << "\\n";
+        gnuplot_file << "    linetype 1 linewidth 2" << "\\n";
+        gnuplot_file << "\\n";
+        gnuplot_file << "plot '" << dat_filename << "' with linespoints linestyle 1" << "\\n";
+        std::system(("cd gnuplot && gnuplot \\"" + gnuplot_filename + "\\"").c_str());
+      }}
+      '''.format(bench_name=bench_name,
+                  typ=typ,
+                  bench_args_decl=bench_args_decl,
+                  bench_args_call=bench_args_call,
+                  )
+    return code
+
+def gen_bench_unrolls_with_timestamp(f, simd, typ, category):
+    code = ''
+    for unroll in [2, 3, 4]:
+        code += gen_bench_with_timestamp(f, simd, typ, category=category,
+                                         unroll=unroll)
+    return code
+
+def gen_bench_against_with_timestamp(f, simd, typ, against):
+    code = ''
+    # "against" dict looks like: { simd: { type: { name: sig } } }
+    for s in [simd, '*']:
+        if not s in against:
+            continue
+        for t in [typ, '*']:
+            if not t in against[s]:
+                continue
+            for category, f in against[s][t].items():
+                # Allow function to be simple str (you use this most of the
+                # time)
+                if isinstance(f, str):
+                    f = fun_from_sig(f)
+                # Now that we have a `Fun` type, we can generate code
+                code += gen_bench_with_timestamp(f, simd, typ, category)
+    return code
+
 def gen_bench(f, simd, typ):
     ## TODO
     path = gen_filename(f, simd, typ)
@@ -936,14 +1110,49 @@ def gen_bench(f, simd, typ):
     ## Now aggregate every parts
     bench = ''
     #bench += gen_bench_asm_function(f, typ, category)
-    bench += gen_bench_against(f, simd, typ, f.bench_against_cpu())
+    bench += gen_bench_against(f, 'cpu', typ, f.bench_against_cpu())
     bench += code
     bench += gen_bench_unrolls(f, simd, typ, category)
     bench += gen_bench_against(f, simd, typ, f.bench_against_libs())
+    ## bench_with_timestamp
+    bench_with_timestamp = ''
+    bench_with_timestamp += 'std::map<std::string, std::pair<' + typ + ', double>> sums;' + '\n'
+    bench_with_timestamp += 'size_t const nb_runs = 10 * 1000;' + '\n'
+    bench_with_timestamp += gen_bench_against_with_timestamp(f, 'cpu', typ, f.bench_against_cpu())
+    bench_with_timestamp += gen_bench_with_timestamp(f, simd, typ, category)
+    bench_with_timestamp += gen_bench_unrolls_with_timestamp(f, simd, typ, category)
+    bench_with_timestamp += gen_bench_against_with_timestamp(f, simd, typ, f.bench_against_libs())
+    bench_with_timestamp += '''
+                            std::string json = "";
+                            json += "{{\\n";
+                            json += "  \\"benchmarks\\": [\\n";
+
+                            for (auto const & bench_name_sum_time : sums) {{
+                              std::string const & bench_name = bench_name_sum_time.first;
+                              {typ} const & sum = bench_name_sum_time.second.first;
+                              double const & elapsed_time_ns = bench_name_sum_time.second.second;
+
+                              json += "  {{" "\\n";
+                              json += "    \\"name\\": \\"" + bench_name + "/{typ}\\"," + "\\n";
+                              json += "    \\"real_time\\": " + std::to_string(elapsed_time_ns) + "," + "\\n";
+                              json += "    \\"sum\\": " + std::string(std::isfinite(sum) ? "" : "\\"") + std::to_string(sum) + std::string(std::isfinite(sum) ? "" : "\\"") + "," + "\\n";
+                              json += "    \\"time_unit\\": \\"ns\\"\\n";
+                              json += "  }}";
+                              if (&bench_name_sum_time != &*sums.rbegin()) {{
+                                json += ",";
+                              }}
+                              json += "\\n";
+                            }}
+
+                            json += "  ]\\n";
+                            json += "}}\\n";
+
+                            std::cout << json << std::flush;
+                            '''.format(typ=typ)
     ## Finalize code
-    code = gen_bench_from_code(f, typ, bench)
+    code = gen_bench_from_code(f, typ, bench, '') # bench_with_timestamp
     ## Write file
-    with common.open_utf8(path) as f:
+    with common.open_utf8(_opts, path) as f:
         f.write(code)
     ## Clang-format it!
     common.clang_format(_opts, path)
@@ -974,6 +1183,7 @@ def doit(opts):
                 if opts.match and not opts.match.match(f.name):
                     continue
                 ## FIXME
-                if f.name in ['gamma', 'lgamma']:
+                if f.name in ['gamma', 'lgamma', 'ziplo', 'ziphi',
+                              'unziphi', 'unziplo']:
                     continue
                 gen_bench(f, simd, typ)

@@ -59,19 +59,21 @@ def get_impl(operator):
         args = ['ToType'] + args
         ret += '\n\n' + template.format(args=', '.join(args))
     if operator.cxx_operator != '' and operator.cxx_operator != None and \
-       operator.params == ['v', 'v', 'v']:
+       (operator.params == ['v', 'v', 'v'] or \
+        operator.params == ['l', 'v', 'v']):
         ret += \
         '''
 
         template <typename T, int N, typename SimdExt, typename S>
-        pack<T, N, SimdExt> {cxx_op}(pack<T, N, SimdExt> const &v, S s) {{
+        pack{l}<T, N, SimdExt> {cxx_op}(pack<T, N, SimdExt> const &v, S s) {{
           return {op_name}(v, pack<T, N, SimdExt>(T(s)));
         }}
 
         template <typename S, typename T, int N, typename SimdExt>
-        pack<T, N, SimdExt> {cxx_op}(S s, pack<T, N, SimdExt> const &v) {{
+        pack{l}<T, N, SimdExt> {cxx_op}(S s, pack<T, N, SimdExt> const &v) {{
           return {op_name}(pack<T, N, SimdExt>(T(s)), v);
-        }}'''.format(cxx_op=operator.cxx_operator, op_name=operator.name)
+        }}'''.format(l='l' if operator.params[0] == 'l' else '',
+                     cxx_op=operator.cxx_operator, op_name=operator.name)
 
     return ret
 
@@ -84,7 +86,7 @@ def doit(opts):
     filename = os.path.join(opts.include_dir, 'friendly_but_not_optimized.hpp')
     if not common.can_create_filename(opts, filename):
         return
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_FRIENDLY_BUT_NOT_OPTIMIZED_HPP
                      #define NSIMD_FRIENDLY_BUT_NOT_OPTIMIZED_HPP
 
@@ -95,8 +97,7 @@ def doit(opts):
 
                      '''.format(year=date.today().year))
         for op_name, operator in operators.operators.items():
-            if operator.load_store or 'l' in operator.params or \
-               op_name == 'set1':
+            if operator.load_store or op_name == 'set1':
                 continue
             out.write('''{hbar}
 

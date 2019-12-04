@@ -165,7 +165,7 @@ def doit(opts):
     filename = os.path.join(opts.include_dir, 'cxx_adv_api_functions.hpp')
     if not common.can_create_filename(opts, filename):
         return
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_CXX_ADV_API_FUNCTIONS_HPP
                      #define NSIMD_CXX_ADV_API_FUNCTIONS_HPP
 

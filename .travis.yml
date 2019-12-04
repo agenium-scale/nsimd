@@ -1,97 +1,88 @@
 language: cpp
 
 ## Install deps
+dist: bionic
 addons:
-    homebrew:
-        packages:
-            - ninja
-            - clang-format
     apt:
         sources:
             - crossbuild-essential-armhf
             - crossbuild-essential-arm64
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
-            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-6.0 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-        packages:
-            - ninja-build
-            - gcc-8
-            - g++-8
-            - clang-6.0
-            - libmpfr-dev
+
+## For some reason, default osx image is not working with homebrew
+osx_image: xcode10.2
 
 ## Compilations and tests
 matrix:
     include:
         ## Linux-gcc-x86
-        ## --------------------------------------------------------------------------------------------
+        ## --------------------------------------------------------------------
         ## SSE2:
         - os: linux
           env:
-            - TOOLSET_CC=gcc-8
-            - TOOLSET_CXX=g++-8
+            - TOOLSET_CC=gcc
+            - TOOLSET_CXX=g++
             - SIMD=SSE2
         ## SSE42:
         - os: linux
           env:
-            - TOOLSET_CC=gcc-8
-            - TOOLSET_CXX=g++-8
+            - TOOLSET_CC=gcc
+            - TOOLSET_CXX=g++
             - SIMD=SSE42
         ## AVX:
         - os: linux
           env:
-            - TOOLSET_CC=gcc-8
-            - TOOLSET_CXX=g++-8
+            - TOOLSET_CC=gcc
+            - TOOLSET_CXX=g++
             - SIMD=AVX
         ## AVX2:
         - os: linux
           env:
-            - TOOLSET_CC=gcc-8
-            - TOOLSET_CXX=g++-8
+            - TOOLSET_CC=gcc
+            - TOOLSET_CXX=g++
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
           env:
-            - TOOLSET_CC=gcc-8
-            - TOOLSET_CXX=g++-8
+            - TOOLSET_CC=gcc
+            - TOOLSET_CXX=g++
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
         ## Linux-clang-x86
-        ## --------------------------------------------------------------------------------------------
+        ## --------------------------------------------------------------------
         ## SSE2:
         - os: linux
           env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=SSE2
         ## SSE42:
         - os: linux
           env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=SSE42
         ## AVX:
         - os: linux
           env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=AVX
         ## AVX2:
         - os: linux
           env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=AVX2
         ## AVX2+FMA:
         - os: linux
           env:
-            - TOOLSET_CC=clang-6.0
-            - TOOLSET_CXX=clang++-6.0
+            - TOOLSET_CC=clang
+            - TOOLSET_CXX=clang++
             - SIMD=AVX2
             - SIMD_OPTIONALS=FMA
         ## OSX-clang-x86
-        ## --------------------------------------------------------------------------------------------
+        ## --------------------------------------------------------------------
         ## SSE2:
         - os: osx
           env:
@@ -125,7 +116,7 @@ matrix:
         #    - SIMD=AVX2
         #    - SIMD_OPTIONALS=FMA
         ## Windows-MSVC-x86
-        ## --------------------------------------------------------------------------------------------
+        ## --------------------------------------------------------------------
         ## SSE2:
         - os: windows
           env:
@@ -155,7 +146,15 @@ matrix:
 ## It seems that travis ignore addons "chocolatey" so do it manually
 install:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-        choco install -y python3 ninja;
+        choco install -y python3 --params "/InstallDir:C:\python3";
+        choco install -y ninja;
+      fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install ninja clang-format;
+      fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        sudo apt update;
+        sudo apt install build-essential clang llvm libmpfr-dev ninja-build -y;
       fi
 
 ## Prepare build
@@ -163,13 +162,18 @@ before_script:
     - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
         scripts/travis-windows-env.bat;
         source _env.sh;
-        export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python37\\python";
+        export CMAKE_ARGS="$CMAKE_ARGS -DPYTHON_EXECUTABLE=C:\\Python3\\python";
+        export PYTHON="C:\\Python3\\python";
+      else
+        export PYTHON="python3";
       fi
     - if [[ ! -z "$TARGET" ]]; then
         export CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER_TARGET=$TARGET";
         export CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER_TARGET=$TARGET";
       fi
     - mkdir build
+    - export HATCH_SIMD=$( echo "$SIMD" | tr '[:upper:]' '[:lower:]' )
+    - $PYTHON egg/hatch.py -Af --simd $HATCH_SIMD
     - cd build
     - cmake .. $CMAKE_ARGS
         -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC
@@ -179,6 +183,5 @@ before_script:
 ## Build
 script:
     - cmake --build .
-    - cmake --build . --target gen.tests
     - cmake --build . --target tests
-    - ctest .
+    - ctest . -V

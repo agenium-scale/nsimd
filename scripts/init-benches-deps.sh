@@ -1,4 +1,4 @@
-#1/bin/sh
+#!/bin/sh
 
 ## The top-level dir
 ROOT_DIR="$( git rev-parse --show-toplevel )"

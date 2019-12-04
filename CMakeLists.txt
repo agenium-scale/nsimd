@@ -37,14 +37,6 @@ endif()
 ## Tells cmake where to find Find*.cmake files
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
-## Python 3 is required (can be redefined using -DPYTHON_EXECUTABLE=...)
-if (NOT DEFINED PYTHON_EXECUTABLE)
-    find_package(PythonInterp 3 REQUIRED)
-    if (NOT PYTHONINTERP_FOUND OR PYTHON_VERSION_MAJOR LESS 3)
-        message(FATAL_ERROR "Python3 is required and has not been found!")
-    endif()
-endif()
-
 ## Tests dependencies
 find_package(MPFR)
 
@@ -271,7 +263,7 @@ if (WIN32)
 else()
     install(TARGETS ${libname} LIBRARY DESTINATION lib)
 endif()
-install(DIRECTORY include DESTINATION include)
+install(DIRECTORY include/nsimd DESTINATION include)
 
 ## Clean
 ## ----------------------------------------------------------------------------

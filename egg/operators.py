@@ -200,7 +200,7 @@ class Operator(object, metaclass=MAddToOperators):
 
     # Defaults values (for tests)
     tests_mpfr = False
-    tests_ulps = False
+    tests_ulps = None
 
     @property
     def returns(self):
@@ -429,74 +429,73 @@ class SrcOperator(Operator):
 # List of functions/operators
 
 class Len(Operator):
+    full_name = 'vector length'
     signature = 'p len'
     domain = Domain('')
-    desc = 'Returns the length of the nsimd vector.'
     categories = [DocMisc]
 
 class Set1(Operator):
+    full_name = 'value broadcast'
     signature = 'v set1 s'
     categories = [DocMisc]
-    desc = 'Set all the element in the vector to the given value.'
+    desc = 'Returns a vector whose all elements are set to the given value.'
 
 class Loadu(Operator):
-    full_name = 'loadu'
     signature = 'v loadu c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from unaligned memory.'
 
 class Load2u(Operator):
-    full_name = 'load2u'
+    full_name = 'load array of structure'
     signature = 'vx2 load2u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 2 members from unaligned memory.'
 
 class Load3u(Operator):
-    full_name = 'load3u'
+    full_name = 'load array of structure'
     signature = 'vx3 load3u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 3 members from unaligned memory.'
 
 class Load4u(Operator):
-    full_name = 'load4u'
+    full_name = 'load array of structure'
     signature = 'vx4 load4u c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 4 members from unaligned memory.'
 
 class Loada(Operator):
-    full_name = 'loada'
     signature = 'v loada c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from aligned memory.'
 
 class Load2a(Operator):
-    full_name = 'load2a'
+    full_name = 'load array of structure'
     signature = 'vx2 load2a c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 2 members from aligned memory.'
 
 class Load3a(Operator):
-    full_name = 'load3a'
+    full_name = 'load array of structure'
     signature = 'vx3 load3a c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 3 members from aligned memory.'
 
 class Load4a(Operator):
-    full_name = 'load4a'
+    full_name = 'load array of structure'
     signature = 'vx4 load4a c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load array of structures of 4 members from aligned memory.'
 
 class Loadlu(Operator):
-    full_name = 'loadlu'
+    full_name = 'load vector of logicals'
     signature = 'l loadlu c*'
     load_store = True
     categories = [DocLoadStore]
@@ -504,7 +503,7 @@ class Loadlu(Operator):
            'Zero is interpreted as False and nonzero as True.'
 
 class Loadla(Operator):
-    full_name = 'loadla'
+    full_name = 'load vector of logicals'
     signature = 'l loadla c*'
     load_store = True
     categories = [DocLoadStore]
@@ -512,14 +511,13 @@ class Loadla(Operator):
            'Zero is interpreted as False and nonzero as True.'
 
 class Storeu(Operator):
-    full_name = 'storeu'
     signature = '_ storeu * v'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into unaligned memory.'
 
 class Store2u(Operator):
-    full_name = 'store2u'
+    full_name = 'store into array of structures'
     signature = '_ store2u * v v'
     load_store = True
     domain = Domain('RxR')
@@ -528,7 +526,7 @@ class Store2u(Operator):
            'unaligned memory.'
 
 class Store3u(Operator):
-    full_name = 'store3u'
+    full_name = 'store into array of structures'
     signature = '_ store3u * v v v'
     load_store = True
     domain = Domain('RxRxR')
@@ -537,7 +535,7 @@ class Store3u(Operator):
            'unaligned memory.'
 
 class Store4u(Operator):
-    full_name = 'store4u'
+    full_name = 'store into array of structures'
     signature = '_ store4u * v v v v'
     load_store = True
     domain = Domain('RxRxRxR')
@@ -546,14 +544,13 @@ class Store4u(Operator):
            'unaligned memory.'
 
 class Storea(Operator):
-    full_name = 'storea'
     signature = '_ storea * v'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into aligned memory.'
 
 class Store2a(Operator):
-    full_name = 'store2a'
+    full_name = 'store into array of structures'
     signature = '_ store2a * v v'
     load_store = True
     domain = Domain('RxR')
@@ -562,7 +559,7 @@ class Store2a(Operator):
            'aligned memory.'
 
 class Store3a(Operator):
-    full_name = 'store3a'
+    full_name = 'store into array of structures'
     signature = '_ store3a * v v v'
     load_store = True
     domain = Domain('RxRxR')
@@ -571,7 +568,7 @@ class Store3a(Operator):
            'aligned memory.'
 
 class Store4a(Operator):
-    full_name = 'store4a'
+    full_name = 'store into array of structures'
     signature = '_ store4a * v v v v'
     load_store = True
     domain = Domain('RxRxRxR')
@@ -580,22 +577,22 @@ class Store4a(Operator):
            'aligned memory.'
 
 class Storelu(Operator):
-    full_name = 'storelu'
+    full_name = 'store vector of logicals'
     signature = '_ storelu * l'
     load_store = True
     categories = [DocLoadStore]
     domain = Domain('R')
     desc = 'Store SIMD vector of booleans into unaligned memory. True is ' + \
-           'store as 1 and False as 0.'
+           'stored as 1 and False as 0.'
 
 class Storela(Operator):
-    full_name = 'storela'
+    full_name = 'store vector of logicals'
     signature = '_ storela * l'
     load_store = True
     categories = [DocLoadStore]
     domain = Domain('R')
     desc = 'Store SIMD vector of booleans into aligned memory. True is ' + \
-           'store as 1 and False as 0.'
+           'stored as 1 and False as 0.'
 
 class Orb(Operator):
     full_name = 'bitwise or'
@@ -616,7 +613,7 @@ class Andb(Operator):
     bench_auto_against_mipp = True
 
 class Andnotb(Operator):
-    full_name = 'bitwise and not'
+    full_name = 'bitwise andnot'
     signature = 'v andnotb v v'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
@@ -660,7 +657,7 @@ class Andl(Operator):
     bench_auto_against_std = True
 
 class Andnotl(Operator):
-    full_name = 'logical and not'
+    full_name = 'logical andnot'
     signature = 'l andnotl l l'
     domain = Domain('BxB')
     categories = [DocLogicalOperators]
@@ -707,7 +704,7 @@ class Addv(Operator):
     do_bench = False
 
 class Mul(Operator):
-    full_name = 'product'
+    full_name = 'multiplication'
     signature = 'v mul v v'
     cxx_operator = 'operator*'
     domain = Domain('RxR')
@@ -725,7 +722,7 @@ class Div(Operator):
     bench_auto_against_mipp = True
 
 class Neg(Operator):
-    full_name = 'negation'
+    full_name = 'opposite'
     signature = 'v neg v'
     cxx_operator = 'operator-'
     domain = Domain('R')
@@ -733,20 +730,20 @@ class Neg(Operator):
     bench_auto_against_std = True
 
 class Min(Operator):
-    full_name = 'min'
+    full_name = 'minimum'
     signature = 'v min v v'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
 
 class Max(Operator):
-    full_name = 'max'
+    full_name = 'maximum'
     signature = 'v max v v'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_mipp = True
 
 class Shr(Operator):
-    full_name = 'right shift'
+    full_name = 'right shift in zeros'
     signature = 'v shr v p'
     types = common.iutypes
     cxx_operator = 'operator>>'
@@ -770,77 +767,95 @@ class Shl(Operator):
         return 'mipp::lshift<{}>'.format(typ)
 
 class Eq(Operator):
+    full_name = 'compare for equality'
     signature = 'l eq v v'
     cxx_operator = 'operator=='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for equality.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpeq<{}>'.format(typ)
 
 class Ne(Operator):
+    full_name = 'compare for inequality'
     signature = 'l ne v v'
     cxx_operator = 'operator!='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for inequality.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpneq<{}>'.format(typ)
 
 class Gt(Operator):
+    full_name = 'compare for greater-than'
     signature = 'l gt v v'
     cxx_operator = 'operator>'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for greater-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpgt<{}>'.format(typ)
 
 class Ge(Operator):
+    full_name = 'compare for greater-or-equal-than'
     signature = 'l ge v v'
     cxx_operator = 'operator>='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for greater-or-equal-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmpge<{}>'.format(typ)
 
 class Lt(Operator):
+    full_name = 'compare for lesser-than'
     signature = 'l lt v v'
     cxx_operator = 'operator<'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for lesser-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmplt<{}>'.format(typ)
 
 class Le(Operator):
+    full_name = 'compare for lesser-or-equal-than'
     signature = 'l le v v'
     cxx_operator = 'operator<='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
     bench_auto_against_mipp = True
+    desc = 'Compare the inputs for lesser-or-equal-than.'
 
     def bench_mipp_name(self, typ):
         return 'mipp::cmple<{}>'.format(typ)
 
 class If_else1(Operator):
+    full_name = 'blend'
     signature = 'v if_else1 l v v'
     domain = Domain('BxRxR')
     categories = [DocMisc]
+    desc = 'Blend the inputs using the vector of logical as a first ' + \
+           'argument. Elements of the second input is taken when the ' + \
+           'corresponding elements from the vector of logicals is true, ' + \
+           'otherwise elements of the second input are taken.'
 
 class Abs(Operator):
+    full_name = 'absolute value'
     signature = 'v abs v'
     domain = Domain('R')
     categories = [DocBasicArithmetic]
@@ -852,26 +867,40 @@ class Abs(Operator):
         return common.sleef_name('fabs', simd, typ)
 
 class Fma(Operator):
+    full_name = 'fused multiply-add'
     signature = 'v fma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Multiply the first and second inputs and then adds the third ' + \
+           'input.'
 
 class Fnma(Operator):
+    full_name = 'fused negate-multiply-add'
     signature = 'v fnma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Multiply the first and second inputs, negate the intermediate ' + \
+           'result and then adds the third input.'
 
 class Fms(Operator):
+    full_name = 'fused multiply-substract'
     signature = 'v fms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Substracts the third input to multiplication the first and ' + \
+           'second inputs.'
 
 class Fnms(Operator):
+    full_name = 'fused negate-multiply-substract'
     signature = 'v fnms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    desc = 'Multiply the first and second inputs, negate the intermediate ' + \
+           'result and then substracts the third input to the ' + \
+           'intermediate result.'
 
 class Ceil(Operator):
+    full_name = 'rounding up to integer value'
     signature = 'v ceil v'
     domain = Domain('R')
     categories = [DocRounding]
@@ -879,6 +908,7 @@ class Ceil(Operator):
     bench_auto_against_std = True
 
 class Floor(Operator):
+    full_name = 'rounding down to integer value'
     signature = 'v floor v'
     domain = Domain('R')
     categories = [DocRounding]
@@ -886,6 +916,7 @@ class Floor(Operator):
     bench_auto_against_std = True
 
 class Trunc(Operator):
+    full_name = 'rounding towards zero to integer value'
     signature = 'v trunc v'
     domain = Domain('R')
     categories = [DocRounding]
@@ -893,64 +924,88 @@ class Trunc(Operator):
     bench_auto_against_std = True
 
 class Round_to_even(Operator):
+    full_name = 'rounding to nearest integer value, tie to even'
     signature = 'v round_to_even v'
     domain = Domain('R')
     categories = [DocRounding]
 
 class All(Operator):
+    full_name = 'check all elements'
     signature = 'p all l'
     domain = Domain('B')
     categories = [DocMisc]
+    desc = 'Return true if and only if all elements of the inputs are true.'
 
 class Any(Operator):
+    full_name = 'check for one true elements'
     signature = 'p any l'
     domain = Domain('B')
     categories = [DocMisc]
+    desc = 'Return true if and only if at least one element of the inputs ' + \
+           'is true.'
 
 class Nbtrue(Operator):
+    full_name = 'count true elements'
     signature = 'p nbtrue l'
     domain = Domain('B')
     categories = [DocMisc]
+    desc = 'Return the number of true elements in the input.'
 
 class Reinterpret(Operator):
+    full_name = 'reinterpret vector'
     signature = 'v reinterpret v'
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     domain = Domain('R')
     categories = [DocConversion]
     ## Disable bench
     do_bench = False
+    desc = 'Reinterpret input vector into a different vector type ' + \
+           'preserving all bits.'
 
 class Reinterpretl(Operator):
+    full_name = 'reinterpret vector of logicals'
     signature = 'l reinterpretl l'
     domain = Domain('B')
     categories = [DocConversion]
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     ## Disable bench
     do_bench = False
+    desc = 'Reinterpret input vector of logicals into a different vector ' + \
+           'type of logicals preserving all elements values. The output ' + \
+           'type must have same length as input type.'
 
 class Cvt(Operator):
+    full_name = 'convert vector'
     signature = 'v cvt v'
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
     domain = Domain('R')
     categories = [DocConversion]
+    desc = 'Convert input vector into a different vector type. The output ' + \
+           'type must have same length as input type.'
     ## Disable bench
     do_bench = False
 
 class Upcvt(Operator):
+    full_name = 'convert vector to larger type'
     signature = 'vx2 upcvt v'
     output_to = common.OUTPUT_TO_UP_TYPES
     domain = Domain('R')
     types = ['i8', 'u8', 'i16', 'u16', 'f16', 'i32', 'u32', 'f32']
     categories = [DocConversion]
+    desc = 'Convert input vector into a different larger vector type. The ' + \
+           'output type must be twice as large as the input type.'
     ## Disable bench
     do_bench = False
 
 class Downcvt(Operator):
+    full_name = 'convert vector to narrow type'
     signature = 'v downcvt v v'
     output_to = common.OUTPUT_TO_DOWN_TYPES
     domain = Domain('R')
     types = ['i16', 'u16', 'f16', 'i32', 'u32', 'f32', 'i64', 'u64', 'f64']
     categories = [DocConversion]
+    desc = 'Convert input vector into a different narrow vector type. The ' + \
+           'output type must be twice as less as the input type.'
     ## Disable bench
     do_bench = False
 
@@ -962,12 +1017,20 @@ class Rec(Operator):
     categories = [DocBasicArithmetic]
 
 class Rec11(Operator):
-    full_name = 'reciprocal with relative error at most 2^{-11}'
+    full_name = 'reciprocal with relative error at most $2^{-11}$'
     signature = 'v rec11 v'
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = True
+    tests_ulps = 11
+
+class Rec8(Operator):
+    full_name = 'reciprocal with relative error at most 2^{-8}'
+    signature = 'v rec8 v'
+    types = common.ftypes
+    categories = [DocBasicArithmetic]
+    domain = Domain('R\{0}')
+    tests_ulps = 8
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -981,12 +1044,75 @@ class Sqrt(Operator):
     tests_mpfr = True
 
 class Rsqrt11(Operator):
-    full_name = 'square root'
+    full_name = 'square root with relative error at most $2^{-11}$'
     signature = 'v rsqrt11 v'
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = True
+    tests_ulps = 11
+
+class Rsqrt8(Operator):
+    full_name = 'square root with relative error at most $2^{-8}$'
+    signature = 'v rsqrt8 v'
+    types = common.ftypes
+    domain = Domain('[0,Inf)')
+    categories = [DocBasicArithmetic]
+    tests_ulps = 8
+
+class Ziplo(Operator):
+    full_name = 'zip low halves'
+    signature = 'v ziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Construct a vector where elements of the first low half input ' + \
+           'are followed by the corresponding element of the second low ' + \
+           'half input.'
+
+class Ziphi(Operator):
+    full_name = 'zip high halves'
+    signature = 'v ziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Construct a vector where elements of the first high half ' + \
+           'input are followed by the corresponding element of the second ' + \
+           'high half input.'
+
+class Unziplo(Operator):
+    full_name = 'unziplo'
+    signature = 'v unziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unziphi(Operator):
+    full_name = 'unziphi'
+    signature = 'v unziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class ToMask(Operator):
+    full_name = 'build mask from logicals'
+    signature = 'v to_mask l'
+    categories = [DocLogicalOperators]
+    do_bench = False
+    desc = 'Returns a mask consisting of all ones for true elements and ' + \
+           'all zeros for false elements.'
+
+class ToLogical(Operator):
+    full_name = 'build logicals from data'
+    signature = 'l to_logical v'
+    categories = [DocLogicalOperators]
+    do_bench = False
+    desc = 'Returns a vector of logicals. Set true when the corresponding ' + \
+           'elements are non zero (at least one bit to 1) and false ' + \
+           'otherwise.'
 
 class Adds(Operator):
     full_name = 'addition using saturation'

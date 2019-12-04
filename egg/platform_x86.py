@@ -37,15 +37,16 @@ avx512 = ['avx512_knl', 'avx512_skylake']
 # -----------------------------------------------------------------------------
 # Implementation of mandatory functions for this module
 
+
 def get_simd_exts():
     return ['sse2', 'sse42', 'avx', 'avx2', 'avx512_knl', 'avx512_skylake']
-    # why not:
-    # return (sse + avx + avx512)
+
 
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     return True
+
 
 def get_type(simd_ext, typ):
     # Number of bits
@@ -69,6 +70,7 @@ def get_type(simd_ext, typ):
     else:
         raise ValueError('Unknown type "{}"'.format(typ))
 
+
 def get_logical_type(simd_ext, typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
@@ -76,10 +78,11 @@ def get_logical_type(simd_ext, typ):
         return get_type(simd_ext, typ)
     elif simd_ext in avx512:
         if typ == 'f16':
-            return 'struct { __mmask16 v0; __mmask16 v1; }';
+            return 'struct { __mmask16 v0; __mmask16 v1; }'
         return '__mmask{}'.format(512 // common.bitsize(typ))
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+
 
 def get_nb_registers(simd_ext):
     if simd_ext in sse + avx:
@@ -89,11 +92,13 @@ def get_nb_registers(simd_ext):
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
+
 def has_compatible_SoA_types(simd_ext):
     if simd_ext not in sse + avx + avx512:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     else:
         return False
+
 
 def get_additional_include(func, platform, simd_ext):
     ret = ''
@@ -117,16 +122,16 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(func)
     if func in ['loadla', 'loadlu', 'storela', 'storelu']:
         ret += '''#include <nsimd/x86/{simd_ext}/set1.h>
-                  #include <nsimd/x86/{simd_ext}/eq.h>
-                  #include <nsimd/x86/{simd_ext}/notl.h>
-                  #include <nsimd/x86/{simd_ext}/if_else1.h>
+                  # include <nsimd/x86/{simd_ext}/eq.h>
+                  # include <nsimd/x86/{simd_ext}/notl.h>
+                  # include <nsimd/x86/{simd_ext}/if_else1.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['notb']:
         ret += '''#include <nsimd/x86/{simd_ext}/andnotb.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['notl']:
         ret += '''#include <nsimd/x86/{simd_ext}/andnotb.h>
-                  #include <nsimd/x86/{simd_ext}/andnotl.h>
+                  # include <nsimd/x86/{simd_ext}/andnotl.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['min', 'max']:
         ret += '''#include <nsimd/x86/{simd_ext}/gt.h>
@@ -139,88 +144,102 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(simd_ext=simd_ext)
     if func in ['if_else1']:
         ret += '''#include <nsimd/x86/{simd_ext}/notb.h>
-                  #include <nsimd/x86/{simd_ext}/orb.h>
-                  #include <nsimd/x86/{simd_ext}/andnotb.h>
-                  #include <nsimd/x86/{simd_ext}/andb.h>
+                  # include <nsimd/x86/{simd_ext}/orb.h>
+                  # include <nsimd/x86/{simd_ext}/andnotb.h>
+                  # include <nsimd/x86/{simd_ext}/andb.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['abs']:
         ret += '''#include <nsimd/x86/{simd_ext}/if_else1.h>
-                  #include <nsimd/x86/{simd_ext}/set1.h>
+                  # include <nsimd/x86/{simd_ext}/set1.h>
                   '''.format(simd_ext=simd_ext)
     if func == 'reinterpretl' and simd_ext in ['sse', 'avx']:
         ret += '''#include <nsimd/x86/{simd_ext}/storeu.h>
-                  #include <nsimd/x86/{simd_ext}/loadu.h>
+                  # include <nsimd/x86/{simd_ext}/loadu.h>
                   '''.format(simd_ext=simd_ext)
     if func == 'upcvt':
         ret += '''#include <nsimd/x86/{simd_ext}/cvt.h>
                   '''.format(simd_ext=simd_ext)
+    if func == 'ziplo' and simd_ext in ['avx512_knl', 'avx512_skylake']:
+        ret += '''#include <nsimd/x86/avx2/ziphi.h>
+                  '''.format(simd_ext=simd_ext)
+    if func == 'ziphi' and simd_ext in ['avx512_knl', 'avx512_skylake']:
+        ret += '''#include <nsimd/x86/avx2/ziplo.h>
+                  '''.format(simd_ext=simd_ext)
+    if func == 'zip':
+        ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
+                  # include <nsimd/x86/{simd_ext}/ziphi.h>
+                  '''.format(simd_ext=simd_ext)
     if simd_ext in avx512 and func in ['loadlu', 'loadla']:
         ret += '''
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   extern "C" {{
-                  #endif
+                  # endif
 
                   NSIMD_INLINE
                   nsimd_{simd_ext}_vlu16
                   nsimd_{func}_{simd_ext}_u16(const u16*);
 
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   }} // extern "C"
-                  #endif
+                  # endif
                   '''.format(func=func, **fmtspec)
     if func in ['load2u', 'load3u', 'load4u', 'load2a', 'load3a', 'load4a']:
         ret += '''
-                  #include <nsimd/x86/{simd_ext}/loadu.h>
-                  #include <nsimd/x86/{simd_ext}/storeu.h>
+                  # include <nsimd/x86/{simd_ext}/loadu.h>
+                  # include <nsimd/x86/{simd_ext}/storeu.h>
 
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   extern "C" {{
-                  #endif
+                  # endif
 
                   NSIMD_INLINE nsimd_{simd_ext}_vu16x{deg}
                   nsimd_{func}_{simd_ext}_u16(const u16*);
 
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   }} // extern "C"
-                  #endif
+                  # endif
                   '''.format(func=func, deg=func[4], **fmtspec)
     if func in ['store2u', 'store3u', 'store4u', 'store2a', 'store3a',
                 'store4a']:
         deg = func[5]
-        args = ','.join(['nsimd_{simd_ext}_vu16'.format(**fmtspec) \
+        args = ','.join(['nsimd_{simd_ext}_vu16'.format(**fmtspec)
                          for i in range(1, int(deg) + 1)])
         ret += '''
-                  #include <nsimd/x86/{simd_ext}/loadu.h>
-                  #include <nsimd/x86/{simd_ext}/storeu.h>
+                  # include <nsimd/x86/{simd_ext}/loadu.h>
+                  # include <nsimd/x86/{simd_ext}/storeu.h>
 
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   extern "C" {{
-                  #endif
+                  # endif
 
                   NSIMD_INLINE void nsimd_{func}_{simd_ext}_u16(u16*, {args});
 
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   }} // extern "C"
-                  #endif
+                  # endif
                   '''.format(func=func, deg=deg, args=args, **fmtspec)
-        if func in ['adds']:
-            ret += '''
-                      #include <nsimd/x86/{simd_ext}/reinterpret.h>
-                      #include <nsimd/x86/{simd_ext}/add.h>
-                      #include <nsimd/x86/{simd_ext}/set1.h>
-                      #include <nsimd/x86/{simd_ext}/shr.h>
-                      #include <nsimd/x86/{simd_ext}/orb.h>
-                      #include <nsimd/x86/{simd_ext}/xorb.h>
-                      #include <nsimd/x86/{simd_ext}/notb.h>
-                      #include <nsimd/x86/{simd_ext}/reinterpretl.h>
-                      #include <nsimd/x86/{simd_ext}/ge.h>
-                      #include <nsimd/x86/{simd_ext}/if_else1.h>
-                    '''.format(**fmtspec)
-        if func in ['subs']:
-            ret += '''
-                     #include <nsimd/x86/{simd_ext}/adds.h>
-                     #include <nsimd/x86/{simd_ext}/neg.h>
-                   '''.format(**fmtspec)
+    if func == 'to_logical':
+        ret += '''#include <nsimd/x86/{simd_ext}/ne.h>
+                  # include <nsimd/x86/{simd_ext}/reinterpretl.h>
+                  '''.format(simd_ext=simd_ext)
+    if func == 'adds':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/reinterpret.h>
+                    # include <nsimd/x86/{simd_ext}/add.h>
+                    # include <nsimd/x86/{simd_ext}/set1.h>
+                    # include <nsimd/x86/{simd_ext}/shr.h>
+                    # include <nsimd/x86/{simd_ext}/orb.h>
+                    # include <nsimd/x86/{simd_ext}/xorb.h>
+                    # include <nsimd/x86/{simd_ext}/notb.h>
+                    # include <nsimd/x86/{simd_ext}/reinterpretl.h>
+                    # include <nsimd/x86/{simd_ext}/ge.h>
+                    # include <nsimd/x86/{simd_ext}/if_else1.h>
+                '''.format(**fmtspec)
+    if func == 'subs':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/adds.h>
+                    # include <nsimd/x86/{simd_ext}/neg.h>
+                '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -419,10 +438,10 @@ def split_cmp2(func, simd_ext, typ):
                             format(fsuf=suf_ep(ftyp), leo2=leo2, **fmtspec)
         else:
             merge = \
-            '''v00 = _mm256_permute4x64_epi64(v00, 216); /* exchange middles qwords */
+            '''v00 = _mm256_permute4x64_epi64(v00, 216); /* exchange middle qwords */
                nsimd_avx2_vi16 lo1 = _mm256_unpacklo_epi16(v00, v00);
                nsimd_avx2_vi16 hi1 = _mm256_unpackhi_epi16(v00, v00);
-               v01 = _mm256_permute4x64_epi64(v01, 216); /* exchange middles qwords */
+               v01 = _mm256_permute4x64_epi64(v01, 216); /* exchange middle qwords */
                nsimd_avx2_vi16 lo2 = _mm256_unpacklo_epi16(v01, v01);
                nsimd_avx2_vi16 hi2 = _mm256_unpackhi_epi16(v01, v01);
                return (__mmask32)(u32)_mm256_movemask_ps(
@@ -470,7 +489,7 @@ def cmp2_with_add(func, simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Returns C code for func
 
-## Load
+# Load
 
 def load(simd_ext, typ, aligned):
     align = '' if aligned else 'u'
@@ -485,7 +504,7 @@ def load(simd_ext, typ, aligned):
                  v = _mm_shuffle_epi32(v, 14); /* = (3 << 2) | (2 << 0) */
                  ret.v1 = _mm_cvtph_ps(v);
                  return ret;
-               #else
+               # else
                  /* Note that we can do much better but is it useful? */
                  nsimd_{simd_ext}_vf16 ret;
                  f32 buf[4];
@@ -500,7 +519,7 @@ def load(simd_ext, typ, aligned):
                  buf[3] = nsimd_u16_to_f32(*((u16*){in0} + 7));
                  ret.v1 = _mm_loadu_ps(buf);
                  return ret;
-               #endif'''.format(align=align, **fmtspec)
+               # endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx:
             return '''#ifdef NSIMD_FP16
                         nsimd_{simd_ext}_vf16 ret;
@@ -509,7 +528,7 @@ def load(simd_ext, typ, aligned):
                         ret.v1 = _mm256_cvtph_ps(_mm_load{align}_si128(
                                    (__m128i*){in0} + 1));
                         return ret;
-                      #else
+                      # else
                         /* Note that we can do much better but is it useful? */
                         nsimd_{simd_ext}_vf16 ret;
                         f32 buf[8];
@@ -523,7 +542,7 @@ def load(simd_ext, typ, aligned):
                         }}
                         ret.v1 = _mm256_loadu_ps(buf);
                         return ret;
-                      #endif'''.format(align=align, **fmtspec)
+                      # endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx512:
             return '''nsimd_{simd_ext}_vf16 ret;
                       ret.v0 = _mm512_cvtph_ps(
@@ -539,7 +558,7 @@ def load(simd_ext, typ, aligned):
                format(align=align, cast=cast, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Loads of degree 2, 3 and 4
+# Loads of degree 2, 3 and 4
 
 def load_deg234(simd_ext, typ, align, deg):
     if typ == 'f16':
@@ -579,7 +598,7 @@ def load_deg234(simd_ext, typ, align, deg):
     return common.NOT_IMPLEMENTED
 
 # -----------------------------------------------------------------------------
-## Stores of degree 2, 3 and 4
+# Stores of degree 2, 3 and 4
 
 def store_deg234(simd_ext, typ, align, deg):
     if typ == 'f16':
@@ -620,71 +639,74 @@ def store_deg234(simd_ext, typ, align, deg):
     return common.NOT_IMPLEMENTED
 
 # -----------------------------------------------------------------------------
-## Store
+# Store
 
 def store(simd_ext, typ, aligned):
     align = '' if aligned else 'u'
     cast = '(__m{}i*)'.format(nbits(simd_ext)) if typ in common.iutypes else ''
     if typ == 'f16':
         if simd_ext in sse:
-            return '''#ifdef NSIMD_FP16
-                        __m128i v0 = _mm_cvtps_ph(
-                          {in1}.v0, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
-                        __m128i v1 = _mm_cvtps_ph(
-                          {in1}.v1, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
-                        __m128d v = _mm_shuffle_pd(_mm_castsi128_pd(v0),
-                                      _mm_castsi128_pd(v1),
-                                        0 /* = (0 << 1) | (0 << 0) */);
-                        _mm_store{align}_pd((f64*){in0}, v);
-                      #else
-                        /* Note that we can do much better but is it useful? */
-                        f32 buf[4];
-                        _mm_storeu_ps(buf, {in1}.v0);
-                        *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
-                        *((u16*){in0} + 1) = nsimd_f32_to_u16(buf[1]);
-                        *((u16*){in0} + 2) = nsimd_f32_to_u16(buf[2]);
-                        *((u16*){in0} + 3) = nsimd_f32_to_u16(buf[3]);
-                        _mm_storeu_ps(buf, {in1}.v1);
-                        *((u16*){in0} + 4) = nsimd_f32_to_u16(buf[0]);
-                        *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
-                        *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
-                        *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
-                      #endif'''.format(align=align, **fmtspec)
+            return \
+            '''#ifdef NSIMD_FP16
+                 __m128i v0 = _mm_cvtps_ph(
+                   {in1}.v0, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+                 __m128i v1 = _mm_cvtps_ph(
+                   {in1}.v1, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+                 __m128d v = _mm_shuffle_pd(_mm_castsi128_pd(v0),
+                               _mm_castsi128_pd(v1),
+                                 0 /* = (0 << 1) | (0 << 0) */);
+                 _mm_store{align}_pd((f64*){in0}, v);
+               # else
+                 /* Note that we can do much better but is it useful? */
+                 f32 buf[4];
+                 _mm_storeu_ps(buf, {in1}.v0);
+                 *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
+                 *((u16*){in0} + 1) = nsimd_f32_to_u16(buf[1]);
+                 *((u16*){in0} + 2) = nsimd_f32_to_u16(buf[2]);
+                 *((u16*){in0} + 3) = nsimd_f32_to_u16(buf[3]);
+                 _mm_storeu_ps(buf, {in1}.v1);
+                 *((u16*){in0} + 4) = nsimd_f32_to_u16(buf[0]);
+                 *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
+                 *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
+                 *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
+               # endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx:
-            return '''#ifdef NSIMD_FP16
-                        _mm_store{align}_si128((__m128i*){in0},
-                          _mm256_cvtps_ph({in1}.v0,
-                            _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
-                        _mm_store{align}_si128((__m128i*){in0} + 1,
-                          _mm256_cvtps_ph({in1}.v1,
-                            _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
-                      #else
-                        /* Note that we can do much better but is it useful? */
-                        int i;
-                        f32 buf[8];
-                        _mm256_storeu_ps(buf, {in1}.v0);
-                        for (i = 0; i < 8; i++) {{
-                          *((u16*){in0} + i) = nsimd_f32_to_u16(buf[i]);
-                        }}
-                        _mm256_storeu_ps(buf, {in1}.v1);
-                        for (i = 0; i < 8; i++) {{
-                          *((u16*){in0} + (8 + i)) = nsimd_f32_to_u16(buf[i]);
-                        }}
-                      #endif'''.format(align=align, **fmtspec)
+            return \
+            '''#ifdef NSIMD_FP16
+                 _mm_store{align}_si128((__m128i*){in0},
+                   _mm256_cvtps_ph({in1}.v0,
+                     _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+                 _mm_store{align}_si128((__m128i*){in0} + 1,
+                   _mm256_cvtps_ph({in1}.v1,
+                     _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+               # else
+                 /* Note that we can do much better but is it useful? */
+                 int i;
+                 f32 buf[8];
+                 _mm256_storeu_ps(buf, {in1}.v0);
+                 for (i = 0; i < 8; i++) {{
+                   *((u16*){in0} + i) = nsimd_f32_to_u16(buf[i]);
+                 }}
+                 _mm256_storeu_ps(buf, {in1}.v1);
+                 for (i = 0; i < 8; i++) {{
+                   *((u16*){in0} + (8 + i)) = nsimd_f32_to_u16(buf[i]);
+                 }}
+               # endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx512:
-            return '''_mm256_store{align}_si256((__m256i*){in0},
-                        _mm512_cvtps_ph({in1}.v0,
-                          _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
-                      _mm256_store{align}_si256((__m256i*){in0} + 1,
-                        _mm512_cvtps_ph({in1}.v1,
-                          _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));'''. \
-                          format(align=align, **fmtspec)
+            return \
+            '''_mm256_store{align}_si256((__m256i*){in0},
+                   _mm512_cvtps_ph({in1}.v0,
+                        _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+               _mm256_store{align}_si256((__m256i*){in0} + 1,
+                   _mm512_cvtps_ph({in1}.v1,
+                        _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));'''. \
+                        format(align=align, **fmtspec)
     else:
         return '{pre}store{align}{sufsi}({cast}{in0}, {in1});'. \
                format(align=align, cast=cast, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Code for binary operators: and, or, xor
+# Code for binary operators: and, or, xor
 
 def binop2(func, simd_ext, typ, logical=False):
     logical = 'l' if logical else ''
@@ -719,24 +741,42 @@ def binop2(func, simd_ext, typ, logical=False):
                           format(func=func, typ2=suf_ep(typ)[1:], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Code for logical binary operators: land, lor, lxor
+# Code for logical binary operators: andl, orl, xorl
 
 def binlop2(func, simd_ext, typ):
     op = { 'orl': '|', 'xorl': '^', 'andl': '&' }
-    if typ == 'f16':
-        if simd_ext in avx512:
-            return '''nsimd_{simd_ext}_vlf16 ret;
-                      ret.v0 = {in0}.v0 {op} {in1}.v0;
-                      ret.v1 = {in0}.v1 {op} {in1}.v1;
-                      return ret;'''.format(op=op[func], **fmtspec)
-        return binop2(func, simd_ext, typ, True)
+    op_fct = { 'orl': 'kor', 'xorl': 'kxor', 'andl': 'kand' }
     if simd_ext not in avx512:
-        return binop2(func, simd_ext, typ)
-    return 'return (__mmask{le})({in0} {op} {in1});'. \
-           format(op=op[func], **fmtspec)
+        if typ == 'f16':
+            return binop2(func, simd_ext, typ, True)
+        else:
+            return binop2(func, simd_ext, typ)
+    else: # avx512
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_vlf16 ret;
+                      ret.v0 = (__mmask16)({in0}.v0 {op} {in1}.v0);
+                      ret.v1 = (__mmask16)({in0}.v1 {op} {in1}.v1);
+                      return ret;'''. \
+                      format(op=op[func], op_fct=op_fct[func], **fmtspec)
+        else:
+            # gcc:  error: inlining failed in call to always_inline
+            #              ‘__mmask8 _kor_mask8(__mmask8, __mmask8)’:
+            #              target specific option mismatch
+            # icc: tests fail with _{op_fct}_mask8 for f64, u64 and i64
+            r = ''
+            if fmtspec['le'] == 8:
+                r += '#if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_GCC) || defined(NSIMD_IS_ICC)'
+                r += '\n'
+            else:
+                r += '#if defined(NSIMD_IS_CLANG)' + '\n'
+            r += '  return (__mmask{le})({in0} {op} {in1});' + '\n'
+            r += '#else' + '\n'
+            r += '  return _{op_fct}_mask{le}({in0}, {in1});' + '\n'
+            r += '#endif' + '\n'
+            return r.format(op=op[func], op_fct=op_fct[func], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## andnot
+# andnot
 
 def andnot2(simd_ext, typ, logical=False):
     if typ == 'f16':
@@ -768,7 +808,7 @@ def andnot2(simd_ext, typ, logical=False):
                                format(suf2=fmtspec['suf'][1:], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## logical andnot
+# logical andnot
 
 def landnot2(simd_ext, typ):
     if simd_ext in avx512:
@@ -782,7 +822,7 @@ def landnot2(simd_ext, typ):
     return andnot2(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
-## Code for unary not
+# Code for unary not
 
 def not1(simd_ext, typ, logical=False):
     if typ == 'f16':
@@ -803,7 +843,7 @@ def not1(simd_ext, typ, logical=False):
                            {pre}set1_epi8(-1), {in0});'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Code for unary logical lnot
+# Code for unary logical lnot
 
 def lnot1(simd_ext, typ):
     if simd_ext in avx512:
@@ -817,7 +857,7 @@ def lnot1(simd_ext, typ):
     return not1(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
-## Addition and substraction
+# Addition and substraction
 
 def addsub(func, simd_ext, typ):
     if typ in common.ftypes or simd_ext in sse or \
@@ -830,13 +870,13 @@ def addsub(func, simd_ext, typ):
             return split_op2(func, simd_ext, typ)
 
 # -----------------------------------------------------------------------------
-## Len
+# Len
 
 def len1(simd_ext, typ):
     return 'return {le};'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Division
+# Division
 
 def div2(simd_ext, typ):
     if typ in common.ftypes:
@@ -844,7 +884,7 @@ def div2(simd_ext, typ):
     return emulate_op2('/', simd_ext, typ)
 
 # -----------------------------------------------------------------------------
-## Multiplication
+# Multiplication
 
 def mul2(simd_ext, typ):
     emulate = emulate_op2('*', simd_ext, typ)
@@ -903,7 +943,7 @@ def mul2(simd_ext, typ):
             return split_epi16
 
 # -----------------------------------------------------------------------------
-## Shift left and right
+# Shift left and right
 
 def shl_shr(func, simd_ext, typ):
     if typ in ['f16', 'f32', 'f64']:
@@ -971,7 +1011,7 @@ def shl_shr(func, simd_ext, typ):
             return normal_16_32_64
 
 # -----------------------------------------------------------------------------
-## set1 or splat function
+# set1 or splat function
 
 def set1(simd_ext, typ):
     if typ == 'f16':
@@ -994,7 +1034,7 @@ def set1(simd_ext, typ):
     return 'return {pre}set1{suf}({in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Equality
+# Equality
 
 def eq2(simd_ext, typ):
     if typ == 'f16':
@@ -1037,7 +1077,7 @@ def eq2(simd_ext, typ):
                 return split_cmp2('eq', simd_ext, typ)
 
 # -----------------------------------------------------------------------------
-## not equal
+# not equal
 
 def neq2(simd_ext, typ):
     if typ == 'f16':
@@ -1064,7 +1104,7 @@ def neq2(simd_ext, typ):
     return noteq
 
 # -----------------------------------------------------------------------------
-## Greater than
+# Greater than
 
 def gt2(simd_ext, typ):
     if typ == 'f16':
@@ -1110,14 +1150,14 @@ def gt2(simd_ext, typ):
         return split_cmp2('gt', simd_ext, typ)
 
 # -----------------------------------------------------------------------------
-## lesser than
+# lesser than
 
 def lt2(simd_ext, typ):
     return 'return nsimd_gt_{simd_ext}_{typ}({in1}, {in0});'. \
            format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## greater or equal
+# greater or equal
 
 def geq2(simd_ext, typ):
     if typ == 'f16':
@@ -1149,7 +1189,7 @@ def geq2(simd_ext, typ):
     return notlt
 
 # -----------------------------------------------------------------------------
-## lesser or equal
+# lesser or equal
 
 def leq2(simd_ext, typ):
     if typ == 'f16':
@@ -1179,7 +1219,7 @@ def leq2(simd_ext, typ):
     return notgt
 
 # -----------------------------------------------------------------------------
-## if_else1 function
+# if_else1 function
 
 def if_else1(simd_ext, typ):
     if typ == 'f16':
@@ -1231,7 +1271,7 @@ def if_else1(simd_ext, typ):
                           return _mm512_loadu_si512(buf0);'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## min and max functions
+# min and max functions
 
 def minmax(func, simd_ext, typ):
     if typ in ['f16', 'f32', 'f64']:
@@ -1271,7 +1311,7 @@ def minmax(func, simd_ext, typ):
     return with_if_else
 
 # -----------------------------------------------------------------------------
-## sqrt
+# sqrt
 
 def sqrt1(simd_ext, typ):
     if typ == 'f16':
@@ -1282,14 +1322,14 @@ def sqrt1(simd_ext, typ):
     return 'return {pre}sqrt{suf}({in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Load logical
+# Load logical
 
 def loadl(simd_ext, typ, aligned):
     if simd_ext in avx512:
         if typ == 'f16':
             return '''/* This can surely be improved but it is not our
                          priority. Note that we take advantage of the fact that
-                         floatting zero is represented as integer zero to
+                         floating zero is represented as integer zero to
                          simplify code. */
                       nsimd_{simd_ext}_vlf16 ret;
                       __mmask32 tmp = nsimd_loadlu_{simd_ext}_u16((u16*){in0});
@@ -1315,29 +1355,29 @@ def loadl(simd_ext, typ, aligned):
               else '({})0'.format(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Store logical
+# Store logical
 
 def storel(simd_ext, typ, aligned):
     if simd_ext in avx512:
         if typ == 'f16':
             return '''/* This can surely be improved but it is not our
                          priority. Note that we take advantage of the fact that
-                         floatting zero is represented as integer zero to
+                         floating zero is represented as integer zero to
                          simplify code. */
                       int i;
                       u16 one = 0x3C00; /* FP16 IEEE754 representation of 1 */
                       for (i = 0; i < 16; i++) {{
-                        ((u16*){in0})[i] = (({in1}.v0 >> i) & 1) ? one
-                                                                 : (u16)0;
+                        ((u16*){in0})[i] = (u16)((({in1}.v0 >> i) & 1) ? one
+                                                                       : 0);
                       }}
                       for (i = 0; i < 16; i++) {{
-                        ((u16*){in0})[i + 16] = (({in1}.v1 >> i) & 1) ? one
-                                                                      : (u16)0;
+                        ((u16*){in0})[i + 16] = (u16)((({in1}.v1 >> i) & 1)
+                                                      ? one : 0);
                       }}'''.format(**fmtspec)
         return '''/* This can surely be improved but it is not our priority. */
                   int i;
                   for (i = 0; i < {le}; i++) {{
-                    {in0}[i] = (({in1} >> i) & 1) ? ({typ})1 : ({typ})0;
+                    {in0}[i] = ({typ})((({in1} >> i) & 1) ? 1 : 0);
                   }}'''.format(**fmtspec)
     return \
     '''/* This can surely be improved but it is not our priority. */
@@ -1352,7 +1392,7 @@ def storel(simd_ext, typ, aligned):
               else '({})0'.format(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Absolute value
+# Absolute value
 
 def abs1(simd_ext, typ):
     def mask(typ):
@@ -1420,7 +1460,7 @@ def abs1(simd_ext, typ):
                 return split_opn('abs', simd_ext, typ, 1)
 
 # -----------------------------------------------------------------------------
-## FMA and FMS
+# FMA and FMS
 
 def fma_fms(func, simd_ext, typ):
     op = 'add' if func in ['fma', 'fnma'] else 'sub'
@@ -1450,9 +1490,9 @@ def fma_fms(func, simd_ext, typ):
         if simd_ext in sse + avx:
             return '''#ifdef NSIMD_FMA
                         return {pre}f{neg}m{op}{suf}({in0}, {in1}, {in2});
-                      #else
+                      # else
                         {emulate}
-                      #endif'''.format(op=op, neg=neg, emulate=emulate,
+                      # endif'''.format(op=op, neg=neg, emulate=emulate,
                                        **fmtspec)
         else:
             return 'return {pre}f{neg}m{op}{suf}({in0}, {in1}, {in2});'. \
@@ -1464,7 +1504,7 @@ def fma_fms(func, simd_ext, typ):
     return emulate
 
 # -----------------------------------------------------------------------------
-## Ceil and floor
+# Ceil and floor
 
 def round1(func, simd_ext, typ):
     if typ == 'f16':
@@ -1533,7 +1573,7 @@ def round_to_even1(simd_ext, typ):
     return 'return {in0};'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## All and any functions
+# All and any functions
 
 def all_any(func, simd_ext, typ):
     if typ == 'f16':
@@ -1604,16 +1644,16 @@ def reinterpret1(simd_ext, from_typ, to_typ):
                  {in0} = _mm_shuffle_epi32({in0}, 14); /* = (3 << 2) | (2 << 0) */
                  ret.v1 = _mm_cvtph_ps({in0});
                  return ret;
-               #else
+               # else
                  {emulate}
-               #endif'''.format(emulate=emulate, **fmtspec)
+               # endif'''.format(emulate=emulate, **fmtspec)
         if simd_ext in avx:
             return \
             '''#ifdef NSIMD_FP16
                  {}
-               #else
+               # else
                  {}
-               #endif'''.format(native, emulate)
+               # endif'''.format(native, emulate)
         if simd_ext in avx512:
             return native
     if from_typ == 'f16':
@@ -1623,31 +1663,31 @@ def reinterpret1(simd_ext, from_typ, to_typ):
            return nsimd_loadu_{simd_ext}_{to_typ}(({to_typ}*)buf);'''. \
            format(**fmtspec)
         native = 'return {};'.format(setr(simd_ext, 'u16',
-                 '''{pre}cvtps_ph({in0}.v0, _MM_FROUND_TO_ZERO |
+                 '''{pre}cvtps_ph({in0}.v0, _MM_FROUND_TO_NEAREST_INT |
                                             _MM_FROUND_NO_EXC)'''. \
                                             format(**fmtspec),
-                 '''{pre}cvtps_ph({in0}.v1, _MM_FROUND_TO_ZERO |
+                 '''{pre}cvtps_ph({in0}.v1, _MM_FROUND_TO_NEAREST_INT |
                                             _MM_FROUND_NO_EXC)'''. \
                                             format(**fmtspec)))
         if simd_ext in sse:
             return \
             '''#ifdef NSIMD_FP16
                  __m128i lo = _mm_cvtps_ph({in0}.v0,
-                                _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+                                _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
                  __m128i hi = _mm_cvtps_ph({in0}.v1,
-                                _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+                                _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
                  return _mm_castpd_si128(_mm_shuffle_pd(
                           _mm_castsi128_pd(lo), _mm_castsi128_pd(hi), 0));
-               #else
+               # else
                  {emulate}
-               #endif'''.format(emulate=emulate, **fmtspec)
+               # endif'''.format(emulate=emulate, **fmtspec)
         if simd_ext in avx:
             return \
             '''#ifdef NSIMD_FP16
                  {}
-               #else
+               # else
                  {}
-               #endif'''.format(native, emulate)
+               # endif'''.format(native, emulate)
         if simd_ext in avx512:
             return native
     if from_typ in common.iutypes and to_typ in common.iutypes:
@@ -1810,7 +1850,7 @@ def convert1(simd_ext, from_typ, to_typ):
             return 'return _mm512_cvtps_epu32({in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Reciprocal (at least 11 bits of precision)
+# Reciprocal (at least 11 bits of precision)
 
 def rec11_rsqrt11(func, simd_ext, typ):
     if typ == 'f16':
@@ -1835,7 +1875,7 @@ def rec11_rsqrt11(func, simd_ext, typ):
                    format(func=func, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Reciprocal (IEEE)
+# Reciprocal (IEEE)
 
 def rec1(simd_ext, typ):
     one = '{pre}set1_ps(1.0f)'.format(**fmtspec) if typ in ['f16', 'f32'] \
@@ -1849,7 +1889,7 @@ def rec1(simd_ext, typ):
     return 'return {pre}div{suf}({one}, {in0});'.format(one=one, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Negative
+# Negative
 
 def neg1(simd_ext, typ):
     cte = '0x80000000' if typ in ['f16', 'f32'] else '0x8000000000000000'
@@ -1871,7 +1911,7 @@ def neg1(simd_ext, typ):
               format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## nbtrue
+# nbtrue
 
 def nbtrue1(simd_ext, typ):
     if typ == 'f16':
@@ -1911,10 +1951,10 @@ def nbtrue1(simd_ext, typ):
         return 'return nsimd_popcnt64_((u64){in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## reverse
+# reverse
 
 def reverse1(simd_ext, typ):
-    ## 8-bit int
+    # 8-bit int
     if typ in ['i8', 'u8']:
         if simd_ext == 'sse2':
             return '''{in0} = _mm_shufflehi_epi16({in0}, _MM_SHUFFLE(0,1,2,3));
@@ -1950,7 +1990,7 @@ def reverse1(simd_ext, typ):
                   24, 25, 26, 27, 28, 29, 30, 31));
                 return _mm256_permute2x128_si256({in0}, {in0}, 1);'''. \
                 format(**fmtspec)
-        ## AVX-512F and above.
+        # AVX-512F and above.
         else:
              return \
              '''nsimd_avx2_v{typ} r0 = _mm512_extracti64x4_epi64({in0}, 0);
@@ -1969,7 +2009,7 @@ def reverse1(simd_ext, typ):
                 r1 = _mm256_permute2x128_si256(r1, r1, 1);
                 {in0} = _mm512_insertf64x4({in0}, r0, 1);
                 return _mm512_insertf64x4({in0}, r1, 0);'''.format(**fmtspec)
-    ## 16-bit int
+    # 16-bit int
     elif typ in ['i16', 'u16']:
         if simd_ext == 'sse2':
             return '''{in0} = _mm_shufflehi_epi16( {in0}, _MM_SHUFFLE(0,1,2,3) );
@@ -2003,7 +2043,7 @@ def reverse1(simd_ext, typ):
                           25, 24, 27, 26, 29, 28, 31, 30));
                return _mm256_permute2x128_si256({in0}, {in0}, 1);'''. \
                format(**fmtspec)
-        ## AVX-512F
+        # AVX-512F
         elif simd_ext == 'avx512_knl':
             return \
             '''{in0} = _mm512_permutexvar_epi32(_mm512_set_epi32(
@@ -2012,7 +2052,7 @@ def reverse1(simd_ext, typ):
                nsimd_{simd_ext}_v{typ} r0 = _mm512_srli_epi32({in0}, 16);
                nsimd_{simd_ext}_v{typ} r1 = _mm512_slli_epi32({in0}, 16);
                return _mm512_or_si512(r0, r1);'''.format(**fmtspec)
-        ## AVX-512F+BW (Skylake) + WORKAROUND GCC<=8
+        # AVX-512F+BW (Skylake) + WORKAROUND GCC<=8
         else:
             return \
             '''return _mm512_permutexvar_epi16(_mm512_set_epi32(
@@ -2021,7 +2061,7 @@ def reverse1(simd_ext, typ):
                  (16<<16) | 17, (18<<16) | 19, (20<<16) | 21, (22<<16) | 23,
                  (24<<16) | 25, (26<<16) | 27, (28<<16) | 29, (30<<16) | 31),
                  {in0} );'''.format(**fmtspec)
-    ## 32-bit int
+    # 32-bit int
     elif typ in ['i32', 'u32']:
         if simd_ext in ['sse2', 'sse42']:
             return 'return _mm_shuffle_epi32({in0}, _MM_SHUFFLE(0,1,2,3));'. \
@@ -2066,13 +2106,13 @@ def reverse1(simd_ext, typ):
            return '''return _mm512_permutexvar_epi64(_mm512_set_epi64(
                               0, 1, 2, 3, 4, 5, 6, 7), {in0});'''. \
                               format(**fmtspec)
-    ## 16-bit float
+    # 16-bit float
     elif typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
                   ret.v0 = nsimd_reverse_{simd_ext}_f32({in0}.v0);
                   ret.v1 = nsimd_reverse_{simd_ext}_f32({in0}.v1);
                   return ret;'''.format(**fmtspec)
-    ## 32-bit float
+    # 32-bit float
     elif typ == 'f32':
         if simd_ext in ['sse2', 'sse42']:
             return '''return _mm_shuffle_ps({in0}, {in0},
@@ -2087,7 +2127,7 @@ def reverse1(simd_ext, typ):
             '''return _mm512_permutexvar_ps(_mm512_set_epi32(
                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
                         {in0} );'''.format(**fmtspec)
-    ## 64-bit float
+    # 64-bit float
     else:
         if simd_ext in ['sse2', 'sse42']:
             return 'return _mm_shuffle_pd({in0}, {in0}, 1);'.format(**fmtspec)
@@ -2104,7 +2144,7 @@ def reverse1(simd_ext, typ):
                                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## addv
+# addv
 
 def addv(simd_ext, typ):
     if simd_ext in sse:
@@ -2200,7 +2240,7 @@ def addv(simd_ext, typ):
                         format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## upconvert
+# upconvert
 
 def upcvt1(simd_ext, from_typ, to_typ):
     # From f16 is easy
@@ -2250,11 +2290,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
     # compute upper half
     if simd_ext in sse:
         if from_typ in common.iutypes:
-            upper_half = \
-            '''{pre}castpd_si{nbits}({pre}shuffle_pd(
-                   {pre}castsi{nbits}_pd({in0}),
-                   {pre}castsi{nbits}_pd({in0}), 1))'''. \
-                   format(**fmtspec)
+            upper_half = '_mm_shuffle_epi32({in0}, 14 /* 2 | 3 */)'. \
+                         format(**fmtspec)
         else:
             upper_half = '''{pre}castpd_ps({pre}shuffle_pd(
                                 {pre}castps_pd({in0}),
@@ -2335,7 +2372,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
     if (from_typ in common.ftypes and to_typ in common.iutypes) or \
        (from_typ in common.iutypes and to_typ in common.ftypes):
         return int_float
-    if simd_ext == 'sse2':
+    # if simd_ext == 'sse2':
+    if simd_ext in sse:
         if from_typ in common.itypes and to_typ in common.iutypes:
             return \
             '''nsimd_{simd_ext}_v{to_typ}x2 ret;
@@ -2351,8 +2389,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
                return ret;'''.format(**fmtspec)
         else:
             return with_intrinsic
-    elif simd_ext == 'sse42':
-        return with_intrinsic
+    # elif simd_ext == 'sse42':
+    #    return with_intrinsic
     elif simd_ext == 'avx':
         if from_typ == 'i32' and to_typ == 'f64':
             return with_intrinsic
@@ -2369,7 +2407,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
         return with_intrinsic
 
 # -----------------------------------------------------------------------------
-## downconvert
+# downconvert
 
 def downcvt1(simd_ext, from_typ, to_typ):
     # From f16 is easy
@@ -2455,7 +2493,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
               **fmtspec)
 
 # -----------------------------------------------------------------------------
-## adds
+# adds
 
 def adds(simd_ext, from_typ):
 
@@ -2491,14 +2529,398 @@ def adds(simd_ext, from_typ):
             format(num_bits = num_bits, max_c_macro = max_c_macro, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## subs
+# subs
 
 def subs():
     return '''nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}))'''. \
         format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## get_impl function
+# to_mask
+
+def to_mask1(simd_ext, typ):
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  ret.v0 = nsimd_to_mask_{simd_ext}_f32({in0}.v0);
+                  ret.v1 = nsimd_to_mask_{simd_ext}_f32({in0}.v1);
+                  return ret;'''.format(**fmtspec)
+    if simd_ext in sse + avx:
+        return 'return {in0};'.format(**fmtspec)
+    elif simd_ext == 'avx512_skylake':
+        if typ in common.iutypes:
+            return 'return _mm512_movm_epi{typnbits}({in0});'. \
+                   format(**fmtspec)
+        elif typ in ['f32', 'f64']:
+            return '''return _mm512_castsi512{suf}(
+                               _mm512_movm_epi{typnbits}({in0}));'''. \
+                               format(**fmtspec)
+    else:
+        if typ in ['i32', 'u32', 'i64', 'u64']:
+            return '''return _mm512_mask_mov{suf}(_mm512_setzero_si512(),
+                                 {in0}, _mm512_set1_epi32(-1));'''. \
+                                 format(**fmtspec)
+        elif typ in ['f32', 'f64']:
+            return '''return _mm512_mask_mov{suf}(_mm512_castsi512{suf}(
+                               _mm512_setzero_si512()), {in0},
+                                 _mm512_castsi512{suf}(
+                                   _mm512_set1_epi32(-1)));'''. \
+                                   format(**fmtspec)
+        else:
+            return '''{typ} buf[{le}];
+                      int i;
+                      for (i = 0; i < {le}; i++) {{
+                        if (({in0} >> i) & 1) {{
+                          buf[i] = ({typ})-1;
+                        }} else {{
+                          buf[i] = ({typ})0;
+                        }}
+                      }}
+                      return _mm512_loadu_si512(buf);'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# to_logical
+
+def to_logical1(simd_ext, typ):
+    if typ in common.iutypes:
+        return '''return nsimd_ne_{simd_ext}_{typ}(
+                           {in0}, {pre}setzero{sufsi}());'''.format(**fmtspec)
+    elif typ in ['f32', 'f64']:
+        return '''return nsimd_reinterpretl_{simd_ext}_{typ}_{utyp}(
+                           nsimd_ne_{simd_ext}_{utyp}(
+                             {pre}cast{suf2}_si{nbits}({in0}),
+                               {pre}setzero_si{nbits}()));'''. \
+                               format(suf2=suf_si(simd_ext, typ)[1:],
+                                      utyp='u{}'.format(fmtspec['typnbits']),
+                                      **fmtspec)
+    else:
+        return '''nsimd_{simd_ext}_vlf16 ret;
+                  ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
+                  ret.v1 = nsimd_to_logical_{simd_ext}_f32({in0}.v1);
+                  return ret;'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# zip functions
+
+def zip_half(func, simd_ext, typ):
+    if func == 'ziplo':
+        get_half0 = '{cast_low}({in0})'
+        get_half1 = '{cast_low}({in1})'
+    else:
+        get_half0 = '{extract}({in0}, 0x01)'
+        get_half1 = '{extract}({in1}, 0x01)'
+
+    if simd_ext in ['sse2', 'sse42']:
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_v{typ} ret;
+            ret.v0 = _mm_unpacklo_ps({in0}.v{k}, {in1}.v{k});
+            ret.v1 = _mm_unpackhi_ps({in0}.v{k}, {in1}.v{k});
+            return ret;'''.format(k = '0' if func == 'ziplo' else '1',
+                                  **fmtspec)
+        else:
+            return '''return {pre}unpack{lo}{suf}({in0}, {in1});'''.\
+                format(k = '0' if func == 'ziplo' else '1',
+                       lo = 'lo' if func == 'ziplo' else 'hi',
+                       **fmtspec)
+    elif simd_ext in ['avx', 'avx2']:
+        # Currently, 256 and 512 bits vectors are splitted into 128 bits vectors
+        # in order to perform the ziplo/hi operation using the unpacklo/hi sse
+        # operations.
+        epi = suf_ep(typ)
+        if typ in common.iutypes:
+            i='i'
+            cast_low = '_mm256_castsi256_si128'
+            cast_high = '_mm256_castsi128_si256'
+            extract = '_mm256_extractf128_si256'
+            insert = '_mm256_insertf128_si256'
+        elif typ in ['f32', 'f16']:
+            i=''
+            cast_low = '_mm256_castps256_ps128'
+            cast_high = '_mm256_castps128_ps256'
+            extract = '_mm256_extractf128_ps'
+            insert = '_mm256_insertf128_ps'
+        elif typ == 'f64':
+            i='d'
+            cast_low = '_mm256_castpd256_pd128'
+            cast_high = '_mm256_castpd128_pd256'
+            extract = '_mm256_extractf128_pd'
+            insert = '_mm256_insertf128_pd'
+        if typ == 'f16':
+            return'''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m128 v_tmp0 = {cast_low}({in0}.v{k});
+            __m128 v_tmp1 = {cast_low}({in1}.v{k});
+            __m128 v_tmp2 = {extract}({in0}.v{k}, 0x01);
+            __m128 v_tmp3 = {extract}({in1}.v{k}, 0x01);
+            __m128 vres_lo0 = _mm_unpacklo_ps(v_tmp0, v_tmp1);
+            __m128 vres_hi0 = _mm_unpackhi_ps(v_tmp0, v_tmp1);
+            ret.v0 = {insert}({cast_high}(vres_lo0), vres_hi0, 0x01);
+            __m128 vres_lo1 = _mm_unpacklo_ps(v_tmp2, v_tmp3);
+            __m128 vres_hi1 = _mm_unpackhi_ps(v_tmp2, v_tmp3);
+            ret.v1 = {insert}({cast_high}(vres_lo1), vres_hi1, 0x01);
+            return ret;
+            '''.format(cast_low=cast_low, cast_high=cast_high,
+                       extract=extract, epi=epi, insert=insert,
+                       k = '0' if func == 'ziplo' else '1',
+                       **fmtspec)
+        else:
+            return '''\
+            __m128{i} v_tmp0 = {get_half0};
+            __m128{i} v_tmp1 = {get_half1};
+            __m128{i} vres_lo = _mm_unpacklo{epi}(v_tmp0, v_tmp1);
+            __m128{i} vres_hi = _mm_unpackhi{epi}(v_tmp0, v_tmp1);
+            return {insert}({cast_high}(vres_lo), vres_hi, 0x01);
+            '''.format(get_half0=get_half0.format(
+                cast_low=cast_low, extract=extract, **fmtspec),
+                       get_half1=get_half1.format(
+                           cast_low=cast_low, extract=extract, **fmtspec),
+                       cast_low=cast_low, cast_high=cast_high,
+                       extract=extract, epi=epi, insert=insert, i=i,**fmtspec)
+    else:
+        if typ in common.iutypes:
+            i = 'i'
+            cast_low = '_mm512_castsi512_si256'
+            cast_high = '_mm512_castsi256_si512'
+            extract = '_mm512_extracti32x8_epi32'
+            insert = '_mm512_inserti32x8'
+        elif typ in ['f32', 'f16']:
+            i = ''
+            cast_low = '_mm512_castps512_ps256'
+            cast_high = '_mm512_castps256_ps512'
+            extract = '_mm512_extractf32x8_ps'
+            insert = '_mm512_insertf32x8'
+        elif typ == 'f64':
+            i = 'd'
+            cast_low = '_mm512_castpd512_pd256'
+            cast_high = '_mm512_castpd256_pd512'
+            extract = '_mm512_extractf64x4_pd'
+            insert = '_mm512_insertf64x4'
+
+        if typ == 'f16':
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m512 v0 = {in0}.v{k};
+            __m512 v1 = {in1}.v{k};
+            __m512 vres;
+            __m256 v_tmp0, v_tmp1, vres_lo, vres_hi;
+            // Low part
+            v_tmp0 = _mm512_castps512_ps256(v0);
+            v_tmp1 = _mm512_castps512_ps256(v1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v0 = _mm512_insertf32x8(vres, vres_hi, 1);
+            // High part
+            v_tmp0 = _mm512_extractf32x8_ps(v0, 0x1);
+            v_tmp1 = _mm512_extractf32x8_ps(v1, 0x1);
+            vres_lo = nsimd_ziplo_avx2_f32(v_tmp0, v_tmp1);
+            vres_hi = nsimd_ziphi_avx2_f32(v_tmp0, v_tmp1);
+            vres = _mm512_castps256_ps512(vres_lo);
+            ret.v1 = _mm512_insertf32x8(vres, vres_hi, 1);
+            return ret;
+            '''.format(**fmtspec, k = '0' if func == 'ziplo' else '1')
+        else:
+            return '''\
+            __m256{i} v_tmp0, v_tmp1;
+            v_tmp0 = {get_half0};
+            v_tmp1 = {get_half1};
+            __m256{i} vres_lo = nsimd_ziplo_avx2_{typ}(v_tmp0, v_tmp1);
+            __m256{i} vres_hi = nsimd_ziphi_avx2_{typ}(v_tmp0, v_tmp1);
+            __m512{i} vres = {cast_high}(vres_lo);
+            return {insert}(vres, vres_hi, 1);
+            '''.format(extract=extract,
+                       get_half0=get_half0.format(
+                           cast_low=cast_low, extract=extract, **fmtspec),
+                       get_half1=get_half1.format(
+                           cast_low=cast_low, extract=extract, **fmtspec),
+                       cast_high=cast_high,
+                       cast_low=cast_low,
+                       insert=insert, i=i, **fmtspec)
+
+def zip(simd_ext, typ):
+    return '// Not implemented yet'
+
+# -----------------------------------------------------------------------------
+# unzip functions
+
+def unzip_half(func, simd_ext, typ):
+    tab_size = 2 * int(fmtspec['le'])
+    vec_size = int(fmtspec['le'])
+    loop = '''\
+    {typ} tab[{tab_size}];
+    {typ} res[{vec_size}];
+    int i;
+    nsimd_storeu_{simd_ext}_{typ}(tab, {in0});
+    nsimd_storeu_{simd_ext}_{typ}(tab + {vec_size}, {in1});
+    for(i = 0; i < {vec_size}; i++) {{
+    res[i] = tab[2 * i + {offset}];
+    }}
+    return nsimd_loadu_{simd_ext}_{typ}(res);
+    '''.format(tab_size=tab_size, vec_size=vec_size,
+               cast='({}*)'.format(get_type(simd_ext, typ)) \
+               if typ in common.iutypes else '',
+               offset = '0' if func == 'unziplo' else '1', **fmtspec)
+    # SSE ------------------------------------------------------------
+    if simd_ext in ['sse2', 'sse42']:
+        if typ in ['f32', 'i32', 'u32']:
+            v0 = '_mm_castsi128_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
+            v1 = '_mm_castsi128_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
+            ret = '_mm_castps_si128(v_res)' if typ in ['i32', 'u32'] else 'v_res'
+            return '''\
+            __m128 v_res;
+            v_res = _mm_shuffle_ps({v0}, {v1}, {mask});
+            return {ret};
+            '''.format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       v0=v0.format(**fmtspec), v1=v1.format(**fmtspec), ret=ret,
+                       **fmtspec)
+        elif typ == 'f16':
+            return '''\
+            nsimd_{simd_ext}_v{typ} v_res;
+            v_res.v0 = _mm_shuffle_ps({in0}.v0, {in0}.v1, {mask});
+            v_res.v1 = _mm_shuffle_ps({in1}.v0, {in1}.v1, {mask});
+            return v_res;
+            '''.format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       **fmtspec)
+        elif typ in ['f64', 'i64', 'u64']:
+            v0 = '_mm_castsi128_pd({in0})' if typ in ['i64', 'u64'] else '{in0}'
+            v1 = '_mm_castsi128_pd({in1})' if typ in ['i64', 'u64'] else '{in1}'
+            ret = '_mm_castpd_si128(v_res)' if typ in ['i64', 'u64'] else 'v_res'
+            return '''\
+            __m128d v_res;
+            v_res = _mm_shuffle_pd({v0}, {v1}, {mask});
+            return {ret};
+            '''.format(mask='0x00' if func == 'unziplo' else '0x03',
+                       v0=v0.format(**fmtspec),v1=v1.format(**fmtspec), ret=ret,
+                       **fmtspec)
+        elif typ in ['i16', 'u16']:
+            return '''\
+            __m128i v_tmp0 = _mm_shufflelo_epi16({in0}, _MM_SHUFFLE(3, 1, 2, 0));
+            v_tmp0 = _mm_shufflehi_epi16(v_tmp0, _MM_SHUFFLE(3, 1, 2, 0));
+            __m128i v_tmp1 = _mm_shufflelo_epi16({in1}, _MM_SHUFFLE(3, 1, 2, 0));
+            v_tmp1 = _mm_shufflehi_epi16(v_tmp1, _MM_SHUFFLE(3, 1, 2, 0));
+            __m128 v_res = _mm_shuffle_ps(
+            _mm_castsi128_ps(v_tmp0), _mm_castsi128_ps(v_tmp1), {mask});
+            return _mm_castps_si128(v_res);
+            '''.format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       **fmtspec)
+        else:
+            return loop
+    # AVX, AVX2 ----------------------------------------------------
+    elif simd_ext in ['avx', 'avx2']:
+        ret_template ='''\
+        v_tmp0 = _mm256_permute2f128_{t}({v0}, {v0}, 0x01);
+        v_tmp0 = _mm256_shuffle_{t}({v0}, v_tmp0, {mask});
+        v_tmp1 = _mm256_permute2f128_{t}({v1}, {v1}, 0x01);
+        v_tmp1 = _mm256_shuffle_{t}({v1}, v_tmp1, {mask});
+        v_res  = _mm256_permute2f128_{t}(v_tmp0, v_tmp1, 0x20);
+        {ret} = {v_res};'''
+        if typ in ['f32', 'i32', 'u32']:
+            v0 = '_mm256_castsi256_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
+            v1 = '_mm256_castsi256_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
+            v_res = '_mm256_castps_si256(v_res)' if typ in ['i32', 'u32'] else 'v_res'
+            ret = 'ret'
+            src = ret_template .\
+                format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                       else '_MM_SHUFFLE(3, 1, 3, 1)',
+                       v0=v0, v1=v1, v_res=v_res, ret=ret, t='ps', **fmtspec)
+            return '''\
+            {styp} ret;
+            __m256 v_res, v_tmp0, v_tmp1;
+            {src}
+            return ret;
+            '''.format(src=src.format(**fmtspec), **fmtspec)
+        elif typ == 'f16':
+            src0 = ret_template.format(
+                mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                else '_MM_SHUFFLE(3, 1, 3, 1)',
+                v0='{in0}.v0', v1='{in0}.v1', v_res='v_res', ret='ret.v0', t='ps')
+            src1 = ret_template.format(
+                mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
+                else '_MM_SHUFFLE(3, 1, 3, 1)',
+                v0='{in1}.v0', v1='{in1}.v1', v_res='v_res', ret='ret.v1', t='ps')
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m256 v_res, v_tmp0, v_tmp1;
+            {src0}
+            {src1}
+            return ret;
+            '''.format(src0=src0.format(**fmtspec), src1=src1.format(**fmtspec),
+                       **fmtspec)
+        elif typ in ['f64', 'i64', 'u64']:
+            v0 = '_mm256_castsi256_pd({in0})' if typ in ['i64', 'u64'] else '{in0}'
+            v1 = '_mm256_castsi256_pd({in1})' if typ in ['i64', 'u64'] else '{in1}'
+            v_res = '_mm256_castpd_si256(v_res)' if typ in ['i64', 'u64'] else 'v_res'
+            src = ret_template . \
+                format(mask='0x00' if func == 'unziplo' else '0x03',
+                       v0=v0, v1=v1, ret='ret', v_res=v_res, t='pd')
+            return '''\
+            {styp} ret;
+            __m256d v_res, v_tmp0, v_tmp1;
+            {src}
+            return ret;
+            '''.format(src=src.format(**fmtspec), **fmtspec)
+        elif typ in ['i16', 'u16']:
+            return '''\
+            __m128i v_tmp0_hi = _mm256_extractf128_si256({in0}, 0x01);
+            __m128i v_tmp0_lo = _mm256_castsi256_si128({in0});
+            __m128i v_tmp1_hi = _mm256_extractf128_si256({in1}, 0x01);
+            __m128i v_tmp1_lo = _mm256_castsi256_si128({in1});
+            v_tmp0_lo = nsimd_{func}_sse2_{typ}(v_tmp0_lo, v_tmp0_hi);
+            v_tmp1_lo = nsimd_{func}_sse2_{typ}(v_tmp1_lo, v_tmp1_hi);
+            __m256i v_res = _mm256_castsi128_si256(v_tmp0_lo);
+            v_res = _mm256_insertf128_si256(v_res, v_tmp1_lo, 0x01);
+            return v_res;
+            '''.format(func=func, **fmtspec)
+        else:
+            return loop
+        # AVX 512 --------------------------------------------------
+    else:
+        if typ == 'f16':
+            return '''\
+            nsimd_{simd_ext}_v{typ} ret;
+            __m512 v_res;
+            __m256 v_tmp0, v_tmp1, v_res_lo, v_res_hi;
+            v_tmp0 = _mm512_castps512_ps256({in0}.v0);
+            v_tmp1 = _mm512_extractf32x8_ps({in0}.v0, 0x01);
+            v_res_lo = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_tmp0 = _mm512_castps512_ps256({in0}.v1);
+            v_tmp1 = _mm512_extractf32x8_ps({in0}.v1, 0x01);
+            v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_res = _mm512_castps256_ps512(v_res_lo);
+            v_res = _mm512_insertf32x8(v_res, v_res_hi, 0x01);
+            ret.v0 = v_res;
+            v_tmp0 = _mm512_castps512_ps256({in1}.v0);
+            v_tmp1 = _mm512_extractf32x8_ps({in1}.v0, 0x01);
+            v_res_lo = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_tmp0 = _mm512_castps512_ps256({in1}.v1);
+            v_tmp1 = _mm512_extractf32x8_ps({in1}.v1, 0x01);
+            v_res_hi = nsimd_{func}_avx2_f32(v_tmp0, v_tmp1);
+            v_res = _mm512_castps256_ps512(v_res_lo);
+            v_res = _mm512_insertf32x8(v_res, v_res_hi, 0x01);
+            ret.v1 = v_res;
+            return ret;
+            '''.format(func=func, **fmtspec)
+        else:
+            # return split_opn(func, simd_ext, typ, 2)
+            return '''\
+            nsimd_avx2_v{typ} v00 = {extract_lo0};
+            nsimd_avx2_v{typ} v01 = {extract_hi0};
+            nsimd_avx2_v{typ} v10 = {extract_lo1};
+            nsimd_avx2_v{typ} v11 = {extract_hi1};
+            v00 = nsimd_{func}_avx2_{typ}(v00, v01);
+            v01 = nsimd_{func}_avx2_{typ}(v10, v11);
+            return {merge};
+            '''.format(func=func,
+                extract_lo0=extract(simd_ext, typ, LO, common.in0),
+                extract_lo1=extract(simd_ext, typ, LO, common.in1),
+                extract_hi0=extract(simd_ext, typ, HI, common.in0),
+                extract_hi1=extract(simd_ext, typ, HI, common.in1),
+                merge=setr(simd_ext, typ, 'v00', 'v01'), **fmtspec)
+
+# -----------------------------------------------------------------------------
+# get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
     global fmtspec
@@ -2524,79 +2946,87 @@ def get_impl(func, simd_ext, from_typ, to_typ):
     }
 
     impls = {
-        'loada': load(simd_ext, from_typ, True),
-        'load2a': load_deg234(simd_ext, from_typ, True, 2),
-        'load3a': load_deg234(simd_ext, from_typ, True, 3),
-        'load4a': load_deg234(simd_ext, from_typ, True, 4),
-        'loadu': load(simd_ext, from_typ, False),
-        'load2u': load_deg234(simd_ext, from_typ, False, 2),
-        'load3u': load_deg234(simd_ext, from_typ, False, 3),
-        'load4u': load_deg234(simd_ext, from_typ, False, 4),
-        'storea': store(simd_ext, from_typ, True),
-        'store2a': store_deg234(simd_ext, from_typ, True, 2),
-        'store3a': store_deg234(simd_ext, from_typ, True, 3),
-        'store4a': store_deg234(simd_ext, from_typ, True, 4),
-        'storeu': store(simd_ext, from_typ, False),
-        'store2u': store_deg234(simd_ext, from_typ, False, 2),
-        'store3u': store_deg234(simd_ext, from_typ, False, 3),
-        'store4u': store_deg234(simd_ext, from_typ, False, 4),
-        'andb': binop2('andb', simd_ext, from_typ),
-        'xorb': binop2('xorb', simd_ext, from_typ),
-        'orb': binop2('orb', simd_ext, from_typ),
-        'andl': binlop2('andl', simd_ext, from_typ),
-        'xorl': binlop2('xorl', simd_ext, from_typ),
-        'orl': binlop2('orl', simd_ext, from_typ),
-        'notb': not1(simd_ext, from_typ),
-        'notl': lnot1(simd_ext, from_typ),
-        'andnotb': andnot2(simd_ext, from_typ),
-        'andnotl': landnot2(simd_ext, from_typ),
-        'add': addsub('add', simd_ext, from_typ),
-        'sub': addsub('sub', simd_ext, from_typ),
-        'div': div2(simd_ext, from_typ),
-        'sqrt': sqrt1(simd_ext, from_typ),
-        'len': len1(simd_ext, from_typ),
-        'mul': mul2(simd_ext, from_typ),
-        'shl': shl_shr('shl', simd_ext, from_typ),
-        'shr': shl_shr('shr', simd_ext, from_typ),
-        'set1': set1(simd_ext, from_typ),
-        'eq': eq2(simd_ext, from_typ),
-        'ne': neq2(simd_ext, from_typ),
-        'gt': gt2(simd_ext, from_typ),
-        'lt': lt2(simd_ext, from_typ),
-        'ge': geq2(simd_ext, from_typ),
-        'le': leq2(simd_ext, from_typ),
-        'if_else1': if_else1(simd_ext, from_typ),
-        'min': minmax('min', simd_ext, from_typ),
-        'max': minmax('max', simd_ext, from_typ),
-        'loadla': loadl(simd_ext, from_typ, True),
-        'loadlu': loadl(simd_ext, from_typ, False),
-        'storela': storel(simd_ext, from_typ, True),
-        'storelu': storel(simd_ext, from_typ, False),
-        'abs': abs1(simd_ext, from_typ),
-        'fma': fma_fms('fma', simd_ext, from_typ),
-        'fnma': fma_fms('fnma', simd_ext, from_typ),
-        'fms': fma_fms('fms', simd_ext, from_typ),
-        'fnms': fma_fms('fnms', simd_ext, from_typ),
-        'ceil': round1('ceil', simd_ext, from_typ),
-        'floor': round1('floor', simd_ext, from_typ),
-        'trunc': trunc1(simd_ext, from_typ),
-        'round_to_even': round_to_even1(simd_ext, from_typ),
-        'all': all_any('all', simd_ext, from_typ),
-        'any': all_any('any', simd_ext, from_typ),
-        'reinterpret': reinterpret1(simd_ext, from_typ, to_typ),
-        'reinterpretl': reinterpretl1(simd_ext, from_typ, to_typ),
-        'cvt': convert1(simd_ext, from_typ, to_typ),
-        'rec11': rec11_rsqrt11('rcp', simd_ext, from_typ),
-        'rsqrt11': rec11_rsqrt11('rsqrt', simd_ext, from_typ),
-        'rec': rec1(simd_ext, from_typ),
-        'neg': neg1(simd_ext, from_typ),
-        'nbtrue': nbtrue1(simd_ext, from_typ),
-        'reverse': reverse1(simd_ext, from_typ),
-        'addv': addv(simd_ext, from_typ),
-        'upcvt': upcvt1(simd_ext, from_typ, to_typ),
-        'downcvt': downcvt1(simd_ext, from_typ, to_typ),
-        'adds': adds(simd_ext, from_typ),
-        'subs': subs()
+        'loada': lambda: load(simd_ext, from_typ, True),
+        'load2a': lambda: load_deg234(simd_ext, from_typ, True, 2),
+        'load3a': lambda: load_deg234(simd_ext, from_typ, True, 3),
+        'load4a': lambda: load_deg234(simd_ext, from_typ, True, 4),
+        'loadu': lambda: load(simd_ext, from_typ, False),
+        'load2u': lambda: load_deg234(simd_ext, from_typ, False, 2),
+        'load3u': lambda: load_deg234(simd_ext, from_typ, False, 3),
+        'load4u': lambda: load_deg234(simd_ext, from_typ, False, 4),
+        'storea': lambda: store(simd_ext, from_typ, True),
+        'store2a': lambda: store_deg234(simd_ext, from_typ, True, 2),
+        'store3a': lambda: store_deg234(simd_ext, from_typ, True, 3),
+        'store4a': lambda: store_deg234(simd_ext, from_typ, True, 4),
+        'storeu': lambda: store(simd_ext, from_typ, False),
+        'store2u': lambda: store_deg234(simd_ext, from_typ, False, 2),
+        'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
+        'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
+        'andb': lambda: binop2('andb', simd_ext, from_typ),
+        'xorb': lambda: binop2('xorb', simd_ext, from_typ),
+        'orb': lambda: binop2('orb', simd_ext, from_typ),
+        'andl': lambda: binlop2('andl', simd_ext, from_typ),
+        'xorl': lambda: binlop2('xorl', simd_ext, from_typ),
+        'orl': lambda: binlop2('orl', simd_ext, from_typ),
+        'notb': lambda: not1(simd_ext, from_typ),
+        'notl': lambda: lnot1(simd_ext, from_typ),
+        'andnotb': lambda: andnot2(simd_ext, from_typ),
+        'andnotl': lambda: landnot2(simd_ext, from_typ),
+        'add': lambda: addsub('add', simd_ext, from_typ),
+        'sub': lambda: addsub('sub', simd_ext, from_typ),
+        'adds': lambda: adds(simd_ext, from_typ),
+        'subs': lambda: subs(),
+        'div': lambda: div2(simd_ext, from_typ),
+        'sqrt': lambda: sqrt1(simd_ext, from_typ),
+        'len': lambda: len1(simd_ext, from_typ),
+        'mul': lambda: mul2(simd_ext, from_typ),
+        'shl': lambda: shl_shr('shl', simd_ext, from_typ),
+        'shr': lambda: shl_shr('shr', simd_ext, from_typ),
+        'set1': lambda: set1(simd_ext, from_typ),
+        'eq': lambda: eq2(simd_ext, from_typ),
+        'ne': lambda: neq2(simd_ext, from_typ),
+        'gt': lambda: gt2(simd_ext, from_typ),
+        'lt': lambda: lt2(simd_ext, from_typ),
+        'ge': lambda: geq2(simd_ext, from_typ),
+        'le': lambda: leq2(simd_ext, from_typ),
+        'if_else1': lambda: if_else1(simd_ext, from_typ),
+        'min': lambda: minmax('min', simd_ext, from_typ),
+        'max': lambda: minmax('max', simd_ext, from_typ),
+        'loadla': lambda: loadl(simd_ext, from_typ, True),
+        'loadlu': lambda: loadl(simd_ext, from_typ, False),
+        'storela': lambda: storel(simd_ext, from_typ, True),
+        'storelu': lambda: storel(simd_ext, from_typ, False),
+        'abs': lambda: abs1(simd_ext, from_typ),
+        'fma': lambda: fma_fms('fma', simd_ext, from_typ),
+        'fnma': lambda: fma_fms('fnma', simd_ext, from_typ),
+        'fms': lambda: fma_fms('fms', simd_ext, from_typ),
+        'fnms': lambda: fma_fms('fnms', simd_ext, from_typ),
+        'ceil': lambda: round1('ceil', simd_ext, from_typ),
+        'floor': lambda: round1('floor', simd_ext, from_typ),
+        'trunc': lambda: trunc1(simd_ext, from_typ),
+        'round_to_even': lambda: round_to_even1(simd_ext, from_typ),
+        'all': lambda: all_any('all', simd_ext, from_typ),
+        'any': lambda: all_any('any', simd_ext, from_typ),
+        'reinterpret': lambda: reinterpret1(simd_ext, from_typ, to_typ),
+        'reinterpretl': lambda: reinterpretl1(simd_ext, from_typ, to_typ),
+        'cvt': lambda: convert1(simd_ext, from_typ, to_typ),
+        'rec11': lambda: rec11_rsqrt11('rcp', simd_ext, from_typ),
+        'rec8': lambda: rec11_rsqrt11('rcp', simd_ext, from_typ),
+        'rsqrt11': lambda: rec11_rsqrt11('rsqrt', simd_ext, from_typ),
+        'rsqrt8': lambda: rec11_rsqrt11('rsqrt', simd_ext, from_typ),
+        'rec': lambda: rec1(simd_ext, from_typ),
+        'neg': lambda: neg1(simd_ext, from_typ),
+        'nbtrue': lambda: nbtrue1(simd_ext, from_typ),
+        'reverse': lambda: reverse1(simd_ext, from_typ),
+        'addv': lambda: addv(simd_ext, from_typ),
+        'upcvt': lambda: upcvt1(simd_ext, from_typ, to_typ),
+        'downcvt': lambda: downcvt1(simd_ext, from_typ, to_typ),
+        'to_mask': lambda: to_mask1(simd_ext, from_typ),
+        'to_logical': lambda: to_logical1(simd_ext, from_typ),
+        'ziplo': lambda: zip_half('ziplo', simd_ext, from_typ),
+        'ziphi': lambda: zip_half('ziphi', simd_ext, from_typ),
+        'unziplo': lambda: unzip_half('unziplo', simd_ext, from_typ),
+        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -2605,4 +3035,4 @@ def get_impl(func, simd_ext, from_typ, to_typ):
     if not func in impls:
         return common.NOT_IMPLEMENTED
     else:
-        return impls[func]
+        return impls[func]()

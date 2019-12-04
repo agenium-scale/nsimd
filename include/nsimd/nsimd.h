@@ -26,14 +26,16 @@ SOFTWARE.
 #define NSIMD_H
 
 /* ------------------------------------------------------------------------- */
-/* Compiler detection */
+/* Compiler detection (order matters https://stackoverflow.com/a/28166605) */
 
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
-#elif defined(__GNUC__)
-  #define NSIMD_IS_GCC
+#elif defined(__INTEL_COMPILER)
+  #define NSIMD_IS_ICC
 #elif defined(__clang__)
   #define NSIMD_IS_CLANG
+#elif defined(__GNUC__) || defined(__GNUG__)
+  #define NSIMD_IS_GCC
 #elif defined(__NVCC__)
   #define NSIMD_IS_NVCC
 #endif
@@ -73,10 +75,14 @@ SOFTWARE.
 #ifdef NSIMD_IS_MSVC
   #define NSIMD_C 1999
 #else
-  #if __STDC_VERSION__ == 199901L
-    #define NSIMD_C 1999
-  #elif __STDC_VERSION__ >= 201112L
-    #define NSIMD_C 2011
+  #ifdef __STDC_VERSION__
+    #if __STDC_VERSION__ == 199901L
+      #define NSIMD_C 1999
+    #elif __STDC_VERSION__ >= 201112L
+      #define NSIMD_C 2011
+    #else
+      #define NSIMD_C 1989
+    #endif
   #else
     #define NSIMD_C 1989
   #endif
@@ -88,7 +94,11 @@ SOFTWARE.
 #ifdef NSIMD_IS_MSVC
   #define NSIMD__cplusplus _MSVC_LANG
 #else
-  #define NSIMD__cplusplus __cplusplus
+  #ifdef __cplusplus
+    #define NSIMD__cplusplus __cplusplus
+  #else
+    #define NSIMD__cplusplus 0
+  #endif
 #endif
 
 #if NSIMD__cplusplus > 0 && NSIMD__cplusplus < 201103L
@@ -305,6 +315,7 @@ SOFTWARE.
 
   #define NSIMD_PLATFORM arm
   #define NSIMD_SIMD sve
+  #include <arm_neon.h>
   #include <arm_sve.h>
 
 #else
@@ -416,7 +427,7 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
 NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
   int i, ret = 0;
   for (i = 0; i < 32; i++) {
-    ret += (a >> i) & 1;
+    ret += (int)((a >> i) & 1);
   }
   return ret;
 }
@@ -424,7 +435,7 @@ NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
-    ret += (a >> i) & 1;
+    ret += (int)((a >> i) & 1);
   }
   return ret;
 }
