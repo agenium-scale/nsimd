@@ -2518,7 +2518,7 @@ def adds(simd_ext, from_typ):
 
             const nsimd_{simd_ext}_vu{num_bits} xor_ux_uy = nsimd_xorb_{simd_ext}_u{num_bits}(ux, uy);
             const nsimd_{simd_ext}_vu{num_bits} xor_uy_res = nsimd_xorb_{simd_ext}_u{num_bits}(uy, res);
-            const nsimd_{simd_ext}_vu{num_bits} not_xor_uy_res = nsimd_notb_{simd_ext}_u{num_bits}(xor_uy_res)
+            const nsimd_{simd_ext}_vu{num_bits} not_xor_uy_res = nsimd_notb_{simd_ext}_u{num_bits}(xor_uy_res);
 
             const nsimd_{simd_ext}_vu{num_bits} u_orb = nsimd_orb_{simd_ext}_u{num_bits}(xor_ux_uy, not_xor_uy_res);
             const nsimd_{simd_ext}_vi{num_bits} i_orb = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_orb);
