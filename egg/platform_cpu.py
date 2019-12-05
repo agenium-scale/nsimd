@@ -640,7 +640,7 @@ def len1(typ):
 
 # -----------------------------------------------------------------------------
 
-def adds_itypes(assign_max, assign_sum_if_ok):
+def adds_itypes(assign_max, assign_add_if_ok):
     check_overflow = \
            'if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))'
     assign_max_if_overflow = check_overflow + '\n' + assign_max
@@ -652,17 +652,17 @@ def adds_itypes(assign_max, assign_sum_if_ok):
 
     algo = assign_max_if_overflow + '\n' + \
            assign_min_if_underflow + '\n' + \
-           assign_sum_if_ok
+           assign_add_if_ok
 
     return algo
 
 
-def adds_utypes(assign_max, assign_sum_if_ok):
+def adds_utypes(assign_max, assign_add_if_ok):
     check_overflow = 'if ({in1}.v{{i}} > {max} - {in0}.v{{i}})'
     assign_max_if_overflow = check_overflow + '\n' + assign_max
 
     algo = assign_max_if_overflow + '\n' + \
-           assign_sum_if_ok
+           assign_add_if_ok
 
     return algo
 
@@ -675,22 +675,17 @@ def adds(typ):
     if not typ in common.limits.keys():
       raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
 
-    type_limits = common.limits[typ]
-
     assign_max = '{{{{ ret.v{{i}} = {max}; }}}}'
     add = '{{{{ ret.v{{i}} = (typ)({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
-    assign_sum_if_ok = 'else ' + '\n' + add
+    assign_add_if_ok = 'else ' + '\n' + add
 
     if typ in common.itypes:
-        algo = adds_itypes(assign_max, assign_sum_if_ok)
+        algo = adds_itypes(assign_max, assign_add_if_ok)
 
-    elif typ in common.utypes:
-        algo = adds_utypes(assign_max, assign_sum_if_ok)
-
-     # overkill but ...
     else:
-        raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
+        algo = adds_utypes(assign_max, assign_add_if_ok)
 
+    type_limits = common.limits[typ]
     content = repeat_stmt(algo.format(**type_limits, **fmtspec), typ)
 
     return '''nsimd_cpu_v{typ} ret;
