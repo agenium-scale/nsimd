@@ -650,19 +650,36 @@ def adds(typ):
 
     type_limits = common.limits[typ]
 
-    content = repeat_stmt(
-      '''if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))
-          {{{{
-            ret.v{{i}} = {max};
-          }}}}
-          else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))
-          {{{{
-            ret.v{{i}} = {min};
-          }}}}
-          else
-          {{{{
-            ret.v{{i}} = {in0}.v{{i}} + {in1}.v{{i}};
-          }}}}'''.format(**type_limits, **fmtspec), typ)
+    assign_max = '{{{{ ret.v{{i}} = {max}; }}}}'
+    add = '{{{{ ret.v{{i}} = (typ)({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
+    assign_sum_if_ok = 'else ' + '\n' + add
+
+    if typ in common.itypes:
+        check_overflow = \
+               'if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))'
+        assign_max_if_overflow = check_overflow + '\n' + assign_max
+
+        check_underflow = \
+               'else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))'
+        assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
+        assign_min_if_underflow = check_underflow + '\n' + assign_min
+
+        algo = assign_max_if_overflow + '\n' + \
+               assign_min_if_underflow + '\n' + \
+               assign_sum_if_ok
+
+    elif typ in common.utypes:
+        check_overflow = 'if ({in1}.v{{i}} > {max} - {in0}.v{{i}})'
+        assign_max_if_overflow = check_overflow + '\n' + assign_max
+
+        algo = assign_max_if_overflow + '\n' + \
+               assign_sum_if_ok
+
+     # overkill but ...
+    else:
+        raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
+
+    content = repeat_stmt(algo.format(**type_limits, **fmtspec), typ)
 
     return '''nsimd_cpu_v{typ} ret;
 
@@ -673,6 +690,7 @@ def adds(typ):
 # -----------------------------------------------------------------------------
 
 def subs():
+    ## TODO: update following changes in adds
     return '''return nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}));'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
