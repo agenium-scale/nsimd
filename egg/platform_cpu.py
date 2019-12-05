@@ -696,9 +696,34 @@ def adds(typ):
 
 # -----------------------------------------------------------------------------
 
-def subs():
-    ## TODO: update following changes in adds
-    return '''return nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}));'''.format(**fmtspec)
+def subs(typ):
+
+    if typ in common.itypes:
+      return '''return nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}));'''.format(**fmtspec)
+
+    if typ in common.ftypes:
+      return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+
+    if typ not in common.utypes:
+      raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
+
+    check_underflow = 'if ({in0}.v{{i}} < {min} + {in1}.v{{i}})'
+    assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
+    assign_min_if_underflow = check_underflow + '\n' + assign_min
+    sub = '{{{{ ret.v{{i}} = (typ)({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
+    assign_sub_if_ok = 'else ' + '\n' + sub
+
+    algo = assign_min_if_underflow + '\n' + \
+           assign_sub_if_ok
+
+    type_limits = common.limits[typ]
+    content = repeat_stmt(algo.format(**type_limits, **fmtspec), typ)
+
+    return '''nsimd_cpu_v{typ} ret;
+
+               {content}
+
+               return ret;'''.format(typ = typ, content = content)
 
 # -----------------------------------------------------------------------------
 
@@ -838,7 +863,7 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'div': lambda: op2('/', from_typ),
         'sub': lambda: op2('-', from_typ),
         'adds' : lambda: adds(from_typ),
-        'subs' : lambda: subs(),
+        'subs' : lambda: subs(from_typ),
         'orb': lambda: bitwise2('|', from_typ),
         'orl': lambda: lop2('|', from_typ),
         'andb': lambda: bitwise2('&', from_typ),
