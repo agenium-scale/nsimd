@@ -640,6 +640,33 @@ def len1(typ):
 
 # -----------------------------------------------------------------------------
 
+def adds_itypes(assign_max, assign_sum_if_ok):
+    check_overflow = \
+           'if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))'
+    assign_max_if_overflow = check_overflow + '\n' + assign_max
+
+    check_underflow = \
+           'else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))'
+    assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
+    assign_min_if_underflow = check_underflow + '\n' + assign_min
+
+    algo = assign_max_if_overflow + '\n' + \
+           assign_min_if_underflow + '\n' + \
+           assign_sum_if_ok
+
+    return algo
+
+
+def adds_utypes(assign_max, assign_sum_if_ok):
+    check_overflow = 'if ({in1}.v{{i}} > {max} - {in0}.v{{i}})'
+    assign_max_if_overflow = check_overflow + '\n' + assign_max
+
+    algo = assign_max_if_overflow + '\n' + \
+           assign_sum_if_ok
+
+    return algo
+
+
 def adds(typ):
     
     if typ in common.ftypes:
@@ -655,25 +682,10 @@ def adds(typ):
     assign_sum_if_ok = 'else ' + '\n' + add
 
     if typ in common.itypes:
-        check_overflow = \
-               'if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))'
-        assign_max_if_overflow = check_overflow + '\n' + assign_max
-
-        check_underflow = \
-               'else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))'
-        assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
-        assign_min_if_underflow = check_underflow + '\n' + assign_min
-
-        algo = assign_max_if_overflow + '\n' + \
-               assign_min_if_underflow + '\n' + \
-               assign_sum_if_ok
+        algo = adds_itypes(assign_max, assign_sum_if_ok)
 
     elif typ in common.utypes:
-        check_overflow = 'if ({in1}.v{{i}} > {max} - {in0}.v{{i}})'
-        assign_max_if_overflow = check_overflow + '\n' + assign_max
-
-        algo = assign_max_if_overflow + '\n' + \
-               assign_sum_if_ok
+        algo = adds_utypes(assign_max, assign_sum_if_ok)
 
      # overkill but ...
     else:
