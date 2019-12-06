@@ -673,10 +673,10 @@ def adds(typ):
       return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
     if not typ in common.limits.keys():
-      raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
+      raise ValueError('Type not implemented in platform_cpu adds({typ})'.format(typ))
 
     assign_max = '{{{{ ret.v{{i}} = {max}; }}}}'
-    add = '{{{{ ret.v{{i}} = (typ)({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
+    add = '{{{{ ret.v{{i}} = ({typ})({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
     assign_add_if_ok = 'else ' + '\n' + add
 
     if typ in common.itypes:
@@ -705,12 +705,12 @@ def subs(typ):
       return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
     if typ not in common.utypes:
-      raise ValueError('Type not implemented in platform_cpu adds(typ)"{}"'.format(typ))
+      raise ValueError('Type not implemented in platform_cpu adds({typ})'.format(typ))
 
     check_underflow = 'if ({in0}.v{{i}} < {min} + {in1}.v{{i}})'
     assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
     assign_min_if_underflow = check_underflow + '\n' + assign_min
-    sub = '{{{{ ret.v{{i}} = (typ)({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
+    sub = '{{{{ ret.v{{i}} = ({typ})({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
     assign_sub_if_ok = 'else ' + '\n' + sub
 
     algo = assign_min_if_underflow + '\n' + \
