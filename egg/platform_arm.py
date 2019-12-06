@@ -61,19 +61,21 @@ def suf(typ):
         return typ
 
 neon = ['neon128', 'aarch64']
-sve = ['sve']
+fixed_sized_sve = ['sve128', 'sve256', 'sve512', 'sve1024', 'sve2048']
+sve = ['sve'] + fixed_sized_sve
 fmtspec = {}
 
 # -----------------------------------------------------------------------------
 # Implementation of mandatory functions for this module
 
 def get_simd_exts():
-    return ['neon128', 'aarch64', 'sve']
+    return ['neon128', 'aarch64', 'sve', 'sve128', 'sve256', 'sve512',
+            'sve1024', 'sve2048']
 
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
-    if simd_ext == 'sve':
+    if simd_ext in sve:
         return False
     else:
         return True
@@ -98,6 +100,8 @@ def get_type(simd_ext, typ):
             return neon_typ(typ)
     elif simd_ext == 'sve':
         return sve_typ(typ)
+    elif simd_ext in fixed_sized_sve:
+        return ''
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
@@ -137,7 +141,7 @@ def get_logical_type(simd_ext, typ):
 def get_nb_registers(simd_ext):
     if simd_ext in neon:
         return '16'
-    elif simd_ext == 'sve':
+    elif simd_ext in sve:
         return '32'
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
