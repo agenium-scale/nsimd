@@ -30,7 +30,7 @@ function(get_simd_infos out simd simd_optional)
         AVX AVX2 AVX512_KNL AVX512_SKYLAKE
         NEON64 NEON128
         AARCH64
-        SVE
+        SVE SVE128 SVE256 SVE512 SVE1024 SVE2048
     )
     set(simd_optionals
         FMA FP16
