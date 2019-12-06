@@ -144,26 +144,10 @@ OUTPUT_TO_DOWN_TYPES      = 3
 # -----------------------------------------------------------------------------
 # SIMD type
 
-simds = [
-    'cpu',
-    'sse2',
-    'sse42',
-    'avx',
-    'fma4',
-    'avx2',
-    'avx512_knl',
-    'avx512_skylake',
-    'neon128',
-    'aarch64',
-    'sve'
-]
-
 x86_simds = [
-    'cpu',
     'sse2',
     'sse42',
     'avx',
-    'fma4',
     'avx2',
     'avx512_knl',
     'avx512_skylake',
@@ -172,8 +156,15 @@ x86_simds = [
 arm_simds = [
     'neon128',
     'aarch64',
-    'sve'
+    'sve',
+    'sve128',
+    'sve256',
+    'sve512',
+    'sve1024',
+    'sve2048'
 ]
+
+simds = ['cpu'] + x86_simds + arm_simds
 
 simds_deps = {
     'cpu': ['cpu'],
@@ -187,6 +178,11 @@ simds_deps = {
     'neon128': ['cpu', 'neon128'],
     'aarch64': ['cpu', 'aarch64'],
     'sve': ['cpu', 'aarch64', 'sve'],
+    'sve128': ['cpu', 'aarch64', 'sve128'],
+    'sve256': ['cpu', 'aarch64', 'sve256'],
+    'sve512': ['cpu', 'aarch64', 'sve512'],
+    'sve1024': ['cpu', 'aarch64', 'sve1024'],
+    'sve2048': ['cpu', 'aarch64', 'sve2048']
 }
 
 ftypes = ['f64', 'f32', 'f16']
@@ -963,6 +959,11 @@ def sleef_name(name, simd, typ, ulp=None):
         'neon128': types_128,
         'aarch64': types_128,
         'sve': types_unknown,
+        'sve128': types_unknown,
+        'sve256': types_unknown,
+        'sve512': types_unknown,
+        'sve1024': types_unknown,
+        'sve2048': types_unknown
     })[simd][typ]
     ## 4. (We cannot really guess that...
     ##     Instead you have to add bench manually)

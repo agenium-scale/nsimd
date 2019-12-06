@@ -222,6 +222,26 @@ SOFTWARE.
   #define NSIMD_SVE
 #endif
 
+#if defined(SVE128) && !defined(NSIMD_SVE128)
+  #define NSIMD_SVE128
+#endif
+
+#if defined(SVE256) && !defined(NSIMD_SVE256)
+  #define NSIMD_SVE256
+#endif
+
+#if defined(SVE512) && !defined(NSIMD_SVE512)
+  #define NSIMD_SVE512
+#endif
+
+#if defined(SVE1024) && !defined(NSIMD_SVE1024)
+  #define NSIMD_SVE1024
+#endif
+
+#if defined(SVE2048) && !defined(NSIMD_SVE2048)
+  #define NSIMD_SVE2048
+#endif
+
 /* PPC */
 
 #if (defined(VMX) || defined(ALTIVEC)) && !defined(NSIMD_VMX)
@@ -318,6 +338,41 @@ SOFTWARE.
   #include <arm_neon.h>
   #include <arm_sve.h>
 
+#elif defined(NSIMD_SVE128)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve128
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE256)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve256
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE512)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve512
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE1024)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve1024
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE2048)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve2048
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
 #else
 
   #define NSIMD_SIMD cpu
@@ -362,7 +417,9 @@ SOFTWARE.
 /* Sorter typedefs for floatting point types */
 
 #if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) && \
-     defined(NSIMD_FP16)) || defined(NSIMD_SVE)
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) || \
+     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || \
+     defined(NSIMD_SVE1024) || defined(NSIMD_SVE2048)
   #define NSIMD_NATIVE_FP16
 #endif
 
