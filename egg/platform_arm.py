@@ -1860,12 +1860,15 @@ def zip_unzip_half(func, simd_ext, typ):
                        i = '0' if func in ['zip1', 'uzp1'] else '1')
 
 def zip_unzip(func, simd_ext, typ):
+    prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
     lo_hi = '''\
     nsimd_{simd_ext}_v{typ}x2 ret;
     ret.v0 = nsimd_{func}lo_{simd_ext}_{typ}({in0}, {in1});
     ret.v1 = nsimd_{func}hi_{simd_ext}_{typ}({in0}, {in1});
     return ret;
     '''.format(func='zip' if func == 'zip' else 'unzip', **fmtspec)
+    neon_typ = '{}{}x{}x2_t'. \
+        format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
     if simd_ext in ['aarch64', 'sve']:
         content = '''\
         nsimd_{simd_ext}_v{typ}x2 ret;
@@ -1885,9 +1888,14 @@ def zip_unzip(func, simd_ext, typ):
         else:
             return content
     else:
-       content = 'return v{func}q_{suf}({in0}, {in1});'\
-           .format(func=func, **fmtspec)
-       if typ in ['u64', 's64', 'f64']:
+       content = '''\
+       nsimd_{simd_ext}_v{typ}x2 ret;
+       {neon_typ} tmp = v{func}q_{suf}({in0}, {in1});
+       ret.v0 = tmp.val[0];
+       ret.v1 = tmp.val[1];
+       return ret;'''\
+           .format(func=func, neon_typ=neon_typ, **fmtspec)
+       if typ in ['u64', 'i64', 'f64']:
            return lo_hi
        elif typ == 'f16':
            return '''\
