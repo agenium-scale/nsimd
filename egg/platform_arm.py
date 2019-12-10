@@ -202,6 +202,14 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
                   '''.format(**fmtspec)
+    if func == 'zip':
+        ret += '''#include <nsimd/arm/{simd_ext}/ziplo.h>
+                  #include <nsimd/arm/{simd_ext}/ziphi.h>
+                  '''.format(**fmtspec)
+    if func == 'unzip':
+        ret += '''#include <nsimd/arm/{simd_ext}/unziplo.h>
+                  #include <nsimd/arm/{simd_ext}/unziphi.h>
+                  '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -1852,54 +1860,44 @@ def zip_unzip_half(func, simd_ext, typ):
                        i = '0' if func in ['zip1', 'uzp1'] else '1')
 
 def zip_unzip(func, simd_ext, typ):
-    content = '''\
+    lo_hi = '''\
     nsimd_{simd_ext}_v{typ}x2 ret;
-    ret.v0 = {s}vzip1q_{suf}({in0}, {in1});
-    ret.v1 = {s}vzip2q_{suf}({in0}, {in1});
-    return ret;'''.format(s = 's' if simd_ext == 'sve' else '', **fmtspec)
+    ret.v0 = nsimd_{func}lo_{simd_ext}_{typ}({in0}, {in1});
+    ret.v1 = nsimd_{func}hi_{simd_ext}_{typ}({in0}, {in1});
+    return ret;
+    '''.format(func='zip' if func == 'zip' else 'unzip', **fmtspec)
     if simd_ext in ['aarch64', 'sve']:
+        content = '''\
+        nsimd_{simd_ext}_v{typ}x2 ret;
+        ret.v0 = {s}v{func}1q_{suf}({in0}, {in1});
+        ret.v1 = {s}v{func}2q_{suf}({in0}, {in1});
+        return ret;'''.format(s = 's' if simd_ext == 'sve' else '',
+                              func=func, **fmtspec)
         if typ == 'f16':
             return '''\
             #ifdef NSIMD_FP16
             {c}
             #else
-            nsimd_{simd_ext}_vf16x2 ret;
-            ret[0].v0 = {s}vzip1q_f32({in0}.v0, {in1}.v0);
-            ret[0].v1 = {s}vzip1q_f32({in0}.v1, {in1}.v1);
-            ret[1].v0 = {s}vzip2q_f32({in0}.v0, {in1}.v0);
-            ret[1].v1 = {s}vzip2q_f32({in0}.v1, {in1}.v1);
-            return ret;
-            #endif
-            '''.format(c=content,
-                       s = 's' if simd_ext == 'sve' else '', **fmtspec)
+            {default}
+            #endif'''.\
+                format(c=content, default=lo_hi, s = 's' if simd_ext == 'sve' else '',
+                       **fmtspec)
         else:
             return content
     else:
-       content = 'return vzipq_{suf}({in0}, {in1});'.format(**fmtspec)
+       content = 'return v{func}q_{suf}({in0}, {in1});'\
+           .format(func=func, **fmtspec)
        if typ in ['u64', 's64', 'f64']:
-           return '''\
-           nsimd_{simd_ext}_v{typ}x2 ret;
-           ret[0].v0 = {in0}.v0;
-           ret[0].v1 = {in1}.v0;
-           ret[1].v0 = {in0}.v1;
-           ret[1].v1 = {in1}.v1;
-           return ret;
-           '''.format(**fmtspec)
+           return lo_hi
        elif typ == 'f16':
            return '''\
            #ifdef NSIMD_FP16
-           {}
+           {content}
            #else
-           nsimd_{simd_ext}_vf16x2 ret;
-           float32x4x2_t v_tmp0 = vzipq_f32({in0}.v0, {in1}.v0);
-           float32x4x2_t v_tmp1 = vzipq_f32({in0}.v1, {in1}.v1);
-           ret[1].v0 = v_tmp0.v0;
-           ret[1].v1 = v_tmp0.v1;
-           ret[0].v0 = v_tmp1.v0;
-           ret[0].v1 = v_tmp1.v1;
-           return ret;
-           #endif
-           '''.format(content, **fmtspec)
+           {default}
+           #endif'''.\
+               format(content=content, default=lo_hi,
+                      f='zip' if func == 'zip' else 'unzip', **fmtspec)
        else:
            return content
                         
@@ -2003,7 +2001,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'ziplo': zip_unzip_half("zip1", simd_ext, from_typ),
         'ziphi': zip_unzip_half("zip2", simd_ext, from_typ),
         'unziplo': zip_unzip_half("uzp1", simd_ext, from_typ),
-        'unziphi': zip_unzip_half("uzp2", simd_ext, from_typ)
+        'unziphi': zip_unzip_half("uzp2", simd_ext, from_typ),
+        'zip': zip_unzip("zip", simd_ext, from_typ),
+        'unzip': zip_unzip("uzp", simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

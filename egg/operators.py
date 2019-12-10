@@ -1003,6 +1003,14 @@ class Ziphi(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
+
+class Zip(Operator):
+    full_name = 'zip'
+    signature = 'vx2 zip v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
     
 class Unziplo(Operator):
     full_name = 'unziplo'
@@ -1017,6 +1025,14 @@ class Unziphi(Operator):
     signature = 'v unziphi v v'
     types = common.types
     domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unzip(Operator):
+    full_name = 'unzip'
+    signature = 'vx2 unzip v v'
+    types = common.types
+    fomain = Domain('R')
     categories = [DocMisc]
     do_bench = False
     
