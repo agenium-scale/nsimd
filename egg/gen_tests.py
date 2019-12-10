@@ -1258,7 +1258,7 @@ def gen_unpack_half(opts, op, typ, lang):
         rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
         / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{head}
 
@@ -1431,7 +1431,7 @@ def gen_unpack(opts, op, typ, lang):
     else:
         comp = 'vout[vi] != vout_ref[vi]'
         
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{head}
         
