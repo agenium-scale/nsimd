@@ -114,7 +114,17 @@ NSIMD_STRUCT packl;
 
 template <typename T, typename SimdExt>
 NSIMD_STRUCT packl<T, 1, SimdExt> {
-  typename simd_traits<T, SimdExt>::simd_vectorl car;
+  typedef typename simd_traits<T, SimdExt>::simd_vectorl simd_vectorl;
+  simd_vectorl car;
+
+  // Default ctor
+  packl() {}
+
+  // Ctor taking a SIMD vector
+  packl(simd_vectorl v) { car = v; }
+
+  // Underlying native SIMD vector getter
+  simd_vectorl native_register() const { return car; }
 
   typedef T value_type;
   typedef SimdExt simd_ext;

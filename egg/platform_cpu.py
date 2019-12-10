@@ -205,9 +205,11 @@ def not1(typ):
 
 def minmax2(minmax, typ):
     op = '<' if minmax == 'min' else '>'
-    return func_body('''ret.v{{i}} = {in0}.v{{i}} {op} {in1}.v{{i}} ?
-                                     {in0}.v{{i}} : {in1}.v{{i}};'''. \
-                                     format(op=op, **fmtspec), typ)
+    typ2 = 'f32' if typ == 'f16' else typ
+    return func_body(
+           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} {op} {in1}.v{{i}} ?
+                                    {in0}.v{{i}} : {in1}.v{{i}});'''. \
+                                    format(typ2=typ2, op=op, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -355,9 +357,9 @@ def cmp2(op, typ):
     return '''nsimd_cpu_vl{typ} ret;
               {content}
               return ret;'''.format(content=repeat_stmt(
-              '''ret.v{{i}} = ({in0}.v{{i}} {op} {in1}.v{{i}}
-                            ? (u32)-1 : (u32)0);'''. \
-                            format(op=op, **fmtspec), typ), **fmtspec)
+              '''ret.v{{i}} = (u32)({in0}.v{{i}} {op} {in1}.v{{i}}
+                                    ? -1 : 0);'''. \
+                                    format(op=op, **fmtspec), typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -426,14 +428,14 @@ def store_deg234(typ, deg):
 def loadl(typ):
     if typ == 'f16':
         content = repeat_stmt(
-                  '''ret.v{{i}} = nsimd_u16_to_f32(
-                                    ((u16 *){in0})[{{i}}]) == 0.0f
-                                ? (u32)0 : (u32)-1;'''.format(**fmtspec), typ)
+                  '''ret.v{{i}} = (u32)(nsimd_u16_to_f32(((u16 *){in0})[{{i}}])
+                                      == 0.0f ? 0 : -1);'''. \
+                                      format(**fmtspec), typ)
     else:
         content = repeat_stmt(
-                  '''ret.v{{i}} = {in0}[{{i}}] == ({typ})0
-                                ? (u32)0 : (u32)-1;'''. \
-                                format(**fmtspec), typ)
+                  '''ret.v{{i}} = (u32)({in0}[{{i}}] == ({typ})0
+                                        ? 0 : -1);'''. \
+                                        format(**fmtspec), typ)
     return '''nsimd_cpu_vl{typ} ret;
               {content}
               return ret;'''.format(content=content, **fmtspec)
@@ -455,22 +457,25 @@ def store(typ):
 def storel(typ):
     if typ == 'f16':
         content = repeat_stmt(
-                  '''((u16*){in0})[{{i}}] = {in1}.v{{i}} == (u32)0
-                                          ? nsimd_f32_to_u16(0.0f)
-                                          : nsimd_f32_to_u16(1.0f);'''. \
-                                          format(**fmtspec), typ)
+                  '''((u16*){in0})[{{i}}] = (u16)({in1}.v{{i}} == (u32)0
+                                            ? nsimd_f32_to_u16(0.0f)
+                                            : nsimd_f32_to_u16(1.0f));'''. \
+                                            format(**fmtspec), typ)
     else:
-        content = repeat_stmt('''{in0}[{{i}}] = {in1}.v{{i}} == (u32)0
-                                              ? ({typ})0 : ({typ})1;'''. \
-                                              format(**fmtspec), typ)
+        content = repeat_stmt(
+                  '''{in0}[{{i}}] = ({typ})({in1}.v{{i}} == (u32)0
+                                  ? ({typ})0 : ({typ})1);'''. \
+                                  format(**fmtspec), typ)
     return content
 
 # -----------------------------------------------------------------------------
 
 def if_else1(typ):
-    return func_body('''ret.v{{i}} = {in0}.v{{i}} != (u32)0
-                                   ? {in1}.v{{i}} : {in2}.v{{i}};'''. \
-                                   format(**fmtspec), typ)
+    typ2 = 'f32' if typ == 'f16' else typ
+    return func_body(
+           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} != (u32)0
+                                    ? {in1}.v{{i}} : {in2}.v{{i}});'''. \
+                                    format(typ2=typ2, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -478,9 +483,10 @@ def abs1(typ):
     if typ in common.utypes:
         return func_body('ret.v{{i}} = {in0}.v{{i}};'.format(**fmtspec), typ)
     typ2 = 'f32' if typ == 'f16' else typ
-    return func_body('''ret.v{{i}} = ({typ2})({in0}.v{{i}} < ({typ2})0
-                                   ? -{in0}.v{{i}} : {in0}.v{{i}});'''. \
-                                   format(typ2=typ2, **fmtspec), typ)
+    return func_body(
+           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} < ({typ2})0
+                                    ? -{in0}.v{{i}} : {in0}.v{{i}});'''. \
+                                    format(typ2=typ2, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -653,7 +659,7 @@ def to_logical1(typ):
 
 def to_mask1(typ):
     logical_to_unsigned = \
-        'ret.v{{i}} = ({in0}.v{{i}} ? ({utyp})-1 : ({utyp})0);'. \
+        'ret.v{{i}} = ({utyp})({in0}.v{{i}} ? -1 : 0);'. \
         format(**fmtspec)
     if typ in common.utypes:
         return func_body(logical_to_unsigned, typ)
@@ -757,85 +763,87 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
     }
 
     impls = {
-        'loada': load(from_typ),
-        'load2a': load_deg234(from_typ, 2),
-        'load3a': load_deg234(from_typ, 3),
-        'load4a': load_deg234(from_typ, 4),
-        'loadu': load(from_typ),
-        'load2u': load_deg234(from_typ, 2),
-        'load3u': load_deg234(from_typ, 3),
-        'load4u': load_deg234(from_typ, 4),
-        'storea': store(from_typ),
-        'store2a': store_deg234(from_typ, 2),
-        'store3a': store_deg234(from_typ, 3),
-        'store4a': store_deg234(from_typ, 4),
-        'storeu': store(from_typ),
-        'store2u': store_deg234(from_typ, 2),
-        'store3u': store_deg234(from_typ, 3),
-        'store4u': store_deg234(from_typ, 4),
-        'loadla': loadl(from_typ),
-        'loadlu': loadl(from_typ),
-        'storela': storel(from_typ),
-        'storelu': storel(from_typ),
-        'add': op2('+', from_typ),
-        'mul': op2('*', from_typ),
-        'div': op2('/', from_typ),
-        'sub': op2('-', from_typ),
-        'orb': bitwise2('|', from_typ),
-        'orl': lop2('|', from_typ),
-        'andb': bitwise2('&', from_typ),
-        'andnotb': andnot2(from_typ),
-        'andnotl': landnot2(from_typ),
-        'andl': lop2('&', from_typ),
-        'xorb': bitwise2('^', from_typ),
-        'xorl': lop2('^', from_typ),
-        'min': minmax2('min', from_typ),
-        'max': minmax2('max', from_typ),
-        'notb': not1(from_typ),
-        'notl': lnot1(from_typ),
-        'sqrt': sqrt1(from_typ),
-        'set1': set1(from_typ),
-        'shr': bitwise1_param('>>', from_typ),
-        'shl': bitwise1_param('<<', from_typ),
-        'eq': cmp2('==', from_typ),
-        'ne': cmp2('!=', from_typ),
-        'gt': cmp2('>', from_typ),
-        'ge': cmp2('>=', from_typ),
-        'lt': cmp2('<', from_typ),
-        'le': cmp2('<=', from_typ),
-        'len': len1(from_typ),
-        'if_else1': if_else1(from_typ),
-        'abs': abs1(from_typ),
-        'fma': fma_fms('fma', from_typ),
-        'fnma': fma_fms('fnma', from_typ),
-        'fms': fma_fms('fms', from_typ),
-        'fnms': fma_fms('fnms', from_typ),
-        'ceil': ceil1(from_typ),
-        'floor': floor1(from_typ),
-        'trunc': trunc1(from_typ),
-        'round_to_even': round_to_even1(from_typ),
-        'all': all_any(from_typ, 'all'),
-        'any': all_any(from_typ, 'any'),
-        'reinterpret': reinterpret1(from_typ, to_typ),
-        'reinterpretl': reinterpretl1(from_typ, to_typ),
-        'cvt': convert1(from_typ, to_typ),
-        'rec11': rec_rec11(from_typ),
-        'rsqrt11': rsqrt11(from_typ),
-        'rec': rec_rec11(from_typ),
-        'neg': neg1(from_typ),
-        'nbtrue': nbtrue1(from_typ),
-        'reverse': reverse1(from_typ),
-        'addv': addv1(from_typ),
-        'upcvt': upcvt1(from_typ, to_typ),
-        'downcvt': downcvt2(from_typ, to_typ),
-        'to_logical': to_logical1(from_typ),
-        'to_mask': to_mask1(from_typ),
-        'ziplo': zip_half('ziplo', from_typ),
-        'ziphi': zip_half('ziphi', from_typ),
-        'unziplo': unzip_half('unziplo', from_typ),
-        'unziphi': unzip_half('unziphi', from_typ),
-        'zip': zip(from_typ),
-        'unzip': unzip(from_typ)
+        'loada': lambda: load(from_typ),
+        'load2a': lambda: load_deg234(from_typ, 2),
+        'load3a': lambda: load_deg234(from_typ, 3),
+        'load4a': lambda: load_deg234(from_typ, 4),
+        'loadu': lambda: load(from_typ),
+        'load2u': lambda: load_deg234(from_typ, 2),
+        'load3u': lambda: load_deg234(from_typ, 3),
+        'load4u': lambda: load_deg234(from_typ, 4),
+        'storea': lambda: store(from_typ),
+        'store2a': lambda: store_deg234(from_typ, 2),
+        'store3a': lambda: store_deg234(from_typ, 3),
+        'store4a': lambda: store_deg234(from_typ, 4),
+        'storeu': lambda: store(from_typ),
+        'store2u': lambda: store_deg234(from_typ, 2),
+        'store3u': lambda: store_deg234(from_typ, 3),
+        'store4u': lambda: store_deg234(from_typ, 4),
+        'loadla': lambda: loadl(from_typ),
+        'loadlu': lambda: loadl(from_typ),
+        'storela': lambda: storel(from_typ),
+        'storelu': lambda: storel(from_typ),
+        'add': lambda: op2('+', from_typ),
+        'mul': lambda: op2('*', from_typ),
+        'div': lambda: op2('/', from_typ),
+        'sub': lambda: op2('-', from_typ),
+        'orb': lambda: bitwise2('|', from_typ),
+        'orl': lambda: lop2('|', from_typ),
+        'andb': lambda: bitwise2('&', from_typ),
+        'andnotb': lambda: andnot2(from_typ),
+        'andnotl': lambda: landnot2(from_typ),
+        'andl': lambda: lop2('&', from_typ),
+        'xorb': lambda: bitwise2('^', from_typ),
+        'xorl': lambda: lop2('^', from_typ),
+        'min': lambda: minmax2('min', from_typ),
+        'max': lambda: minmax2('max', from_typ),
+        'notb': lambda: not1(from_typ),
+        'notl': lambda: lnot1(from_typ),
+        'sqrt': lambda: sqrt1(from_typ),
+        'set1': lambda: set1(from_typ),
+        'shr': lambda: bitwise1_param('>>', from_typ),
+        'shl': lambda: bitwise1_param('<<', from_typ),
+        'eq': lambda: cmp2('==', from_typ),
+        'ne': lambda: cmp2('!=', from_typ),
+        'gt': lambda: cmp2('>', from_typ),
+        'ge': lambda: cmp2('>=', from_typ),
+        'lt': lambda: cmp2('<', from_typ),
+        'le': lambda: cmp2('<=', from_typ),
+        'len': lambda: len1(from_typ),
+        'if_else1': lambda: if_else1(from_typ),
+        'abs': lambda: abs1(from_typ),
+        'fma': lambda: fma_fms('fma', from_typ),
+        'fnma': lambda: fma_fms('fnma', from_typ),
+        'fms': lambda: fma_fms('fms', from_typ),
+        'fnms': lambda: fma_fms('fnms', from_typ),
+        'ceil': lambda: ceil1(from_typ),
+        'floor': lambda: floor1(from_typ),
+        'trunc': lambda: trunc1(from_typ),
+        'round_to_even': lambda: round_to_even1(from_typ),
+        'all': lambda: all_any(from_typ, 'all'),
+        'any': lambda: all_any(from_typ, 'any'),
+        'reinterpret': lambda: reinterpret1(from_typ, to_typ),
+        'reinterpretl': lambda: reinterpretl1(from_typ, to_typ),
+        'cvt': lambda: convert1(from_typ, to_typ),
+        'rec11': lambda: rec_rec11(from_typ),
+        'rec8': lambda: rec_rec11(from_typ),
+        'rsqrt11': lambda: rsqrt11(from_typ),
+        'rsqrt8': lambda: rsqrt11(from_typ),
+        'rec': lambda: rec_rec11(from_typ),
+        'neg': lambda: neg1(from_typ),
+        'nbtrue': lambda: nbtrue1(from_typ),
+        'reverse': lambda: reverse1(from_typ),
+        'addv': lambda: addv1(from_typ),
+        'upcvt': lambda: upcvt1(from_typ, to_typ),
+        'downcvt': lambda: downcvt2(from_typ, to_typ),
+        'to_logical': lambda: to_logical1(from_typ),
+        'to_mask': lambda: to_mask1(from_typ),
+        'ziplo': lambda: zip_half('ziplo', from_typ),
+        'ziphi': lambda: zip_half('ziphi', from_typ),
+        'unziplo': lambda: unzip_half('unziplo', from_typ),
+        'unziphi': lambda: unzip_half('unziphi', from_typ),
+        'zip' : lambda : zip(from_typ),
+        'unzip' : lambda : unzip(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -843,4 +851,4 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         raise ValueError('Unknown from_type "{}"'.format(from_typ))
     if not func in impls:
         return common.NOT_IMPLEMENTED
-    return impls[func]
+    return impls[func]()

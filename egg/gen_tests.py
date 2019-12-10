@@ -209,7 +209,7 @@ int main(void) {{
   fprintf(stdout, STATUS "...\\n");
   fflush(stdout);
 
-  /* Fill input vector(s) with random */
+  /* Fill input vector(s) with random values */
   for (i = 0; i < SIZE; i++) {{
     {vin_rand}
   }}
@@ -265,9 +265,9 @@ def get_content(op, typ, lang):
                  format(cast=cast)
 
     # For signed types, make some positive and negative inputs
-    if op.name not in ['sqrt', 'rsqrt11'] and typ in common.itypes:
+    if op.name not in ['sqrt', 'rsqrt11', 'rsqrt8'] and typ in common.itypes:
         rand = '(2 * (rand() % 2) - 1) * {}'.format(rand)
-    if op.name not in ['sqrt', 'rsqrt11'] and typ in common.ftypes:
+    if op.name not in ['sqrt', 'rsqrt11', 'rsqrt8'] and typ in common.ftypes:
         rand = '({})(2 * (rand() % 2) - 1) * {}'.format(cast, rand)
 
     # Depending on function parameters, generate specific input, ...
@@ -489,9 +489,10 @@ def gen_test(opts, op, typ, lang, ulps):
             right = 'nsimd_out'
         relative_distance = relative_distance_c if lang == 'c_base' \
                             else relative_distance_cpp
-        if op.tests_ulps:
+        if op.tests_ulps != None:
             comp = 'return relative_distance({}, {}) > get_2th_power(-{nbits})'. \
-                   format(left, right, nbits='11' if typ != 'f16' else '9')
+                   format(left, right, nbits=op.tests_ulps \
+                          if typ != 'f16' else min(9, op.tests_ulps))
             extra_code = relative_distance
         elif op.src:
             if op.name in ulps:
@@ -580,7 +581,7 @@ def gen_test(opts, op, typ, lang, ulps):
             #pragma GCC diagnostic pop
             '''
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(template.format( \
             includes=includes, sizeof=common.sizeof(typ), typ=typ,
             op_name=op.name, year=date.today().year, comp=comp,
@@ -653,7 +654,7 @@ def gen_addv(opts, op, typ, lang):
                       (double)res) > get_2th_power(-{nbits})) {{
                     return EXIT_FAILURE;
                   }}'''.format(nbits=nbits[typ])
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
             ''' \
             {head}
@@ -710,7 +711,7 @@ def gen_all_any(opts, op, typ, lang):
     else:
         scalar0 = '({})0'.format(typ)
         scalar1 = '({})1'.format(typ)
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -740,7 +741,7 @@ def gen_all_any(opts, op, typ, lang):
                exit(EXIT_FAILURE);
              }}
 
-             /* Test with all elements to false */
+             /* Test with all elements set to false */
              for (i = 0; i < len; i++) {{
                buf[i] = {scalar0};
              }}
@@ -748,7 +749,7 @@ def gen_all_any(opts, op, typ, lang):
                exit(EXIT_FAILURE);
              }}
 
-             /* Test with only one element to true */
+             /* Test with only one element set to true */
              if (len > 1) {{
                buf[0] = {scalar1};
                if ({notl}{op_test}) {{
@@ -800,7 +801,7 @@ def gen_load_store(opts, op, typ, lang):
     else:
         rand = 'vin[i] = ({})(rand() % 10);'.format(typ)
         comp = 'vin[i] != vout[i]'
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -879,7 +880,7 @@ def gen_nbtrue(opts, op, typ, lang):
     else:
         scalar0 = '({})0'.format(typ)
         scalar1 = '({})1'.format(typ)
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -1020,7 +1021,7 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
     else:
         rand = '({}){}'.format(from_typ, rand)
         neq_test = 'in[j] != out[j]'
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -1088,7 +1089,7 @@ def gen_reverse(opts, op, typ, lang):
         init = 'in[ i ] = ({typ})(i + 1);'.format( typ=typ )
         comp = 'ok &= out[len - 1 - i] == in[i];'
 
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write(
         '''{includes}
 
@@ -1195,7 +1196,7 @@ def gen_unpack_half(opts, op, typ, lang):
         vc = nsimd::{op_name}(va1, va2);
         nsimd::storeu(&vout[i], vc);'''. \
             format(typ=typ, op_name=op.name)
-
+        
     op_test =  'step/(2*nb_lane)'
     if op.name in['ziphi', 'ziplo']:
         offset = 'int offset = {val};'.\
@@ -1305,7 +1306,7 @@ def gen_unpack_half(opts, op, typ, lang):
                   }}
                 }}
               }}
-  
+
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
               fflush(stdout);
               return EXIT_SUCCESS;

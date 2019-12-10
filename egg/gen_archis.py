@@ -108,7 +108,7 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
     if not common.can_create_filename(opts, filename):
         return
     op = None
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write( \
         '''#ifndef NSIMD_{PLATFORM}_{SIMD_EXT}_PUT_H
            #define NSIMD_{PLATFORM}_{SIMD_EXT}_PUT_H
@@ -162,7 +162,7 @@ def gen_archis_write_file(opts, op, platform, simd_ext, simd_dir):
     if not common.can_create_filename(opts, filename):
         return
     mod = opts.platforms[platform]
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef {guard}
                      #define {guard}
 
@@ -241,7 +241,7 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                                  typedef nsimd_{simd_ext}_vl{typ} simd_vectorl;
                                }};'''.format(typ=t, simd_ext=simd_ext)
                                for t in common.types])
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_{platform}_{SIMD_EXT}_TYPES_H
                      #define NSIMD_{platform}_{SIMD_EXT}_TYPES_H
 
