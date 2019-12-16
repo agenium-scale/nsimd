@@ -162,6 +162,10 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
                   #include <nsimd/x86/{simd_ext}/ziphi.h>
                   '''.format(simd_ext=simd_ext)
+    if func == 'unzip':
+        ret += '''#include <nsimd/x86/{simd_ext}/unziplo.h>
+                  #include <nsimd/x86/{simd_ext}/unziphi.h>
+                  '''.format(simd_ext=simd_ext)
     if simd_ext in avx512 and func in ['loadlu', 'loadla']:
         ret += '''
                   #if NSIMD_CXX > 0
@@ -2627,7 +2631,6 @@ def zip_half(func, simd_ext, typ):
             cast_high = '_mm512_castpd256_pd512'
             extract = '_mm512_extractf64x4_pd'
             insert = '_mm512_insertf64x4'
-
         if typ == 'f16':
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
@@ -2667,11 +2670,16 @@ def zip_half(func, simd_ext, typ):
                            cast_low=cast_low, extract=extract, **fmtspec),
                        cast_high=cast_high,
                        cast_low=cast_low,
-                       insert=insert, i=i, **fmtspec)
+                       insert=insert, i=i, **fmtspec) 
 
 def zip(simd_ext, typ):
-    return '// Not implemented yet'
-
+    return '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_ziplo_{simd_ext}_{typ}({in0}, {in1});
+    ret.v1 = nsimd_ziphi_{simd_ext}_{typ}({in0}, {in1});
+    return ret;
+    '''.format(**fmtspec)
+    
 # -----------------------------------------------------------------------------
 ## unzip functions
 
@@ -2753,7 +2761,7 @@ def unzip_half(func, simd_ext, typ):
             v0 = '_mm256_castsi256_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
             v1 = '_mm256_castsi256_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
             v_res = '_mm256_castps_si256(v_res)' if typ in ['i32', 'u32'] else 'v_res'
-            ret = 'ret'
+            ret = 'ret' 
             src = ret_template .\
                 format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
                        else '_MM_SHUFFLE(3, 1, 3, 1)',
@@ -2808,7 +2816,7 @@ def unzip_half(func, simd_ext, typ):
             '''.format(func=func, **fmtspec)
         else:
             return loop
-        ## AVX 512 --------------------------------------------------
+        ## AVX 512 --------------------------------------------------     
     else:
         if typ == 'f16':
             return '''\
@@ -2852,6 +2860,14 @@ def unzip_half(func, simd_ext, typ):
                 extract_hi1=extract(simd_ext, typ, HI, common.in1),
                 merge=setr(simd_ext, typ, 'v00', 'v01'), **fmtspec)
 
+def unzip(simd_ext, typ):
+    return '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_unziplo_{simd_ext}_{typ}({in0}, {in1});
+    ret.v1 = nsimd_unziphi_{simd_ext}_{typ}({in0}, {in1});
+    return ret;
+    '''.format(**fmtspec)
+    
 # -----------------------------------------------------------------------------
 ## get_impl function
 
@@ -2957,7 +2973,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'ziplo': lambda: zip_half('ziplo', simd_ext, from_typ),
         'ziphi': lambda: zip_half('ziphi', simd_ext, from_typ),
         'unziplo': lambda: unzip_half('unziplo', simd_ext, from_typ),
-        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ)
+        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ),
+        'zip' : lambda : zip(simd_ext, from_typ),
+        'unzip' : lambda : unzip(simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

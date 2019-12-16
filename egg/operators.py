@@ -1097,6 +1097,54 @@ class Unziphi(Operator):
     categories = [DocMisc]
     do_bench = False
 
+class Ziplo(Operator):
+    full_name = 'ziplo'
+    signature = 'v ziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    
+class Ziphi(Operator):
+    full_name = 'ziphi'
+    signature = 'v ziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Zip(Operator):
+    full_name = 'zip'
+    signature = 'vx2 zip v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    
+class Unziplo(Operator):
+    full_name = 'unziplo'
+    signature = 'v unziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    
+class Unziphi(Operator):
+    full_name = 'unziphi'
+    signature = 'v unziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unzip(Operator):
+    full_name = 'unzip'
+    signature = 'vx2 unzip v v'
+    types = common.types
+    fomain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+    
 class ToMask(Operator):
     full_name = 'build mask from logicals'
     signature = 'v to_mask l'
