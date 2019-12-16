@@ -75,10 +75,14 @@ SOFTWARE.
 #ifdef NSIMD_IS_MSVC
   #define NSIMD_C 1999
 #else
-  #if __STDC_VERSION__ == 199901L
-    #define NSIMD_C 1999
-  #elif __STDC_VERSION__ >= 201112L
-    #define NSIMD_C 2011
+  #ifdef __STDC_VERSION__
+    #if __STDC_VERSION__ == 199901L
+      #define NSIMD_C 1999
+    #elif __STDC_VERSION__ >= 201112L
+      #define NSIMD_C 2011
+    #else
+      #define NSIMD_C 1989
+    #endif
   #else
     #define NSIMD_C 1989
   #endif
@@ -90,7 +94,11 @@ SOFTWARE.
 #ifdef NSIMD_IS_MSVC
   #define NSIMD__cplusplus _MSVC_LANG
 #else
-  #define NSIMD__cplusplus __cplusplus
+  #ifdef __cplusplus
+    #define NSIMD__cplusplus __cplusplus
+  #else
+    #define NSIMD__cplusplus 0
+  #endif
 #endif
 
 #if NSIMD__cplusplus > 0 && NSIMD__cplusplus < 201103L
@@ -419,7 +427,7 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
 NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
   int i, ret = 0;
   for (i = 0; i < 32; i++) {
-    ret += (a >> i) & 1;
+    ret += (int)((a >> i) & 1);
   }
   return ret;
 }
@@ -427,7 +435,7 @@ NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
-    ret += (a >> i) & 1;
+    ret += (int)((a >> i) & 1);
   }
   return ret;
 }

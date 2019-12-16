@@ -62,9 +62,29 @@ def can_create_filename(opts, filename):
 # -----------------------------------------------------------------------------
 # open with UTF8 encoding
 
-def open_utf8(filename):
+def open_utf8(opts, filename):
+    dummy, ext = os.path.splitext(filename)
+    if ext.lower() in ['.c', '.h', '.cpp', '.hpp', '.cc', '.cxx', '.hxx',
+                       '.hpp']:
+        begin_comment = '/*'
+        end_comment = '*/'
+    elif ext.lower() in ['.md', '.htm', '.html']:
+        begin_comment = '<!--'
+        end_comment = '-->'
+    else:
+        begin_comment = None
     with io.open(filename, mode='w', encoding='utf-8') as fout:
-        fout.write('''/*
+        if begin_comment is not None:
+            if opts.simple_license:
+                fout.write('''{}
+
+Copyright (c) 2019 Agenium Scale
+
+{}
+
+'''.format(begin_comment, end_comment))
+            else:
+                fout.write('''{}
 
 Copyright (c) 2019 Agenium Scale
 
@@ -86,9 +106,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-*/
+{}
 
-''')
+'''.format(begin_comment, end_comment))
     return io.open(filename, mode='a', encoding='utf-8')
 
 # -----------------------------------------------------------------------------
@@ -104,7 +124,7 @@ def clang_format(opts, filename):
         fout.write('\n')
 
 # -----------------------------------------------------------------------------
-# NOT implemented response
+# Not implemented response
 
 NOT_IMPLEMENTED = 'abort();'
 
@@ -747,12 +767,12 @@ class Interval(object):
             raise ValueError ('Trying to print invalid interval')
 
         if self.removed_:
-            ret += '∖{'
+            ret += '∖\\{'
             comma = ''
             for removed in self.removed_:
                 ret+=comma+str(removed)
                 comma = ', '
-            ret += '}'
+            ret += '\\}'
 
         return ret
 
@@ -834,7 +854,7 @@ class Domain(object):
 
             product = ' × '
 
-        return ret
+        return '$' + ret + '$'
 
     @property
     def intervals(self):

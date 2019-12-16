@@ -263,7 +263,7 @@ if (WIN32)
 else()
     install(TARGETS ${libname} LIBRARY DESTINATION lib)
 endif()
-install(DIRECTORY include DESTINATION include)
+install(DIRECTORY include/nsimd DESTINATION include)
 
 ## Clean
 ## ----------------------------------------------------------------------------
