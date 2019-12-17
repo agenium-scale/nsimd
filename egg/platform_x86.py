@@ -113,6 +113,9 @@ def get_additional_include(func, platform, simd_ext):
     elif simd_ext == 'avx512_skylake':
         ret += '''#include <nsimd/x86/avx2/{}.h>
                   '''.format(func)
+    if func == 'shra':
+        ret += '''#include <nsimd/x86/{simd_ext}/shr.h>
+                  '''.format(simd_ext=simd_ext)
     if func in ['loadla', 'loadlu', 'storela', 'storelu']:
         ret += '''#include <nsimd/x86/{simd_ext}/set1.h>
                   #include <nsimd/x86/{simd_ext}/eq.h>
@@ -990,6 +993,56 @@ def shl_shr(func, simd_ext, typ):
         if typ in ['i32', 'u32', 'i64', 'u64']:
             return normal_16_32_64
 
+def shra(simd_ext, typ):
+    ## Same thing for i8 on all Intel architectures
+    if typ in common.utypes:
+        return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
+                format(**fmtspec)
+    elif typ == 'i8':
+        return '''\
+        {v_typ} v_mask0 = {pre}set1_epi16(0xFF);
+        {v_typ} v_tmp0 = {pre}slli_epi16({in0}, 8);
+        v_tmp0 = {pre}srai_epi16(v_tmp0, {in1} + 8);
+        v_tmp0 = {pre}and_si{nbits}(v_tmp0, v_mask0);
+        {v_typ} v_tmp1 = {pre}srai_epi16({in0}, 8 + {in1});
+        v_tmp1 = {pre}slli_epi16(v_tmp1, 8);
+        return {pre}or_si{nbits}(v_tmp0, v_tmp1);
+        '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))       
+    elif typ  == 'i64':
+        # For i64 we have to do the sign extension manually.
+        # So first, we compute a logical right shift, and then we compute
+        # a logical mask for the negative values. The sign bits are added
+        # to the negative values.
+        if simd_ext in ['sse2', 'sse42']:
+            return '''\
+            const unsigned int shift = (unsigned int)(64 - {in1});
+            __m128i v_sign = _mm_set1_epi64x((unsigned int)-1 << shift);
+            __m128i v_tmp0 = _mm_srli_epi64({in0}, {in1});
+            __m128i v_test = _mm_castpd_si128(
+              _mm_cmplt_pd(_mm_castsi128_pd({in0}), _mm_set1_pd(0)));
+            __m128i v_mask = _mm_and_si128(v_sign, v_test);
+            return _mm_or_si128(v_tmp0, v_mask);
+            '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
+        elif simd_ext in ['avx', 'avx2']:
+            return '''\
+            const unsigned int shift = (unsigned int)(64 - {in1});
+            __m256i v_sign = _mm256_set1_epi64x((unsigned int)-1 << shift);
+            __m256i v_tmp0 = _mm256_srli_epi64({in0}, {in1});
+            __m256i v_test = _mm256_cmpgt_epi64(
+              _mm256_sub_epi64(_mm256_setzero_si256(), {in0}), _mm256_setzero_si256());
+            __m256i v_mask = _mm256_and_si256(v_sign, v_test);
+            return _mm256_or_si256(v_tmp0, v_mask);
+            '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
+        else:
+            return '''return {pre}srai{suf}({in0}, (unsigned int){in1});'''. \
+                format(**fmtspec)
+    elif typ in ['i16', 'i32']:
+        cast = ''
+        if simd_ext in ['avx512_skylake', 'avx512_knl'] and typ == 'i32':
+            cast = '(unsigned int)'
+        return '''return {pre}srai{suf}({in0}, {cast}{in1});'''. \
+                        format(**fmtspec, cast=cast)
+                    
 # -----------------------------------------------------------------------------
 ## set1 or splat function
 
@@ -2929,6 +2982,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'mul': lambda: mul2(simd_ext, from_typ),
         'shl': lambda: shl_shr('shl', simd_ext, from_typ),
         'shr': lambda: shl_shr('shr', simd_ext, from_typ),
+        'shra': lambda: shra(simd_ext, from_typ),
         'set1': lambda: set1(simd_ext, from_typ),
         'eq': lambda: eq2(simd_ext, from_typ),
         'ne': lambda: neq2(simd_ext, from_typ),

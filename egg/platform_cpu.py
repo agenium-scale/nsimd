@@ -103,6 +103,9 @@ def get_additional_include(func, platform, simd_ext):
          return '''#include <nsimd/cpu/cpu/unziplo.h>
                    #include <nsimd/cpu/cpu/unziphi.h>
                   '''
+    elif func == 'shra':
+        return '''#include <nsimd/cpu/{simd_ext}/shr.h>
+                  '''.format(simd_ext=simd_ext)   
     return ''
 
 # -----------------------------------------------------------------------------
@@ -744,6 +747,41 @@ def unzip(from_typ):
     '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+## shift right
+
+def shra(typ):
+    n = get_nb_el(typ)
+    content = ''
+    # Sign extension for a right shift has implementation-defined behaviour.
+    # To be sure it is performed, we do it manually.
+    content = '\n'.join('''\
+    /* -------------------------------------------- */
+    val.ival = {in0}.v{i};
+    if(val.ival < 0){{
+      sign.ival = -1;
+      sign.uval = (u{typnbits})(sign.uval << shift);
+    }} else {{
+      sign.uval = 0u;
+    }}
+    shifted = (u{typnbits})(val.uval >> {in1});
+    ret.v{i} = (i{typnbits}) (shifted | sign.uval);'''.\
+                    format(**fmtspec, i=i)for i in range(0, n))
+    if typ in common.utypes:
+        return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
+            format(**fmtspec)
+    else:
+        return '''\
+        nsimd_cpu_v{typ} ret;
+        const int shift = {typnbits} - {in1};
+        union {{i{typnbits} ival; u{typnbits} uval;}} val;
+        union {{i{typnbits} ival; u{typnbits} uval;}} sign;
+        u{typnbits} shifted;
+        
+        {content}
+        
+        return ret;'''.format(content=content, **fmtspec)
+    
+# -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
 
@@ -803,6 +841,7 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'set1': lambda: set1(from_typ),
         'shr': lambda: bitwise1_param('>>', from_typ),
         'shl': lambda: bitwise1_param('<<', from_typ),
+        'shra': lambda:shra(from_typ),
         'eq': lambda: cmp2('==', from_typ),
         'ne': lambda: cmp2('!=', from_typ),
         'gt': lambda: cmp2('>', from_typ),
