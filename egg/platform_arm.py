@@ -1723,7 +1723,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
 
 def adds(simd_ext, from_typ):
     if from_typ in common.ftypes:
-        return 'return nsimd_{simd_ext}_v{from_typ} nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+        return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
 
     if simd_ext in neon:
         return 'return vqaddq_{suf}({in0}, {in1});'. \
