@@ -2600,15 +2600,45 @@ def adds(simd_ext, from_typ):
             ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
             return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min); 
           '''. \
-            format(num_bits=num_bits, max_c_macro=max_c_macro, avx512_dependent_block=avx512_dependent_block, avx512_dependent_mask=avx512_dependent_mask, **fmtspec)
+            format(num_bits=num_bits, max_c_macro=max_c_macro,
+             avx512_dependent_block=avx512_dependent_block,
+              avx512_dependent_mask=avx512_dependent_mask, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # subs
 
-def subs():
-    # TODO: deal with unsigned case
-    return '''nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}))'''. \
-        format(**fmtspec)
+def subs(from_typ):
+    if from_typ in common.itypes:
+        return \
+            'return nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}));'. \
+            format(**fmtspec)
+
+    if from_typ in common.ftypes:
+        return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+
+    if from_typ not in common.utypes:
+        raise ValueError('Type not implemented in platform_x86 adds({typ});'.
+            format(**fmtspec))
+
+    num_bits = from_typ[1:3]
+
+    return'''
+        // Algo pseudo code:
+
+        // unsigned only
+        // a > 0; b > 0 ==> a - b --> possibility for underflow only
+        // res = a - b
+        // if res > a <==> b > a --> underflow
+
+        const nsimd_{simd_ext}_vu{num_bits} ures = nsimd_sub_{simd_ext}_u{num_bits}({in0}, {in1});
+        const nsimd_{simd_ext}_vlu{num_bits} umask = nsimd_gt_{simd_ext}_u{num_bits}(ures, {in0});
+        const nsimd_{simd_ext}_vu{num_bits} umin = nsimd_{simd_ext}_set1_u{num_bits}(UINT_MIN);
+        return nsimd_if_else1_{simd_ext}_i{num_bits}(umask, ures, umin);
+    '''.format(num_bits=num_bits, **fmtspec)
+
+
+
+
 
 # -----------------------------------------------------------------------------
 # to_mask
@@ -3050,7 +3080,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'add': lambda: addsub('add', simd_ext, from_typ),
         'sub': lambda: addsub('sub', simd_ext, from_typ),
         'adds': lambda: adds(simd_ext, from_typ),
-        'subs': lambda: subs(),
+        'subs': lambda: subs(from_typ),
         'div': lambda: div2(simd_ext, from_typ),
         'sqrt': lambda: sqrt1(simd_ext, from_typ),
         'len': lambda: len1(simd_ext, from_typ),
