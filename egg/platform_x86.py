@@ -2497,7 +2497,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
 
 def adds(simd_ext, from_typ):
 
-    if from_typ in { 'i8', 'i16', 'u8', 'u16' }:
+    if from_typ in ( 'i8', 'i16', 'u8', 'u16' ):
             return 'return {pre}adds{suf}({in0}, {in1});'.format(**fmtspec)
 
     if from_typ in common.ftypes:
@@ -2506,6 +2506,9 @@ def adds(simd_ext, from_typ):
     num_bits = from_typ[1:3]
     max_c_macro_map = { 'i': 'INT_MAX', 'u': 'UINT_MAX' }
     max_c_macro = max_c_macro_map[from_typ[0]]
+
+    # TODO:
+    # Implement simplified version for unsigned
 
     if 'avx512' in simd_ext:
         avx512_dependent_block = \
@@ -2577,7 +2580,7 @@ def adds(simd_ext, from_typ):
             // u{num_bits} tmp = (u{num_bits})sMAX + 1
             // i{num_bits} sMIN = *(i{num_bits}*)(&tmp)
 
-            const nsimd_{simd_ext}_vu{num_bits} u_max = nsimd_set1_{simd_ext}_u{num_bits}((u_{num_bits})max_c_macro);
+            const nsimd_{simd_ext}_vu{num_bits} u_max = nsimd_set1_{simd_ext}_u{num_bits}((u_{num_bits}){max_c_macro});
             const nsimd_{simd_ext}_vu{num_bits} u_max_min = nsimd_add_{simd_ext}_u{num_bits}(u_max, u_zeros_ones);
             const nsimd_{simd_ext}_vi{num_bits} i_max_min = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_max_min);
 
