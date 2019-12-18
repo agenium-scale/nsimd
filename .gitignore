@@ -19,6 +19,7 @@ tests/cxx_adv
 benches/cxx_adv
 _deps
 _install
+doc/markdown/api_*.md
 
 ## Ulps
 ulps/
