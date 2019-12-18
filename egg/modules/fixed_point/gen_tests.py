@@ -186,7 +186,7 @@ def gen_arithmetic_ops_tests(lf, rt, opts):
             op_name=op_name, op_val=op_val, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
 
@@ -248,7 +248,7 @@ def gen_minmax_ops_tests(lf, rt, opts):
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
         
@@ -321,7 +321,7 @@ def gen_ternary_ops_tests(lf, rt, opts):
             op_name=op_name, check_statement=statement.format(lf=lf, rt=rt),
             lf=lf, rt=rt,includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
 
@@ -383,7 +383,7 @@ def gen_math_functions_tests(lf, rt, opts):
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
 
@@ -443,7 +443,7 @@ def gen_comparison_tests(lf, rt, opts):
             op_name=op_name, op_val=op_val, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
 
@@ -512,7 +512,7 @@ def gen_bitwise_ops_tests(lf, rt, opts):
             rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
             test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
         
@@ -523,7 +523,7 @@ def gen_bitwise_ops_tests(lf, rt, opts):
             rand_statement="(raw_t)(rand() % 2);".format(lf=lf, rt=rt),
             test_statement=s1, l="l", term="l")
         filename = get_filename(opts, op_name + "l", lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
 
@@ -582,7 +582,7 @@ def gen_unary_ops_tests(lf, rt, opts):
             rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
             test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
 
@@ -593,7 +593,7 @@ def gen_unary_ops_tests(lf, rt, opts):
             rand_statement="(raw_t)(rand() % 2);".format(lf=lf, rt=rt),
             test_statement=s1, l="l", term="l")
         filename = get_filename(opts, op_name + "l", lf, rt)
-        with common.open_utf8(filename) as fp:
+        with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
         
@@ -650,7 +650,7 @@ def gen_if_else_tests(lf, rt, opts):
     content_src = if_else_test_template.format(
         lf=lf, rt=rt, includes=includes, decls=decls)
     filename = get_filename(opts, "if_else", lf, rt)
-    with common.open_utf8(filename) as fp:
+    with common.open_utf8(opts, filename) as fp:
         fp.write(content_src)
     common.clang_format(opts, filename)
 # -------------------------------------------------------------------------------
