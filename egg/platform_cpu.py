@@ -667,63 +667,63 @@ def adds_utypes(assign_max, assign_add_if_ok):
     return algo
 
 
-def adds(typ):
+def adds(from_typ):
     
-    if typ in common.ftypes:
-      return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+    if from_typ in common.ftypes:
+      return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
 
-    if not typ in common.limits.keys():
-      raise ValueError('Type not implemented in platform_cpu adds({typ})'.format(typ))
+    if not from_typ in common.limits.keys():
+      raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
 
     assign_max = '{{{{ ret.v{{i}} = {max}; }}}}'
-    add = '{{{{ ret.v{{i}} = ({typ})({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
+    add = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
     assign_add_if_ok = 'else ' + '\n' + add
 
-    if typ in common.itypes:
+    if from_typ in common.itypes:
         algo = adds_itypes(assign_max, assign_add_if_ok)
 
     else:
         algo = adds_utypes(assign_max, assign_add_if_ok)
 
-    type_limits = common.limits[typ]
-    content = repeat_stmt(algo.format(**type_limits, **fmtspec), typ)
+    type_limits = common.limits[from_typ]
+    content = repeat_stmt(algo.format(**type_limits, **fmtspec), from_typ)
 
-    return '''nsimd_cpu_v{typ} ret;
+    return '''nsimd_{simd_ext}_v{from_typ} ret;
 
               {content}
 
-              return ret;'''.format(typ = typ, content = content)
+              return ret;'''.format(from_typ = from_typ, content = content, simd_ext=fmtspec['simd_ext'])
 
 # -----------------------------------------------------------------------------
 
-def subs(typ):
+def subs(from_typ):
 
-    if typ in common.itypes:
-      return '''return nsimd_adds_cpu_{typ}({in0},nsimd_neg_cpu_{typ}({in1}));'''.format(**fmtspec)
+    if from_typ in common.itypes:
+      return 'return nsimd_adds_{simd_ext}_{from_typ}({in0},nsimd_neg_{simd_ext}_{from_typ}({in1}));'.format(**fmtspec)
 
-    if typ in common.ftypes:
-      return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+    if from_typ in common.ftypes:
+      return 'return nsimd_sub_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
 
-    if typ not in common.utypes:
-      raise ValueError('Type not implemented in platform_cpu adds({typ})'.format(typ))
+    if from_typ not in common.utypes:
+      raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
 
     check_underflow = 'if ({in0}.v{{i}} < {min} + {in1}.v{{i}})'
     assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
     assign_min_if_underflow = check_underflow + '\n' + assign_min
-    sub = '{{{{ ret.v{{i}} = ({typ})({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
+    sub = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
     assign_sub_if_ok = 'else ' + '\n' + sub
 
     algo = assign_min_if_underflow + '\n' + \
            assign_sub_if_ok
 
-    type_limits = common.limits[typ]
-    content = repeat_stmt(algo.format(**type_limits, **fmtspec), typ)
+    type_limits = common.limits[from_typ]
+    content = repeat_stmt(algo.format(**type_limits, **fmtspec), from_typ)
 
-    return '''nsimd_cpu_v{typ} ret;
+    return '''nsimd_{simd_ext}_v{from_typ} ret;
 
                {content}
 
-               return ret;'''.format(typ = typ, content = content)
+               return ret;'''.format(from_typ = from_typ, content = content, simd_ext=fmtspec['simd_ext'])
 
 # -----------------------------------------------------------------------------
 
