@@ -2506,32 +2506,104 @@ def adds(simd_ext, from_typ):
     num_bits = from_typ[1:3]
     max_c_macro_map = { 'i': 'INT_MAX', 'u': 'UINT_MAX' }
     max_c_macro = max_c_macro_map[from_typ[0]]
+
+    if 'avx512' in simd_ext:
+        avx512_dependent_block = \
+        '''
+        // Needed only after avx512 was introduced
+        const nsimd_{simd_ext}_vlu{num_bits} mask_l = nsimd_to_logical_{simd_ext}_u{num_bits}(mask);
+        '''.format(num_bits=num_bits, **fmtspec)
+        avx512_dependent_mask = 'mask_l'
+        
+    else:
+        avx512_dependent_block = \
+        '''
+        // Before avx512: is_same(__m128i, vector<signed>, vector<unsigned>, vector<logical>)
+        '''
+        avx512_dependent_mask = 'mask'
     
-    return '''
+    return'''
+            // Algo pseudo code:
+
+            // if ( ( same_sign(ux, uy) && same_sign(uy, res) ) || ! same_sign(ux, uy) ):
+            //     neither overflow nor underflow happened
+            // else:
+            //     if(ux > 0 && uy > 0): res = MAX // overflow
+            //     else: res = MIN // underflow
+
+            // -------- Step 1: reinterpret to unsigned to work with the bits ------------
+
             nsimd_{simd_ext}_vu{num_bits} ux = nsimd_reinterpret_{simd_ext}_u{num_bits}_i{num_bits}({in0});
             const nsimd_{simd_ext}_vu{num_bits} uy = nsimd_reinterpret_{simd_ext}_u{num_bits}_i{num_bits}({in1});
-            const nsimd_{simd_ext}_vu{num_bits} res = nsimd_add_{simd_ext}_u{num_bits}(ux, uy);
+            const nsimd_{simd_ext}_vu{num_bits} ures = nsimd_add_{simd_ext}_u{num_bits}(ux, uy);
 
-            const nsimd_{simd_ext}_vu{num_bits} vmax = nsimd_set1_{simd_ext}_u{num_bits}({max_c_macro});
-            const nsimd_{simd_ext}_vu{num_bits} shr = nsimd_shr_{simd_ext}_u{num_bits}(ux, sizeof(i{num_bits}) * CHAR_BIT - 1);
-            ux = nsimd_add_{simd_ext}_u{num_bits}(shr, vmax);
+            // ------------- Step 2: check signs different: ux, uy, res ------------------
+
+            // xor_ux_uy's most significant bit will be zero if both ux and uy have same sign
 
             const nsimd_{simd_ext}_vu{num_bits} xor_ux_uy = nsimd_xorb_{simd_ext}_u{num_bits}(ux, uy);
-            const nsimd_{simd_ext}_vu{num_bits} xor_uy_res = nsimd_xorb_{simd_ext}_u{num_bits}(uy, res);
+
+            // xor_uy_res's most significant bit will be zero if both uy and ures have same sign
+
+            const nsimd_{simd_ext}_vu{num_bits} xor_uy_res = nsimd_xorb_{simd_ext}_u{num_bits}(uy, ures);
+
+            // ----------------- Step 3: Construct the MIN/MAX vector --------------------
+
+            // Pseudo code:
+
+            // Both positive --> overflow possible 
+            // --> get the MAX:
+
+            // (signed)ux >= 0 && (signed)uy >= 0 
+            // <=> ((unsigned)ux | (unsigned)uy) >> 31 == 0
+            // --> MAX + ( (ux | uy) >> 31 ) == MAX + 0 == MAX
+
+            // At least one negative 
+            // --> overflow not possible / underflow possible if both negative 
+            // --> get the MIN:
+
+            // unsigned tmp = (unsigned)MAX + ( (ux | uy) >> 31 ) == (unsigned)MAX + 1
+            // --> MIN = (reinterpret signed)tmp
+
+            // ux | uy
+            const nsimd_{simd_ext}_vu{num_bits} ux_uy_orb = nsimd_orb_{simd_ext}_u{num_bits}(ux, uy);
+
+            // (ux | uy) >> 31 --> Vector of 0's and 1's
+            const nsimd_{simd_ext}_vu{num_bits} u_zeros_ones = nsimd_shr_{simd_ext}_u{num_bits}(ux_uy_orb, sizeof(u{num_bits}) * CHAR_BIT - 1);
+            
+            // MIN/MAX vector
+
+            // i{num_bits} tmp = sMAX + 1 --> undefined behavior
+            // u{num_bits} tmp = (u{num_bits})sMAX + 1
+            // i{num_bits} sMIN = *(i{num_bits}*)(&tmp)
+
+            const nsimd_{simd_ext}_vu{num_bits} u_max = nsimd_set1_{simd_ext}_u{num_bits}((u_{num_bits})max_c_macro);
+            const nsimd_{simd_ext}_vu{num_bits} u_max_min = nsimd_add_{simd_ext}_u{num_bits}(u_max, u_zeros_ones);
+            const nsimd_{simd_ext}_vi{num_bits} i_max_min = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_max_min);
+
+            // ------------------ Step 4: Construct the mask vector ---------------------
+
+            // mask == ( not_same_sign(ux, uy) || same_sign(uy, res) )
+            // mask: True (no underflow/overflow) / False (underflow/overflow)
+            // mask = xor_ux_uy | ~ xor_uy_res
+
             const nsimd_{simd_ext}_vu{num_bits} not_xor_uy_res = nsimd_notb_{simd_ext}_u{num_bits}(xor_uy_res);
+            const nsimd_{simd_ext}_vu{num_bits} mask = nsimd_orb_{simd_ext}_u{num_bits}(xor_ux_uy, not_xor_uy_res);
 
-            const nsimd_{simd_ext}_vu{num_bits} u_orb = nsimd_orb_{simd_ext}_u{num_bits}(xor_ux_uy, not_xor_uy_res);
-            const nsimd_{simd_ext}_vi{num_bits} i_orb = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_orb);
+            {avx512_dependent_block}
 
-            const nsimd_{simd_ext}_vi{num_bits} zeros = nsimd_set1_{simd_ext}_i{num_bits}(0);
-            const nsimd_{simd_ext}_vlu{num_bits} gteq_to_zero = nsimd_reinterpretl_{simd_ext}_u{num_bits}_i{num_bits}(nsimd_ge_{simd_ext}_i{num_bits}(i_orb, zeros));
-            return nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(nsimd_if_else1_{simd_ext}_u{num_bits}(gteq_to_zero, ux, res));'''. \
-            format(num_bits = num_bits, max_c_macro = max_c_macro, **fmtspec)
+            // ----------------------- Step 5: Apply the Mask ---------------------------
+
+            ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
+            return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min); 
+          '''. \
+            format(num_bits=num_bits, max_c_macro=max_c_macro, avx512_dependent_block=avx512_dependent_block, avx512_dependent_mask=avx512_dependent_mask, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # subs
 
 def subs():
+    # TODO: deal with unsigned case
     return '''nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}))'''. \
         format(**fmtspec)
 
