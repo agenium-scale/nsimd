@@ -994,11 +994,24 @@ def shl_shr(func, simd_ext, typ):
             return normal_16_32_64
 
 def shra(simd_ext, typ):
-    ## Same thing for i8 on all Intel architectures
     if typ in common.utypes:
+        # For unsigned type, logical shift
         return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
                 format(**fmtspec)
-    elif typ == 'i8':
+
+    if simd_ext == 'avx':
+        # Unfortunately, no shift available for avx...
+        return '''\
+        __m128i v0, v1;
+        v0 = _mm256_castsi256_si128({in0});
+        v1 = _mm256_extractf128_si256({in0}, 0x01);
+        v0 = nsimd_shra_sse42_{typ}(v0, {in1});
+        v1 = nsimd_shra_sse42_{typ}(v1, {in1});
+        return _mm256_insertf128_si256(
+          _mm256_castsi128_si256(v0), v1, 0x01);'''.format(**fmtspec)
+    
+    if typ == 'i8':
+        # Same thing for i8 on all Intel architectures
         return '''\
         {v_typ} v_mask0 = {pre}set1_epi16(0xFF);
         {v_typ} v_tmp0 = {pre}slli_epi16({in0}, 8);
@@ -1009,10 +1022,7 @@ def shra(simd_ext, typ):
         return {pre}or_si{nbits}(v_tmp0, v_tmp1);
         '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))       
     elif typ  == 'i64':
-        # For i64 we have to do the sign extension manually.
-        # So first, we compute a logical right shift, and then we compute
-        # a logical mask for the negative values. The sign bits are added
-        # to the negative values.
+        # For i64 we have to extend the sign manually.
         if simd_ext in ['sse2', 'sse42']:
             return '''\
             const unsigned int shift = (unsigned int)(64 - {in1});
@@ -1023,7 +1033,7 @@ def shra(simd_ext, typ):
             __m128i v_mask = _mm_and_si128(v_sign, v_test);
             return _mm_or_si128(v_tmp0, v_mask);
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
-        elif simd_ext in ['avx', 'avx2']:
+        elif simd_ext == 'avx2':
             return '''\
             const unsigned int shift = (unsigned int)(64 - {in1});
             __m256i v_sign = _mm256_set1_epi64x((unsigned int)-1 << shift);

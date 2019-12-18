@@ -773,28 +773,6 @@ def sqrt1(simd_ext, typ):
 # -----------------------------------------------------------------------------
 ## Shifts
 
-# def shl_shr(op, simd_ext, typ):
-#     if simd_ext in neon:
-#         if op == 'shl':
-#             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
-#                              (i{typnbits}){in1}));'''.format(**fmtspec)
-#         else:
-#             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
-#                              (i{typnbits})(-{in1})));'''.format(**fmtspec)
-#     else:
-#         armop = 'lsl' if op == 'shl' else 'lsr'
-#         if op == 'shr' and typ in common.itypes:
-#             return \
-#             '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_z({svtrue},
-#                           svreinterpret_{suf2}_{suf}({in0}),
-#                           svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
-#                           format(suf2=common.bitfield_type[typ], armop=armop,
-#                                  **fmtspec)
-#         else:
-#             return '''return sv{armop}_{suf}_z({svtrue}, {in0},
-#                                svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
-#                                format(armop=armop, **fmtspec)
-
 def shl_shr(op, simd_ext, typ):
     if simd_ext in neon:
         sign = '-' if op == 'shr' else ''
@@ -802,8 +780,8 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_n_{suf}({in0}, (i{typnbits})({sign}{in1}));'''.\
                 format(**fmtspec, sign=sign)
         else:
-            return '''return vreinterpretq_u{typnbits}_i{typnbits}( 
-            vshlq_n_u{typnbits}(vreinterpretq_i{typnbits}_u{typnbits}({in0}), 
+            return '''return vreinterpretq_u{typnbits}_s{typnbits}( 
+            vshlq_n_u{typnbits}(vreinterpretq_s{typnbits}_u{typnbits}({in0}), 
             (i{typnbits})({sign}{in1})));'''.format(**fmtspec, sign=sign)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
@@ -824,7 +802,7 @@ def shra(simd_ext, typ):
                 format(**fmtspec)
     
     if simd_ext in neon:
-        return  '''return vshlq_n_{suf}({in0}, (i{typnbits})-{in1}));'''.\
+        return  '''return vshlq_n_{suf}({in0}, (i{typnbits})-{in1});'''.\
                 format(**fmtspec)
     else:
         return '''return svasr_{typ}_z({svtrue}, {in0}, 
