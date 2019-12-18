@@ -766,6 +766,13 @@ class Shl(Operator):
     def bench_mipp_name(self, typ):
         return 'mipp::lshift<{}>'.format(typ)
 
+class Shra(Operator):
+    full_name = 'arithmetic right shift'
+    signature = 'v shra v p'
+    types = common.iutypes
+    domain = Domain('R+xN')
+    categories = [DocBitsOperators]
+    
 class Eq(Operator):
     full_name = 'compare for equality'
     signature = 'l eq v v'
