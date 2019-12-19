@@ -2619,20 +2619,19 @@ def adds(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # subs
 
-def subs(from_typ):
-    if from_typ in common.itypes:
+def subs(typ):
+
+    if typ in common.ftypes:
+        return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+
+    if typ in common.itypes:
         return \
             'return nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}));'. \
             format(**fmtspec)
 
-    if from_typ in common.ftypes:
-        return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
-
-    if from_typ not in common.utypes:
+    if typ not in common.utypes:
         raise ValueError('Type not implemented in platform_x86 adds({typ});'.
             format(**fmtspec))
-
-    num_bits = from_typ[1:3]
 
     return'''
         // Algo pseudo code:
@@ -2642,15 +2641,11 @@ def subs(from_typ):
         // res = a - b
         // if res > a <==> b > a --> underflow
 
-        const nsimd_{simd_ext}_vu{num_bits} ures = nsimd_sub_{simd_ext}_u{num_bits}({in0}, {in1});
-        const nsimd_{simd_ext}_vlu{num_bits} umask = nsimd_gt_{simd_ext}_u{num_bits}(ures, {in0});
-        const nsimd_{simd_ext}_vu{num_bits} umin = nsimd_{simd_ext}_set1_u{num_bits}(UINT_MIN);
-        return nsimd_if_else1_{simd_ext}_i{num_bits}(umask, ures, umin);
-    '''.format(num_bits=num_bits, **fmtspec)
-
-
-
-
+        const nsimd_{simd_ext}_v{typ} ures = nsimd_sub_{simd_ext}_{typ}({in0}, {in1});
+        const nsimd_{simd_ext}_vl{typ} umask = nsimd_gt_{simd_ext}_{typ}(ures, {in0});
+        const nsimd_{simd_ext}_v{typ} umin = nsimd_{simd_ext}_set1_{typ}(UINT_MIN);
+        return nsimd_if_else1_{simd_ext}_{typ}(umask, ures, umin);
+    '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # to_mask
