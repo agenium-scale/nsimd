@@ -2495,20 +2495,32 @@ def downcvt1(simd_ext, from_typ, to_typ):
 # -----------------------------------------------------------------------------
 # adds
 
-def adds(simd_ext, from_typ):
+def adds(simd_ext, typ):
 
-    if from_typ in ( 'i8', 'i16', 'u8', 'u16' ):
+    if typ in common.ftypes:
+            return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+
+    if typ in ( 'i8', 'i16', 'u8', 'u16' ):
             return 'return {pre}adds{suf}({in0}, {in1});'.format(**fmtspec)
 
-    if from_typ in common.ftypes:
-            return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
-            
-    num_bits = from_typ[1:3]
-    max_c_macro_map = { 'i': 'INT_MAX', 'u': 'UINT_MAX' }
-    max_c_macro = max_c_macro_map[from_typ[0]]
+    if typ in common.utypes:
+        return'''
+        // Algo pseudo code:
+        // res = a + b
+        // return res < max(a, b) ? UINT_MAX : res
 
-    # TODO:
-    # Implement simplified version for unsigned
+        const nsimd_{simd_ext}_v{typ} ures = nsimd_add_{simd_ext}_{typ}({in0}, {in1});
+        const nsimd_{simd_ext}_v{typ} max =  nsimd_max_{simd_ext}_{typ}({in0}, {in1});
+        return nsimd_if_else1_{simd_ext}_{typ}(nsimd_lt_{simd_ext}_{typ}(ures, max), UINT_MAX, ures);
+        '''.format(**fmtspec)
+
+    if typ not in common.itypes:
+        raise ValueError('Type not implemented in platform_{simd_ext} adds({typ});'.
+            format(**fmtspec))
+
+    num_bits = typ[1:3]
+    max_c_macro_map = { 'i': 'INT_MAX', 'u': 'UINT_MAX' }
+    max_c_macro = max_c_macro_map[typ[0]]
 
     if 'avx512' in simd_ext:
         avx512_dependent_block = \
@@ -2517,14 +2529,14 @@ def adds(simd_ext, from_typ):
         const nsimd_{simd_ext}_vlu{num_bits} mask_l = nsimd_to_logical_{simd_ext}_u{num_bits}(mask);
         '''.format(num_bits=num_bits, **fmtspec)
         avx512_dependent_mask = 'mask_l'
-        
+
     else:
         avx512_dependent_block = \
         '''
         // Before avx512: is_same(__m128i, vector<signed>, vector<unsigned>, vector<logical>)
         '''
         avx512_dependent_mask = 'mask'
-    
+
     return'''
             // Algo pseudo code:
 
@@ -2554,15 +2566,15 @@ def adds(simd_ext, from_typ):
 
             // Pseudo code:
 
-            // Both positive --> overflow possible 
+            // Both positive --> overflow possible
             // --> get the MAX:
 
-            // (signed)ux >= 0 && (signed)uy >= 0 
+            // (signed)ux >= 0 && (signed)uy >= 0
             // <=> ((unsigned)ux | (unsigned)uy) >> 31 == 0
             // --> MAX + ( (ux | uy) >> 31 ) == MAX + 0 == MAX
 
-            // At least one negative 
-            // --> overflow not possible / underflow possible if both negative 
+            // At least one negative
+            // --> overflow not possible / underflow possible if both negative
             // --> get the MIN:
 
             // unsigned tmp = (unsigned)MAX + ( (ux | uy) >> 31 ) == (unsigned)MAX + 1
@@ -2573,7 +2585,7 @@ def adds(simd_ext, from_typ):
 
             // (ux | uy) >> 31 --> Vector of 0's and 1's
             const nsimd_{simd_ext}_vu{num_bits} u_zeros_ones = nsimd_shr_{simd_ext}_u{num_bits}(ux_uy_orb, sizeof(u{num_bits}) * CHAR_BIT - 1);
-            
+
             // MIN/MAX vector
 
             // i{num_bits} tmp = sMAX + 1 --> undefined behavior
@@ -2598,7 +2610,7 @@ def adds(simd_ext, from_typ):
             // ----------------------- Step 5: Apply the Mask ---------------------------
 
             ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
-            return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min); 
+            return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min);
           '''. \
             format(num_bits=num_bits, max_c_macro=max_c_macro,
              avx512_dependent_block=avx512_dependent_block,
