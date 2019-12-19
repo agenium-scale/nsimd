@@ -13,14 +13,13 @@ The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf, rt>
 represent a fixed_point number. All the basic floating-point arithmetic operaors have 
 been defined, therefore fp\_t elements can be manipulated as normal numbers.
 The fixed\_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type for 
-storage, depending on the value of `lf + rt`. 
+storage, depending on the value of `lf + 2 * rt`. 
 
 All the functions of the module are under the namespace `nsimd::fixed_point`, 
 and match the same interface than NSIMD.
 
 The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd `fpsimd_t` 
-struct type is defined in `simd.hpp`. Conversions from fixed to floating point numbers 
-are respectively performed by the `float2fixed()` and `fixed2float()` functions.
+struct type is defined in `simd.hpp`.
 
 The modules redefines the NSIMD pack type for fixed-point numbers, templated with `lf` 
 and `rt` :
@@ -36,7 +35,7 @@ a minimal example :
 ```C++
 // Assumes that NSIMD is in your include path
 #include <iostream>
-#include <nsimd/nsimd.h>
+#include <nsimd/modules/fixed_point.hpp>
 
 int main() {
   typedef nsimd::fixed_point::fp_t<8, 8> fp_t;
@@ -60,7 +59,7 @@ int main() {
   nsimd::fixed_point::storeu(res, vres);
   
   for(size_t i = 0; i < nsimd::fixed_point::len(fp_t()); i++) {
-    std::cout << nsimd::fixed_point::fixed2float(res[i]) << " ";
+    std::cout << float(res[i]) << " ";
   }
   std::cout << std::endl;
   
