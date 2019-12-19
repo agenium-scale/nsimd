@@ -32,15 +32,19 @@ namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt> mul(const fp_t<_lf, _rt> &a,
                                 const fp_t<_lf, _rt> &b) {
-  typedef typename fp_t<_lf, _rt>::value_up up_t;
-  const int half_size = 4 * sizeof(up_t);
-  const int shift = half_size - _lf;
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
+  typedef typename fp_t<_lf, _rt>::positive_type pos_t;
 
-  up_t tmp = up_t(a._raw) * up_t(b._raw);
-  tmp = tmp >> shift;
+  const size_t storage_size = 8 * sizeof(raw_t);
+  static const raw_t sign_val =
+      (raw_t)((pos_t)-1 << (storage_size - _rt));
 
   fp_t<_lf, _rt> res;
-  res._raw = tmp;
+
+  raw_t tmp = a._raw * b._raw;
+  raw_t sign = tmp < 0 ? sign_val : 0;
+  tmp = tmp >> _rt;
+  res._raw = tmp | sign;
 
   return res;
 }

@@ -31,20 +31,12 @@ namespace nsimd {
 namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
 inline fp_t<_lf, _rt> div(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
+
   fp_t<_lf, _rt> res;
 
-  //// Fastest, but only gives integer output
-  // res._raw = a._raw / b._raw;
-  // res._raw = res._raw << _rt;
-
-  // Slower, but allows decimal output
-  typedef typename fp_t<_lf, _rt>::value_up up_t;
-  typedef typename fp_t<_lf, _rt>::value_type val_t;
-  const int extra = 8 * sizeof(val_t) - _lf - _rt;
-  const int shift = _rt + extra;
-
-  up_t tmp;
-  tmp = (up_t(a._raw) << shift);
+  raw_t tmp;
+  tmp = a._raw << _rt;
   tmp /= b._raw;
   res._raw = tmp;
 
