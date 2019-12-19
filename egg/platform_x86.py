@@ -234,7 +234,11 @@ def get_additional_include(func, platform, simd_ext):
                     # include <nsimd/x86/{simd_ext}/reinterpretl.h>
                     # include <nsimd/x86/{simd_ext}/ge.h>
                     # include <nsimd/x86/{simd_ext}/if_else1.h>
-                '''.format(**fmtspec)
+                ''' .format(**fmtspec)
+        if simd_ext in avx512:
+            ret += '''
+                    # include <nsimd/x86/{simd_ext}/to_logical.h>
+                   '''
     if func == 'subs':
         ret += '''
                     # include <nsimd/x86/{simd_ext}/adds.h>
