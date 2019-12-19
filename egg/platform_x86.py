@@ -2613,7 +2613,7 @@ def adds(simd_ext, typ):
 
             // ----------------------- Step 5: Apply the Mask ---------------------------
 
-            ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
+            const nsimd_{simd_ext}_vi{num_bits} ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
             return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min);
           '''. \
             format(num_bits=num_bits, max_c_macro=max_c_macro,
