@@ -141,7 +141,7 @@ template <uint8_t _lf, uint8_t _rt> struct fp_t {
 // For examining available precision
 //------------------------------------------------------------------------------
 
-  template <uint8_t _lf, uint8_t _rt> uint8_t left(const fp_t<_lf, _rt>) {
+template <uint8_t _lf, uint8_t _rt> uint8_t left(const fp_t<_lf, _rt>) {
   return _lf;
 }
 
