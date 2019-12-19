@@ -54,21 +54,21 @@ typedef nsimd::fixed_point::pack<fp_t> vec_t;
 typedef nsimd::fixed_point::packl<fp_t> vecl_t;
 typedef nsimd::fixed_point::pack<fp_t>::value_type raw_t;
 typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
-const size_t v_size = nsimd::fixed_point::len(fp_t());
+const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 """
 
 # ------------------------------------------------------------------------------
 # Utility functions
 
 check = """\
-#define CHECK(a) {{ \\
-  if (!(a)) {{ \\
+#define CHECK(a) { \\
+  if (!(a)) { \\
     fprintf(stderr, "ERROR: " #a ":%s: %d\\n", \\
             __FILE__, __LINE__); \\
     fflush(stderr); \\
     exit(EXIT_FAILURE); \\
-  }} \\
-}}
+  } \\
+}
 
 """
 
@@ -82,10 +82,8 @@ static double __get_numeric_precision() {
 
 comparison_fp = """\
 template <uint8_t lf, uint8_t rt>
-bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref)
-{
-  return abs(nsimd::fixed_point::fixed2float<lf, rt>(val) - ref) 
-    <= __get_numeric_precision<lf, rt>();
+bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
+  return abs(double(val) - ref) <= __get_numeric_precision<lf, rt>();
 }
 
 """
@@ -103,26 +101,11 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 
 gen_random_val = """\
 template <uint8_t lf, uint8_t rt>
-nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
-  const double max_val = ldexp(1.0, (lf - 1) / 2) - 1;
-  const double min_val = -ldexp(1.0, (lf - 1) / 2);
-  const int n_vals = (int)ldexp(1.0, (rt - 1) / 2);
-  
-  nsimd::fixed_point::fp_t<lf, rt> res = 0;
-  const double integral =
-      roundf(((double)rand() / (double)RAND_MAX) * (max_val - min_val) + min_val);
-  const double decimal =
-      ((double)(rand() % n_vals) + ldexp(1.0, rt / 2))
-      * __get_numeric_precision<lf, rt>();
-  // Ensure abs(val) > 1
-  double val = integral + decimal;
-  if(abs(val) < 1.0)
-  {{
-    val += val > 0.0 ? 1.0 : -1.0;
-  }}
-  res = nsimd::fixed_point::fp_t<lf, rt>(val);
-  return res;
-}}
+nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {
+  float tmp = (float) rand() / (float) RAND_MAX;
+  fprintf(stdout, \"Val : %f\\n\", 0.5f * tmp + 1.0f);
+  return nsimd::fixed_point::fp_t<lf, rt>(0.5f * tmp + 1.0f);
+}
 
 """
 
@@ -139,9 +122,7 @@ arithmetic_test_template = """\
 int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
-
-  srand(time(NULL));
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 
   // FP vectors
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -156,8 +137,8 @@ int main() {{
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
     tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
-    tab0_f[i] = nsimd::fixed_point::fixed2float(tab0_fp[i]);
-    tab1_f[i] = nsimd::fixed_point::fixed2float(tab1_fp[i]);
+    tab0_f[i] = float(tab0_fp[i]);
+    tab1_f[i] = float(tab1_fp[i]);
   }}
 
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
@@ -206,9 +187,7 @@ minmax_test_template = """\
 int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
-
-  srand(time(NULL));
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 
   // FP vectors
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -265,10 +244,8 @@ ternary_ops_template = """\
 int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
  
-  srand(time(NULL));
-
   // FP vectors
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -285,9 +262,9 @@ int main() {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
     tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
     tab2_fp[i] = __gen_random_val<{lf}, {rt}>();
-    tab0_f[i] = nsimd::fixed_point::fixed2float(tab0_fp[i]);
-    tab1_f[i] = nsimd::fixed_point::fixed2float(tab1_fp[i]);
-    tab2_f[i] = nsimd::fixed_point::fixed2float(tab2_fp[i]);
+    tab0_f[i] = float(tab0_fp[i]);
+    tab1_f[i] = float(tab1_fp[i]);
+    tab2_f[i] = float(tab2_fp[i]);
   }}
 
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
@@ -341,9 +318,7 @@ static inline double rec(const double x){{return 1.0 / x;}}
 int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
-
-  srand(time(NULL));
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 
   // FP vectors
   fp_t *tab0_fp= (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -355,7 +330,7 @@ int main() {{
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
-    tab0_f[i] = nsimd::fixed_point::fixed2float(tab0_fp[i]);
+    tab0_f[i] = float(tab0_fp[i]);
   }}
 
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
@@ -402,10 +377,8 @@ int main(){{
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
   typedef nsimd::fixed_point::packl<fp_t> vecl_t;
   typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
   
-  srand(time(NULL));
-
   // FP vectors
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -463,10 +436,8 @@ int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack{l}<fp_t> vec{l}_t;
   typedef nsimd::fixed_point::pack{l}<fp_t>::value_type raw_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 
-  srand(time(NULL));
-  
   raw_t *tab0 = (raw_t *) malloc(v_size * sizeof(raw_t));
   raw_t *tab1 = (raw_t *) malloc(v_size * sizeof(raw_t));
   raw_t *res  = (raw_t *) malloc(v_size * sizeof(raw_t));
@@ -542,9 +513,7 @@ int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack{l}<fp_t> vec{l}_t;
   typedef nsimd::fixed_point::pack{l}<fp_t>::value_type raw_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
-  
-  srand(time(NULL));
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
   
   raw_t *tab0 = (raw_t *) malloc(v_size * sizeof(raw_t));;
   raw_t *res  = (raw_t *) malloc(v_size * sizeof(raw_t));;
@@ -613,9 +582,7 @@ int main() {{
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
   typedef nsimd::fixed_point::packl<fp_t> vecl_t;
   typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
-  
-  srand(time(NULL));
+  const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
   
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));

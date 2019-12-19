@@ -51,9 +51,9 @@ template <typename T> struct packl {
   fpsimdl_t<lf, rt> val;
 };
 
-template <typename T> size_t len(const T &) { return fpsimd_n(T()); }
+template <typename T> int len(const T &) { return fpsimd_n(T()); }
 
-template <typename T> size_t len(const pack<T> &) {
+template <typename T> int len(const pack<T> &) {
   return fpsimd_n(fpsimd_t<T::lf, T::rt>());
 }
 
@@ -342,22 +342,22 @@ template <typename T> NSIMD_INLINE T loadla(typename T::value_type *p) {
 // -----------------------------------------------------------------------------
 
 template <typename T>
-NSIMD_INLINE void storeu(typename T::value_type *p, T &v) {
+NSIMD_INLINE void storeu(typename T::value_type *p, T v) {
   simd_storeu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storea(typename T::value_type *p, T &v) {
+NSIMD_INLINE void storea(typename T::value_type *p, T v) {
   simd_storea<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storelu(typename T::value_type *p, T &v) {
+NSIMD_INLINE void storelu(typename T::value_type *p, T v) {
   simd_storelu<T::lf, T::rt>(p, v.val);
 }
 
 template <typename T>
-NSIMD_INLINE void storela(typename T::value_type *p, T &v) {
+NSIMD_INLINE void storela(typename T::value_type *p, T v) {
   simd_storela<T::lf, T::rt>(p, v.val);
 }
 
