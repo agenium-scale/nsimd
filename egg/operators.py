@@ -1125,12 +1125,12 @@ class Adds(Operator):
     bench_auto_against_mipp = True
 
 class Subs(Operator):
-    full_name = 'substraction using saturation'
+    full_name = 'subtraction using saturation'
     signature = 'v subs v v'
     types = common.types
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
-    desc = 'Returns the saturated substraction of the two vectors given as arguments'
+    desc = 'Returns the saturated subtraction of the two vectors given as arguments'
     bench_auto_against_std = True
     bench_auto_against_mipp = True
 
