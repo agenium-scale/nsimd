@@ -61,14 +61,13 @@ const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 # Utility functions
 
 check = """\
-#define CHECK(a) { \\
-  if (!(a)) { \\
-    fprintf(stderr, "ERROR: " #a ":%s: %d\\n", \\
-            __FILE__, __LINE__); \\
+#define CHECK(a) {{ \\
+  if (!(a)) {{ \\
+    fprintf(stderr, "ERROR: " #a ":%s: %d\\n", __FILE__, __LINE__); \\
     fflush(stderr); \\
     exit(EXIT_FAILURE); \\
-  } \\
-}
+  }} \\
+}}
 
 """
 
@@ -101,11 +100,10 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 
 gen_random_val = """\
 template <uint8_t lf, uint8_t rt>
-nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {
+nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
   float tmp = (float) rand() / (float) RAND_MAX;
-  fprintf(stdout, \"Val : %f\\n\", 0.5f * tmp + 1.0f);
   return nsimd::fixed_point::fp_t<lf, rt>(0.5f * tmp + 1.0f);
-}
+}}
 
 """
 

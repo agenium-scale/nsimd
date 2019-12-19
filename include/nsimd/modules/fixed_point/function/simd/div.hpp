@@ -37,8 +37,8 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_div(const fpsimd_t<_lf, _rt> &a,
 
   fpsimd_t<_lf, _rt> res;
 
-  res._raw = nsimd::div(a._raw, b._raw, raw_t());
-  res._raw = nsimd::shl(res._raw, _rt, raw_t());
+  res._raw = nsimd::shl(a._raw, _rt, raw_t());
+  res._raw = nsimd::div(res._raw, b._raw, raw_t());
   
   return res;
 }
