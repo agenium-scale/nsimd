@@ -25,8 +25,8 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_MUL_HPP
 
-#include <nsimd/nsimd.h>
 #include "nsimd/modules/fixed_point/simd.hpp"
+#include <nsimd/nsimd.h>
 
 namespace nsimd {
 namespace fixed_point {

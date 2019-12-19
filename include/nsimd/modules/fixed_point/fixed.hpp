@@ -85,6 +85,18 @@ struct fp_types<_lf, _rt,
   typedef vli32 simd_logical;
 };
 
+template <uint8_t _lf, uint8_t _rt>
+struct fp_types<_lf, _rt,
+                typename enable_if<(((_lf + 2 * _rt) > 32)) &&
+                                   ((_lf + 2 * _rt) <= 64)>::type> {
+  typedef int64_t value_type;
+  typedef int64_t logical_type;
+  typedef uint64_t positive_type;
+  typedef vi64 simd_type;
+  typedef vli64 simd_logical;
+};
+
+
 template <uint8_t _lf, uint8_t _rt> struct fp_t {
   typedef typename fp_types<_lf, _rt>::value_type value_type;
   typedef typename fp_types<_lf, _rt>::logical_type logical_type;
