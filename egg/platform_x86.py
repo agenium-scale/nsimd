@@ -2504,8 +2504,17 @@ def adds(simd_ext, typ):
     if typ in common.ftypes:
             return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
-    if typ in ( 'i8', 'i16', 'u8', 'u16' ):
-            return 'return {pre}adds{suf}({in0}, {in1});'.format(**fmtspec)
+    if typ in ('i8', 'i16', 'u8', 'u16'):
+        if simd_ext in ('sse2', 'sse42'):
+            return'''
+            return _mm_adds_ep{typ}({in0}, {in1});
+            '''.format(**fmtspec)
+        if 'avx' == simd_ext:
+            return split_opn('adds', simd_ext, typ, 2)
+        if simd_ext in ('avx2', 'avx512_skylake'):
+            return 'return {pre}adds_ep{typ}({in0}, {in1});'.format(**fmtspec)
+        if 'avx512_knl' == simd_ext:
+            return split_opn('adds', simd_ext, typ, 2)
 
     if typ in common.utypes:
         return'''
