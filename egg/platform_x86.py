@@ -2632,10 +2632,22 @@ def adds(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # subs
 
-def subs(typ):
+def subs(simd_ext, typ):
 
     if typ in common.ftypes:
         return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+
+    if typ in ('i8', 'i16', 'u8', 'u16'):
+        if simd_ext in ('sse2', 'sse42'):
+            return'''
+            return _mm_subs_ep{typ}({in0}, {in1});
+            '''.format(**fmtspec)
+        if 'avx' == simd_ext:
+            return split_opn('subs', simd_ext, typ, 2)
+        if simd_ext in ('avx2', 'avx512_skylake'):
+            return 'return {pre}subs_ep{typ}({in0}, {in1});'.format(**fmtspec)
+        if 'avx512_knl' == simd_ext:
+            return split_opn('subs', simd_ext, typ, 2)
 
     if typ in common.itypes:
         return \
@@ -3100,7 +3112,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'add': lambda: addsub('add', simd_ext, from_typ),
         'sub': lambda: addsub('sub', simd_ext, from_typ),
         'adds': lambda: adds(simd_ext, from_typ),
-        'subs': lambda: subs(from_typ),
+        'subs': lambda: subs(simd_ext, from_typ),
         'div': lambda: div2(simd_ext, from_typ),
         'sqrt': lambda: sqrt1(simd_ext, from_typ),
         'len': lambda: len1(simd_ext, from_typ),
