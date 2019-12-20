@@ -2497,6 +2497,31 @@ def downcvt1(simd_ext, from_typ, to_typ):
               **fmtspec)
 
 # -----------------------------------------------------------------------------
+# adds / subs helper
+
+def adds_subs_intrinsic_instructions_i8_i16_u8_u16(which_op, simd_ext, typ):
+
+    valid_types = ('i8', 'i16', 'u8', 'u16')
+    if typ not in valid_types:
+        raise TypeError(
+    '''def adds_subs_intrinsic_instructions_i8_i16_u8_u16(...):
+     {typ} must belong to the following types set: {valid_types}'''.\
+        format(typ=typ, valid_types=valid_types)
+    )
+    if simd_ext in ('sse2', 'sse42'):
+        return'''
+        return _mm_{which_op}_ep{typ}({in0}, {in1});
+        '''.format(which_op=which_op, **fmtspec)
+    if 'avx' == simd_ext:
+        return split_opn(which_op, simd_ext, typ, 2)
+    if simd_ext in ('avx2', 'avx512_skylake'):
+        return 'return {pre}{which_op}_ep{typ}({in0}, {in1});'. \
+            format(which_op=which_op, **fmtspec)
+    if 'avx512_knl' == simd_ext:
+        return split_opn(which_op, simd_ext, typ, 2)
+
+
+# -----------------------------------------------------------------------------
 # adds
 
 def adds(simd_ext, typ):
@@ -2505,16 +2530,7 @@ def adds(simd_ext, typ):
             return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
     if typ in ('i8', 'i16', 'u8', 'u16'):
-        if simd_ext in ('sse2', 'sse42'):
-            return'''
-            return _mm_adds_ep{typ}({in0}, {in1});
-            '''.format(**fmtspec)
-        if 'avx' == simd_ext:
-            return split_opn('adds', simd_ext, typ, 2)
-        if simd_ext in ('avx2', 'avx512_skylake'):
-            return 'return {pre}adds_ep{typ}({in0}, {in1});'.format(**fmtspec)
-        if 'avx512_knl' == simd_ext:
-            return split_opn('adds', simd_ext, typ, 2)
+        return adds_subs_intrinsic_instructions_i8_i16_u8_u16('adds', simd_ext, typ)
 
     if typ in common.utypes:
         return'''
@@ -2638,16 +2654,7 @@ def subs(simd_ext, typ):
         return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
 
     if typ in ('i8', 'i16', 'u8', 'u16'):
-        if simd_ext in ('sse2', 'sse42'):
-            return'''
-            return _mm_subs_ep{typ}({in0}, {in1});
-            '''.format(**fmtspec)
-        if 'avx' == simd_ext:
-            return split_opn('subs', simd_ext, typ, 2)
-        if simd_ext in ('avx2', 'avx512_skylake'):
-            return 'return {pre}subs_ep{typ}({in0}, {in1});'.format(**fmtspec)
-        if 'avx512_knl' == simd_ext:
-            return split_opn('subs', simd_ext, typ, 2)
+        return adds_subs_intrinsic_instructions_i8_i16_u8_u16('subs', simd_ext, typ)
 
     if typ in common.itypes:
         return \
