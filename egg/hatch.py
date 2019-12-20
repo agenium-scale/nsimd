@@ -112,6 +112,7 @@ import gen_base_apis
 import gen_advanced_api
 import gen_tests
 import gen_benches
+import gen_module_tet1d
 import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
@@ -172,6 +173,8 @@ def parse_args(args):
         help='Generate tests in C and C++ for the fixed precision module')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
+    parser.add_argument('--module_tet1d', action='store_true',
+        help='Generate module tet1d')
     parser.add_argument('--include-dir', '-i', type=str,
         default=os.path.join(script_dir, '..', 'include', 'nsimd'),
         help='Base directory for headers')
@@ -230,6 +233,8 @@ def main():
         gen_tests.doit(opts)
     if opts.benches == True or opts.all == True:
         gen_benches.doit(opts)
+    if opts.module_tet1d == True or opts.all == True:
+        gen_module_tet1d.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
