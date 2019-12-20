@@ -19,11 +19,14 @@
 # SOFTWARE.
 
 # -----------------------------------------------------------------------------
-# Just import your modules htach.py here
-import modules.fixed_point.hatch
+# Imports
+
+import modules.fixed_point.gen_tests
+# import modules.fixed_point.gen_doc
 
 # -----------------------------------------------------------------------------
 # Entry point
 
 def doit(opts):
-    modules.fixed_point.hatch.doit(opts)
+    if opts.tests == True or opts.all == True:
+        modules.fixed_point.gen_tests.doit(opts)

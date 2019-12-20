@@ -170,8 +170,8 @@ def parse_args(args):
         help='Generate friendly but not optimized overloads for C++')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--tests-fp', action='store_true',
-        help='Generate tests in C and C++ for the fixed precision module')
+    parser.add_argument('--build-modules', '-M', action='store_true',
+        help='Build modules')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
     parser.add_argument('--include-dir', '-i', type=str,
@@ -240,7 +240,8 @@ def main():
         gen_doc.doit(opts)
 
     ## Gen modules
-    modules.hatch.doit(opts)
+    if opts.build_modules == True or opts.all == True:
+        modules.hatch.doit(opts)
 
 if __name__ == '__main__':
     main()
