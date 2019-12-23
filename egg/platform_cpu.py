@@ -676,7 +676,7 @@ def adds_utypes(assign_max, assign_add_if_ok):
 
 
 def adds(from_typ):
-    
+
     if from_typ in common.ftypes:
       return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
 
