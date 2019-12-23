@@ -701,21 +701,126 @@ def gen_addv(opts, op, typ, lang):
 # -----------------------------------------------------------------------------
 # Tests for adds
 
+def gen_adds_floats_test_helper(typ, min_, max_):
+
+      rand_val = f'({typ})(1 << (rand() % 4)) / ({typ})(1 << (rand() % 4))'
+      rand_sign_switch = f'({typ})((2 * (rand() % 2) - 1)'
+      rand = f'({typ})({rand_sign_switch} * {rand_val})'
+
+      return "Not implemented"
+
+def gen_adds_signed_test_helper(typ, min_, max_):
+
+      rand_val = f'(1 << (rand() % 4))'
+      rand_sign_switch = f'(2 * (rand() % 2) - 1)'
+      rand = f'({typ})({rand_sign_switch} * {rand_val})'
+
+      return f'''
+              // Algo scalar pseudo code:
+
+              // if ((a > 0) && (b > LONG_MAX - a)):
+              //    ret = LONG_MAX;
+              // elif ((a < 0) && (b < LONG_MIN - a)):
+              //    ret = LONG_MIN;
+              // else
+              //    ret = (i64)(a + b);
+
+              const int num_test_cases = 9;
+
+              int ii = 0;
+
+              fprintf(stdout, STATUS "...\\n");
+              fflush(stdout);
+
+              /* Fill first inputs with values testing overflow/underflow */
+              ii = 0;
+
+              // No overflow expected
+              vin1[ii] = {max_} - 1;
+              vin2[ii] = 0;
+              vout_expected[ii] = {max_} - 1;
+              ++ ii;
+
+              vin1[ii] = 0;
+              vin2[ii] = {max_} - 1;
+              vout_expected[ii] = {max_} - 1;
+              ++ ii;
+
+              // Overflow expected
+              vin1[ii] = {max_};
+              vin2[ii] = 1;
+              vout_expected[ii] = {max_};
+              ++ ii;
+
+              vin1[ii] = 1;
+              vin2[ii] = {max_};
+              vout_expected[ii] = {max_};
+              ++ ii;
+
+              vin1[ii] = {max_};
+              vin2[ii] = {max_};
+              vout_expected[ii] = {max_};
+              ++ ii;
+
+              // No underflow expected
+              vin1[ii] = {min_};
+              vin2[ii] = 1;
+              vout_expected[ii] = {min_} + 1;
+              ++ ii;
+
+              vin1[ii] = 1;
+              vin2[ii] = {min_};
+              vout_expected[ii] = {min_} + 1;
+              ++ ii;
+
+              // Underflow expected
+              vin1[ii] = {min_};
+              vin2[ii] = -1;
+              vout_expected[ii] = {min_};
+              ++ ii;
+
+              vin1[ii] = -1;
+              vin2[ii] = {min_};
+              vout_expected[ii] = {min_};
+              ++ ii;
+
+              assert(num_test_cases == ii);
+
+              /* Fill remaining input vectors with random */
+
+              for (ii = num_test_cases; ii < SIZE; ++ ii) {{
+                vin1[ii] = {rand};
+                vin2[ii] = {rand};
+              }}
+
+              /*
+              Fill the remainder of vout_expected with the sum
+              of the random values stored in vin1 and vin2.
+              Call directly the cpu API of nsimd to ensure
+              that we call the scalar version of the function.
+              */
+
+              for (ii = num_test_cases ; ii < SIZE; ii += nsimd_len_cpu_{typ}()) {{
+                nsimd_cpu_v{typ} va1, va2, vc;
+                va1 = nsimd_loadu_cpu_{typ}(&vin1[ii]);
+                va2 = nsimd_loadu_cpu_{typ}(&vin2[ii]);
+                vc = nsimd_adds_cpu_{typ}(va1, va2);
+                nsimd_storeu_cpu_{typ}(&vout_expected[ii], vc);
+              }}
+      '''
+
+def gen_adds_unsigned_test_helper(typ, min_, max_):
+
+      rand_val = f'(1 << (rand() % 4))'
+      rand = f'({typ})({rand_val})'
+      return "Not implemented"
+
+
 def gen_adds(opts, op, typ, lang, ulps):
 
     # TODO:
-    # - Create tests for floats (check for +/- inf)
-    # - For integers: split test cases between signed and unsigned
     # - Add C++ tests
-    # - Refactor, make main string smaller
 
-    if typ in common.ftypes:
-      # fallback to testing add
-      return gen_test(opts, op, typ, lang, ulps)
-
-    if not typ in common.limits.keys():
-      raise ValueError('{typ} limit not implemented in common.limits'.format(typ))
-  
     filename = get_filename(opts, op, typ, lang)
 
     if filename == None:
@@ -727,11 +832,11 @@ def gen_adds(opts, op, typ, lang, ulps):
               {includes}
               #include <limits.h>
               #include <assert.h>
-              
+
               #define SIZE (2048 / {sizeof})
-              
+
               #define STATUS "test of adds over {typ}"
-              
+
               #define CHECK(a) {{ \\
                 errno = 0; \\
                 if (!(a)) {{ \\
@@ -742,157 +847,53 @@ def gen_adds(opts, op, typ, lang, ulps):
               }}
             '''.format(includes=get_includes(lang), typ = typ, sizeof = sizeof)
 
-    type_limits = common.limits[typ]
+    if typ in common.ftypes:
+        MIN = f"{typ}('-Inf')"
+        MAX = f"{typ}('Inf')"
+        test_cases_given_type = gen_adds_floats_test_helper(typ = typ, min_ = MIN, max_ = MAX)
 
-    rand_val = '1 << (rand() % 4)'
-    rand_sign_switch = '2 * (rand() % 2) - 1'
+    elif typ in common.iutypes:
+        type_limits = common.limits[typ]
+        MIN = type_limits['min']
+        MAX = type_limits['max']
+        if typ in common.utypes:
+          test_cases_given_type = gen_adds_unsigned_test_helper(typ = typ, min_ = MIN, max_ = MAX)
+        elif typ in common.itypes:
+          test_cases_given_type = gen_adds_signed_test_helper(typ = typ, min_ = MIN, max_ = MAX)
 
-    if typ in common.utypes:
-      rand = '({typ})({rand_val})'.format(typ = typ, rand_val = rand_val)
-
-    elif typ in common.itypes:
-      rand = '({typ})(({rand_sign_switch}) * ({rand_val}))'. \
-        format(typ = typ,
-               rand_sign_switch = rand_sign_switch,
-               rand_val = rand_val)
+    else:
+        raise TypeError(f'{typ} not implemented')
 
     with common.open_utf8(opts, filename) as out:
         out.write(
             ''' \
             {head}
             /* ------------------------------------------------------------------------- */
-            
+
             int comp_function({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out != nsimd_out; }}
-            
+
             int main(void) {{
-            
-              const int num_test_cases = 9;
-              const int step = vlen({typ});
+
               const int mem_aligned_size = SIZE * {sizeof};
-            
-              int ii = 0;
-              
+
               {typ} *vin1;
               {typ} *vin2;
-            
+
               {typ} *vout_expected;
               {typ} *vout_computed;
-            
+
               CHECK(vin1 = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
               CHECK(vin2 = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
-            
+
               CHECK(vout_expected = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
               CHECK(vout_computed = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
-            
-              fprintf(stdout, STATUS "...\\n");
-              fflush(stdout);
-              
-              /* Fill first inputs with values testing overflow/underflow */
-              ii = 0;
-            
-              // No overflow expected            
-              vin1[ii] = {max} - 1;
-              vin2[ii] = 0;
-              ++ ii;
-            
-              vin1[ii] = 0;
-              vin2[ii] = {max} - 1;
-              ++ ii;
-            
-              // Overflow expected
-              vin1[ii] = {max};
-              vin2[ii] = 1;
-              ++ ii;
-            
-              vin1[ii] = 1;
-              vin2[ii] = {max};
-              ++ ii;
-            
-              vin1[ii] = {max};
-              vin2[ii] = {max};
-              ++ ii;
-            
-              // No underflow expected
-              vin1[ii] = {min};
-              vin2[ii] = 1;
-              ++ ii;
-            
-              vin1[ii] = 1;
-              vin2[ii] = {min};
-              ++ ii;
-            
-              // Underflow expected
-              vin1[ii] = {min};
-              vin2[ii] = -1;
-              ++ ii;
-            
-              vin1[ii] = -1;
-              vin2[ii] = {min};
-              ++ ii;
-            
-              assert(num_test_cases == ii);
-            
-              /* Fill remaining input vectors with random */
 
-              for (ii = num_test_cases; ii < SIZE; ++ ii) {{
-                vin1[ii] = {rand};
-                vin2[ii] = {rand};
-              }}
-            
-              /* Fill output expected vector with references values */
-            
-              ii = 0;
-            
-              // No overflow expected            
-              vout_expected[ii] = {max} - 1;
-              ++ ii;
-            
-              vout_expected[ii] = {max} - 1;
-              ++ ii;
-            
-              // Overflow expected
-              vout_expected[ii] = {max};
-              ++ ii;
-            
-              vout_expected[ii] = {max};
-              ++ ii;
-            
-              vout_expected[ii] = {max};
-              ++ ii;
-            
-              // No underflow expected
-              vout_expected[ii] = {min} + 1;
-              ++ ii;
-            
-              vout_expected[ii] = {min} + 1;
-              ++ ii;
-            
-              // Underflow expected
-              vout_expected[ii] = {min};
-              ++ ii;
-            
-              vout_expected[ii] = {min};
-              ++ ii;
-              
-              assert(num_test_cases == ii);
-            
-              /* 
-              Fill the remainder of vout_expected with the sum 
-              of the random values stored in vin1 and vin2.
-              Call directly the cpu API of nsimd to ensure
-              that we call the scalar version of the function.
-              */
-            
-              for (ii = num_test_cases ; ii < SIZE; ii += nsimd_len_cpu_{typ}()) {{
-                nsimd_cpu_v{typ} va1, va2, vc;
-                va1 = nsimd_loadu_cpu_{typ}(&vin1[ii]);
-                va2 = nsimd_loadu_cpu_{typ}(&vin2[ii]);
-                vc = nsimd_adds_cpu_{typ}(va1, va2);
-                nsimd_storeu_cpu_{typ}(&vout_expected[ii], vc);
-              }}
-            
+              {test_cases_given_type}
+
+              const int step = vlen({typ});
+
               /* Fill vout_computed with computed values */
-            
+
               for (ii = 0; ii < SIZE; ii += step) {{
                 vec({typ}) va1, va2, vc;
                 va1 = vloadu(&vin1[ii], {typ});
@@ -900,9 +901,9 @@ def gen_adds(opts, op, typ, lang, ulps):
                 vc = vadds(va1, va2, {typ});
                 vstoreu(&vout_computed[ii], vc, {typ});
               }}
-            
+
               /* Compare results */
-            
+
               for (int vi = 0; vi < SIZE; vi += step) {{
                 for (ii = vi; ii < vi + step; ii++) {{
                   if (comp_function(vout_expected[ii], vout_computed[ii])) {{
@@ -912,14 +913,15 @@ def gen_adds(opts, op, typ, lang, ulps):
                   }}
                 }}
               }}
-            
+
               fprintf(stdout, STATUS "... OK\\n");
               fflush(stdout);
               return 0;
             }}
-        '''.format(head = head, op_name = op.name,
-                   typ = typ, sizeof = sizeof,
-                   rand = rand, **type_limits)
+        ''' .format(head=head,
+                   test_cases_given_type=test_cases_given_type,
+                   op_name = op.name,
+                   typ = typ, sizeof = sizeof)
         )
 
     common.clang_format(opts, filename)
@@ -1409,7 +1411,7 @@ def gen_unpack_half(opts, op, typ, lang):
     else:
         left = 'mpfr_out'
         right = 'nsimd_out'
-        
+
     if lang == 'c_base':
         extra_code = relative_distance_c
         typ_nsimd = 'vec({typ})'.format(typ=typ)
@@ -1437,7 +1439,7 @@ def gen_unpack_half(opts, op, typ, lang):
         vc = nsimd::{op_name}(va1, va2);
         nsimd::storeu(&vout[i], vc);'''. \
             format(typ=typ, op_name=op.name)
-        
+
     op_test =  'step/(2*nb_lane)'
     if op.name in['ziphi', 'ziplo']:
         offset = 'int offset = {val};'.\
@@ -1463,7 +1465,7 @@ def gen_unpack_half(opts, op, typ, lang):
         else:
             comp_unpack ='''(vout[i] != vin1[j]) ||
             (vout[i + 1] != vin2[j])'''
-      
+
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     head = '''#define _POSIX_C_SOURCE 200112L
 
@@ -1488,15 +1490,15 @@ def gen_unpack_half(opts, op, typ, lang):
               // {simd}
             ''' .format(year=date.today().year, typ=typ,
                           includes=get_includes(lang),
-                          extra_code=extra_code, 
-                          comp_unpack=comp_unpack, 
+                          extra_code=extra_code,
+                          comp_unpack=comp_unpack,
                           sizeof=common.sizeof(typ), simd= opts.simd)
     if typ == 'f16':
         rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
         (f32)(1 << (rand() % 4)) /
         (f32)(1 << (rand() % 4)))'''
     else:
-        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
+        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
         / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
 
     with common.open_utf8(opts, filename) as out:
@@ -1616,13 +1618,13 @@ def gen_unpack(opts, op, typ, lang):
             format(typ=typ, op_name=op.name)
 
     head = '''#define _POSIX_C_SOURCE 200112L
-    
+
     {includes}
     #include <float.h>
     #include <math.h>
-    
+
     #define SIZE (2048 / {sizeof})
-    
+
     #define CHECK(a) {{ \\
     errno = 0; \\
     if (!(a)) {{ \\
@@ -1632,13 +1634,13 @@ def gen_unpack(opts, op, typ, lang):
     exit(EXIT_FAILURE); \\
     }} \\
     }}
-    
+
     {extra_code}
-    
+
     // {simd}
     ''' .format(year=date.today().year, typ=typ,
                 includes=get_includes(lang),
-                extra_code=extra_code, 
+                extra_code=extra_code,
                 sizeof=common.sizeof(typ), simd= opts.simd)
 
     if typ == 'f16':
@@ -1646,7 +1648,7 @@ def gen_unpack(opts, op, typ, lang):
         (f32)(1 << (rand() % 4)) /
         (f32)(1 << (rand() % 4)))'''
     else:
-        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4)) 
+        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
         / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
 
     if op.name == 'zip':
@@ -1671,11 +1673,11 @@ def gen_unpack(opts, op, typ, lang):
         comp = 'nsimd_f16_to_f32(vout[vi]) !=  nsimd_f16_to_f32(vout_ref[vi])'
     else:
         comp = 'vout[vi] != vout_ref[vi]'
-        
+
     with common.open_utf8(opts, filename) as out:
         out.write(
         '''{head}
-        
+
         int main(void){{
           int i, vi, step, nb_lanes;
           {typ} *vin1, *vin2;
@@ -1684,7 +1686,7 @@ def gen_unpack(opts, op, typ, lang):
 
           CHECK(vin1 = ({typ} *)nsimd_aligned_alloc(SIZE * {sizeof}));
           CHECK(vin2 = ({typ} *)nsimd_aligned_alloc(SIZE * {sizeof}));
-          CHECK(vout = ({typ} *)nsimd_aligned_alloc(2 * SIZE * {sizeof})); 
+          CHECK(vout = ({typ} *)nsimd_aligned_alloc(2 * SIZE * {sizeof}));
           CHECK(vout_ref = ({typ} *)nsimd_aligned_alloc(2 * SIZE * {sizeof}));
 
           step = vlen({typ});
@@ -1692,9 +1694,9 @@ def gen_unpack(opts, op, typ, lang):
           if(nb_lanes == 0){{
             nb_lanes = 1;
           }}
-        
+
           fprintf(stdout, "test of {op_name} over {typ}...\\n");
-          
+
           /* Fill input vector(s) with random */
           for (i = 0; i < SIZE; i++)
           {{
@@ -1717,7 +1719,7 @@ def gen_unpack(opts, op, typ, lang):
           {{
             {vout1_comp}
           }}
-         
+
           /* Compare results */
           for(vi = 0; vi < SIZE; vi++) {{
             if({comp}) {{
@@ -1725,7 +1727,7 @@ def gen_unpack(opts, op, typ, lang):
               exit(EXIT_FAILURE);
             }}
           }}
-        
+
           fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
           fflush(stdout);
           return EXIT_SUCCESS;
@@ -1735,7 +1737,7 @@ def gen_unpack(opts, op, typ, lang):
                    rand=rand, head=head, scalar_code=scalar_code, comp=comp,
                    vout1_comp= vout1_comp, typ_nsimd=typ_nsimd))
     common.clang_format(opts, filename)
-    
+
 # -----------------------------------------------------------------------------
 # Entry point
 
