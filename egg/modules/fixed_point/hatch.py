@@ -22,7 +22,7 @@
 # Imports
 
 import modules.fixed_point.gen_tests
-# import modules.fixed_point.gen_doc
+import modules.fixed_point.gen_doc
 
 # -----------------------------------------------------------------------------
 # Entry point
@@ -30,3 +30,5 @@ import modules.fixed_point.gen_tests
 def doit(opts):
     if opts.tests == True or opts.all == True:
         modules.fixed_point.gen_tests.doit(opts)
+    if opts.doc == True or opts.all == True:
+        modules.fixed_point.gen_doc.doit(opts)
