@@ -772,6 +772,7 @@ class Shra(Operator):
     types = common.iutypes
     domain = Domain('R+xN')
     categories = [DocBitsOperators]
+    desc = 'Performs a right shift operation with sign extension.'
     
 class Eq(Operator):
     full_name = 'compare for equality'
