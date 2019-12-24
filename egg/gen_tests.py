@@ -699,7 +699,42 @@ def gen_addv(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
-# Tests for adds
+# Tests helper for adds
+
+def compare_expected_vs_computed(typ):
+      return f'''
+      int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
+      {{
+          const int step = vlen({typ});
+
+          /* Fill vout_computed with computed values */
+
+          for (ii = 0; ii < SIZE; ii += step) {{
+            vec({typ}) va1, va2, vc;
+            va1 = vloadu(&vin1[ii], {typ});
+            va2 = vloadu(&vin2[ii], {typ});
+            vc = vadds(va1, va2, {typ});
+            vstoreu(&vout_computed[ii], vc, {typ});
+          }}
+
+          /* Compare results */
+
+          for (int vi = 0; vi < SIZE; vi += step) {{
+            for (ii = vi; ii < vi + step; ii++) {{
+              if (comp_function(vout_expected[ii], vout_computed[ii])) {{
+                return -1;
+              }}
+            }}
+          }}
+
+          return 0;
+      }}
+      '''
+
+# -----------------------------------------------------------------------------
+# Tests helper for adds with float types
+
+# TODO: update
 
 def gen_adds_floats_test_helper(typ, min_, max_):
 
@@ -709,105 +744,204 @@ def gen_adds_floats_test_helper(typ, min_, max_):
 
       return "Not implemented"
 
-def gen_adds_signed_test_helper(typ, min_, max_):
+# -----------------------------------------------------------------------------
+# Tests helper for adds with signed types
 
-      rand_val = f'(1 << (rand() % 4))'
-      rand_sign_switch = f'(2 * (rand() % 2) - 1)'
-      rand = f'({typ})({rand_sign_switch} * {rand_val})'
-
+def test_adds_signed_overflow(typ, limit):
       return f'''
-              // Algo scalar pseudo code:
+      void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        // if ((vin1[ii] > 0) && (vin2[ii] > {limit} - vin1[ii])) {{ overflow }}
 
-              // if ((a > 0) && (b > LONG_MAX - a)):
-              //    ret = LONG_MAX;
-              // elif ((a < 0) && (b < LONG_MIN - a)):
-              //    ret = LONG_MIN;
-              // else
-              //    ret = (i64)(a + b);
+        // vin1[ii] > 0
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+          {typ} rand_val = rand() % {limit};
+          vin1[ii] = (rand_val == 0 ? 1 : rand_val);
+        }}
 
-              const int num_test_cases = 9;
+        // vin2[ii] > {limit} - vin1[ii]
+        // vin2[ii] = {limit} - vin1[ii] + {{1... <= vin1[ii]}}
+        int ii = 0;
+        while(ii < SIZE)
+        {{
+            {typ} rand_val = rand() % {limit};
+            rand_val = (rand_val == 0 ? 1 : rand_val);
+            if (rand_val > vin1[ii]){{ continue; }}
+            vin2[ii] = {limit} - vin1[ii] + rand_val;
+            vout_expected[ii] = {limit};
+            ++ ii;
+        }}
 
-              int ii = 0;
+        assert(ii == SIZE);
 
-              fprintf(stdout, STATUS "...\\n");
-              fflush(stdout);
-
-              /* Fill first inputs with values testing overflow/underflow */
-              ii = 0;
-
-              // No overflow expected
-              vin1[ii] = {max_} - 1;
-              vin2[ii] = 0;
-              vout_expected[ii] = {max_} - 1;
-              ++ ii;
-
-              vin1[ii] = 0;
-              vin2[ii] = {max_} - 1;
-              vout_expected[ii] = {max_} - 1;
-              ++ ii;
-
-              // Overflow expected
-              vin1[ii] = {max_};
-              vin2[ii] = 1;
-              vout_expected[ii] = {max_};
-              ++ ii;
-
-              vin1[ii] = 1;
-              vin2[ii] = {max_};
-              vout_expected[ii] = {max_};
-              ++ ii;
-
-              vin1[ii] = {max_};
-              vin2[ii] = {max_};
-              vout_expected[ii] = {max_};
-              ++ ii;
-
-              // No underflow expected
-              vin1[ii] = {min_};
-              vin2[ii] = 1;
-              vout_expected[ii] = {min_} + 1;
-              ++ ii;
-
-              vin1[ii] = 1;
-              vin2[ii] = {min_};
-              vout_expected[ii] = {min_} + 1;
-              ++ ii;
-
-              // Underflow expected
-              vin1[ii] = {min_};
-              vin2[ii] = -1;
-              vout_expected[ii] = {min_};
-              ++ ii;
-
-              vin1[ii] = -1;
-              vin2[ii] = {min_};
-              vout_expected[ii] = {min_};
-              ++ ii;
-
-              assert(num_test_cases == ii);
-
-              /* Fill remaining input vectors with random */
-
-              for (ii = num_test_cases; ii < SIZE; ++ ii) {{
-                vin1[ii] = {rand};
-                vin2[ii] = {rand};
-              }}
-
-              /*
-              Fill the remainder of vout_expected with the sum
-              of the random values stored in vin1 and vin2.
-              Call directly the cpu API of nsimd to ensure
-              that we call the scalar version of the function.
-              */
-
-              for (ii = num_test_cases ; ii < SIZE; ii += nsimd_len_cpu_{typ}()) {{
-                nsimd_cpu_v{typ} va1, va2, vc;
-                va1 = nsimd_loadu_cpu_{typ}(&vin1[ii]);
-                va2 = nsimd_loadu_cpu_{typ}(&vin2[ii]);
-                vc = nsimd_adds_cpu_{typ}(va1, va2);
-                nsimd_storeu_cpu_{typ}(&vout_expected[ii], vc);
-              }}
+        // Test:
+        // if ((vin1[ii] > 0) && (vin2[ii] > {limit} - v1[ii])) {{ vout_expected[ii] == {limit}; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+     }}
       '''
+
+def test_adds_signed_underflow(typ, limit):
+      return f'''
+      void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        // if ((vin1[ii] < 0) && (vin2[ii] < {limit} - vin1[ii])) {{ underflow }}
+
+        // vin1[ii] < 0
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+            {typ} rand_val = (- rand()) % {limit};
+            vin1[ii] = (rand_val == 0 ? - 1 : rand_val);
+        }}
+
+        // vin1[ii] < 0
+        // vin2[ii] < {limit} - vin1[ii]
+        // vin2[ii] = {limit} - vin1[ii] + {{ -1, -2, ... => vin1[ii] }}
+        int ii = 0;
+        while(ii < SIZE)
+        {{
+            {typ} rand_val = (- rand()) % {limit};
+            rand_val = (rand_val == 0 ? - 1 : rand_val);
+            if (rand_val < vin1[ii]){{ continue; }}
+            vin2[ii] = {limit} - vin1[ii] + rand_val;
+            vout_expected[ii] = {limit};
+            ++ ii;
+        }}
+
+        assert(ii == SIZE);
+
+        // Test:
+        // if ((vin1[ii] < 0) && (vin2[ii] < {limit} - vin1[ii])) {{ vout_expected[ii] == {limit}; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+def adds_signed_is_overflow(typ, limit):
+      return f'''
+      {typ} is_overflow(const {typ} a, const {typ} b)
+      {{
+        if((a > 0) && (b > {limit} - a)){{ return 1; }}
+        return 0;
+      }}
+      '''
+
+def adds_signed_is_underflow(typ, limit):
+      return f'''
+      {typ} is_underflow(const {typ} a, const {typ} b)
+      {{
+        if ((a < 0) && (b < {limit} - a)) {{ return 1; }}
+        return 0;
+      }}
+      '''
+
+def adds_signed_is_neither_overflow_nor_underflow(typ):
+      return f'''
+      {typ} is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      {{
+        return ! is_overflow(a, b) && ! is_underflow(a, b);
+      }}
+      '''
+
+def flip_sign():
+      return f'''
+      int flip_sign(void)
+      {{
+        return 2 * (rand() % 2) - 1;
+      }}
+      '''
+
+def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
+      return f'''
+      void test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        int ii = 0;
+        while(ii < SIZE)
+        {{
+          {typ} a = (({typ})(flip_sign() * rand()) % {max_}) % {min_};
+          {typ} b = (({typ})(flip_sign() * rand()) % {max_}) % {min_};
+          if(is_neither_overflow_nor_underflow(a, b))
+          {{
+            vin1[ii] = a;
+            vin2[ii] = b;
+            vout_expected[ii] = a + b;
+            ++ ii;
+          }}
+        }}
+        assert(ii == SIZE);
+        // Test:
+        // if (neither overflow nor underflow) {{ vout_expected[ii] == a + b; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+def test_adds_signed_all_cases(typ, min_, max_):
+      return f'''
+      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        int ii = 0;
+        while(ii < SIZE)
+        {{
+          vin1[ii] = (({typ})(flip_sign() * rand()) % INT_MAX) % INT_MIN;
+          vin2[ii] = (({typ})(flip_sign() * rand()) % INT_MAX) % INT_MIN;
+          if(is_overflow(vin1[ii], vin2[ii]))
+          {{
+            vout_expected[ii] = INT_MAX;
+          }}
+          else if(is_underflow(vin1[ii], vin2[ii]))
+          {{
+            vout_expected[ii] = INT_MIN;
+          }}
+          else
+          {{
+            vout_expected[ii] = vin1[ii] + vin2[ii];
+          }}
+          ++ ii;
+        }}
+        assert(ii == SIZE);
+        // Test all cases:
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+def test_adds_signed():
+      return '''
+      int check = test_overflow(vin1, vin2, vout_expected, vout_computed);
+      if(-1 == check)
+      {
+        fprintf(stdout, STATUS "... overflow check FAIL\\n");
+        fflush(stdout);
+        return -1;
+      }
+
+      check = test_underflow(vin1, vin2, vout_expected, vout_computed);
+      if(-1 == check)
+      {
+        fprintf(stdout, STATUS "... underflow check FAIL\\n");
+        fflush(stdout);
+        return -1;
+      }
+
+      check = test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed);
+      if(-1 == check)
+      {
+        fprintf(stdout, STATUS "... case with neither underflow nor overflow check FAIL\\n");
+        fflush(stdout);
+        return -1;
+      }
+
+      check = test_all_cases(vin1, vin2, vout_expected, vout_computed);
+      if(-1 == check)
+      {
+         fprintf(stdout, STATUS "... general case FAIL\\n");
+         fflush(stdout);
+         return -1;
+      }
+      '''
+
+# -----------------------------------------------------------------------------
+# Tests helper for adds with unsigned types
+
+# TODO: update
 
 def gen_adds_unsigned_test_helper(typ, min_, max_):
 
@@ -835,7 +969,7 @@ def gen_adds(opts, op, typ, lang, ulps):
 
               #define SIZE (2048 / {sizeof})
 
-              #define STATUS "test of adds over {typ}"
+              #define STATUS "test of {op_name} over {typ}"
 
               #define CHECK(a) {{ \\
                 errno = 0; \\
@@ -845,21 +979,47 @@ def gen_adds(opts, op, typ, lang, ulps):
                   exit(EXIT_FAILURE); \\
                 }} \\
               }}
-            '''.format(includes=get_includes(lang), typ = typ, sizeof = sizeof)
+            '''.format(includes=get_includes(lang), op_name = op.name, typ = typ, sizeof = sizeof)
 
     if typ in common.ftypes:
         MIN = f"{typ}('-Inf')"
         MAX = f"{typ}('Inf')"
+        test_cases_helpers_given_type = 'Not implemented'
         test_cases_given_type = gen_adds_floats_test_helper(typ = typ, min_ = MIN, max_ = MAX)
 
     elif typ in common.iutypes:
         type_limits = common.limits[typ]
         MIN = type_limits['min']
         MAX = type_limits['max']
+
         if typ in common.utypes:
-          test_cases_given_type = gen_adds_unsigned_test_helper(typ = typ, min_ = MIN, max_ = MAX)
+          test_cases_helpers_given_type = 'Not implemented'
+          test_cases_given_type = gen_adds_unsigned_test_helper(typ=typ, min_=MIN, max_=MAX)
+
         elif typ in common.itypes:
-          test_cases_given_type = gen_adds_signed_test_helper(typ = typ, min_ = MIN, max_ = MAX)
+          test_cases_helpers_given_type = '''
+            {test_adds_signed_overflow}
+
+            {test_adds_signed_underflow}
+
+            {adds_signed_is_overflow}
+
+            {adds_signed_is_underflow}
+
+            {adds_signed_is_neither_overflow_nor_underflow}
+
+            {test_adds_signed_neither_overflow_nor_underflow}
+
+            {test_adds_signed_all_cases}
+          ''' .format(test_adds_signed_overflow=test_adds_signed_overflow(typ, MAX),
+                      test_adds_signed_underflow=test_adds_signed_underflow(typ, MIN),
+                      adds_signed_is_overflow=adds_signed_is_overflow(typ, MAX),
+                      adds_signed_is_underflow=adds_signed_is_underflow(typ, MIN),
+                      adds_signed_is_neither_overflow_nor_underflow=adds_signed_is_neither_overflow_nor_underflow(typ),
+                      test_adds_signed_neither_overflow_nor_underflow=test_adds_signed_neither_overflow_nor_underflow(typ, min_=MIN, max_=MAX),
+                      test_adds_signed_all_cases=test_adds_signed_all_cases(typ, min_=MIN, max_=MAX)
+                      )
+          test_cases_given_type = test_adds_signed()
 
     else:
         raise TypeError(f'{typ} not implemented')
@@ -871,6 +1031,12 @@ def gen_adds(opts, op, typ, lang, ulps):
             /* ------------------------------------------------------------------------- */
 
             int comp_function({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out != nsimd_out; }}
+
+            {compare_expected_vs_computed}
+
+            {flip_sign}
+
+            {test_cases_helpers_given_type}
 
             int main(void) {{
 
@@ -890,38 +1056,17 @@ def gen_adds(opts, op, typ, lang, ulps):
 
               {test_cases_given_type}
 
-              const int step = vlen({typ});
-
-              /* Fill vout_computed with computed values */
-
-              for (ii = 0; ii < SIZE; ii += step) {{
-                vec({typ}) va1, va2, vc;
-                va1 = vloadu(&vin1[ii], {typ});
-                va2 = vloadu(&vin2[ii], {typ});
-                vc = vadds(va1, va2, {typ});
-                vstoreu(&vout_computed[ii], vc, {typ});
-              }}
-
-              /* Compare results */
-
-              for (int vi = 0; vi < SIZE; vi += step) {{
-                for (ii = vi; ii < vi + step; ii++) {{
-                  if (comp_function(vout_expected[ii], vout_computed[ii])) {{
-                    fprintf(stdout, STATUS "... FAIL\\n");
-                    fflush(stdout);
-                    return -1;
-                  }}
-                }}
-              }}
-
               fprintf(stdout, STATUS "... OK\\n");
               fflush(stdout);
-              return 0;
+              return EXIT_SUCCESS;
             }}
         ''' .format(head=head,
-                   test_cases_given_type=test_cases_given_type,
-                   op_name = op.name,
-                   typ = typ, sizeof = sizeof)
+                    compare_expected_vs_computed=compare_expected_vs_computed(typ),
+                    flip_sign = flip_sign(),
+                    test_cases_helpers_given_type=test_cases_helpers_given_type,
+                    test_cases_given_type=test_cases_given_type,
+                    op_name = op.name,
+                    typ = typ, sizeof = sizeof)
         )
 
     common.clang_format(opts, filename)
