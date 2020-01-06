@@ -28,14 +28,19 @@ SOFTWARE.
 #include <nsimd/nsimd-all.hpp>
 
 #include <cassert>
-#include <vector>
+#include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace tet1d {
 
 // void_t
 
-struct void_t { };
+struct void_t {};
+
+// Eval
+
+enum EvalMode { Scalar, Simd, Cuda, Hip };
 
 // in
 
@@ -62,7 +67,8 @@ template <typename T> tet1d::in_t<T> in(T &data_) {
 template <typename T> struct out_t;
 
 template <typename T, typename Node>
-tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node);
+tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
+                      tet1d::EvalMode const eval_mode);
 
 template <typename T> struct out_t {
   typedef typename T::value_type value_type;
@@ -71,7 +77,10 @@ template <typename T> struct out_t {
 
   T &data;
 
-  out_t(T &data_) : data(data_) {}
+  tet1d::EvalMode eval_mode;
+
+  out_t(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd)
+      : data(data_), eval_mode(eval_mode_) {}
 
   void resize(size_t const size) { data.resize(size); }
 
@@ -81,12 +90,13 @@ template <typename T> struct out_t {
   value_type operator()(int const i) const { return data[i]; }
 
   template <typename Node> tet1d::out_t<T> &operator=(Node const &node) {
-    return tet1d::eval(*this, node);
+    return tet1d::eval(*this, node, eval_mode);
   }
 };
 
-template <typename T> tet1d::out_t<T> out(T &data_) {
-  return tet1d::out_t<T>(data_);
+template <typename T>
+tet1d::out_t<T> out(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd) {
+  return tet1d::out_t<T>(data_, eval_mode_);
 }
 
 // Common type
@@ -222,35 +232,40 @@ eval_scalar_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
 // Eval simd
 
 template <typename T>
-typename tet1d::in_t<T>::simd_pack_type eval_simd_i(tet1d::in_t<T> const &in, int const i) {
+typename tet1d::in_t<T>::simd_pack_type eval_simd_i(tet1d::in_t<T> const &in,
+                                                    int const i) {
   typedef typename tet1d::in_t<T>::value_type value_type;
   return nsimd::loadu<nsimd::pack<value_type> >(&in.data[i]);
 }
 
 template <typename Op, typename A>
 typename op1_t<Op, A>::simd_pack_type eval_simd_i(op1_t<Op, A> const &node,
-                                                 int const i);
+                                                  int const i);
 
 template <typename Op, typename A0, typename A1>
-typename op2_t<Op, A0, A1>::simd_pack_type eval_simd_i(op2_t<Op, A0, A1> const &node, int const i);
+typename op2_t<Op, A0, A1>::simd_pack_type
+eval_simd_i(op2_t<Op, A0, A1> const &node, int const i);
 
 template <typename Op, typename A0, typename A1, typename A2>
-typename op3_t<Op, A0, A1, A2>::simd_pack_type eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i);
+typename op3_t<Op, A0, A1, A2>::simd_pack_type
+eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i);
 
 template <typename Op, typename A>
 typename op1_t<Op, A>::simd_pack_type eval_simd_i(op1_t<Op, A> const &node,
-                                                 int const i) {
+                                                  int const i) {
   return node.op.eval_simd_i(tet1d::eval_simd_i(node.a, i));
 }
 
 template <typename Op, typename A0, typename A1>
-typename op2_t<Op, A0, A1>::simd_pack_type eval_simd_i(op2_t<Op, A0, A1> const &node, int const i) {
+typename op2_t<Op, A0, A1>::simd_pack_type
+eval_simd_i(op2_t<Op, A0, A1> const &node, int const i) {
   return node.op.eval_simd_i(tet1d::eval_simd_i(node.a0, i),
                              tet1d::eval_simd_i(node.a1, i));
 }
 
 template <typename Op, typename A0, typename A1, typename A2>
-typename op3_t<Op, A0, A1, A2>::simd_pack_type eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
+typename op3_t<Op, A0, A1, A2>::simd_pack_type
+eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
   return node.op.eval_simd_i(tet1d::eval_simd_i(node.a0, i),
                              tet1d::eval_simd_i(node.a1, i),
                              tet1d::eval_simd_i(node.a2, i));
@@ -259,22 +274,29 @@ typename op3_t<Op, A0, A1, A2>::simd_pack_type eval_simd_i(op3_t<Op, A0, A1, A2>
 // Eval
 
 template <typename T, typename Node>
-tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node) {
+tet1d::out_t<T> &eval_scalar(tet1d::out_t<T> &out, Node const &node) {
   out.resize(node.size());
 
-  bool const simd = true;
+  for (int i = 0; i < node.size(); ++i) {
+    out(i) = tet1d::eval_scalar_i(node, i);
+  }
+
+  return out;
+}
+
+template <typename T, typename Node>
+tet1d::out_t<T> &eval_simd(tet1d::out_t<T> &out, Node const &node) {
+  out.resize(node.size());
 
   int i = 0;
   // simd
-  if (simd) {
-    typedef typename tet1d::out_t<T>::value_type value_type;
-    typedef typename tet1d::out_t<T>::simd_pack_type simd_pack_type;
+  typedef typename tet1d::out_t<T>::value_type value_type;
+  typedef typename tet1d::out_t<T>::simd_pack_type simd_pack_type;
 
-    size_t len = size_t(nsimd::len(value_type()));
-    for (; i + len < node.size(); i += len) {
-      simd_pack_type r = tet1d::eval_simd_i(node, i);
-      nsimd::storeu(&(out.data[i]), r);
-    }
+  size_t len = size_t(nsimd::len(value_type()));
+  for (; i + len < node.size(); i += len) {
+    simd_pack_type r = tet1d::eval_simd_i(node, i);
+    nsimd::storeu(&(out.data[i]), r);
   }
   // scalar
   for (; i < node.size(); ++i) {
@@ -282,6 +304,22 @@ tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node) {
   }
 
   return out;
+}
+
+template <typename T, typename Node>
+tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
+                      tet1d::EvalMode const eval_mode) {
+  switch (eval_mode) {
+  case tet1d::Scalar:
+    return tet1d::eval_scalar(out, node);
+  case tet1d::Simd:
+    return tet1d::eval_simd(out, node);
+  case tet1d::Cuda:
+    throw std::runtime_error("Not implemented");
+  case tet1d::Hip:
+    throw std::runtime_error("Not implemented");
+  }
+  return out; // GCC warning
 }
 
 } // namespace tet1d

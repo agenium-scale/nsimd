@@ -38,37 +38,53 @@ def doit(opts):
     scalar_impl['neg'] = '-a'
     scalar_impl['min'] = 'std::min(a0, a1)'
     scalar_impl['max'] = 'std::max(a0, a1)'
-    scalar_impl['abs'] = 'std::abs(a)'
-    scalar_impl['fma'] = '(a0 * a1) + a2' # FIXME
-    scalar_impl['fnma'] = '(a0 * a1) + a2' # FIXME
-    scalar_impl['fms'] = '(a0 * a1) + a2' # FIXME
-    scalar_impl['fnms'] = '(a0 * a1) + a2' # FIXME
+    scalar_impl['abs'] = '(a < 0 ? -a : a)' # std::abs(const unsigned int&) is ambiguous
+    scalar_impl['fma'] = 'a0 * a1 + a2'
+    scalar_impl['fnma'] = '-a0 * a1 + a2'
+    scalar_impl['fms'] = 'a0 * a1 - a2'
+    scalar_impl['fnms'] = '-a0 * a1 - a2'
     scalar_impl['ceil'] = 'std::ceil(a)'
     scalar_impl['floor'] = 'std::floor(a)'
     scalar_impl['trunc'] = 'std::trunc(a)'
     scalar_impl['round_to_even'] = 'std::round(a)' # FIXME
     scalar_impl['reinterpret'] = 'a' # FIXME
     scalar_impl['cvt'] = 'a' # FIXME
-    scalar_impl['rec'] = 'a' # FIXME
-    scalar_impl['rec11'] = 'a' # FIXME
-    scalar_impl['rec8'] = 'a' # FIXME
-    scalar_impl['sqrt'] = 'sqrt(a)'
-    scalar_impl['rsqrt'] = 'sqrt(a)' # FIXME
-    scalar_impl['rsqrt11'] = 'sqrt(a)' # FIXME
-    scalar_impl['rsqrt8'] = 'sqrt(a)' # FIXME
+    scalar_impl['rec'] = '1 / a'
+    scalar_impl['rec11'] = '1 / a'
+    scalar_impl['rec8'] = '1 / a'
+    scalar_impl['sqrt'] = 'std::sqrt(a)'
+    scalar_impl['rsqrt'] = '1 / std::sqrt(a)'
+    scalar_impl['rsqrt11'] = '1 / std::sqrt(a)'
+    scalar_impl['rsqrt8'] = '1 / std::sqrt(a)'
 
+    # Code contains the functions as tet1d nodes
     code = ''
     code += '''namespace tet1d
                {
 
             '''
+
+    # Generate code and tests
     for op_name, operator in operators.operators.items():
-      print('-- ', op_name, operator.signature)
+      #print('-- ', op_name, operator.signature)
+
+      # Skip some operators
       if op_name == 'downcvt': continue
       if op_name == 'ziplo': continue
       if op_name == 'ziphi': continue
       if op_name == 'unziplo': continue
       if op_name == 'unziphi': continue
+
+      # TODO
+      if op_name == 'reinterpret': continue
+      if op_name == 'cvt': continue
+      if op_name == 'notb': continue
+      if op_name == 'orb': continue
+      if op_name == 'andb': continue
+      if op_name == 'andnotb': continue
+      if op_name == 'xorb': continue
+
+      # Generate code
       if (operator.params == ['v', 'v']):
         code += '''// {op_name}
 
@@ -100,7 +116,7 @@ def doit(opts):
                      return tet1d::op1_t<tet1d::{op_name}_t, A>(tet1d::{op_name}_t(), a);
                    }};
 
-                   '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+                '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name])
         if (operator.cxx_operator != None):
           code += '''template <typename A>
                      tet1d::op1_t<tet1d::{op_name}_t, A> {op_cxx_op}(A const & a)
@@ -108,7 +124,7 @@ def doit(opts):
                        return tet1d::{op_name}(a);
                      }};
 
-                     '''.format(op_name=op_name, op_cxx_op=operator.cxx_operator)
+                  '''.format(op_name=op_name, op_cxx_op=operator.cxx_operator)
       if (operator.params == ['v', 'v', 'v']):
         code += '''// {op_name}
 
@@ -140,7 +156,7 @@ def doit(opts):
                      return tet1d::op2_t<tet1d::{op_name}_t, A0, A1>(tet1d::{op_name}_t(), a0, a1);
                    }};
 
-                   '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+                '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name])
         if (operator.cxx_operator != None):
           code += '''template <typename A0, typename A1>
                      tet1d::op2_t<tet1d::{op_name}_t, A0, A1> {op_cxx_op}(A0 const & a0, A1 const & a1)
@@ -148,7 +164,7 @@ def doit(opts):
                        return tet1d::{op_name}(a0, a1);
                      }};
 
-                     '''.format(op_name=op_name, op_cxx_op=operator.cxx_operator)
+                  '''.format(op_name=op_name, op_cxx_op=operator.cxx_operator)
       if (operator.params == ['v', 'v', 'v', 'v']):
         code += '''// {op_name}
 
@@ -180,8 +196,213 @@ def doit(opts):
                      return tet1d::op3_t<tet1d::{op_name}_t, A0, A1, A2>(tet1d::{op_name}_t(), a0, a1, a2);
                    }};
 
-                   '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+                '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+
+      # Generate the test
+      test = ''
+      test += '''#include <nsimd/modules/tet1d.hpp>
+
+                #include <algorithm>
+                #include <ctime>
+                #include <iostream>
+                #include <vector>
+
+                template <typename C>
+                void print_container(std::string const & header, C const & c, std::string const & footer) {
+                  std::cout << header << "{";
+                  for (size_t i = 0; i < c.size(); ++i) {
+                    std::cout << " " << c[i];
+                  }
+                  std::cout << " }" << footer;
+                }
+
+                template <typename T>
+                T rand_int(T const a, T const b) {
+                  // https://stackoverflow.com/questions/5008804/generating-random-integer-from-a-range
+                  return a + (rand() % (a - b + 1));
+                }
+
+                template <typename T>
+                T rand_float(T const a, T const b) {
+                  // https://stackoverflow.com/questions/686353/random-float-number-generation
+                  return a + T(rand()) / (T(RAND_MAX) / (b - a));
+                }
+
+                struct compare_float_t {
+                  template <typename T>
+                  bool operator()(T const a, T const b) const {
+                    return std::abs(a - b) < T(0.0002);
+                  }
+                };
+
+                template <typename T, typename Fct = std::equal_to<typename T::value_type>>
+                int compare_vector( std::string const & title
+                                  , std::string const & v0_name, T const & v0
+                                  , std::string const & v1_name, T const & v1
+                                  , Fct const & fct = Fct()) {
+                if (v0.size() != v1.size() ||
+                    std::equal(v0.begin(), v0.end(), v1.begin(), fct) == false) {
+                  std::cout << "ERROR: " << title <<  ": vectors are not the same:" << std::endl;
+                  print_container("- " + v0_name + ":\\n  ", v0, "\\n");
+                  print_container("- " + v1_name + ":\\n  ", v1, "\\n");
+                  return 1;
+                }
+                return 0;
+              }
+
+              int main() {
+                std::srand(std::time(0));
+
+                int r = 0;
+
+                size_t N = 16;
+
+            '''
+      write_test = False
+      for element_type in ['f32', 'f64', 'i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64']:
+        if ('sqrt' in op_name or 'rec' in op_name) and element_type not in ['f32', 'f64']: continue
+        rand_fct = ''
+        compare_fct = ''
+        if element_type == 'f32':
+          rand_fct = 'rand_float(1.0f, 42.0f)'
+          compare_fct = ', compare_float_t()'
+        elif element_type == 'f64':
+          rand_fct = 'rand_float(1.0, 42.0)'
+          compare_fct = ', compare_float_t()'
+        else:
+          rand_fct = 'rand_int(' + element_type + '(1), ' + element_type + '(42))'
+        test_T = ''
+        if (operator.params == ['v', 'v']):
+          write_test = True
+          test_T += '''std::vector<{T}/*, nsimd::allocator<{T}> */> v(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd(N);
+
+                       for (size_t i = 0; i < v.size(); ++i) {{
+                         v[i] = {rand_fct};
+                       }}
+
+                       for (size_t i = 0; i < r_loop.size(); ++i) {{
+                         {T} const & a = v[i];
+                         r_loop[i] = {op_scalar_impl};
+                       }}
+
+                       tet1d::out(r_scalar, tet1d::Scalar) = tet1d::{op_name}(tet1d::in(v));
+                       r += compare_vector("{T}", "r_scalar", r_scalar, "r_loop", r_loop{compare_fct});
+
+                       tet1d::out(r_simd, tet1d::Simd) = tet1d::{op_name}(tet1d::in(v));
+                       r += compare_vector("{T}", "r_simd", r_simd, "r_loop", r_loop{compare_fct});
+
+                    '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+          if (operator.cxx_operator != None):
+            test_T += '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_op(N);
+                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_op(N);
+
+                         tet1d::out(r_scalar_op, tet1d::Scalar) = {op_cxx_op}tet1d::in(v);
+                         r += compare_vector("{T}", "r_scalar_op", r_scalar_op, "r_loop", r_loop{compare_fct});
+
+                         tet1d::out(r_simd_op, tet1d::Simd) = {op_cxx_op}tet1d::in(v);
+                         r += compare_vector("{T}", "r_simd_op", r_simd_op, "r_loop", r_loop{compare_fct});
+
+                    '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
+        elif (operator.params == ['v', 'v', 'v']):
+          write_test = True
+          test_T += '''std::vector<{T}/*, nsimd::allocator<{T}> */> v0(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> v1(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd(N);
+
+                       for (size_t i = 0; i < v0.size(); ++i) {{
+                         v0[i] = {rand_fct};
+                         v1[i] = {rand_fct};
+                       }}
+
+                       for (size_t i = 0; i < r_loop.size(); ++i) {{
+                         {T} const & a0 = v0[i];
+                         {T} const & a1 = v1[i];
+                         r_loop[i] = {op_scalar_impl};
+                       }}
+
+                       tet1d::out(r_scalar, tet1d::Scalar) =
+                         tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1));
+                       r += compare_vector("{T}", "r_scalar", r_scalar, "r_loop", r_loop{compare_fct});
+
+                       tet1d::out(r_simd, tet1d::Simd) =
+                         tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1));
+                       r += compare_vector("{T}", "r_simd", r_simd, "r_loop", r_loop{compare_fct});
+
+                      '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+          if (operator.cxx_operator != None):
+            test_T += '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_op(N);
+                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_op(N);
+
+                         tet1d::out(r_scalar_op, tet1d::Scalar) =
+                           tet1d::in(v0) {op_cxx_op} tet1d::in(v1);
+                         r += compare_vector("{T}", "r_scalar_op", r_scalar_op, "r_loop", r_loop{compare_fct});
+
+                         tet1d::out(r_simd_op, tet1d::Simd) =
+                           tet1d::in(v0) {op_cxx_op} tet1d::in(v1);
+                         r += compare_vector("{T}", "r_simd_op", r_simd_op, "r_loop", r_loop{compare_fct});
+
+                    '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
+        elif (operator.params == ['v', 'v', 'v', 'v']):
+          write_test = True
+          test_T += '''std::vector<{T}/*, nsimd::allocator<{T}> */> v0(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> v1(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> v2(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar(N);
+                       std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd(N);
+
+                       for (size_t i = 0; i < v0.size(); ++i) {{
+                         v0[i] = {rand_fct};
+                         v1[i] = {rand_fct};
+                         v2[i] = {rand_fct};
+                       }}
+
+                       for (size_t i = 0; i < r_loop.size(); ++i) {{
+                         {T} const & a0 = v0[i];
+                         {T} const & a1 = v1[i];
+                         {T} const & a2 = v2[i];
+                         r_loop[i] = {op_scalar_impl};
+                       }}
+
+                       tet1d::out(r_scalar, tet1d::Scalar) =
+                         tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1), tet1d::in(v2));
+                       r += compare_vector("{T}", "r_scalar", r_scalar, "r_loop", r_loop{compare_fct});
+
+                       tet1d::out(r_simd, tet1d::Simd) =
+                         tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1), tet1d::in(v2));
+                       r += compare_vector("{T}", "r_simd", r_simd, "r_loop", r_loop{compare_fct});
+
+                    '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
+        else:
+          continue
+        test += '''// Test of {op_name} for {T}
+                   {{
+                     {test_T}
+                   }}
+
+                 '''.format(T=element_type, op_name=op_name, test_T=test_T)
+      test += '''  return r;
+                 }
+
+              '''
+      # Write the test
+      if write_test:
+        dirname = os.path.join('tests', 'modules', 'tet1d', 'functions')
+        os.makedirs(dirname, exist_ok=True)
+        filename = os.path.join(dirname, op_name + '.cpp')
+        with common.open_utf8(opts, filename) as out:
+          out.write(test)
+        common.clang_format(opts, filename)
+
+    # End of the code
     code += '}'
+
+    # Write the code
     dirname = os.path.join('include', 'nsimd', 'modules', 'tet1d')
     os.makedirs(dirname, exist_ok=True)
     filename = os.path.join(dirname, 'functions.hpp')
