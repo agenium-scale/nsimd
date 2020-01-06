@@ -202,6 +202,14 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
                   '''.format(**fmtspec)
+    if func == 'zip':
+        ret += '''#include <nsimd/arm/{simd_ext}/ziplo.h>
+                  #include <nsimd/arm/{simd_ext}/ziphi.h>
+                  '''.format(**fmtspec)
+    if func == 'unzip':
+        ret += '''#include <nsimd/arm/{simd_ext}/unziplo.h>
+                  #include <nsimd/arm/{simd_ext}/unziphi.h>
+                  '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -818,9 +826,17 @@ def shl_shr(op, simd_ext, typ):
                              (i{typnbits})(-{in1})));'''.format(**fmtspec)
     else:
         armop = 'lsl' if op == 'shl' else 'lsr'
-        return '''return sv{armop}_{suf}_z({svtrue}, {in0},
-                           svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
-                           format(armop=armop, **fmtspec)
+        if op == 'shr' and typ in common.itypes:
+            return \
+            '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_z({svtrue},
+                          svreinterpret_{suf2}_{suf}({in0}),
+                          svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
+                          format(suf2=common.bitfield_type[typ], armop=armop,
+                                 **fmtspec)
+        else:
+            return '''return sv{armop}_{suf}_z({svtrue}, {in0},
+                               svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
+                               format(armop=armop, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Set1
@@ -1785,10 +1801,9 @@ def to_mask1(simd_ext, typ):
         else:
             utyp = 'u{}'.format(fmtspec['typnbits'])
             return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
-                               svreinterpret_{utyp}_{suf}({in0}),
-                                 svdup_n_{utyp}(({utyp})-1),
-                                   svdup_n_{suf}(({typ})0)));'''. \
-                                   format(utyp=utyp, **fmtspec)
+                               {in0}, svdup_n_{utyp}(({utyp})-1),
+                               svdup_n_{utyp}(({utyp})0)));'''. \
+                               format(utyp=utyp, **fmtspec)
     else:
         return normal
 
@@ -1962,6 +1977,56 @@ def zip_unzip(func, simd_ext, typ):
        else:
            return content
 
+def zip_unzip(func, simd_ext, typ):
+    prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
+    lo_hi = '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_{func}lo_{simd_ext}_{typ}({in0}, {in1});
+    ret.v1 = nsimd_{func}hi_{simd_ext}_{typ}({in0}, {in1});
+    return ret;
+    '''.format(func='zip' if func == 'zip' else 'unzip', **fmtspec)
+    neon_typ = '{}{}x{}x2_t'. \
+        format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
+    if simd_ext in ['aarch64', 'sve']:
+        content = '''\
+        nsimd_{simd_ext}_v{typ}x2 ret;
+        ret.v0 = {s}v{func}1q_{suf}({in0}, {in1});
+        ret.v1 = {s}v{func}2q_{suf}({in0}, {in1});
+        return ret;'''.format(s = 's' if simd_ext == 'sve' else '',
+                              func=func, **fmtspec)
+        if typ == 'f16':
+            return '''\
+            #ifdef NSIMD_FP16
+            {c}
+            #else
+            {default}
+            #endif'''.\
+                format(c=content, default=lo_hi, s = 's' if simd_ext == 'sve' else '',
+                       **fmtspec)
+        else:
+            return content
+    else:
+       content = '''\
+       nsimd_{simd_ext}_v{typ}x2 ret;
+       {neon_typ} tmp = v{func}q_{suf}({in0}, {in1});
+       ret.v0 = tmp.val[0];
+       ret.v1 = tmp.val[1];
+       return ret;'''\
+           .format(func=func, neon_typ=neon_typ, **fmtspec)
+       if typ in ['u64', 'i64', 'f64']:
+           return lo_hi
+       elif typ == 'f16':
+           return '''\
+           #ifdef NSIMD_FP16
+           {content}
+           #else
+           {default}
+           #endif'''.\
+               format(content=content, default=lo_hi,
+                      f='zip' if func == 'zip' else 'unzip', **fmtspec)
+       else:
+           return content
+                        
 # -----------------------------------------------------------------------------
 ## get_impl function
 
@@ -2071,7 +2136,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'ziplo': lambda: zip_unzip_half("zip1", simd_ext, from_typ),
         'ziphi': lambda: zip_unzip_half("zip2", simd_ext, from_typ),
         'unziplo': lambda: zip_unzip_half("uzp1", simd_ext, from_typ),
-        'unziphi': lambda: zip_unzip_half("uzp2", simd_ext, from_typ)
+        'unziphi': lambda: zip_unzip_half("uzp2", simd_ext, from_typ),
+        'zip' : lambda: zip_unzip("zip", simd_ext, from_typ),
+        'unzip' : lambda: zip_unzip("uzp", simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

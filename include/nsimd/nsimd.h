@@ -427,7 +427,7 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
 NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
   int i, ret = 0;
   for (i = 0; i < 32; i++) {
-    ret += (a >> i) & 1;
+    ret += (int)((a >> i) & 1);
   }
   return ret;
 }
@@ -435,7 +435,7 @@ NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
-    ret += (a >> i) & 1;
+    ret += (int)((a >> i) & 1);
   }
   return ret;
 }

@@ -20,9 +20,5 @@ benches/cxx_adv
 _deps
 _install
 
-## Doc
-DOC.md
-doc/
-
 ## Ulps
 ulps/

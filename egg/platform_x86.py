@@ -162,6 +162,10 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
                   #include <nsimd/x86/{simd_ext}/ziphi.h>
                   '''.format(simd_ext=simd_ext)
+    if func == 'unzip':
+        ret += '''#include <nsimd/x86/{simd_ext}/unziplo.h>
+                  #include <nsimd/x86/{simd_ext}/unziphi.h>
+                  '''.format(simd_ext=simd_ext)
     if simd_ext in avx512 and func in ['loadlu', 'loadla']:
         ret += '''
                   #if NSIMD_CXX > 0
@@ -622,58 +626,61 @@ def store(simd_ext, typ, aligned):
     cast = '(__m{}i*)'.format(nbits(simd_ext)) if typ in common.iutypes else ''
     if typ == 'f16':
         if simd_ext in sse:
-            return '''#ifdef NSIMD_FP16
-                        __m128i v0 = _mm_cvtps_ph(
-                          {in1}.v0, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
-                        __m128i v1 = _mm_cvtps_ph(
-                          {in1}.v1, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
-                        __m128d v = _mm_shuffle_pd(_mm_castsi128_pd(v0),
-                                      _mm_castsi128_pd(v1),
-                                        0 /* = (0 << 1) | (0 << 0) */);
-                        _mm_store{align}_pd((f64*){in0}, v);
-                      #else
-                        /* Note that we can do much better but is it useful? */
-                        f32 buf[4];
-                        _mm_storeu_ps(buf, {in1}.v0);
-                        *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
-                        *((u16*){in0} + 1) = nsimd_f32_to_u16(buf[1]);
-                        *((u16*){in0} + 2) = nsimd_f32_to_u16(buf[2]);
-                        *((u16*){in0} + 3) = nsimd_f32_to_u16(buf[3]);
-                        _mm_storeu_ps(buf, {in1}.v1);
-                        *((u16*){in0} + 4) = nsimd_f32_to_u16(buf[0]);
-                        *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
-                        *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
-                        *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
-                      #endif'''.format(align=align, **fmtspec)
+            return \
+            '''#ifdef NSIMD_FP16
+                 __m128i v0 = _mm_cvtps_ph(
+                   {in1}.v0, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+                 __m128i v1 = _mm_cvtps_ph(
+                   {in1}.v1, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+                 __m128d v = _mm_shuffle_pd(_mm_castsi128_pd(v0),
+                               _mm_castsi128_pd(v1),
+                                 0 /* = (0 << 1) | (0 << 0) */);
+                 _mm_store{align}_pd((f64*){in0}, v);
+               #else
+                 /* Note that we can do much better but is it useful? */
+                 f32 buf[4];
+                 _mm_storeu_ps(buf, {in1}.v0);
+                 *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
+                 *((u16*){in0} + 1) = nsimd_f32_to_u16(buf[1]);
+                 *((u16*){in0} + 2) = nsimd_f32_to_u16(buf[2]);
+                 *((u16*){in0} + 3) = nsimd_f32_to_u16(buf[3]);
+                 _mm_storeu_ps(buf, {in1}.v1);
+                 *((u16*){in0} + 4) = nsimd_f32_to_u16(buf[0]);
+                 *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
+                 *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
+                 *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
+               #endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx:
-            return '''#ifdef NSIMD_FP16
-                        _mm_store{align}_si128((__m128i*){in0},
-                          _mm256_cvtps_ph({in1}.v0,
-                            _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
-                        _mm_store{align}_si128((__m128i*){in0} + 1,
-                          _mm256_cvtps_ph({in1}.v1,
-                            _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
-                      #else
-                        /* Note that we can do much better but is it useful? */
-                        int i;
-                        f32 buf[8];
-                        _mm256_storeu_ps(buf, {in1}.v0);
-                        for (i = 0; i < 8; i++) {{
-                          *((u16*){in0} + i) = nsimd_f32_to_u16(buf[i]);
-                        }}
-                        _mm256_storeu_ps(buf, {in1}.v1);
-                        for (i = 0; i < 8; i++) {{
-                          *((u16*){in0} + (8 + i)) = nsimd_f32_to_u16(buf[i]);
-                        }}
-                      #endif'''.format(align=align, **fmtspec)
+            return \
+            '''#ifdef NSIMD_FP16
+                 _mm_store{align}_si128((__m128i*){in0},
+                   _mm256_cvtps_ph({in1}.v0,
+                     _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+                 _mm_store{align}_si128((__m128i*){in0} + 1,
+                   _mm256_cvtps_ph({in1}.v1,
+                     _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+               #else
+                 /* Note that we can do much better but is it useful? */
+                 int i;
+                 f32 buf[8];
+                 _mm256_storeu_ps(buf, {in1}.v0);
+                 for (i = 0; i < 8; i++) {{
+                   *((u16*){in0} + i) = nsimd_f32_to_u16(buf[i]);
+                 }}
+                 _mm256_storeu_ps(buf, {in1}.v1);
+                 for (i = 0; i < 8; i++) {{
+                   *((u16*){in0} + (8 + i)) = nsimd_f32_to_u16(buf[i]);
+                 }}
+               #endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx512:
-            return '''_mm256_store{align}_si256((__m256i*){in0},
-                        _mm512_cvtps_ph({in1}.v0,
-                          _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));
-                      _mm256_store{align}_si256((__m256i*){in0} + 1,
-                        _mm512_cvtps_ph({in1}.v1,
-                          _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC));'''. \
-                          format(align=align, **fmtspec)
+            return \
+            '''_mm256_store{align}_si256((__m256i*){in0},
+                   _mm512_cvtps_ph({in1}.v0,
+                        _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+               _mm256_store{align}_si256((__m256i*){in0} + 1,
+                   _mm512_cvtps_ph({in1}.v1,
+                        _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));'''. \
+                        format(align=align, **fmtspec)
     else:
         return '{pre}store{align}{sufsi}({cast}{in0}, {in1});'. \
                format(align=align, cast=cast, **fmtspec)
@@ -1570,17 +1577,17 @@ def storel(simd_ext, typ, aligned):
                       int i;
                       u16 one = 0x3C00; /* FP16 IEEE754 representation of 1 */
                       for (i = 0; i < 16; i++) {{
-                        ((u16*){in0})[i] = (({in1}.v0 >> i) & 1) ? one
-                                                                 : (u16)0;
+                        ((u16*){in0})[i] = (u16)((({in1}.v0 >> i) & 1) ? one
+                                                                       : 0);
                       }}
                       for (i = 0; i < 16; i++) {{
-                        ((u16*){in0})[i + 16] = (({in1}.v1 >> i) & 1) ? one
-                                                                      : (u16)0;
+                        ((u16*){in0})[i + 16] = (u16)((({in1}.v1 >> i) & 1)
+                                                      ? one : 0);
                       }}'''.format(**fmtspec)
         return '''/* This can surely be improved but it is not our priority. */
                   int i;
                   for (i = 0; i < {le}; i++) {{
-                    {in0}[i] = (({in1} >> i) & 1) ? ({typ})1 : ({typ})0;
+                    {in0}[i] = ({typ})((({in1} >> i) & 1) ? 1 : 0);
                   }}'''.format(**fmtspec)
     return \
     '''/* This can surely be improved but it is not our priority. */
@@ -1866,19 +1873,19 @@ def reinterpret1(simd_ext, from_typ, to_typ):
            return nsimd_loadu_{simd_ext}_{to_typ}(({to_typ}*)buf);'''. \
            format(**fmtspec)
         native = 'return {};'.format(setr(simd_ext, 'u16',
-                 '''{pre}cvtps_ph({in0}.v0, _MM_FROUND_TO_ZERO |
+                 '''{pre}cvtps_ph({in0}.v0, _MM_FROUND_TO_NEAREST_INT |
                                             _MM_FROUND_NO_EXC)'''. \
                                             format(**fmtspec),
-                 '''{pre}cvtps_ph({in0}.v1, _MM_FROUND_TO_ZERO |
+                 '''{pre}cvtps_ph({in0}.v1, _MM_FROUND_TO_NEAREST_INT |
                                             _MM_FROUND_NO_EXC)'''. \
                                             format(**fmtspec)))
         if simd_ext in sse:
             return \
             '''#ifdef NSIMD_FP16
                  __m128i lo = _mm_cvtps_ph({in0}.v0,
-                                _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+                                _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
                  __m128i hi = _mm_cvtps_ph({in0}.v1,
-                                _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+                                _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
                  return _mm_castpd_si128(_mm_shuffle_pd(
                           _mm_castsi128_pd(lo), _mm_castsi128_pd(hi), 0));
                #else
@@ -2493,11 +2500,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
     # compute upper half
     if simd_ext in sse:
         if from_typ in common.iutypes:
-            upper_half = \
-            '''{pre}castpd_si{nbits}({pre}shuffle_pd(
-                   {pre}castsi{nbits}_pd({in0}),
-                   {pre}castsi{nbits}_pd({in0}), 1))'''. \
-                   format(**fmtspec)
+            upper_half = '_mm_shuffle_epi32({in0}, 14 /* 2 | 3 */)'. \
+                         format(**fmtspec)
         else:
             upper_half = '''{pre}castpd_ps({pre}shuffle_pd(
                                 {pre}castps_pd({in0}),
@@ -2578,7 +2582,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
     if (from_typ in common.ftypes and to_typ in common.iutypes) or \
        (from_typ in common.iutypes and to_typ in common.ftypes):
         return int_float
-    if simd_ext == 'sse2':
+    #if simd_ext == 'sse2':
+    if simd_ext in sse:
         if from_typ in common.itypes and to_typ in common.iutypes:
             return \
             '''nsimd_{simd_ext}_v{to_typ}x2 ret;
@@ -2594,8 +2599,8 @@ def upcvt1(simd_ext, from_typ, to_typ):
                return ret;'''.format(**fmtspec)
         else:
             return with_intrinsic
-    elif simd_ext == 'sse42':
-        return with_intrinsic
+    #elif simd_ext == 'sse42':
+    #    return with_intrinsic
     elif simd_ext == 'avx':
         if from_typ == 'i32' and to_typ == 'f64':
             return with_intrinsic
@@ -2933,7 +2938,6 @@ def zip_half(func, simd_ext, typ):
             cast_high = '_mm512_castpd256_pd512'
             extract = '_mm512_extractf64x4_pd'
             insert = '_mm512_insertf64x4'
-
         if typ == 'f16':
             return '''\
             nsimd_{simd_ext}_v{typ} ret;
@@ -2972,11 +2976,16 @@ def zip_half(func, simd_ext, typ):
                            cast_low=cast_low, extract=extract, **fmtspec),
                        cast_high=cast_high,
                        cast_low=cast_low,
-                       insert=insert, i=i, **fmtspec)
+                       insert=insert, i=i, **fmtspec) 
 
 def zip(simd_ext, typ):
-    return '// Not implemented yet'
-
+    return '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_ziplo_{simd_ext}_{typ}({in0}, {in1});
+    ret.v1 = nsimd_ziphi_{simd_ext}_{typ}({in0}, {in1});
+    return ret;
+    '''.format(**fmtspec)
+    
 # -----------------------------------------------------------------------------
 ## unzip functions
 
@@ -3058,7 +3067,7 @@ def unzip_half(func, simd_ext, typ):
             v0 = '_mm256_castsi256_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
             v1 = '_mm256_castsi256_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
             v_res = '_mm256_castps_si256(v_res)' if typ in ['i32', 'u32'] else 'v_res'
-            ret = 'ret'
+            ret = 'ret' 
             src = ret_template .\
                 format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
                        else '_MM_SHUFFLE(3, 1, 3, 1)',
@@ -3200,6 +3209,14 @@ def unzip_half(func, simd_ext, typ):
                 extract_hi1=extract(simd_ext, typ, HI, common.in1),
                 merge=setr(simd_ext, typ, 'v00', 'v01'), **fmtspec)
 
+def unzip(simd_ext, typ):
+    return '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_unziplo_{simd_ext}_{typ}({in0}, {in1});
+    ret.v1 = nsimd_unziphi_{simd_ext}_{typ}({in0}, {in1});
+    return ret;
+    '''.format(**fmtspec)
+    
 # -----------------------------------------------------------------------------
 ## get_impl function
 
@@ -3312,7 +3329,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'ziplo': lambda: zip_half('ziplo', simd_ext, from_typ),
         'ziphi': lambda: zip_half('ziphi', simd_ext, from_typ),
         'unziplo': lambda: unzip_half('unziplo', simd_ext, from_typ),
-        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ)
+        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ),
+        'zip' : lambda : zip(simd_ext, from_typ),
+        'unzip' : lambda : unzip(simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
