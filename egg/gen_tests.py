@@ -720,7 +720,7 @@ def compare_expected_vs_computed(typ):
           /* Compare results */
 
           for (int vi = 0; vi < SIZE; vi += step) {{
-            for (ii = vi; ii < vi + step; ii++) {{
+            for (ii = vi; ii < vi + step; ++ii) {{
               if (comp_function(vout_expected[ii], vout_computed[ii])) {{
                 return -1;
               }}
