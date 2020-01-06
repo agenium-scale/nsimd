@@ -221,7 +221,7 @@ Fma.name = 'fma'
 Fma.full_name = 'Fused multiplication and accumulation emulation'
 Fma.signatures = ['v fma cv& cv& cv&']
 Fma.categories = [DocBasicArithmetic]
-Fma.desc = 'Emulates the FMA operation with fixed-point arithmetic' \
+Fma.desc = 'Emulates the FMA operation with fixed-point arithmetic ' \
     + 'for compatibility.\n' \
     + 'This function is just a wrapper that calls consecutively  an add then\n' \
     + 'a mul operation.'
@@ -311,7 +311,7 @@ Le.signatures = ['vl le cv& cv&']
 Le.categories = [DocComparison]
 Le.cxx_operator = '<='
 Le.desc = '''\
-Performs a lesser-or-equal comparison between two fixed-point registers, and returns
+Performs a lesser-or-equal comparison between two fixed-point registers, and returns 
 the results of the test in a logical vector.
 '''
 fp_operators.append(Le)
