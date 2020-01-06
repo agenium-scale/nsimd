@@ -985,20 +985,20 @@ def gen_adds(opts, op, typ, lang, ulps):
 
               #define STATUS "test of {op_name} over {typ}"
 
-              #define CHECK(a) {{ \\
-                errno = 0; \\
-                if (!(a)) {{ \\
-                  fprintf(stderr, "ERROR: " #a ":%d: %s\\n", __LINE__, strerror(errno)); \\
-                  fflush(stderr); \\
-                  exit(EXIT_FAILURE); \\
-                }} \\
-              }}
-            '''.format(includes=get_includes(lang), op_name = op.name, typ = typ, sizeof = sizeof)
+              {aligned_alloc_error}
+
+              {adds_subs_check_case}
+            ''' .format(includes=get_includes(lang),
+                        op_name=op.name,
+                        typ=typ,
+                        sizeof=sizeof,
+                        aligned_alloc_error=aligned_alloc_error(),
+                        adds_subs_check_case=adds_subs_check_case())
 
     if typ in common.ftypes:
         MIN = f"{typ}('-Inf')"
         MAX = f"{typ}('Inf')"
-        test_cases_helpers_given_type = 'Not implemented'
+        test_cases_helpers_given_type = '// Not implemented'
         test_cases_given_type = gen_adds_floats_test_helper(typ = typ, min_ = MIN, max_ = MAX)
 
     elif typ in common.iutypes:
@@ -1044,16 +1044,18 @@ def gen_adds(opts, op, typ, lang, ulps):
             {head}
             /* ------------------------------------------------------------------------- */
 
+            {random_sign_flip}
+
+            {zero_out_arrays}
+
             int comp_function({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out != nsimd_out; }}
 
             {compare_expected_vs_computed}
 
-            {random_sign_flip}
-
             {test_cases_helpers_given_type}
 
-            int main(void) {{
-
+            int main(void)
+            {{
               const int mem_aligned_size = SIZE * {sizeof};
 
               {typ} *vin1;
@@ -1076,7 +1078,8 @@ def gen_adds(opts, op, typ, lang, ulps):
             }}
         ''' .format(head=head,
                     compare_expected_vs_computed=compare_expected_vs_computed(typ),
-                    random_sign_flip = random_sign_flip(),
+                    random_sign_flip=random_sign_flip(),
+                    zero_out_arrays=zero_out_arrays(typ),
                     test_cases_helpers_given_type=test_cases_helpers_given_type,
                     test_cases_given_type=test_cases_given_type,
                     op_name = op.name,
