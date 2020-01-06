@@ -814,7 +814,7 @@ def test_adds_signed_underflow(typ, limit):
 
 def adds_signed_is_overflow(typ, limit):
       return f'''
-      {typ} is_overflow(const {typ} a, const {typ} b)
+      {typ} adds_signed_is_overflow(const {typ} a, const {typ} b)
       {{
         if((a > 0) && (b > {limit} - a)){{ return 1; }}
         return 0;
@@ -823,7 +823,7 @@ def adds_signed_is_overflow(typ, limit):
 
 def adds_signed_is_underflow(typ, limit):
       return f'''
-      {typ} is_underflow(const {typ} a, const {typ} b)
+      {typ} adds_signed_is_underflow(const {typ} a, const {typ} b)
       {{
         if ((a < 0) && (b < {limit} - a)) {{ return 1; }}
         return 0;
@@ -832,9 +832,9 @@ def adds_signed_is_underflow(typ, limit):
 
 def adds_signed_is_neither_overflow_nor_underflow(typ):
       return f'''
-      {typ} is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      {typ} adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
       {{
-        return ! is_overflow(a, b) && ! is_underflow(a, b);
+        return ! adds_signed_is_overflow(a, b) && ! adds_signed_is_underflow(a, b);
       }}
       '''
 
@@ -855,7 +855,7 @@ def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
         {{
           {typ} a = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
           {typ} b = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
-          if(is_neither_overflow_nor_underflow(a, b))
+          if(adds_signed_is_neither_overflow_nor_underflow(a, b))
           {{
             vin1[ii] = a;
             vin2[ii] = b;
@@ -879,11 +879,11 @@ def test_adds_signed_all_cases(typ, min_, max_):
         {{
           vin1[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
           vin2[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
-          if(is_overflow(vin1[ii], vin2[ii]))
+          if(adds_signed_is_overflow(vin1[ii], vin2[ii]))
           {{
             vout_expected[ii] = INT_MAX;
           }}
-          else if(is_underflow(vin1[ii], vin2[ii]))
+          else if(adds_signed_is_underflow(vin1[ii], vin2[ii]))
           {{
             vout_expected[ii] = INT_MIN;
           }}
