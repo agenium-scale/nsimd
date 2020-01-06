@@ -25,5 +25,5 @@ import modules.fixed_point.hatch
 # -----------------------------------------------------------------------------
 # Entry point
 
-def doit(opts):
+def doit(opts):    
     modules.fixed_point.hatch.doit(opts)

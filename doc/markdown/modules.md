@@ -22,6 +22,8 @@ SOFTWARE.
 
 -->
 
-# `NSIMD` modules
 
-- [Fixed-point arithmetic support](fixed_point/overview.md)
+# NSIMD modules list
+
+- [Fixed-point support](modules/fixed_point/overview.md)
+

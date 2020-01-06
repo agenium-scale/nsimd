@@ -69,7 +69,7 @@ running CMake.
 
 The installation of `nsimd` is done by retrieving the current status of the
 library by cloning the repository. This is done via the following command:
-@[INCLUDE_CODE:L24:L24](../src/nsimd.sh)
+@[INCLUDE_CODE:L26:L26](../src/nsimd.sh)
 
 Generating C and C++ files using Python3:
 @[INCLUDE_CODE:L28:L29](../src/nsimd.sh)

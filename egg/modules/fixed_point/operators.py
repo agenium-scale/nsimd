@@ -37,15 +37,13 @@ DocComparison = 'Comparison operators'
 DocLogicalOperators = 'Logical operators'
 DocBitsOperators = 'Bits manipulation operators'
 
-fp_categories = [
+fp_categories = sorted([
     DocMisc,
     DocLoadStore,
     DocBasicArithmetic,
     DocComparison,
     DocLogicalOperators,
-    DocBitsOperators
-]
-fp_categories = sorted(fp_categories)
+    DocBitsOperators])
 
 class FpOperator(object):
     name = ''
@@ -74,7 +72,7 @@ fp_operators.append(Len)
 Set1 = FpOperator()
 Set1.name = 'set1'
 Set1.full_name = 'Value broadcast'
-Set1.signatures = ['v set1 cs&']
+Set1.signatures = ['T set1 s']
 Set1.categories = [DocMisc]
 Set1.desc = 'Returns a vector whose all elements are set to the given value.'
 fp_operators.append(Set1)
@@ -175,7 +173,7 @@ Add.name = 'add'
 Add.full_name = 'Addition of two vectors'
 Add.signatures = ['v add cv& cv&']
 Add.categories = [DocBasicArithmetic]
-Add.desc = 'Adds of two vectors.'
+Add.desc = 'Adds two vectors.'
 Add.cxx_operator = '+'
 fp_operators.append(Add)
 

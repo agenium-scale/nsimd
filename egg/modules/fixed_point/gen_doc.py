@@ -53,66 +53,88 @@ def gen_overview(opts):
         return
     with common.open_utf8(opts, filename) as fout:
         fout.write('''
-# NSIMD fixed-point module
+# NSIMD fixed point module
 
 ## Description
 
-This module implements a fixed-point numbers support for the NSIMD library.
+This module implements a fixed-point numbers support for the `nsimd` library.
 Fixed-point numbers are integer types used to represent decimal numbers. A number `lf` 
 of bits are used to encode its integer part, and `rt` bits are used to encode its 
 fractional part.
 
 The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf, rt>` to 
 represent a fixed_point number. All the basic floating-point arithmetic operaors have 
-been defined, therefore fp\_t elements can be manipulated as normal numbers.
-The fixed\_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type for 
+been defined, therefore fp_t elements can be manipulated as normal numbers.
+The fixed_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type for 
 storage, depending on the value of `lf + 2 * rt`. 
 
 All the functions of the module are under the namespace `nsimd::fixed_point`, 
-and match the same interface than NSIMD.
+and match the same interface than `nsimd`.
 
 The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd `fpsimd_t` 
 struct type is defined in `simd.hpp`.
 
-The modules redefines the NSIMD pack type for fixed-point numbers, templated with `lf` 
+The modules redefines the `nsimd` pack type for fixed-point numbers, templated with `lf` 
 and `rt` :
 
 ```C++
+namespace nsimd {
+namespace fixed_point {
 template <uint8_t lf, uint8_t rt>
 struct pack;
+} // namespace fixed_point
+} // namespace nsimd
 ```
 
-Then, the pack can be manipulated as an NSIMD pack like other scalar types. Here is 
-a minimal example :
+Then, the pack can be manipulated as an `nsimd` pack like other scalar types. 
+
+## Compatibility
+
+The fixed point module is a C++ only API, compatible with the C++98 standard.
+It has the same compilers and hardware support than the main `nsimd` API 
+(see the [API index](../../index.md)).
+
+## Example
+
+Here is a minimal example(main.cpp) :
 
 ```C++
-// Assumes that NSIMD is in your include path
+#include <ctime>
+#include <cstdlib>
 #include <iostream>
 #include <nsimd/modules/fixed_point.hpp>
 
+float rand_float() {
+  return 4.0f * ((float) rand() / (float) RAND_MAX) - 2.0f;        
+}
+
 int main() {
+  // We use fixed point numbers with 8 bits of integer part and 8 bits of 
+  // decimal part. It will use a 32 bits integer for internal storage.
   typedef nsimd::fixed_point::fp_t<8, 8> fp_t;
-  typedef nsimd::fixed_point::pack<fp_t> vec_t;
+  typedef nsimd::fixed_point::pack<fp_t> fp_pack_t;
   
-  fp_t *input0;
-  fp_t *input1;
-  fp_t *res;
+  const size_t v_size = nsimd::fixed_point::len(fp_t());
+
+  fp_t *input0 = (fp_t*)malloc(v_size * sizeof(fp_t));
+  fp_t *input1 = (fp_t *)malloc(v_size * sizeof(fp_t));
+  fp_t *res = (fp_t *)malloc(v_size * sizeof(fp_t));
   
   // Input and output initializations 
-  // We assume that a function float rand_float(); has been 
-  // previously defined
   for(size_t i = 0; i < nsimd::fixed_point::len(fp_t()); i++) {
-    input0 = fp_t(rand_float());
-    input1 = fp_t(rand_float());
+    input0[i] = fp_t(rand_float());
+    input1[i] = fp_t(rand_float());
   }
   
-  vec_t v0 = nsimd::fixed_point::loadu<vec_t>(input0);
-  vec_t v1 = nsimd::fixed_point::loadu<vec_t>(input1);
-  vec_t vres = nsimd::fixed_point::add(input0, input1);
+  fp_pack_t v0 = nsimd::fixed_point::loadu<fp_pack_t>(input0);
+  fp_pack_t v1 = nsimd::fixed_point::loadu<fp_pack_t>(input1);
+  fp_pack_t vres = nsimd::fixed_point::add(v0, v1);
   nsimd::fixed_point::storeu(res, vres);
   
   for(size_t i = 0; i < nsimd::fixed_point::len(fp_t()); i++) {
-    std::cout << float(res[i]) << \" \";
+    std::cout << float(input0[i]) << \" | \"
+      << float(input1[i]) << \" | \"
+      << float(res[i]) << \"\\n\";
   }
   std::cout << std::endl;
   
@@ -120,15 +142,56 @@ int main() {
 }
 
 ```
+
+To test with avx2 run : 
+```bash
+export NSIMD_ROOT=<path/to/simd>
+g++ -o main -I$NSIMD_ROOT/include -mavx2 -DNSIMD_AVX2 main.cpp
+./main
+```
+
+The console output will look like this : 
+```console
+$>./main 
+1.35938 | -0.421875 | 0.9375
+1.13281 | 1.19531 | 2.32812
+1.64844 | -1.21094 | 0.4375
+-0.660156 | 1.07422 | 0.414062
+-0.890625 | 0.214844 | -0.675781
+-0.0898438 | 0.515625 | 0.425781
+-0.539062 | 0.0546875 | -0.484375
+1.80859 | 1.66406 | 3.47266
+```
         ''')
 
 api_template = '''\
 # {full_name}
 
 {desc}
-**TODO : Precise which type can be given to T (fixed point or scalar).**
 
-## C++ APIs
+## Template parameter type for T: 
+
+When using the following typedef :
+```c++
+typedef nsimd::fixed_point::fp_t<lf, rt> fp_t
+```
+
+The T template parameter is of the following type depending on the operator:
+
+- `set1`, `loadu` and `loada`: 
+```c++
+nsimd::fixed_point::pack<fp_t>
+```
+- `loadlu`, `loadla`: 
+```c++
+nsimd::fixed_point::packl<fp_t>
+```
+- Other operators: 
+```c++ 
+nsimd::fixed_point::fp_t<lf, rt>
+```
+
+## C++ API
 
 ```c++
 {decl}
@@ -148,6 +211,8 @@ def get_type(param):
         return 'typename T::value_type '
     elif param == 'cs': # Const scalar parameter
         return 'const typename T::value_type '
+    elif param == 'cs&': # Const scalar parameter
+        return 'const typename T::value_type &'
     elif param == 'cT&':
         return 'const T &'
     elif param == 's*': # Pointer to a scalar
@@ -201,7 +266,7 @@ def gen_api(opts):
                             'modules', 'fixed_point',
                             'api.md')
     with common.open_utf8(opts, filename) as fout:
-        fout.write('''# NSIMD fixed-point API\n''')
+        fout.write('''# NSIMD fixed point API\n''')
         for cat in fp_categories:
             ops = [op for op in fp_operators if cat in op.categories]
             if(len(ops) == 0):
@@ -221,10 +286,130 @@ def gen_doc(opts):
         with common.open_utf8(opts, filename) as fout:
             fout.write(api_template.format(full_name=op.full_name,
                                            desc=op.desc, decl=gen_decl(op)))
-            
+
+header_src = '''\
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset=\"utf-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+    <title>{doc_title}</title>
+    <style type=\"text/css\">
+      body {{
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }}
+      h1,h2,h3 {{
+        line-height:1.2
+      }}
+      table,th, td {{
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }}
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src=\"{assets_dir}/polyfill.min.js\"></script>
+    <script id=\"MathJax-script\" async src=\"{assets_dir}/tex-mml-chtml.js\"></script>
+    <!-- Highlight.js -->
+    <link rel=\"stylesheet\" href= \"{assets_dir}/highlight.js.default.min.css\">
+    <script src=\"{assets_dir}/highlight.min.js\"></script>
+    <script src=\"{assets_dir}/cpp.min.js\"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src=\"{img_dir}/logo.svg\"><br>
+  <br>
+  <a href=\"../../index.html\">Index</a> |
+  <a href=\"../../quick_start.html\">Quick Start</a> |
+  <a href=\"../../tutorials.html\">Tutorials</a> |
+  <a href=\"../../faq.html\">FAQ</a> |
+  <a href=\"../../contribute.html\">Contribute</a> |
+  <a href=\"../../overview.html\">API overview</a> |
+  <a href=\"../../api.html\">API reference</a> |
+  <a href=\"../../modules.html\">Modules</a>
+  <br><hr>
+  <b>Fixed point support : </b>
+  <a href=\"overview.html\">Overview</a> |
+  <a href=\"api.html\">Reference</a>
+</center>
+'''
+
+footer_src = '''\
+  </body>
+</html>
+'''
+
+def gen_html(opts):
+    # check if md2html exists
+    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+    full_path_md2html = os.path.join(doc_dir, md2html)
+    if not os.path.isfile(full_path_md2html):
+        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
+        if platform.system() == 'Windows':
+            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+        else:
+            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
+        print(msg)
+        return
+
+    # get all markdown files
+    md_dir = os.path.join(doc_dir, 'markdown/modules/fixed_point')
+    html_dir = os.path.join(doc_dir, 'html/modules/fixed_point')
+    common.mkdir_p(html_dir)
+    dirs = [md_dir]
+    md_files = []
+    while len(dirs) > 0:
+        curr_dir = dirs.pop()
+        entries = os.listdir(curr_dir)
+        for entry in entries:
+            full_path_entry = os.path.join(curr_dir, entry)
+            if full_path_entry == '..' or full_path_entry == '.':
+                continue
+            elif os.path.isdir(full_path_entry):
+                continue
+            elif entry.endswith('.md'):
+                md_files.append(full_path_entry)
+
+    # header and footer
+    doc_title = '`nsimd` fixed point module documentation'
+    root_dir = '../..'
+    assets_dir = '../../assets'
+    img_dir = '../../img'
+    header = header_src.format(doc_title=doc_title,
+                               root_dir=root_dir,
+                               img_dir=img_dir,
+                               assets_dir=assets_dir)
+    footer = footer_src
+    tmp_file = os.path.join(doc_dir, 'tmp.html')
+    for filename in md_files:
+        i = filename.rfind('markdown')
+        if i == -1:
+            continue
+        output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
+        common.mkdir_p(os.path.dirname(output))
+        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
+        with common.open_utf8(opts, output) as fout:
+            fout.write(header)
+            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                fout.write(fin.read())
+            fout.write(footer)
+    
 def doit(opts):
     print('-- Generating doc for module fixed_point')
     gen_overview(opts)
     gen_api(opts)
     gen_doc(opts)
+    gen_html(opts)
     
