@@ -902,7 +902,8 @@ def gen_load_store_masked(opts, op, typ, lang):
                            nsimd::loada<nsimd::pack<{typ}> >(vin);
                        nsimd::{op_name}(vout, in, mask);'''.\
                     format(typ=typ, op_name=op.name)
-    common.write_utf8(filename, opts,
+    with common.open_utf8(opts, filename) as out:
+        out.write(
         '''{includes}
 
            #define NMASKS 1024
@@ -973,6 +974,7 @@ def gen_load_store_masked(opts, op, typ, lang):
            }}'''.format(includes=get_includes(lang), vout_comp=vout_comp,
                         op_name=op.name, typ=typ, sizeof=common.sizeof(typ),
                         convert_to=convert_to, convert_from=convert_from))
+    common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
 # Tests for nbtrue
