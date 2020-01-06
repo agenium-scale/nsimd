@@ -699,7 +699,57 @@ def gen_addv(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
-# Tests helper for adds
+# Tests helper for adds/subs
+
+def aligned_alloc_error():
+      return f'''
+      #define CHECK(a) \\
+      {{ \\
+        errno = 0; \\
+        if (!(a)) \\
+        {{ \\
+          fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                __LINE__, strerror(errno)); \\
+          fflush(stderr); \\
+          exit(EXIT_FAILURE); \\
+        }} \\
+      }}
+      '''
+
+def adds_subs_check_case():
+      return f'''
+      #define CHECK_CASE(a, which) \\
+      {{ \\
+        if(-1 == (a)) \\
+        {{ \\
+          fprintf(stderr, STATUS " ... " which " check FAIL\\n"); \\
+          fflush(stderr); \\
+          return EXIT_FAILURE; \\
+        }} \\
+      }}
+      '''
+
+def random_sign_flip():
+      return f'''
+      int random_sign_flip(void)
+      {{
+          return 2 * (rand() % 2) - 1;
+      }}
+      '''
+
+def zero_out_arrays(typ):
+      return f'''
+      void zero_out_arrays({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+           vin1[ii] = ({typ})0;
+           vin2[ii] = ({typ})0;
+           vout_expected[ii] = ({typ})0;
+           vout_computed[ii] = ({typ})0;
+        }}
+      }}
+      '''
 
 def compare_expected_vs_computed(typ):
       return f'''
@@ -832,14 +882,7 @@ def adds_signed_is_neither_overflow_nor_underflow(typ):
       }}
       '''
 
-def random_sign_flip():
-      return f'''
-      int random_sign_flip(void)
-      {{
-        return 2 * (rand() % 2) - 1;
-      }}
-      '''
-
+# test signed neither overflow nor underflow
 def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
       return f'''
       void test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
