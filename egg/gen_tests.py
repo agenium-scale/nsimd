@@ -816,8 +816,7 @@ def adds_signed_is_overflow(typ, limit):
       return f'''
       {typ} adds_signed_is_overflow(const {typ} a, const {typ} b)
       {{
-        if((a > 0) && (b > {limit} - a)){{ return 1; }}
-        return 0;
+        return (a > 0) && (b > {limit} - a);
       }}
       '''
 
@@ -825,8 +824,7 @@ def adds_signed_is_underflow(typ, limit):
       return f'''
       {typ} adds_signed_is_underflow(const {typ} a, const {typ} b)
       {{
-        if ((a < 0) && (b < {limit} - a)) {{ return 1; }}
-        return 0;
+        return (a < 0) && (b < {limit} - a);
       }}
       '''
 
