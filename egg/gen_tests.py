@@ -761,19 +761,15 @@ def test_adds_signed_overflow(typ, limit):
         }}
 
         // vin2[ii] > {limit} - vin1[ii]
-        // vin2[ii] = {limit} - vin1[ii] + {{1... <= vin1[ii]}}
-        int ii = 0;
-        while(ii < SIZE)
+        // vin2[ii] = {limit} - vin1[ii] + rand_val
+        // s.t.: 0 < rand_val <= vin1[ii]
+        for(int ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % {limit};
+            {typ} rand_val = rand() % (vin1[ii] + 1);
             rand_val = (rand_val == 0 ? 1 : rand_val);
-            if (rand_val > vin1[ii]){{ continue; }}
             vin2[ii] = {limit} - vin1[ii] + rand_val;
             vout_expected[ii] = {limit};
-            ++ ii;
         }}
-
-        assert(ii == SIZE);
 
         // Test:
         // if ((vin1[ii] > 0) && (vin2[ii] > {limit} - v1[ii])) {{ vout_expected[ii] == {limit}; }}
