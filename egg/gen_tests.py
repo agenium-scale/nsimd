@@ -933,39 +933,21 @@ def test_adds_signed_all_cases(typ, min_, max_):
       }}
       '''
 
+# all signed tests
 def test_adds_signed():
-      return '''
-      int check = test_overflow(vin1, vin2, vout_expected, vout_computed);
-      if(-1 == check)
-      {
-        fprintf(stdout, STATUS "... overflow check FAIL\\n");
-        fflush(stdout);
-        return -1;
-      }
+      return'''
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_overflow(vin1, vin2, vout_expected, vout_computed), "overflow");
 
-      check = test_underflow(vin1, vin2, vout_expected, vout_computed);
-      if(-1 == check)
-      {
-        fprintf(stdout, STATUS "... underflow check FAIL\\n");
-        fflush(stdout);
-        return -1;
-      }
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_underflow(vin1, vin2, vout_expected, vout_computed), "underflow");
 
-      check = test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed);
-      if(-1 == check)
-      {
-        fprintf(stdout, STATUS "... case with neither underflow nor overflow check FAIL\\n");
-        fflush(stdout);
-        return -1;
-      }
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed),
+      "neither underflow nor overflow check");
 
-      check = test_all_cases(vin1, vin2, vout_expected, vout_computed);
-      if(-1 == check)
-      {
-         fprintf(stdout, STATUS "... general case FAIL\\n");
-         fflush(stdout);
-         return -1;
-      }
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected, vout_computed), "general");
       '''
 
 # -----------------------------------------------------------------------------
