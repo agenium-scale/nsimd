@@ -940,6 +940,8 @@ def gen_adds_unsigned_test_helper(typ, min_, max_):
       rand = f'({typ})({rand_val})'
       return "Not implemented"
 
+# -----------------------------------------------------------------------------
+# gen_adds
 
 def gen_adds(opts, op, typ, lang, ulps):
 
