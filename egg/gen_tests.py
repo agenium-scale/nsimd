@@ -797,10 +797,12 @@ def gen_adds_floats_test_helper(typ, min_, max_):
 # -----------------------------------------------------------------------------
 # Tests helper for adds with signed types
 
+# test signed overflow
 def test_adds_signed_overflow(typ, limit):
       return f'''
       void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
+
         // if ((vin1[ii] > 0) && (vin2[ii] > {limit} - vin1[ii])) {{ overflow }}
 
         // vin1[ii] > 0
@@ -827,10 +829,12 @@ def test_adds_signed_overflow(typ, limit):
      }}
       '''
 
+# test signed underflow
 def test_adds_signed_underflow(typ, limit):
       return f'''
       void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
+
         // if ((vin1[ii] < 0) && (vin2[ii] < {limit} - vin1[ii])) {{ underflow }}
 
         // vin1[ii] < 0
@@ -858,6 +862,7 @@ def test_adds_signed_underflow(typ, limit):
       }}
       '''
 
+# helpers - is signed: overflow/underflow/neither overflow nor underflow
 def adds_signed_is_overflow(typ, limit):
       return f'''
       {typ} adds_signed_is_overflow(const {typ} a, const {typ} b)
@@ -907,6 +912,7 @@ def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
       }}
       '''
 
+# test signed all cases
 def test_adds_signed_all_cases(typ, min_, max_):
       return f'''
       void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
