@@ -838,9 +838,9 @@ def adds_signed_is_neither_overflow_nor_underflow(typ):
       }}
       '''
 
-def flip_sign():
+def random_sign_flip():
       return f'''
-      int flip_sign(void)
+      int random_sign_flip(void)
       {{
         return 2 * (rand() % 2) - 1;
       }}
@@ -853,8 +853,8 @@ def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
         int ii = 0;
         while(ii < SIZE)
         {{
-          {typ} a = (({typ})(flip_sign() * rand()) % {max_}) % {min_};
-          {typ} b = (({typ})(flip_sign() * rand()) % {max_}) % {min_};
+          {typ} a = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
+          {typ} b = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
           if(is_neither_overflow_nor_underflow(a, b))
           {{
             vin1[ii] = a;
@@ -877,8 +877,8 @@ def test_adds_signed_all_cases(typ, min_, max_):
         int ii = 0;
         while(ii < SIZE)
         {{
-          vin1[ii] = (({typ})(flip_sign() * rand()) % INT_MAX) % INT_MIN;
-          vin2[ii] = (({typ})(flip_sign() * rand()) % INT_MAX) % INT_MIN;
+          vin1[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
+          vin2[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
           if(is_overflow(vin1[ii], vin2[ii]))
           {{
             vout_expected[ii] = INT_MAX;
@@ -1030,7 +1030,7 @@ def gen_adds(opts, op, typ, lang, ulps):
 
             {compare_expected_vs_computed}
 
-            {flip_sign}
+            {random_sign_flip}
 
             {test_cases_helpers_given_type}
 
@@ -1058,7 +1058,7 @@ def gen_adds(opts, op, typ, lang, ulps):
             }}
         ''' .format(head=head,
                     compare_expected_vs_computed=compare_expected_vs_computed(typ),
-                    flip_sign = flip_sign(),
+                    random_sign_flip = random_sign_flip(),
                     test_cases_helpers_given_type=test_cases_helpers_given_type,
                     test_cases_given_type=test_cases_given_type,
                     op_name = op.name,
