@@ -872,8 +872,7 @@ def test_adds_signed_all_cases(typ, min_, max_):
       return f'''
       void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
-        int ii = 0;
-        while(ii < SIZE)
+        for(int ii = 0; ii < SIZE; ++ii)
         {{
           vin1[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
           vin2[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
@@ -889,9 +888,7 @@ def test_adds_signed_all_cases(typ, min_, max_):
           {{
             vout_expected[ii] = vin1[ii] + vin2[ii];
           }}
-          ++ ii;
         }}
-        assert(ii == SIZE);
         // Test all cases:
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
