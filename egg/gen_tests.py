@@ -934,7 +934,7 @@ def gen_adds_unsigned_test_helper(typ, min_, max_):
 
       rand_val = f'(1 << (rand() % 4))'
       rand = f'({typ})({rand_val})'
-      return "Not implemented"
+      return "// Not implemented"
 
 # -----------------------------------------------------------------------------
 # gen_adds
@@ -982,7 +982,7 @@ def gen_adds(opts, op, typ, lang, ulps):
         MAX = type_limits['max']
 
         if typ in common.utypes:
-          test_cases_helpers_given_type = 'Not implemented'
+          test_cases_helpers_given_type = '// Not implemented'
           test_cases_given_type = gen_adds_unsigned_test_helper(typ=typ, min_=MIN, max_=MAX)
 
         elif typ in common.itypes:
