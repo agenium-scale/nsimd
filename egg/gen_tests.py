@@ -716,15 +716,20 @@ def aligned_alloc_error():
       }}
       '''
 
+def equal(typ):
+      return f'''
+      char equal({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out == nsimd_out; }}
+      '''
+
 def adds_subs_check_case():
       return f'''
-      #define CHECK_CASE(a, which) \\
+      #define CHECK_CASE(test_output, which_test) \\
       {{ \\
-        if(-1 == (a)) \\
+        if(0 == (test_output)) \\
         {{ \\
-          fprintf(stderr, STATUS " ... " which " check FAIL\\n"); \\
-          fflush(stderr); \\
-          return EXIT_FAILURE; \\
+          fprintf(stdout, STATUS " ... " which_test " check FAIL\\n"); \\
+          fflush(stdout); \\
+          return -1; \\
         }} \\
       }}
       '''
@@ -759,7 +764,7 @@ def compare_expected_vs_computed(typ):
 
           /* Fill vout_computed with computed values */
 
-          for (ii = 0; ii < SIZE; ii += step) {{
+          for (int ii = 0; ii < SIZE; ii += step) {{
             vec({typ}) va1, va2, vc;
             va1 = vloadu(&vin1[ii], {typ});
             va2 = vloadu(&vin2[ii], {typ});
@@ -769,15 +774,14 @@ def compare_expected_vs_computed(typ):
 
           /* Compare results */
 
-          for (int vi = 0; vi < SIZE; vi += step) {{
-            for (ii = vi; ii < vi + step; ++ii) {{
-              if (comp_function(vout_expected[ii], vout_computed[ii])) {{
-                return -1;
+          for (int ii = 0; ii < SIZE; ++ii) {{
+              if (! equal(vout_expected[ii], vout_computed[ii])) {{
+                return 0;
               }}
             }}
           }}
 
-          return 0;
+          return 1;
       }}
       '''
 
@@ -953,7 +957,7 @@ def test_adds_signed():
       "neither underflow nor overflow check");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected, vout_computed), "general");
+      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected, vout_computed), "all cases");
       '''
 
 # -----------------------------------------------------------------------------
@@ -1054,7 +1058,7 @@ def gen_adds(opts, op, typ, lang, ulps):
 
             {zero_out_arrays}
 
-            int comp_function({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out != nsimd_out; }}
+            {equal}
 
             {compare_expected_vs_computed}
 
@@ -1086,6 +1090,7 @@ def gen_adds(opts, op, typ, lang, ulps):
                     compare_expected_vs_computed=compare_expected_vs_computed(typ),
                     random_sign_flip=random_sign_flip(),
                     zero_out_arrays=zero_out_arrays(typ),
+                    equal=equal(typ),
                     test_cases_helpers_given_type=test_cases_helpers_given_type,
                     test_cases_given_type=test_cases_given_type,
                     op_name = op.name,
