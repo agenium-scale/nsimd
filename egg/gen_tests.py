@@ -756,24 +756,50 @@ def zero_out_arrays(typ):
       }}
       '''
 
-def compare_expected_vs_computed(typ):
+def compute_values_given_language(typ, language):
+      if 'c_base' == language:
+            return f'''
+            for (int ii = 0; ii < SIZE; ii += step) {{
+              vec({typ}) va1, va2, vc;
+              va1 = vloadu(&vin1[ii], {typ});
+              va2 = vloadu(&vin2[ii], {typ});
+              vc = vadds(va1, va2, {typ});
+              vstoreu(&vout_computed[ii], vc, {typ});
+            }}
+            '''
+      elif 'cxx_base' == language:
+            return f'''
+            for (int ii = 0; ii < SIZE; ii += step) {{
+              vec({typ}) va1, va2, vc;
+              va1 = nsimd::loadu(&vin1[i], {typ}());
+              va2 = nsimd::loadu(&vin2[i], {typ}());
+              vc = nsimd::adds(va1, va2, {typ}());
+              nsimd::storeu(&vout_computed[i], vc, {typ}());
+            }}
+            '''
+      else:
+            return f'''
+              for (i = 0; i < SIZE; i += step) {{
+                nsimd::pack<{typ}> va1, va2, vc;
+                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
+                va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[i]);
+                vc = nsimd::adds(va1, va2);
+                nsimd::storeu(&vout_computed[i], vc);
+              }}
+            '''
+
+def compare_expected_vs_computed(typ, language):
+      values_computation = compute_values_given_language(typ, language)
+
       return f'''
       int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
       {{
           const int step = vlen({typ});
 
           /* Fill vout_computed with computed values */
-
-          for (int ii = 0; ii < SIZE; ii += step) {{
-            vec({typ}) va1, va2, vc;
-            va1 = vloadu(&vin1[ii], {typ});
-            va2 = vloadu(&vin2[ii], {typ});
-            vc = vadds(va1, va2, {typ});
-            vstoreu(&vout_computed[ii], vc, {typ});
-          }}
+          {values_computation}
 
           /* Compare results */
-
           for (int ii = 0; ii < SIZE; ++ii) {{
               if (! equal(vout_expected[ii], vout_computed[ii])) {{
                 return 0;
@@ -1087,7 +1113,7 @@ def gen_adds(opts, op, typ, lang, ulps):
               return EXIT_SUCCESS;
             }}
         ''' .format(head=head,
-                    compare_expected_vs_computed=compare_expected_vs_computed(typ),
+                    compare_expected_vs_computed=compare_expected_vs_computed(typ, lang),
                     random_sign_flip=random_sign_flip(),
                     zero_out_arrays=zero_out_arrays(typ),
                     equal=equal(typ),
@@ -1940,6 +1966,8 @@ def doit(opts):
                 gen_addv(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'adds':
                 gen_adds(opts, operator, typ, 'c_base', ulps)
+                gen_adds(opts, operator, typ, 'cxx_base', ulps)
+                gen_adds(opts, operator, typ, 'cxx_adv', ulps)
             elif operator.name in ['all', 'any']:
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'cxx_base')
