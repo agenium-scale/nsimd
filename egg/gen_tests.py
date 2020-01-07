@@ -811,24 +811,37 @@ def compare_expected_vs_computed(typ, language):
       }}
       '''
 
+# helpers - is overflow/underflow/neither overflow nor underflow
+
+def adds_is_overflow(typ, limit):
+      return f'''
+      {typ} adds_is_overflow(const {typ} a, const {typ} b)
+      {{
+        return (a > 0) && (b > {limit} - a);
+      }}
+      '''
+
+def adds_signed_is_underflow(typ, limit):
+      return f'''
+      {typ} adds_signed_is_underflow(const {typ} a, const {typ} b)
+      {{
+        return (a < 0) && (b < {limit} - a);
+      }}
+      '''
+
+def adds_signed_is_neither_overflow_nor_underflow(typ):
+      return f'''
+      {typ} adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      {{
+        return ! adds_is_overflow(a, b) && ! adds_signed_is_underflow(a, b);
+      }}
+      '''
+
 # -----------------------------------------------------------------------------
-# Tests helper for adds with float types
+# Tests helpers for adds with integer types
 
-# TODO: update
-
-def gen_adds_floats_test_helper(typ, min_, max_):
-
-      rand_val = f'({typ})(1 << (rand() % 4)) / ({typ})(1 << (rand() % 4))'
-      rand_sign_switch = f'({typ})((2 * (rand() % 2) - 1)'
-      rand = f'({typ})({rand_sign_switch} * {rand_val})'
-
-      return "Not implemented"
-
-# -----------------------------------------------------------------------------
-# Tests helper for adds with signed types
-
-# test signed overflow
-def test_adds_signed_overflow(typ, limit):
+# test integer overflow
+def test_adds_integer_overflow(typ, limit):
       return f'''
       void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
@@ -859,8 +872,11 @@ def test_adds_signed_overflow(typ, limit):
      }}
       '''
 
+# -----------------------------------------------------------------------------
+# Tests helpers for adds with signed integer types
+
 # test signed underflow
-def test_adds_signed_underflow(typ, limit):
+def test_adds_signed_integer_underflow(typ, limit):
       return f'''
       void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
@@ -889,31 +905,6 @@ def test_adds_signed_underflow(typ, limit):
         // Test:
         // if ((vin1[ii] < 0) && (vin2[ii] < {limit} - vin1[ii])) {{ vout_expected[ii] == {limit}; }}
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
-      }}
-      '''
-
-# helpers - is signed: overflow/underflow/neither overflow nor underflow
-def adds_signed_is_overflow(typ, limit):
-      return f'''
-      {typ} adds_signed_is_overflow(const {typ} a, const {typ} b)
-      {{
-        return (a > 0) && (b > {limit} - a);
-      }}
-      '''
-
-def adds_signed_is_underflow(typ, limit):
-      return f'''
-      {typ} adds_signed_is_underflow(const {typ} a, const {typ} b)
-      {{
-        return (a < 0) && (b < {limit} - a);
-      }}
-      '''
-
-def adds_signed_is_neither_overflow_nor_underflow(typ):
-      return f'''
-      {typ} adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
-      {{
-        return ! adds_signed_is_overflow(a, b) && ! adds_signed_is_underflow(a, b);
       }}
       '''
 
@@ -951,7 +942,7 @@ def test_adds_signed_all_cases(typ, min_, max_):
         {{
           vin1[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
           vin2[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
-          if(adds_signed_is_overflow(vin1[ii], vin2[ii]))
+          if(adds_is_overflow(vin1[ii], vin2[ii]))
           {{
             vout_expected[ii] = INT_MAX;
           }}
@@ -989,6 +980,42 @@ def test_adds_signed():
 # -----------------------------------------------------------------------------
 # Tests helper for adds with unsigned types
 
+# test signed neither overflow nor underflow
+def test_adds_unsigned_no_overflow(typ, max_):
+      return f'''
+      void test_no_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        int ii = 0;
+        while(ii < SIZE)
+        {{
+          {typ} a = ({typ})(rand() % {max_});
+          {typ} b = ({typ})(rand() % {max_});
+          if(! adds_is_overflow(a, b))
+          {{
+            vin1[ii] = a;
+            vin2[ii] = b;
+            vout_expected[ii] = a + b;
+            ++ ii;
+          }}
+        }}
+        assert(ii == SIZE);
+        // Test:
+        // if (not adds is overflow) {{ vout_expected[ii] == a + b; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+# all unsigned tests
+def test_adds_unsigned():
+      return'''
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_overflow(vin1, vin2, vout_expected, vout_computed), "overflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_no_overflow(vin1, vin2, vout_expected, vout_computed), "no overflow");
+      // In progress
+      '''
+
 # TODO: update
 
 def gen_adds_unsigned_test_helper(typ, min_, max_):
@@ -996,6 +1023,24 @@ def gen_adds_unsigned_test_helper(typ, min_, max_):
       rand_val = f'(1 << (rand() % 4))'
       rand = f'({typ})({rand_val})'
       return "// Not implemented"
+
+
+# -----------------------------------------------------------------------------
+# Tests helper for adds with float types
+
+# TODO: update
+
+def test_adds_floats():
+      return '//Not implemented'
+
+def gen_adds_floats_test_helper(typ, min_, max_):
+
+      rand_val = f'({typ})(1 << (rand() % 4)) / ({typ})(1 << (rand() % 4))'
+      rand_sign_switch = f'({typ})((2 * (rand() % 2) - 1)'
+      rand = f'({typ})({rand_sign_switch} * {rand_val})'
+
+      return 'Not implemented'
+
 
 # -----------------------------------------------------------------------------
 # gen_adds
@@ -1040,16 +1085,22 @@ def gen_adds(opts, op, typ, lang, ulps):
         MAX = type_limits['max']
 
         if typ in common.utypes:
-          test_cases_helpers_given_type = '// Not implemented'
-          test_cases_given_type = gen_adds_unsigned_test_helper(typ=typ, min_=MIN, max_=MAX)
+          test_cases_helpers_given_type = '''
+          {test_adds_integer_overflow}
+
+          {test_adds_unsigned_no_overflow}
+          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, MAX),
+                      test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(typ, MAX)
+                      )
+          test_cases_given_type = test_adds_unsigned()
 
         elif typ in common.itypes:
           test_cases_helpers_given_type = '''
-            {test_adds_signed_overflow}
+            {test_adds_integer_overflow}
 
-            {test_adds_signed_underflow}
+            {test_adds_signed_integer_underflow}
 
-            {adds_signed_is_overflow}
+            {adds_is_overflow}
 
             {adds_signed_is_underflow}
 
@@ -1058,9 +1109,9 @@ def gen_adds(opts, op, typ, lang, ulps):
             {test_adds_signed_neither_overflow_nor_underflow}
 
             {test_adds_signed_all_cases}
-          ''' .format(test_adds_signed_overflow=test_adds_signed_overflow(typ, MAX),
-                      test_adds_signed_underflow=test_adds_signed_underflow(typ, MIN),
-                      adds_signed_is_overflow=adds_signed_is_overflow(typ, MAX),
+          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, MAX),
+                      test_adds_signed_integer_underflow=test_adds_signed_integer_underflow(typ, MIN),
+                      adds_is_overflow=adds_is_overflow(typ, MAX),
                       adds_signed_is_underflow=adds_signed_is_underflow(typ, MIN),
                       adds_signed_is_neither_overflow_nor_underflow=adds_signed_is_neither_overflow_nor_underflow(typ),
                       test_adds_signed_neither_overflow_nor_underflow=test_adds_signed_neither_overflow_nor_underflow(typ, min_=MIN, max_=MAX),
@@ -1111,7 +1162,7 @@ def gen_adds(opts, op, typ, lang, ulps):
             }}
         ''' .format(head=head,
                     compare_expected_vs_computed=compare_expected_vs_computed(typ, lang),
-                    random_sign_flip=random_sign_flip(),
+                    random_sign_flip='' if typ in common.utypes else random_sign_flip(),
                     zero_out_arrays=zero_out_arrays(typ),
                     equal=equal(typ),
                     test_cases_helpers_given_type=test_cases_helpers_given_type,
