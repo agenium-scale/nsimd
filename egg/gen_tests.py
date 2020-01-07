@@ -1002,9 +1002,6 @@ def gen_adds_unsigned_test_helper(typ, min_, max_):
 
 def gen_adds(opts, op, typ, lang, ulps):
 
-    # TODO:
-    # - Add C++ tests
-
     filename = get_filename(opts, op, typ, lang)
 
     if filename == None:
