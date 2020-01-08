@@ -1010,25 +1010,42 @@ def test_adds_unsigned_no_overflow(typ, max_):
       }}
       '''
 
+# test unsigned all cases
+
+def test_adds_unsigned_all_cases(typ, max_):
+      return f'''
+      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+          vin1[ii] = ({typ})(rand() % {max_});
+          vin2[ii] = ({typ})(rand() % {max_});
+          if(adds_is_overflow(vin1[ii], vin2[ii]))
+          {{
+            vout_expected[ii] = {max_};
+          }}
+          else {{ vout_expected[ii] = vin1[ii] + vin2[ii]; }}
+        }}
+        // Test all cases:
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
 # all unsigned tests
 def test_adds_unsigned():
       return'''
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_overflow(vin1, vin2, vout_expected, vout_computed), "overflow");
+      CHECK_CASE(test_overflow(vin1, vin2, vout_expected,
+                 vout_computed), "overflow");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_no_overflow(vin1, vin2, vout_expected, vout_computed), "no overflow");
-      // In progress
+      CHECK_CASE(test_no_overflow(vin1, vin2, vout_expected,
+                 vout_computed), "no overflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected,
+                 vout_computed), "all cases");
       '''
-
-# TODO: update
-
-def gen_adds_unsigned_test_helper(typ, min_, max_):
-
-      rand_val = f'(1 << (rand() % 4))'
-      rand = f'({typ})({rand_val})'
-      return "// Not implemented"
-
 
 # -----------------------------------------------------------------------------
 # Tests helper for adds with float types
