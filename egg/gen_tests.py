@@ -1045,22 +1045,6 @@ def test_adds_unsigned():
                  vout_computed), "all cases");
       '''
 
-# -----------------------------------------------------------------------------
-# Tests helper for adds with float types
-
-# TODO: update
-
-def test_adds_floats():
-      return '//Not implemented'
-
-def gen_adds_floats_test_helper(typ, min_, max_):
-
-      rand_val = f'({typ})(1 << (rand() % 4)) / ({typ})(1 << (rand() % 4))'
-      rand_sign_switch = f'({typ})((2 * (rand() % 2) - 1)'
-      rand = f'({typ})({rand_sign_switch} * {rand_val})'
-
-      return 'Not implemented'
-
 # ------------------------------------------------------------------------------
 # Get tests adds given type
 
@@ -1110,14 +1094,6 @@ def get_tests_cases_for_unsigned_types(typ, min_, max_):
       # TODO: test --> tests
       return {'helpers': helpers, 'tests': test_adds_unsigned()}
 
-def get_tests_cases_for_float_types(typ):
-      min_ = f"{typ}('-Inf')"
-      max_ = f"{typ}('Inf')"
-      helpers = '''
-      // Not implemented
-      '''
-      return {'helpers': helpers, 'tests': test_adds_floats()}  # TODO: test --> tests
-
 def get_test_cases_given_type(typ):
       if typ in common.iutypes:
             type_limits = common.limits[typ]
@@ -1129,9 +1105,6 @@ def get_test_cases_given_type(typ):
 
             if typ in common.utypes:
                   return get_tests_cases_for_unsigned_types(typ=typ, min_=min_, max_=max_)
-
-      if typ in common.ftypes:
-            return get_tests_cases_for_float_types(typ)
 
       else:
             raise TypeError(f'{typ} not implemented')
