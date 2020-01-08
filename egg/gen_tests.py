@@ -805,7 +805,6 @@ def compare_expected_vs_computed(typ, language):
                 return 0;
               }}
             }}
-          }}
 
           return 1;
       }}
@@ -1011,7 +1010,6 @@ def test_adds_unsigned_no_overflow(typ, max_):
       '''
 
 # test unsigned all cases
-
 def test_adds_unsigned_all_cases(typ, max_):
       return f'''
       void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
