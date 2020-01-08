@@ -940,15 +940,17 @@ def test_adds_signed_all_cases(typ, min_, max_):
       {{
         for(int ii = 0; ii < SIZE; ++ii)
         {{
-          vin1[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
-          vin2[ii] = (({typ})(random_sign_flip() * rand()) % INT_MAX) % INT_MIN;
+          vin1[ii] = (({typ})(random_sign_flip() * rand()) %
+                      {max_}) % {min_};
+          vin2[ii] = (({typ})(random_sign_flip() * rand()) %
+                      {max_}) % {min_};
           if(adds_is_overflow(vin1[ii], vin2[ii]))
           {{
-            vout_expected[ii] = INT_MAX;
+            vout_expected[ii] = {max_};
           }}
           else if(adds_signed_is_underflow(vin1[ii], vin2[ii]))
           {{
-            vout_expected[ii] = INT_MIN;
+            vout_expected[ii] = {min_};
           }}
           else
           {{
@@ -964,17 +966,20 @@ def test_adds_signed_all_cases(typ, min_, max_):
 def test_adds_signed():
       return'''
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_overflow(vin1, vin2, vout_expected, vout_computed), "overflow");
+      CHECK_CASE(test_overflow(vin1, vin2, vout_expected,
+                 vout_computed), "overflow");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_underflow(vin1, vin2, vout_expected, vout_computed), "underflow");
+      CHECK_CASE(test_underflow(vin1, vin2, vout_expected,
+                 vout_computed), "underflow");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
       CHECK_CASE(test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed),
       "neither underflow nor overflow check");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected, vout_computed), "all cases");
+      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected,
+                 vout_computed), "all cases");
       '''
 
 # -----------------------------------------------------------------------------
