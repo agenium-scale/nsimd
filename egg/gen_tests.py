@@ -1063,6 +1063,80 @@ def gen_adds_floats_test_helper(typ, min_, max_):
 
       return 'Not implemented'
 
+# ------------------------------------------------------------------------------
+# Get tests adds given type
+
+def get_tests_cases_for_signed_types(typ, min_, max_):
+      helpers = '''
+            {test_adds_integer_overflow}
+
+            {test_adds_signed_integer_underflow}
+
+            {adds_is_overflow}
+
+            {adds_signed_is_underflow}
+
+            {adds_signed_is_neither_overflow_nor_underflow}
+
+            {test_adds_signed_neither_overflow_nor_underflow}
+
+            {test_adds_signed_all_cases}
+          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, max_),
+                      test_adds_signed_integer_underflow=test_adds_signed_integer_underflow(
+                          typ, min_),
+                      adds_is_overflow=adds_is_overflow(typ, max_),
+                      adds_signed_is_underflow=adds_signed_is_underflow(
+                          typ, min_),
+                      adds_signed_is_neither_overflow_nor_underflow=adds_signed_is_neither_overflow_nor_underflow(
+                          typ),
+                      test_adds_signed_neither_overflow_nor_underflow=test_adds_signed_neither_overflow_nor_underflow(
+                          typ, min_=min_, max_=max_),
+                      test_adds_signed_all_cases=test_adds_signed_all_cases(
+                          typ, min_=min_, max_=max_)
+                      )
+      # TODO: test --> tests
+      return {'helpers': helpers, 'tests': test_adds_signed()}
+
+def get_tests_cases_for_unsigned_types(typ, min_, max_):
+      helpers = '''
+          {test_adds_integer_overflow}
+
+          {test_adds_unsigned_no_overflow}
+
+          {test_adds_unsigned_all_cases}
+          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, min_),
+                      test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(
+                          typ, max_),
+                      test_adds_unsigned_all_cases=test_adds_unsigned_all_cases(typ, max_)
+                      )
+      # TODO: test --> tests
+      return {'helpers': helpers, 'tests': test_adds_unsigned()}
+
+def get_tests_cases_for_float_types(typ):
+      min_ = f"{typ}('-Inf')"
+      max_ = f"{typ}('Inf')"
+      helpers = '''
+      // Not implemented
+      '''
+      return {'helpers': helpers, 'tests': test_adds_floats()}  # TODO: test --> tests
+
+def get_test_cases_given_type(typ):
+      if typ in common.iutypes:
+            type_limits = common.limits[typ]
+            min_ = type_limits['min']
+            max_ = type_limits['max']
+
+            if typ in common.itypes:
+                  return get_tests_cases_for_signed_types(typ=typ, min_=min_, max_=max_)
+
+            if typ in common.utypes:
+                  return get_tests_cases_for_unsigned_types(typ=typ, min_=min_, max_=max_)
+
+      if typ in common.ftypes:
+            return get_tests_cases_for_float_types(typ)
+
+      else:
+            raise TypeError(f'{typ} not implemented')
 
 # -----------------------------------------------------------------------------
 # gen_adds
@@ -1095,55 +1169,6 @@ def gen_adds(opts, op, typ, lang, ulps):
                         aligned_alloc_error=aligned_alloc_error(),
                         adds_subs_check_case=adds_subs_check_case())
 
-    if typ in common.ftypes:
-        MIN = f"{typ}('-Inf')"
-        MAX = f"{typ}('Inf')"
-        test_cases_helpers_given_type = '// Not implemented'
-        test_cases_given_type = gen_adds_floats_test_helper(typ = typ, min_ = MIN, max_ = MAX)
-
-    elif typ in common.iutypes:
-        type_limits = common.limits[typ]
-        MIN = type_limits['min']
-        MAX = type_limits['max']
-
-        if typ in common.utypes:
-          test_cases_helpers_given_type = '''
-          {test_adds_integer_overflow}
-
-          {test_adds_unsigned_no_overflow}
-          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, MAX),
-                      test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(typ, MAX)
-                      )
-          test_cases_given_type = test_adds_unsigned()
-
-        elif typ in common.itypes:
-          test_cases_helpers_given_type = '''
-            {test_adds_integer_overflow}
-
-            {test_adds_signed_integer_underflow}
-
-            {adds_is_overflow}
-
-            {adds_signed_is_underflow}
-
-            {adds_signed_is_neither_overflow_nor_underflow}
-
-            {test_adds_signed_neither_overflow_nor_underflow}
-
-            {test_adds_signed_all_cases}
-          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, MAX),
-                      test_adds_signed_integer_underflow=test_adds_signed_integer_underflow(typ, MIN),
-                      adds_is_overflow=adds_is_overflow(typ, MAX),
-                      adds_signed_is_underflow=adds_signed_is_underflow(typ, MIN),
-                      adds_signed_is_neither_overflow_nor_underflow=adds_signed_is_neither_overflow_nor_underflow(typ),
-                      test_adds_signed_neither_overflow_nor_underflow=test_adds_signed_neither_overflow_nor_underflow(typ, min_=MIN, max_=MAX),
-                      test_adds_signed_all_cases=test_adds_signed_all_cases(typ, min_=MIN, max_=MAX)
-                      )
-          test_cases_given_type = test_adds_signed()
-
-    else:
-        raise TypeError(f'{typ} not implemented')
-
     with common.open_utf8(opts, filename) as out:
         out.write(
             ''' \
@@ -1158,7 +1183,7 @@ def gen_adds(opts, op, typ, lang, ulps):
 
             {compare_expected_vs_computed}
 
-            {test_cases_helpers_given_type}
+            {tests_helpers}
 
             int main(void)
             {{
@@ -1176,7 +1201,7 @@ def gen_adds(opts, op, typ, lang, ulps):
               CHECK(vout_expected = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
               CHECK(vout_computed = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
 
-              {test_cases_given_type}
+              {tests}
 
               fprintf(stdout, STATUS "... OK\\n");
               fflush(stdout);
@@ -1187,8 +1212,8 @@ def gen_adds(opts, op, typ, lang, ulps):
                     random_sign_flip='' if typ in common.utypes else random_sign_flip(),
                     zero_out_arrays=zero_out_arrays(typ),
                     equal=equal(typ),
-                    test_cases_helpers_given_type=test_cases_helpers_given_type,
-                    test_cases_given_type=test_cases_given_type,
+                    tests_helpers=get_test_cases_given_type(typ)['helpers'],
+                    tests=get_test_cases_given_type(typ)['tests'],
                     op_name = op.name,
                     typ = typ, sizeof = sizeof)
         )
