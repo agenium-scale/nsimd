@@ -756,7 +756,7 @@ def zero_out_arrays(typ):
       }}
       '''
 
-def compute_values_given_language(typ, language):
+def compute_adds_values_given_language(typ, language):
       if 'c_base' == language:
             return f'''
             for (int ii = 0; ii < SIZE; ii += step) {{
@@ -789,7 +789,7 @@ def compute_values_given_language(typ, language):
             '''
 
 def compare_expected_vs_computed(typ, language):
-      values_computation = compute_values_given_language(typ, language)
+      values_computation = compute_adds_values_given_language(typ, language)
       return f'''
       int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
       {{
