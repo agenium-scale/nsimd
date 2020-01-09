@@ -839,7 +839,7 @@ def adds_signed_is_neither_overflow_nor_underflow(typ):
 # Tests helpers for adds with integer types
 
 # test integer overflow
-def test_adds_integer_overflow(typ, max_):
+def test_adds_overflow(typ, max_):
       return f'''
       void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
@@ -874,7 +874,7 @@ def test_adds_integer_overflow(typ, max_):
 # Tests helpers for adds with signed integer types
 
 # test signed underflow
-def test_adds_signed_integer_underflow(typ, min_):
+def test_adds_signed_underflow(typ, min_):
       return f'''
       void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
@@ -1049,9 +1049,9 @@ def tests_adds_unsigned():
 
 def get_tests_cases_for_signed_types(typ, min_, max_):
       helpers = '''
-            {test_adds_integer_overflow}
+            {test_adds_overflow}
 
-            {test_adds_signed_integer_underflow}
+            {test_adds_signed_underflow}
 
             {adds_is_overflow}
 
@@ -1062,8 +1062,8 @@ def get_tests_cases_for_signed_types(typ, min_, max_):
             {test_adds_signed_neither_overflow_nor_underflow}
 
             {test_adds_signed_all_cases}
-          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, max_),
-                      test_adds_signed_integer_underflow=test_adds_signed_integer_underflow(
+          ''' .format(test_adds_overflow=test_adds_overflow(typ, max_),
+                      test_adds_signed_underflow=test_adds_signed_underflow(
                           typ, min_),
                       adds_is_overflow=adds_is_overflow(typ, max_),
                       adds_signed_is_underflow=adds_signed_is_underflow(
@@ -1079,12 +1079,12 @@ def get_tests_cases_for_signed_types(typ, min_, max_):
 
 def get_tests_cases_for_unsigned_types(typ, max_):
       helpers = '''
-          {test_adds_integer_overflow}
+          {test_adds_overflow}
 
           {test_adds_unsigned_no_overflow}
 
           {test_adds_unsigned_all_cases}
-          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, max_),
+          ''' .format(test_adds_overflow=test_adds_overflow(typ, max_),
                       test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(
                           typ, max_),
                       test_adds_unsigned_all_cases=test_adds_unsigned_all_cases(typ, max_)
