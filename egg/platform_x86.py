@@ -2669,6 +2669,8 @@ def subs(simd_ext, typ):
         raise ValueError('Type not implemented in platform_x86 adds({typ});'.
             format(**fmtspec))
 
+    min_ = common.limits[typ]['min']
+
     return'''
         // Algo pseudo code:
 
@@ -2679,9 +2681,9 @@ def subs(simd_ext, typ):
 
         const nsimd_{simd_ext}_v{typ} ures = nsimd_sub_{simd_ext}_{typ}({in0}, {in1});
         const nsimd_{simd_ext}_vl{typ} umask = nsimd_gt_{simd_ext}_{typ}(ures, {in0});
-        const nsimd_{simd_ext}_v{typ} umin = nsimd_{simd_ext}_set1_{typ}(UINT_MIN);
+        const nsimd_{simd_ext}_v{typ} umin = nsimd_{simd_ext}_set1_{typ}(({typ}){min_});
         return nsimd_if_else1_{simd_ext}_{typ}(umask, ures, umin);
-    '''.format(**fmtspec)
+    '''.format(min_=min_, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # to_mask
