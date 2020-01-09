@@ -790,7 +790,6 @@ def compute_values_given_language(typ, language):
 
 def compare_expected_vs_computed(typ, language):
       values_computation = compute_values_given_language(typ, language)
-
       return f'''
       int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
       {{
@@ -812,19 +811,19 @@ def compare_expected_vs_computed(typ, language):
 
 # helpers - is overflow/underflow/neither overflow nor underflow
 
-def adds_is_overflow(typ, limit):
+def adds_is_overflow(typ, max_):
       return f'''
       {typ} adds_is_overflow(const {typ} a, const {typ} b)
       {{
-        return (a > 0) && (b > {limit} - a);
+        return (a > 0) && (b > {max_} - a);
       }}
       '''
 
-def adds_signed_is_underflow(typ, limit):
+def adds_signed_is_underflow(typ, min_):
       return f'''
       {typ} adds_signed_is_underflow(const {typ} a, const {typ} b)
       {{
-        return (a < 0) && (b < {limit} - a);
+        return (a < 0) && (b < {min_} - a);
       }}
       '''
 
@@ -840,33 +839,33 @@ def adds_signed_is_neither_overflow_nor_underflow(typ):
 # Tests helpers for adds with integer types
 
 # test integer overflow
-def test_adds_integer_overflow(typ, limit):
+def test_adds_integer_overflow(typ, max_):
       return f'''
       void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if ((vin1[ii] > 0) && (vin2[ii] > {limit} - vin1[ii])) {{ overflow }}
+        // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ overflow }}
 
         // vin1[ii] > 0
         for(int ii = 0; ii < SIZE; ++ii)
         {{
-          {typ} rand_val = rand() % {limit};
+          {typ} rand_val = rand() % {max_};
           vin1[ii] = (rand_val == 0 ? 1 : rand_val);
         }}
 
-        // vin2[ii] > {limit} - vin1[ii]
-        // vin2[ii] = {limit} - vin1[ii] + rand_val
+        // vin2[ii] > {max_} - vin1[ii]
+        // vin2[ii] = {max_} - vin1[ii] + rand_val
         // s.t.: 0 < rand_val <= vin1[ii]
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = rand() % (vin1[ii] + 1);
             rand_val = (rand_val == 0 ? 1 : rand_val);
-            vin2[ii] = {limit} - vin1[ii] + rand_val;
-            vout_expected[ii] = {limit};
+            vin2[ii] = {max_} - vin1[ii] + rand_val;
+            vout_expected[ii] = {max_};
         }}
 
         // Test:
-        // if ((vin1[ii] > 0) && (vin2[ii] > {limit} - v1[ii])) {{ vout_expected[ii] == {limit}; }}
+        // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - v1[ii])) {{ vout_expected[ii] == {max_}; }}
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
      }}
       '''
@@ -875,34 +874,34 @@ def test_adds_integer_overflow(typ, limit):
 # Tests helpers for adds with signed integer types
 
 # test signed underflow
-def test_adds_signed_integer_underflow(typ, limit):
+def test_adds_signed_integer_underflow(typ, min_):
       return f'''
       void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if ((vin1[ii] < 0) && (vin2[ii] < {limit} - vin1[ii])) {{ underflow }}
+        // if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ underflow }}
 
         // vin1[ii] < 0
         for(int ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = (- rand()) % {limit};
+            {typ} rand_val = (- rand()) % {min_};
             vin1[ii] = (rand_val == 0 ? - 1 : rand_val);
         }}
 
         // vin1[ii] < 0
-        // vin2[ii] < {limit} - vin1[ii]
-        // vin2[ii] = {limit} - vin1[ii] - rand_val
+        // vin2[ii] < {min_} - vin1[ii]
+        // vin2[ii] = {min_} - vin1[ii] - rand_val
         // s.t.: 0 < rand_val < - vin1[ii]
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = (rand()) % (- vin1[ii]);
             rand_val = (rand_val == 0 ? 1 : rand_val);
-            vin2[ii] = {limit} - vin1[ii] - rand_val;
-            vout_expected[ii] = {limit};
+            vin2[ii] = {min_} - vin1[ii] - rand_val;
+            vout_expected[ii] = {min_};
         }}
 
         // Test:
-        // if ((vin1[ii] < 0) && (vin2[ii] < {limit} - vin1[ii])) {{ vout_expected[ii] == {limit}; }}
+        // if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ vout_expected[ii] == {min_}; }}
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -962,7 +961,7 @@ def test_adds_signed_all_cases(typ, min_, max_):
       '''
 
 # all signed tests
-def test_adds_signed():
+def tests_adds_signed():
       return'''
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
       CHECK_CASE(test_overflow(vin1, vin2, vout_expected,
@@ -1030,7 +1029,7 @@ def test_adds_unsigned_all_cases(typ, max_):
       '''
 
 # all unsigned tests
-def test_adds_unsigned():
+def tests_adds_unsigned():
       return'''
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
       CHECK_CASE(test_overflow(vin1, vin2, vout_expected,
@@ -1076,25 +1075,23 @@ def get_tests_cases_for_signed_types(typ, min_, max_):
                       test_adds_signed_all_cases=test_adds_signed_all_cases(
                           typ, min_=min_, max_=max_)
                       )
-      # TODO: test --> tests
-      return {'helpers': helpers, 'tests': test_adds_signed()}
+      return {'helpers': helpers, 'tests': tests_adds_signed()}
 
-def get_tests_cases_for_unsigned_types(typ, min_, max_):
+def get_tests_cases_for_unsigned_types(typ, max_):
       helpers = '''
           {test_adds_integer_overflow}
 
           {test_adds_unsigned_no_overflow}
 
           {test_adds_unsigned_all_cases}
-          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, min_),
+          ''' .format(test_adds_integer_overflow=test_adds_integer_overflow(typ, max_),
                       test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(
                           typ, max_),
                       test_adds_unsigned_all_cases=test_adds_unsigned_all_cases(typ, max_)
                       )
-      # TODO: test --> tests
-      return {'helpers': helpers, 'tests': test_adds_unsigned()}
+      return {'helpers': helpers, 'tests': tests_adds_unsigned()}
 
-def get_test_cases_given_type(typ):
+def get_tests_cases_given_type(typ):
       if typ in common.iutypes:
             type_limits = common.limits[typ]
             min_ = type_limits['min']
@@ -1104,8 +1101,7 @@ def get_test_cases_given_type(typ):
                   return get_tests_cases_for_signed_types(typ=typ, min_=min_, max_=max_)
 
             if typ in common.utypes:
-                  return get_tests_cases_for_unsigned_types(typ=typ, min_=min_, max_=max_)
-
+                  return get_tests_cases_for_unsigned_types(typ=typ, max_=max_)
       else:
             raise TypeError(f'{typ} not implemented')
 
@@ -1183,10 +1179,11 @@ def gen_adds(opts, op, typ, lang, ulps):
                     random_sign_flip='' if typ in common.utypes else random_sign_flip(),
                     zero_out_arrays=zero_out_arrays(typ),
                     equal=equal(typ),
-                    tests_helpers=get_test_cases_given_type(typ)['helpers'],
-                    tests=get_test_cases_given_type(typ)['tests'],
+                    tests_helpers=get_tests_cases_given_type(typ)['helpers'],
+                    tests=get_tests_cases_given_type(typ)['tests'],
                     op_name = op.name,
-                    typ = typ, sizeof = sizeof)
+                    typ=typ,
+                    sizeof = sizeof)
         )
 
     common.clang_format(opts, filename)
