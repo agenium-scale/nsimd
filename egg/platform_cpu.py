@@ -715,8 +715,8 @@ def subs(from_typ):
     if from_typ not in common.utypes:
       raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
 
-    check_underflow = 'if ({in0}.v{{i}} < {min} + {in1}.v{{i}})'
-    assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
+    check_underflow = 'if ({in0}.v{{i}} < {in1}.v{{i}})'
+    assign_min = '{{{{ ret.v{{i}} = ({from_typ}){min}; }}}}'
     assign_min_if_underflow = check_underflow + '\n' + assign_min
     sub = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
     assign_sub_if_ok = 'else ' + '\n' + sub
