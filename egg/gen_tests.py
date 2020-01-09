@@ -1175,12 +1175,140 @@ def gen_adds(opts, op, typ, lang, ulps):
               return EXIT_SUCCESS;
             }}
         ''' .format(head=head,
-                    compare_expected_vs_computed=compare_expected_vs_computed(typ, lang),
+                    compare_expected_vs_computed=compare_expected_vs_computed(typ, op.name, lang),
                     random_sign_flip='' if typ in common.utypes else random_sign_flip(),
                     zero_out_arrays=zero_out_arrays(typ),
                     equal=equal(typ),
-                    tests_helpers=get_tests_cases_given_type(typ)['helpers'],
-                    tests=get_tests_cases_given_type(typ)['tests'],
+                    tests_helpers=get_adds_tests_cases_given_type(typ)['helpers'],
+                    tests=get_adds_tests_cases_given_type(typ)['tests'],
+                    op_name = op.name,
+                    typ=typ,
+                    sizeof = sizeof)
+        )
+
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
+# Tests helpers for subs - is overflow/underflow/neither overflow nor underflow
+
+# subs signed
+
+def subs_signed_is_overflow(typ, max_):
+      return f'''
+      int subs_is_overflow(const {typ} a, const {typ} b)
+      {{
+        return (b < 0) && (a > {max_} + b);
+      }}
+      '''
+
+def subs_signed_is_underflow(typ, min_):
+      return f'''
+      int adds_signed_is_underflow(const {typ} a, const {typ} b)
+      {{
+        return (b > 0) && (a < {min_} + b);
+      }}
+      '''
+
+def subs_signed_is_neither_overflow_nor_underflow(typ):
+      return f'''
+      int adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      {{
+        return ! subs_signed_is_underflow(a, b) && ! subs_signed_is_overflow(a, b);
+      }}
+      '''
+
+# subs unsigned
+
+def subs_unsigned_is_underflow(typ):
+      return f'''
+      int subs_unsigned_is_underflow(const {typ} a, const {typ} b)
+      {{
+        return a < b;
+      }}
+      '''
+
+# ------------------------------------------------------------------------------
+# Get subs tests given type
+
+def get_subs_tests_cases_given_type(typ):
+      return { 'helpers': '// Not implemented', 'tests': '// Not implemented' }
+
+# -----------------------------------------------------------------------------
+# gen_subs
+
+def gen_subs(opts, op, typ, lang, ulps):
+
+    filename = get_filename(opts, op, typ, lang)
+
+    if filename == None:
+        return
+
+    sizeof = common.sizeof(typ)
+
+    head = '''
+              {includes}
+              #include <limits.h>
+              #include <assert.h>
+
+              #define SIZE (2048 / {sizeof})
+
+              #define STATUS "test of {op_name} over {typ}"
+
+              {aligned_alloc_error}
+
+              {adds_subs_check_case}
+            ''' .format(includes=get_includes(lang),
+                        op_name=op.name,
+                        typ=typ,
+                        sizeof=sizeof,
+                        aligned_alloc_error=aligned_alloc_error(),
+                        adds_subs_check_case=adds_subs_check_case())
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+            ''' \
+            {head}
+            /* ------------------------------------------------------------------------- */
+
+            {random_sign_flip}
+
+            {zero_out_arrays}
+
+            {equal}
+
+            {compare_expected_vs_computed}
+
+            {tests_helpers}
+
+            int main(void)
+            {{
+              const int mem_aligned_size = SIZE * {sizeof};
+
+              {typ} *vin1;
+              {typ} *vin2;
+
+              {typ} *vout_expected;
+              {typ} *vout_computed;
+
+              CHECK(vin1 = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+              CHECK(vin2 = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+
+              CHECK(vout_expected = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+              CHECK(vout_computed = ({typ} *)nsimd_aligned_alloc(mem_aligned_size));
+
+              {tests}
+
+              fprintf(stdout, STATUS "... OK\\n");
+              fflush(stdout);
+              return EXIT_SUCCESS;
+            }}
+        ''' .format(head=head,
+                    compare_expected_vs_computed=compare_expected_vs_computed(typ, op.name, lang),
+                    random_sign_flip='' if typ in common.utypes else random_sign_flip(),
+                    zero_out_arrays=zero_out_arrays(typ),
+                    equal=equal(typ),
+                    tests_helpers=get_subs_tests_cases_given_type(typ)['helpers'],
+                    tests=get_subs_tests_cases_given_type(typ)['tests'],
                     op_name = op.name,
                     typ=typ,
                     sizeof = sizeof)
@@ -2031,6 +2159,10 @@ def doit(opts):
                 gen_adds(opts, operator, typ, 'c_base', ulps)
                 gen_adds(opts, operator, typ, 'cxx_base', ulps)
                 gen_adds(opts, operator, typ, 'cxx_adv', ulps)
+            elif operator.name == 'subs':
+                gen_subs(opts, operator, typ, 'c_base', ulps)
+                gen_subs(opts, operator, typ, 'cxx_base', ulps)
+                gen_subs(opts, operator, typ, 'cxx_adv', ulps)
             elif operator.name in ['all', 'any']:
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'cxx_base')
