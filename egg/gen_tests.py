@@ -599,7 +599,6 @@ def gen_test(opts, op, typ, lang, ulps):
 # -----------------------------------------------------------------------------
 # Tests for addv
 
-
 def gen_addv(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
@@ -699,7 +698,7 @@ def gen_addv(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
-# Tests helper for adds/subs
+# General tests helpers for adds/subs
 
 def aligned_alloc_error():
       return f'''
@@ -718,7 +717,7 @@ def aligned_alloc_error():
 
 def equal(typ):
       return f'''
-      char equal({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out == nsimd_out; }}
+      int equal({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out == nsimd_out; }}
       '''
 
 def adds_subs_check_case():
@@ -809,11 +808,12 @@ def compare_expected_vs_computed(typ, language):
       }}
       '''
 
-# helpers - is overflow/underflow/neither overflow nor underflow
+# -----------------------------------------------------------------------------
+# Tests helpers for adds - is overflow/underflow/neither overflow nor underflow
 
 def adds_is_overflow(typ, max_):
       return f'''
-      {typ} adds_is_overflow(const {typ} a, const {typ} b)
+      int adds_is_overflow(const {typ} a, const {typ} b)
       {{
         return (a > 0) && (b > {max_} - a);
       }}
@@ -821,7 +821,7 @@ def adds_is_overflow(typ, max_):
 
 def adds_signed_is_underflow(typ, min_):
       return f'''
-      {typ} adds_signed_is_underflow(const {typ} a, const {typ} b)
+      int adds_signed_is_underflow(const {typ} a, const {typ} b)
       {{
         return (a < 0) && (b < {min_} - a);
       }}
@@ -829,7 +829,7 @@ def adds_signed_is_underflow(typ, min_):
 
 def adds_signed_is_neither_overflow_nor_underflow(typ):
       return f'''
-      {typ} adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      int adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
       {{
         return ! adds_is_overflow(a, b) && ! adds_signed_is_underflow(a, b);
       }}
