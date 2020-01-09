@@ -755,14 +755,14 @@ def zero_out_arrays(typ):
       }}
       '''
 
-def compute_adds_values_given_language(typ, language):
+def compute_adds_or_subs_values_given_language(typ, op, language):
       if 'c_base' == language:
             return f'''
             for (int ii = 0; ii < SIZE; ii += step) {{
               vec({typ}) va1, va2, vc;
               va1 = vloadu(&vin1[ii], {typ});
               va2 = vloadu(&vin2[ii], {typ});
-              vc = vadds(va1, va2, {typ});
+              vc = v{op}(va1, va2, {typ});
               vstoreu(&vout_computed[ii], vc, {typ});
             }}
             '''
@@ -772,7 +772,7 @@ def compute_adds_values_given_language(typ, language):
               vec({typ}) va1, va2, vc;
               va1 = nsimd::loadu(&vin1[i], {typ}());
               va2 = nsimd::loadu(&vin2[i], {typ}());
-              vc = nsimd::adds(va1, va2, {typ}());
+              vc = nsimd::{op}(va1, va2, {typ}());
               nsimd::storeu(&vout_computed[i], vc, {typ}());
             }}
             '''
@@ -782,13 +782,13 @@ def compute_adds_values_given_language(typ, language):
                 nsimd::pack<{typ}> va1, va2, vc;
                 va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
                 va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[i]);
-                vc = nsimd::adds(va1, va2);
+                vc = nsimd::{op}(va1, va2);
                 nsimd::storeu(&vout_computed[i], vc);
               }}
             '''
 
-def compare_expected_vs_computed(typ, language):
-      values_computation = compute_adds_values_given_language(typ, language)
+def compare_expected_vs_computed(typ, op, language):
+      values_computation = compute_adds_or_subs_values_given_language(typ, op, language)
       return f'''
       int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
       {{
