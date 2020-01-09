@@ -1045,9 +1045,9 @@ def tests_adds_unsigned():
       '''
 
 # ------------------------------------------------------------------------------
-# Get tests adds given type
+# Get adds tests given type
 
-def get_tests_cases_for_signed_types(typ, min_, max_):
+def get_adds_tests_cases_for_signed_types(typ, min_, max_):
       helpers = '''
             {test_adds_overflow}
 
@@ -1077,7 +1077,7 @@ def get_tests_cases_for_signed_types(typ, min_, max_):
                       )
       return {'helpers': helpers, 'tests': tests_adds_signed()}
 
-def get_tests_cases_for_unsigned_types(typ, max_):
+def get_adds_tests_cases_for_unsigned_types(typ, max_):
       helpers = '''
           {test_adds_overflow}
 
@@ -1091,17 +1091,17 @@ def get_tests_cases_for_unsigned_types(typ, max_):
                       )
       return {'helpers': helpers, 'tests': tests_adds_unsigned()}
 
-def get_tests_cases_given_type(typ):
+def get_adds_tests_cases_given_type(typ):
       if typ in common.iutypes:
             type_limits = common.limits[typ]
             min_ = type_limits['min']
             max_ = type_limits['max']
 
             if typ in common.itypes:
-                  return get_tests_cases_for_signed_types(typ=typ, min_=min_, max_=max_)
+                  return get_adds_tests_cases_for_signed_types(typ=typ, min_=min_, max_=max_)
 
             if typ in common.utypes:
-                  return get_tests_cases_for_unsigned_types(typ=typ, max_=max_)
+                  return get_adds_tests_cases_for_unsigned_types(typ=typ, max_=max_)
       else:
             raise TypeError(f'{typ} not implemented')
 
