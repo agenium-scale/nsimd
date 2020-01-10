@@ -981,7 +981,7 @@ def tests_adds_signed():
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
       CHECK_CASE(test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed),
-      "neither underflow nor overflow check");
+      "neither underflow nor overflow");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
       CHECK_CASE(test_all_cases(vin1, vin2, vout_expected,
