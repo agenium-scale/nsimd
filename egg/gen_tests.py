@@ -1236,7 +1236,7 @@ def subs_unsigned_is_underflow(typ):
       '''
 
 # -----------------------------------------------------------------------------
-# Tests helpers for subs with integer types
+# Tests helpers for subs with signed types
 
 # test signed integer overflow
 def test_subs_signed_overflow(typ, min_, max_):
