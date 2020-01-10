@@ -1457,19 +1457,17 @@ def get_subs_tests_cases_for_signed_types(typ, min_, max_):
       return {'helpers': helpers, 'tests': tests_subs_signed()}
 
 def get_subs_tests_cases_for_unsigned_types(typ, min_, max_):
-      # TODO: copied from adds - to update for subs
       helpers = '''
-          {test_adds_overflow}
+          {test_subs_unsigned_underflow}
 
-          {test_adds_unsigned_no_overflow}
+          {test_subs_unsigned_no_underflow}
 
-          {test_adds_unsigned_all_cases}
-          ''' .format(test_adds_overflow=test_adds_overflow(typ, max_),
-                      test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(
-                          typ, max_),
-                      test_adds_unsigned_all_cases=test_adds_unsigned_all_cases(typ, max_)
+          {test_subs_unsigned_all_cases}
+          ''' .format(test_subs_unsigned_underflow=test_subs_unsigned_underflow(typ, min_, max_),
+                      test_subs_unsigned_no_underflow=test_subs_unsigned_no_underflow(typ, max_),
+                      test_subs_unsigned_all_cases=test_subs_unsigned_all_cases(typ, min_, max_)
                       )
-      return {'helpers': helpers, 'tests': tests_adds_unsigned()}
+      return {'helpers': helpers, 'tests': tests_subs_unsigned()}
 
 def get_subs_tests_cases_given_type(typ):
       if typ in common.iutypes:
@@ -1481,7 +1479,7 @@ def get_subs_tests_cases_given_type(typ):
                   return get_subs_tests_cases_for_signed_types(typ=typ, min_=min_, max_=max_)
 
             if typ in common.utypes:
-                  return {'helpers': '// To implement', 'tests': '// To implement'}
+                  return get_subs_tests_cases_for_unsigned_types(typ=typ, min_=min_, max_=max_)
       else:
             raise TypeError(f'{typ} not implemented')
 
