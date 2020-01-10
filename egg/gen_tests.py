@@ -787,6 +787,58 @@ def compute_adds_or_subs_values_given_language(typ, op, language):
               }}
             '''
 
+def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check):
+      return f'''
+      void test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        int ii = 0;
+        while(ii < SIZE)
+        {{
+          {typ} a = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
+          {typ} b = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
+          if({check}(a, b))
+          {{
+            vin1[ii] = a;
+            vin2[ii] = b;
+            vout_expected[ii] = a {operator} b;
+            ++ ii;
+          }}
+        }}
+        assert(ii == SIZE);
+        // Test:
+        // if (neither overflow nor underflow) {{ vout_expected[ii] == a {operator} b; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_underflow):
+      return f'''
+      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+          vin1[ii] = (({typ})(random_sign_flip() * rand()) %
+                      {max_}) % {min_};
+          vin2[ii] = (({typ})(random_sign_flip() * rand()) %
+                      {max_}) % {min_};
+          if({oper_is_overflow}(vin1[ii], vin2[ii]))
+          {{
+            vout_expected[ii] = {max_};
+          }}
+          else if({oper_is_underflow}(vin1[ii], vin2[ii]))
+          {{
+            vout_expected[ii] = {min_};
+          }}
+          else
+          {{
+            vout_expected[ii] = vin1[ii] {oper} vin2[ii];
+          }}
+        }}
+        // Test all cases:
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
 def compare_expected_vs_computed(typ, op, language):
       values_computation = compute_adds_or_subs_values_given_language(typ, op, language)
       return f'''
@@ -908,57 +960,13 @@ def test_adds_signed_underflow(typ, min_):
 
 # test signed neither overflow nor underflow
 def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
-      return f'''
-      void test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
-      {{
-        int ii = 0;
-        while(ii < SIZE)
-        {{
-          {typ} a = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
-          {typ} b = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
-          if(adds_signed_is_neither_overflow_nor_underflow(a, b))
-          {{
-            vin1[ii] = a;
-            vin2[ii] = b;
-            vout_expected[ii] = a + b;
-            ++ ii;
-          }}
-        }}
-        assert(ii == SIZE);
-        // Test:
-        // if (neither overflow nor underflow) {{ vout_expected[ii] == a + b; }}
-        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
-      }}
-      '''
+      return \
+        test_signed_neither_overflow_nor_underflow(typ, min_, max_,
+         '+', 'adds_signed_is_neither_overflow_nor_underflow')
 
 # test signed all cases
 def test_adds_signed_all_cases(typ, min_, max_):
-      return f'''
-      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
-      {{
-        for(int ii = 0; ii < SIZE; ++ii)
-        {{
-          vin1[ii] = (({typ})(random_sign_flip() * rand()) %
-                      {max_}) % {min_};
-          vin2[ii] = (({typ})(random_sign_flip() * rand()) %
-                      {max_}) % {min_};
-          if(adds_is_overflow(vin1[ii], vin2[ii]))
-          {{
-            vout_expected[ii] = {max_};
-          }}
-          else if(adds_signed_is_underflow(vin1[ii], vin2[ii]))
-          {{
-            vout_expected[ii] = {min_};
-          }}
-          else
-          {{
-            vout_expected[ii] = vin1[ii] + vin2[ii];
-          }}
-        }}
-        // Test all cases:
-        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
-      }}
-      '''
+      return test_signed_all_cases(typ, min_, max_, '+', 'adds_is_overflow', 'adds_signed_is_underflow')
 
 # all signed tests
 def tests_adds_signed():
