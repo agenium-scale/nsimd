@@ -1393,7 +1393,23 @@ def test_subs_unsigned_no_underflow(typ, max_):
 
 # test signed all cases
 def test_subs_unsigned_all_cases(typ, min_, max_):
-      return '// Not implemented'
+      return f'''
+      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+          vin1[ii] = ({typ})(rand() % {max_});
+          vin2[ii] = ({typ})(rand() % {max_});
+          if(subs_unsigned_is_underflow(vin1[ii], vin2[ii]))
+          {{
+            vout_expected[ii] = ({typ}){min_};
+          }}
+          else {{ vout_expected[ii] = vin1[ii] - vin2[ii]; }}
+        }}
+        // Test all cases:
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
 
 # all unsigned tests
 def tests_subs_unsigned():
