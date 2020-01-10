@@ -1333,6 +1333,84 @@ def tests_subs_signed():
                  vout_computed), "all cases");
       '''
 
+# -----------------------------------------------------------------------------
+# Tests helpers for subs with unsigned types
+
+# test unsigned underflow
+def test_subs_unsigned_underflow(typ, min_, max_):
+      return f'''
+      void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+
+        // if (vin1[ii] < vin2[ii]) {{ underflow }}
+
+        // vin1[ii]
+        for(int ii = 0; ii < SIZE; ++ii){{ vin1[ii] = rand() % {max_}; }}
+
+        // vin1[ii] < vin2[ii]
+        // vin2[ii] = vin1[ii] + rand_val
+        // s.t.: 0 < rand_val < {max_} - vin1[ii]
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+            {typ} rand_val = rand() % ({max_} - vin1[ii]);
+            rand_val = (rand_val == 0 ? 1 : rand_val);
+            vin2[ii] = vin1[ii] + rand_val;
+            vout_expected[ii] = ({typ}){min_};
+        }}
+
+        // Test:
+        // if (vin1[ii] < vin2[ii]) {{ vout_expected[ii] == {min_}; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+# test unsigned no underflow
+def test_subs_unsigned_no_underflow(typ, max_):
+      return f'''
+      void test_no_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+        // if (vin1[ii] >= vin2[ii]) {{ no underflow }}
+
+        // vin1[ii]
+        for(int ii = 0; ii < SIZE; ++ii){{ vin1[ii] = rand() % {max_}; }}
+
+        // vin1[ii] >= vin2[ii]
+        // vin2 = vin1 - rand_val
+        // s.t. 0 <= rand_val <= vin1
+
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+            {typ} rand_val = rand() % (vin1[ii] + 1);
+            vin2[ii] = vin1[ii] - rand_val;
+            vout_expected[ii] = vin1[ii] - vin2[ii];
+        }}
+
+        // Test:
+        // if (vin1[ii] >= vin2[ii]) {{ vout_expected[ii] == vin1[ii] - vin2[ii]; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+# test signed all cases
+def test_subs_unsigned_all_cases(typ, min_, max_):
+      return '// Not implemented'
+
+# all unsigned tests
+def tests_subs_unsigned():
+      return'''
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_underflow(vin1, vin2, vout_expected,
+                 vout_computed), "underflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_no_underflow(vin1, vin2, vout_expected, vout_computed),
+      "no underflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected,
+                 vout_computed), "all cases");
+      '''
+
 # ------------------------------------------------------------------------------
 # Get subs tests given type
 
