@@ -1203,7 +1203,7 @@ def subs_signed_is_overflow(typ, max_):
 
 def subs_signed_is_underflow(typ, min_):
       return f'''
-      int adds_signed_is_underflow(const {typ} a, const {typ} b)
+      int subs_signed_is_underflow(const {typ} a, const {typ} b)
       {{
         return (b > 0) && (a < {min_} + b);
       }}
@@ -1211,7 +1211,7 @@ def subs_signed_is_underflow(typ, min_):
 
 def subs_signed_is_neither_overflow_nor_underflow(typ):
       return f'''
-      int adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      int subs_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
       {{
         return ! subs_signed_is_underflow(a, b) && ! subs_signed_is_overflow(a, b);
       }}
