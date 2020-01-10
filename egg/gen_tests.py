@@ -865,7 +865,7 @@ def test_adds_overflow(typ, max_):
         }}
 
         // Test:
-        // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - v1[ii])) {{ vout_expected[ii] == {max_}; }}
+        // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ vout_expected[ii] == {max_}; }}
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
      }}
       '''
