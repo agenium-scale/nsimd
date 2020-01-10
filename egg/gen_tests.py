@@ -1235,11 +1235,161 @@ def subs_unsigned_is_underflow(typ):
       }}
       '''
 
+# -----------------------------------------------------------------------------
+# Tests helpers for subs with integer types
+
+# test signed integer overflow
+def test_subs_signed_overflow(typ, min_, max_):
+      return f'''
+      void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+
+        // if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ overflow }}
+
+        // vin2[ii] < 0
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+          {typ} rand_val = (- rand()) % {min_};
+          vin2[ii] = (rand_val == 0 ? - 1 : rand_val);
+        }}
+
+        // vin1[ii] - vin2[ii] > {max_}
+        // vin1[ii] > {max_} + vin2[ii]
+        // vin1[ii] = {max_} + vin2[ii] + rand_val
+        // s.t.: 0 < rand_val <= - vin2[ii]
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+            {typ} rand_val = rand() % -(vin2[ii] + 1); // (- TYPE_MIN) overflows
+            rand_val = (rand_val == 0 ? 1 : rand_val);
+            vin1[ii] = {max_} + vin2[ii] + rand_val;
+            vout_expected[ii] = {max_};
+        }}
+
+        // Test:
+        // if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ vout_expected[ii] == {max_}; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+     }}
+      '''
+
+# test signed underflow
+def test_subs_signed_underflow(typ, min_, max_):
+      return f'''
+      void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      {{
+
+        // if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ underflow }}
+
+        // vin2[ii] > 0
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+            {typ} rand_val = rand() % {max_};
+            vin2[ii] = (rand_val == 0 ? 1 : rand_val);
+        }}
+
+        // vin1[ii] < {min_} + vin2[ii]
+        // vin1[ii] = {min_} + vin2[ii] - rand_val
+        // s.t.: 0 < rand_val < vin2[ii]
+        for(int ii = 0; ii < SIZE; ++ii)
+        {{
+            {typ} rand_val = rand() % vin2[ii];
+            rand_val = (rand_val == 0 ? 1 : rand_val);
+            vin1[ii] = {min_} + vin2[ii] - rand_val;
+            vout_expected[ii] = {min_};
+        }}
+
+        // Test:
+        // if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ vout_expected[ii] == {min_}; }}
+        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+      }}
+      '''
+
+# test signed neither overflow nor underflow
+def test_subs_signed_neither_overflow_nor_underflow(typ, min_, max_):
+      return \
+        test_signed_neither_overflow_nor_underflow(typ, min_, max_,
+         '-', 'subs_signed_is_neither_overflow_nor_underflow')
+
+# test signed all cases
+def test_subs_signed_all_cases(typ, min_, max_):
+      return test_signed_all_cases(typ, min_, max_, '-', 'subs_signed_is_overflow', 'subs_signed_is_underflow')
+
+# all signed tests
+def tests_subs_signed():
+      return'''
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_overflow(vin1, vin2, vout_expected,
+                 vout_computed), "overflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_underflow(vin1, vin2, vout_expected,
+                 vout_computed), "underflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed),
+      "neither underflow nor overflow");
+
+      zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
+      CHECK_CASE(test_all_cases(vin1, vin2, vout_expected,
+                 vout_computed), "all cases");
+      '''
+
 # ------------------------------------------------------------------------------
 # Get subs tests given type
 
+def get_subs_tests_cases_for_signed_types(typ, min_, max_):
+      helpers = '''
+            {test_subs_signed_overflow}
+
+            {test_subs_signed_underflow}
+
+            {subs_signed_is_overflow}
+
+            {subs_signed_is_underflow}
+
+            {subs_signed_is_neither_overflow_nor_underflow}
+
+            {test_subs_signed_neither_overflow_nor_underflow}
+
+            {test_subs_signed_all_cases}
+          ''' .format(test_subs_signed_overflow=test_subs_signed_overflow(typ, min_, max_),
+                      test_subs_signed_underflow=test_subs_signed_underflow(typ, min_, max_),
+                      subs_signed_is_overflow=subs_signed_is_overflow(typ, max_),
+                      subs_signed_is_underflow=subs_signed_is_underflow(typ, min_),
+                      subs_signed_is_neither_overflow_nor_underflow=subs_signed_is_neither_overflow_nor_underflow(typ),
+                      test_subs_signed_neither_overflow_nor_underflow=test_subs_signed_neither_overflow_nor_underflow(
+                          typ, min_=min_, max_=max_),
+                      test_subs_signed_all_cases=test_subs_signed_all_cases(typ, min_=min_, max_=max_)
+                      )
+      return {'helpers': helpers, 'tests': tests_subs_signed()}
+
+def get_subs_tests_cases_for_unsigned_types(typ, min_, max_):
+      # TODO: copied from adds - to update for subs
+      helpers = '''
+          {test_adds_overflow}
+
+          {test_adds_unsigned_no_overflow}
+
+          {test_adds_unsigned_all_cases}
+          ''' .format(test_adds_overflow=test_adds_overflow(typ, max_),
+                      test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(
+                          typ, max_),
+                      test_adds_unsigned_all_cases=test_adds_unsigned_all_cases(typ, max_)
+                      )
+      return {'helpers': helpers, 'tests': tests_adds_unsigned()}
+
 def get_subs_tests_cases_given_type(typ):
-      return { 'helpers': '// Not implemented', 'tests': '// Not implemented' }
+      if typ in common.iutypes:
+            type_limits = common.limits[typ]
+            min_ = type_limits['min']
+            max_ = type_limits['max']
+
+            if typ in common.itypes:
+                  return get_subs_tests_cases_for_signed_types(typ=typ, min_=min_, max_=max_)
+
+            if typ in common.utypes:
+                  return {'helpers': '// To implement', 'tests': '// To implement'}
+      else:
+            raise TypeError(f'{typ} not implemented')
 
 # -----------------------------------------------------------------------------
 # gen_subs

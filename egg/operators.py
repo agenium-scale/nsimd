@@ -1175,7 +1175,7 @@ class Adds(Operator):
 class Subs(Operator):
     full_name = 'subtraction using saturation'
     signature = 'v subs v v'
-    types = common.types
+    types = common.iutypes
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
