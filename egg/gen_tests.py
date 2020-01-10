@@ -1221,7 +1221,7 @@ def subs_signed_is_neither_overflow_nor_underflow(typ):
       return f'''
       int subs_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
       {{
-        return ! subs_signed_is_underflow(a, b) && ! subs_signed_is_overflow(a, b);
+        return ! subs_signed_is_overflow(a, b) && ! subs_signed_is_underflow(a, b);
       }}
       '''
 
