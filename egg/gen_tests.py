@@ -1084,10 +1084,13 @@ def get_adds_tests_cases_for_unsigned_types(typ, max_):
       helpers = '''
           {test_adds_overflow}
 
+          {adds_is_overflow}
+
           {test_adds_unsigned_no_overflow}
 
           {test_adds_unsigned_all_cases}
           ''' .format(test_adds_overflow=test_adds_overflow(typ, max_),
+                      adds_is_overflow=adds_is_overflow(typ, max_),
                       test_adds_unsigned_no_overflow=test_adds_unsigned_no_overflow(
                           typ, max_),
                       test_adds_unsigned_all_cases=test_adds_unsigned_all_cases(typ, max_)
@@ -1198,7 +1201,7 @@ def gen_adds(opts, op, typ, lang, ulps):
 
 def subs_signed_is_overflow(typ, max_):
       return f'''
-      int subs_is_overflow(const {typ} a, const {typ} b)
+      int subs_signed_is_overflow(const {typ} a, const {typ} b)
       {{
         return (b < 0) && (a > {max_} + b);
       }}
@@ -1457,9 +1460,12 @@ def get_subs_tests_cases_for_unsigned_types(typ, min_, max_):
 
           {test_subs_unsigned_no_underflow}
 
+          {subs_unsigned_is_underflow}
+
           {test_subs_unsigned_all_cases}
           ''' .format(test_subs_unsigned_underflow=test_subs_unsigned_underflow(typ, min_, max_),
                       test_subs_unsigned_no_underflow=test_subs_unsigned_no_underflow(typ, max_),
+                      subs_unsigned_is_underflow=subs_unsigned_is_underflow(typ),
                       test_subs_unsigned_all_cases=test_subs_unsigned_all_cases(typ, min_, max_)
                       )
       return {'helpers': helpers, 'tests': tests_subs_unsigned()}
