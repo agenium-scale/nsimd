@@ -1255,10 +1255,19 @@ def test_subs_signed_overflow(typ, min_, max_):
         // vin1[ii] > {max_} + vin2[ii]
         // vin1[ii] = {max_} + vin2[ii] + rand_val
         // s.t.: 0 < rand_val <= - vin2[ii]
+
+        // (- TYPE_MIN) overflows
+        // if vin2[ii] == -1 -->  rand() % -(vin2[ii] + 1) --> rand() % 0
+        // Therefore check if vin2[ii] == -1 --> if True --> set rand_val == 1
+
         for(int ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % -(vin2[ii] + 1); // (- TYPE_MIN) overflows
+          {typ} rand_val = 0;
+          if(-1 == vin2[ii]){{ rand_val == 1; }}
+          else{{
+            rand_val = rand() % -(vin2[ii] + 1);
             rand_val = (rand_val == 0 ? 1 : rand_val);
+          }}
             vin1[ii] = {max_} + vin2[ii] + rand_val;
             vout_expected[ii] = {max_};
         }}
