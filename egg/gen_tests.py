@@ -821,8 +821,10 @@ def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check)
           }}
         }}
         assert(ii == SIZE);
-        // Test:
-        // if (neither overflow nor underflow) {{ vout_expected[ii] == a {operator} b; }}
+        /*
+        Test:
+        if (neither overflow nor underflow) {{ vout_expected[ii] == a {operator} b; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -850,7 +852,7 @@ def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_under
             vout_expected[ii] = vin1[ii] {oper} vin2[ii];
           }}
         }}
-        // Test all cases:
+        /* Test all cases */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -891,18 +893,20 @@ def test_adds_overflow(typ, max_):
       int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ overflow }}
+        /* if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ overflow }} */
 
-        // vin1[ii] > 0
+        /* vin1[ii] > 0 */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
           {typ} rand_val = rand() % {max_};
           vin1[ii] = (rand_val == 0 ? 1 : rand_val);
         }}
 
-        // vin2[ii] > {max_} - vin1[ii]
-        // vin2[ii] = {max_} - vin1[ii] + rand_val
-        // s.t.: 0 < rand_val <= vin1[ii]
+        /*
+        vin2[ii] > {max_} - vin1[ii]
+        vin2[ii] = {max_} - vin1[ii] + rand_val
+        s.t.: 0 < rand_val <= vin1[ii]
+        */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = rand() % (vin1[ii] + 1);
@@ -911,8 +915,10 @@ def test_adds_overflow(typ, max_):
             vout_expected[ii] = {max_};
         }}
 
-        // Test:
-        // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ vout_expected[ii] == {max_}; }}
+        /*
+        Test:
+        if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ vout_expected[ii] == {max_}; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
      }}
       '''
@@ -926,19 +932,22 @@ def test_adds_signed_underflow(typ, min_):
       int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ underflow }}
+        /* if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ underflow }} */
 
-        // vin1[ii] < 0
+        /* vin1[ii] < 0 */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = (- rand()) % {min_};
             vin1[ii] = (rand_val == 0 ? - 1 : rand_val);
         }}
 
-        // vin1[ii] < 0
-        // vin2[ii] < {min_} - vin1[ii]
-        // vin2[ii] = {min_} - vin1[ii] - rand_val
-        // s.t.: 0 < rand_val < - vin1[ii]
+        /*
+        vin1[ii] < 0
+        vin2[ii] < {min_} - vin1[ii]
+        vin2[ii] = {min_} - vin1[ii] - rand_val
+        s.t.: 0 < rand_val < - vin1[ii]
+        */
+
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = (rand()) % (- vin1[ii]);
@@ -947,8 +956,10 @@ def test_adds_signed_underflow(typ, min_):
             vout_expected[ii] = {min_};
         }}
 
-        // Test:
-        // if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ vout_expected[ii] == {min_}; }}
+        /*
+        Test:
+        if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ vout_expected[ii] == {min_}; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -1005,8 +1016,10 @@ def test_adds_unsigned_no_overflow(typ, max_):
           }}
         }}
         assert(ii == SIZE);
-        // Test:
-        // if (not adds is overflow) {{ vout_expected[ii] == a + b; }}
+        /*
+        Test:
+        if (not adds is overflow) {{ vout_expected[ii] == a + b; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -1026,7 +1039,7 @@ def test_adds_unsigned_all_cases(typ, max_):
           }}
           else {{ vout_expected[ii] = vin1[ii] + vin2[ii]; }}
         }}
-        // Test all cases:
+        /* Test all cases: */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -1242,23 +1255,25 @@ def test_subs_signed_overflow(typ, min_, max_):
       int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ overflow }}
+        /* if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ overflow }} */
 
-        // vin2[ii] < 0
+        /* vin2[ii] < 0 */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
           {typ} rand_val = (- rand()) % {min_};
           vin2[ii] = (rand_val == 0 ? - 1 : rand_val);
         }}
 
-        // vin1[ii] - vin2[ii] > {max_}
-        // vin1[ii] > {max_} + vin2[ii]
-        // vin1[ii] = {max_} + vin2[ii] + rand_val
-        // s.t.: 0 < rand_val <= - vin2[ii]
+        /*
+        vin1[ii] - vin2[ii] > {max_}
+        vin1[ii] > {max_} + vin2[ii]
+        vin1[ii] = {max_} + vin2[ii] + rand_val
+        s.t.: 0 < rand_val <= - vin2[ii]
 
-        // (- TYPE_MIN) overflows
-        // if vin2[ii] == -1 -->  rand() % -(vin2[ii] + 1) --> rand() % 0
-        // Therefore check if vin2[ii] == -1 --> if True --> set rand_val == 1
+        (- TYPE_MIN) overflows
+        if vin2[ii] == -1 -->  rand() % -(vin2[ii] + 1) --> rand() % 0
+        Therefore check if vin2[ii] == -1 --> if True --> set rand_val == 1
+        */
 
         for(int ii = 0; ii < SIZE; ++ii)
         {{
@@ -1272,8 +1287,10 @@ def test_subs_signed_overflow(typ, min_, max_):
             vout_expected[ii] = {max_};
         }}
 
-        // Test:
-        // if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ vout_expected[ii] == {max_}; }}
+        /*
+        Test:
+        if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ vout_expected[ii] == {max_}; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
      }}
       '''
@@ -1284,18 +1301,20 @@ def test_subs_signed_underflow(typ, min_, max_):
       int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ underflow }}
+        /* if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ underflow }} */
 
-        // vin2[ii] > 0
+        /* vin2[ii] > 0 */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = rand() % {max_};
             vin2[ii] = (rand_val == 0 ? 1 : rand_val);
         }}
 
-        // vin1[ii] < {min_} + vin2[ii]
-        // vin1[ii] = {min_} + vin2[ii] - rand_val
-        // s.t.: 0 < rand_val < vin2[ii]
+        /*
+        vin1[ii] < {min_} + vin2[ii]
+        vin1[ii] = {min_} + vin2[ii] - rand_val
+        s.t.: 0 < rand_val < vin2[ii]
+        */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = rand() % vin2[ii];
@@ -1304,8 +1323,10 @@ def test_subs_signed_underflow(typ, min_, max_):
             vout_expected[ii] = {min_};
         }}
 
-        // Test:
-        // if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ vout_expected[ii] == {min_}; }}
+        /*
+        Test:
+        if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ vout_expected[ii] == {min_}; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -1349,14 +1370,16 @@ def test_subs_unsigned_underflow(typ, min_, max_):
       int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
-        // if (vin1[ii] < vin2[ii]) {{ underflow }}
+        /* if (vin1[ii] < vin2[ii]) {{ underflow }} */
 
-        // vin1[ii]
+        /* vin1[ii] */
         for(int ii = 0; ii < SIZE; ++ii){{ vin1[ii] = rand() % {max_}; }}
 
-        // vin1[ii] < vin2[ii]
-        // vin2[ii] = vin1[ii] + rand_val
-        // s.t.: 0 < rand_val < {max_} - vin1[ii]
+        /*
+        vin1[ii] < vin2[ii]
+        vin2[ii] = vin1[ii] + rand_val
+        s.t.: 0 < rand_val < {max_} - vin1[ii]
+        */
         for(int ii = 0; ii < SIZE; ++ii)
         {{
             {typ} rand_val = rand() % ({max_} - vin1[ii]);
@@ -1365,8 +1388,10 @@ def test_subs_unsigned_underflow(typ, min_, max_):
             vout_expected[ii] = ({typ}){min_};
         }}
 
-        // Test:
-        // if (vin1[ii] < vin2[ii]) {{ vout_expected[ii] == {min_}; }}
+        /*
+        Test:
+        if (vin1[ii] < vin2[ii]) {{ vout_expected[ii] == {min_}; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -1376,14 +1401,16 @@ def test_subs_unsigned_no_underflow(typ, max_):
       return f'''
       int test_no_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
-        // if (vin1[ii] >= vin2[ii]) {{ no underflow }}
+        /* if (vin1[ii] >= vin2[ii]) {{ no underflow }} */
 
-        // vin1[ii]
+        /* vin1[ii] */
         for(int ii = 0; ii < SIZE; ++ii){{ vin1[ii] = rand() % {max_}; }}
 
-        // vin1[ii] >= vin2[ii]
-        // vin2 = vin1 - rand_val
-        // s.t. 0 <= rand_val <= vin1
+        /*
+        vin1[ii] >= vin2[ii]
+        vin2 = vin1 - rand_val
+        s.t. 0 <= rand_val <= vin1
+        */
 
         for(int ii = 0; ii < SIZE; ++ii)
         {{
@@ -1392,8 +1419,10 @@ def test_subs_unsigned_no_underflow(typ, max_):
             vout_expected[ii] = vin1[ii] - vin2[ii];
         }}
 
-        // Test:
-        // if (vin1[ii] >= vin2[ii]) {{ vout_expected[ii] == vin1[ii] - vin2[ii]; }}
+        /*
+        Test:
+        if (vin1[ii] >= vin2[ii]) {{ vout_expected[ii] == vin1[ii] - vin2[ii]; }}
+        */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
@@ -1413,7 +1442,7 @@ def test_subs_unsigned_all_cases(typ, min_, max_):
           }}
           else {{ vout_expected[ii] = vin1[ii] - vin2[ii]; }}
         }}
-        // Test all cases:
+        /* Test all cases: */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
       '''
