@@ -755,37 +755,53 @@ def zero_out_arrays(typ):
       }}
       '''
 
-def compute_adds_or_subs_values_given_language(typ, op, language):
+def compute_op_given_language(typ, op, language):
       if 'c_base' == language:
             return f'''
-            for (int ii = 0; ii < SIZE; ii += step) {{
               vec({typ}) va1, va2, vc;
-              va1 = vloadu(&vin1[ii], {typ});
-              va2 = vloadu(&vin2[ii], {typ});
+              va1 = vloadu(&vin1[outer], {typ});
+              va2 = vloadu(&vin2[outer], {typ});
               vc = v{op}(va1, va2, {typ});
-              vstoreu(&vout_computed[ii], vc, {typ});
-            }}
+              vstoreu(&vout_computed[outer], vc, {typ});
             '''
       elif 'cxx_base' == language:
             return f'''
-            for (int ii = 0; ii < SIZE; ii += step) {{
               vec({typ}) va1, va2, vc;
-              va1 = nsimd::loadu(&vin1[i], {typ}());
-              va2 = nsimd::loadu(&vin2[i], {typ}());
+              va1 = nsimd::loadu(&vin1[outer], {typ}());
+              va2 = nsimd::loadu(&vin2[outer], {typ}());
               vc = nsimd::{op}(va1, va2, {typ}());
-              nsimd::storeu(&vout_computed[i], vc, {typ}());
-            }}
+              nsimd::storeu(&vout_computed[outer], vc, {typ}());
             '''
       else:
             return f'''
-              for (i = 0; i < SIZE; i += step) {{
                 nsimd::pack<{typ}> va1, va2, vc;
-                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
-                va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[i]);
+                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[outer]);
+                va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[outer]);
                 vc = nsimd::{op}(va1, va2);
-                nsimd::storeu(&vout_computed[i], vc);
-              }}
+                nsimd::storeu(&vout_computed[outer], vc);
             '''
+
+def compare_expected_vs_computed(typ, op, language):
+      values_computation = compute_op_given_language(typ, op, language)
+      return f'''
+      int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
+      {{
+          const int step = vlen({typ});
+
+          for (int outer = 0; outer < SIZE; outer += step) {{
+          /* Fill vout_computed with computed values */
+          {values_computation}
+          /* Compare results */
+          for (int inner = outer; inner < outer + step; ++inner) {{
+              if (! equal(vout_expected[inner], vout_computed[inner])) {{
+                return 0;
+              }}
+            }}
+          }}
+
+          return 1;
+      }}
+      '''
 
 def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check):
       return f'''
@@ -836,27 +852,6 @@ def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_under
         }}
         // Test all cases:
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
-      }}
-      '''
-
-def compare_expected_vs_computed(typ, op, language):
-      values_computation = compute_adds_or_subs_values_given_language(typ, op, language)
-      return f'''
-      int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
-      {{
-          const int step = vlen({typ});
-
-          /* Fill vout_computed with computed values */
-          {values_computation}
-
-          /* Compare results */
-          for (int ii = 0; ii < SIZE; ++ii) {{
-              if (! equal(vout_expected[ii], vout_computed[ii])) {{
-                return 0;
-              }}
-            }}
-
-          return 1;
       }}
       '''
 
