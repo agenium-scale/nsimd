@@ -805,7 +805,7 @@ def compare_expected_vs_computed(typ, op, language):
 
 def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check):
       return f'''
-      void test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
         while(ii < SIZE)
@@ -829,7 +829,7 @@ def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check)
 
 def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_underflow):
       return f'''
-      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         for(int ii = 0; ii < SIZE; ++ii)
         {{
@@ -888,7 +888,7 @@ def adds_signed_is_neither_overflow_nor_underflow(typ):
 # test integer overflow
 def test_adds_overflow(typ, max_):
       return f'''
-      void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
         // if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ overflow }}
@@ -923,7 +923,7 @@ def test_adds_overflow(typ, max_):
 # test signed underflow
 def test_adds_signed_underflow(typ, min_):
       return f'''
-      void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
         // if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ underflow }}
@@ -989,7 +989,7 @@ def tests_adds_signed():
 # test signed neither overflow nor underflow
 def test_adds_unsigned_no_overflow(typ, max_):
       return f'''
-      void test_no_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_no_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
         while(ii < SIZE)
@@ -1014,7 +1014,7 @@ def test_adds_unsigned_no_overflow(typ, max_):
 # test unsigned all cases
 def test_adds_unsigned_all_cases(typ, max_):
       return f'''
-      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         for(int ii = 0; ii < SIZE; ++ii)
         {{
@@ -1236,7 +1236,7 @@ def subs_unsigned_is_underflow(typ):
 # test signed integer overflow
 def test_subs_signed_overflow(typ, min_, max_):
       return f'''
-      void test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
         // if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ overflow }}
@@ -1269,7 +1269,7 @@ def test_subs_signed_overflow(typ, min_, max_):
 # test signed underflow
 def test_subs_signed_underflow(typ, min_, max_):
       return f'''
-      void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
         // if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ underflow }}
@@ -1334,7 +1334,7 @@ def tests_subs_signed():
 # test unsigned underflow
 def test_subs_unsigned_underflow(typ, min_, max_):
       return f'''
-      void test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
 
         // if (vin1[ii] < vin2[ii]) {{ underflow }}
@@ -1362,7 +1362,7 @@ def test_subs_unsigned_underflow(typ, min_, max_):
 # test unsigned no underflow
 def test_subs_unsigned_no_underflow(typ, max_):
       return f'''
-      void test_no_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_no_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         // if (vin1[ii] >= vin2[ii]) {{ no underflow }}
 
@@ -1389,7 +1389,7 @@ def test_subs_unsigned_no_underflow(typ, max_):
 # test signed all cases
 def test_subs_unsigned_all_cases(typ, min_, max_):
       return f'''
-      void test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         for(int ii = 0; ii < SIZE; ++ii)
         {{
