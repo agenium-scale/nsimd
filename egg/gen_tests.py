@@ -900,7 +900,7 @@ def test_adds_overflow(typ, max_):
         /* vin1[ii] > 0 */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-          {typ} rand_val = rand() % {max_};
+          {typ} rand_val = ({typ})(rand() % {max_});
           vin1[ii] = (rand_val == 0 ? 1 : rand_val);
         }}
 
@@ -911,7 +911,7 @@ def test_adds_overflow(typ, max_):
         */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % (vin1[ii] + 1);
+            {typ} rand_val = ({typ})(rand() % (vin1[ii] + 1));
             rand_val = (rand_val == 0 ? 1 : rand_val);
             vin2[ii] = {max_} - vin1[ii] + rand_val;
             vout_expected[ii] = {max_};
@@ -939,7 +939,7 @@ def test_adds_signed_underflow(typ, min_):
         /* vin1[ii] < 0 */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = (- rand()) % {min_};
+            {typ} rand_val = ({typ})((- rand()) % {min_});
             vin1[ii] = (rand_val == 0 ? - 1 : rand_val);
         }}
 
@@ -952,7 +952,7 @@ def test_adds_signed_underflow(typ, min_):
 
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = (rand()) % (- vin1[ii]);
+            {typ} rand_val = ({typ})((rand()) % (- vin1[ii]));
             rand_val = (rand_val == 0 ? 1 : rand_val);
             vin2[ii] = {min_} - vin1[ii] - rand_val;
             vout_expected[ii] = {min_};
@@ -1263,7 +1263,7 @@ def test_subs_signed_overflow(typ, min_, max_):
         /* vin2[ii] < 0 */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-          {typ} rand_val = (- rand()) % {min_};
+          {typ} rand_val = ({typ})((- rand()) % {min_});
           vin2[ii] = (rand_val == 0 ? - 1 : rand_val);
         }}
 
@@ -1283,7 +1283,7 @@ def test_subs_signed_overflow(typ, min_, max_):
           {typ} rand_val = 0;
           if(-1 == vin2[ii]){{ rand_val == 1; }}
           else{{
-            rand_val = rand() % -(vin2[ii] + 1);
+            rand_val = ({typ})(rand() % -(vin2[ii] + 1));
             rand_val = (rand_val == 0 ? 1 : rand_val);
           }}
             vin1[ii] = {max_} + vin2[ii] + rand_val;
@@ -1309,7 +1309,7 @@ def test_subs_signed_underflow(typ, min_, max_):
         /* vin2[ii] > 0 */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % {max_};
+            {typ} rand_val = ({typ})(rand() % {max_});
             vin2[ii] = (rand_val == 0 ? 1 : rand_val);
         }}
 
@@ -1320,7 +1320,7 @@ def test_subs_signed_underflow(typ, min_, max_):
         */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % vin2[ii];
+            {typ} rand_val = ({typ})(rand() % vin2[ii]);
             rand_val = (rand_val == 0 ? 1 : rand_val);
             vin1[ii] = {min_} + vin2[ii] - rand_val;
             vout_expected[ii] = {min_};
@@ -1376,7 +1376,7 @@ def test_subs_unsigned_underflow(typ, min_, max_):
         int ii = 0;
 
         /* vin1[ii] */
-        for(ii = 0; ii < SIZE; ++ii){{ vin1[ii] = rand() % {max_}; }}
+        for(ii = 0; ii < SIZE; ++ii){{ vin1[ii] = ({typ})(rand() % {max_}); }}
 
         /*
         vin1[ii] < vin2[ii]
@@ -1385,7 +1385,7 @@ def test_subs_unsigned_underflow(typ, min_, max_):
         */
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % ({max_} - vin1[ii]);
+            {typ} rand_val = ({typ})(rand() % ({max_} - vin1[ii]));
             rand_val = (rand_val == 0 ? 1 : rand_val);
             vin2[ii] = vin1[ii] + rand_val;
             vout_expected[ii] = ({typ}){min_};
@@ -1408,7 +1408,7 @@ def test_subs_unsigned_no_underflow(typ, max_):
         int ii = 0;
 
         /* vin1[ii] */
-        for(ii = 0; ii < SIZE; ++ii){{ vin1[ii] = rand() % {max_}; }}
+        for(ii = 0; ii < SIZE; ++ii){{ vin1[ii] = ({typ})(rand() % {max_}); }}
 
         /*
         vin1[ii] >= vin2[ii]
@@ -1418,7 +1418,7 @@ def test_subs_unsigned_no_underflow(typ, max_):
 
         for(ii = 0; ii < SIZE; ++ii)
         {{
-            {typ} rand_val = rand() % (vin1[ii] + 1);
+            {typ} rand_val = ({typ})(rand() % (vin1[ii] + 1));
             vin2[ii] = vin1[ii] - rand_val;
             vout_expected[ii] = vin1[ii] - vin2[ii];
         }}
