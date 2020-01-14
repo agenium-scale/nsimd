@@ -2539,13 +2539,15 @@ def adds(simd_ext, typ):
     if typ in common.utypes:
         return'''
         // Algo pseudo code:
-        // res = a + b
-        // return res < max(a, b) ? UINT_MAX : res
+        // ures = a + b
+        // if overflow then ures < a && ures < b
+        // --> test against a single value: if(ures < a){ overflow ; }
+        // return ures < a ? {type_max} : ures
 
         const nsimd_{simd_ext}_v{typ} ures = nsimd_add_{simd_ext}_{typ}({in0}, {in1});
-        const nsimd_{simd_ext}_v{typ} max =  nsimd_max_{simd_ext}_{typ}({in0}, {in1});
-        return nsimd_if_else1_{simd_ext}_{typ}(nsimd_lt_{simd_ext}_{typ}(ures, max), UINT_MAX, ures);
-        '''.format(**fmtspec)
+        const nsimd_{simd_ext}_v{typ} type_max = nsimd_set1_{simd_ext}_{typ}(({typ}){type_max});
+        return nsimd_if_else1_{simd_ext}_{typ}(nsimd_lt_{simd_ext}_{typ}(ures, {in0}), type_max, ures);
+        '''.format(type_max=common.limits[typ]['max'], **fmtspec)
 
     if typ not in common.itypes:
         raise ValueError('Type not implemented in platform_{simd_ext} adds({typ});'.
