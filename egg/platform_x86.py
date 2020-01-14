@@ -2541,7 +2541,7 @@ def adds(simd_ext, typ):
         // Algo pseudo code:
         // ures = a + b
         // if overflow then ures < a && ures < b
-        // --> test against a single value: if(ures < a){ overflow ; }
+        // --> test against a single value: if(ures < a){{ overflow ; }}
         // return ures < a ? {type_max} : ures
 
         const nsimd_{simd_ext}_v{typ} ures = nsimd_add_{simd_ext}_{typ}({in0}, {in1});
