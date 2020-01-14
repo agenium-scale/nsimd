@@ -20,12 +20,12 @@
 #
 # -----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 ## Setup project
 ## ----------------------------------------------------------------------------
 
-project(nsimd)
+project(nsimd LANGUAGES C CXX CUDA)
 set(NSIMD_ROOT ${CMAKE_SOURCE_DIR})
 if (NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RELEASE)
@@ -110,7 +110,7 @@ function(make_target_path root src OUT)
 endfunction()
 
 ## Make pretty test targets
-function(make_tests root pattern is_cpp)
+function(make_tests root pattern lang)
     ## Get all files
     file(GLOB_RECURSE srcs ${root}/${pattern})
     ## List of functions that requires MPFR (use | to chain them)
@@ -144,12 +144,15 @@ function(make_tests root pattern is_cpp)
         set_target_properties(${target} PROPERTIES EXCLUDE_FROM_ALL TRUE)
         target_link_libraries(${target} ${libname} ${libm} ${target.libs})
 
-        if (is_cpp)
+        if (lang STREQUAL "C++")
           set_target_properties(${target} PROPERTIES COMPILE_FLAGS
               "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS} ${flag_cpp14}")
-        else()
+        elseif(lang STREQUAL "C")
           set_target_properties(${target} PROPERTIES COMPILE_FLAGS
               "${flag_g} ${flag_O3} ${SIMD_INFO_FLAGS}")
+        elseif(lang STREQUAL "CUDA")
+          set_target_properties(${target} PROPERTIES COMPILE_FLAGS
+          "${flag_g} ${flag_O3} -std=c++03 -lineinfo")
         endif()
 
         ## Attach to the main tests target
@@ -221,8 +224,9 @@ add_custom_command(TARGET gen.tests
 )
 
 ## Create targets
-make_tests(${NSIMD_ROOT}/tests *.c FALSE)
-make_tests(${NSIMD_ROOT}/tests *.cpp TRUE)
+make_tests(${NSIMD_ROOT}/tests *.c "C")
+make_tests(${NSIMD_ROOT}/tests *.cpp "C++")
+make_tests(${NSIMD_ROOT}/tests *.cu "CUDA")
 
 ## Setup benchmarks generation target
 ## ----------------------------------------------------------------------------

@@ -51,11 +51,22 @@ template <typename T> struct in_t {
 
   T const &data;
 
-  in_t(T const &data_) : data(data_) {}
+  in_t(T const &data_) : data(data_)
+  {
+    #ifdef NSIMD_IS_NVCC
+    update_p_data_cuda();
+    #endif
+  }
 
   int size() const { return int(data.size()); }
 
   value_type operator()(int const i) const { return data[i]; }
+
+  #ifdef NSIMD_IS_NVCC
+  value_type const * p_data_cuda;
+  void update_p_data_cuda() { p_data_cuda = data.data(); }
+  __device__ value_type cuda_get(int const i) const { return *(p_data_cuda + i); }
+  #endif
 };
 
 template <typename T> tet1d::in_t<T> in(T &data_) {
@@ -80,7 +91,12 @@ template <typename T> struct out_t {
   tet1d::EvalMode eval_mode;
 
   out_t(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd)
-      : data(data_), eval_mode(eval_mode_) {}
+      : data(data_), eval_mode(eval_mode_)
+  {
+    #ifdef NSIMD_IS_NVCC
+    update_p_data_cuda();
+    #endif
+  }
 
   void resize(size_t const size) { data.resize(size); }
 
@@ -88,6 +104,13 @@ template <typename T> struct out_t {
 
   value_type &operator()(int const i) { return data[i]; }
   value_type operator()(int const i) const { return data[i]; }
+
+  #ifdef NSIMD_IS_NVCC
+  value_type * p_data_cuda;
+  void update_p_data_cuda() { p_data_cuda = data.data(); }
+  __device__ value_type &cuda_get(int const i) { return *(p_data_cuda + i); }
+  __device__ value_type cuda_get(int const i) const { return *(p_data_cuda + i); }
+  #endif
 
   template <typename Node> tet1d::out_t<T> &operator=(Node const &node) {
     return tet1d::eval(*this, node, eval_mode);
@@ -146,7 +169,8 @@ template <typename Op, typename A0, typename A1> struct op2_t {
   A1 a1;
 
   op2_t(Op op_, A0 a0_, A1 a1_) : op(op_), a0(a0_), a1(a1_) {
-    assert(a0.size() == a1.size() && "TODO");
+    char const * const error_message = "TODO";
+    assert(a0.size() == a1.size() && error_message);
   }
 
   int size() const { return a0.size(); }
@@ -164,7 +188,8 @@ template <typename Op, typename A0, typename A1, typename A2> struct op3_t {
   A2 a2;
 
   op3_t(Op op_, A0 a0_, A1 a1_, A2 a2_) : op(op_), a0(a0_), a1(a1_), a2(a2_) {
-    assert(a0.size() == a1.size() && a0.size() == a2.size() && "TODO");
+    char const * const error_message = "TODO";
+    assert(a0.size() == a1.size() && a0.size() == a2.size() && error_message);
   }
 
   int size() const { return a0.size(); }
@@ -271,6 +296,63 @@ eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
                              tet1d::eval_simd_i(node.a2, i));
 }
 
+// Eval CUDA
+
+#ifdef NSIMD_IS_NVCC
+
+template <typename T>
+__device__ typename tet1d::in_t<T>::value_type
+eval_cuda_i(tet1d::in_t<T> const &in, int const i) {
+  return in.cuda_get(i);
+}
+
+template <typename T>
+__device__ typename tet1d::out_t<T>::value_type &
+eval_cuda_i(tet1d::out_t<T> &out, int const i) {
+  return out.cuda_get(i);
+}
+
+template <typename T>
+__device__ typename tet1d::out_t<T>::value_type
+eval_cuda_i(tet1d::out_t<T> const &out, int const i) {
+  return out.cuda_get(i);
+}
+
+template <typename Op, typename A>
+__device__ typename op1_t<Op, A>::result_type
+eval_cuda_i(op1_t<Op, A> const &node, int const i);
+
+template <typename Op, typename A0, typename A1>
+__device__ typename op2_t<Op, A0, A1>::result_type
+eval_cuda_i(op2_t<Op, A0, A1> const &node, int const i);
+
+template <typename Op, typename A0, typename A1, typename A2>
+__device__ typename op3_t<Op, A0, A1, A2>::result_type
+eval_cuda_i(op3_t<Op, A0, A1, A2> const &node, int const i);
+
+template <typename Op, typename A>
+__device__ typename op1_t<Op, A>::result_type
+eval_cuda_i(op1_t<Op, A> const &node, int const i) {
+  return node.op.eval_cuda_i(tet1d::eval_cuda_i(node.a, i));
+}
+
+template <typename Op, typename A0, typename A1>
+__device__ typename op2_t<Op, A0, A1>::result_type
+eval_cuda_i(op2_t<Op, A0, A1> const &node, int const i) {
+  return node.op.eval_cuda_i(tet1d::eval_cuda_i(node.a0, i),
+                             tet1d::eval_cuda_i(node.a1, i));
+}
+
+template <typename Op, typename A0, typename A1, typename A2>
+__device__ typename op3_t<Op, A0, A1, A2>::result_type
+eval_cuda_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
+  return node.op.eval_cuda_i(tet1d::eval_cuda_i(node.a0, i),
+                             tet1d::eval_cuda_i(node.a1, i),
+                             tet1d::eval_cuda_i(node.a2, i));
+}
+
+#endif
+
 // Eval
 
 template <typename T, typename Node>
@@ -306,6 +388,25 @@ tet1d::out_t<T> &eval_simd(tet1d::out_t<T> &out, Node const &node) {
   return out;
 }
 
+#ifdef NSIMD_IS_NVCC
+template <typename T, typename Node>
+__global__ void eval_cuda_kernel( tet1d::out_t<T> out // Copy
+                                , Node const node // Copy
+                                ) {
+  size_t const i = blockIdx.x;
+  out.cuda_get(i) = tet1d::eval_cuda_i(node, i);
+}
+
+template <typename T, typename Node>
+tet1d::out_t<T> &eval_cuda(tet1d::out_t<T> &out, Node const &node) {
+  out.resize(node.size());
+  out.update_p_data_cuda();
+  eval_cuda_kernel<<<node.size(), 1>>>(out, node);
+  cudaDeviceSynchronize();
+  return out;
+}
+#endif
+
 template <typename T, typename Node>
 tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
                       tet1d::EvalMode const eval_mode) {
@@ -315,7 +416,11 @@ tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
   case tet1d::Simd:
     return tet1d::eval_simd(out, node);
   case tet1d::Cuda:
-    throw std::runtime_error("Not implemented");
+    #ifdef NSIMD_IS_NVCC
+    return tet1d::eval_cuda(out, node);
+    #else
+    throw std::runtime_error("Compiler is not nvcc");
+    #endif
   case tet1d::Hip:
     throw std::runtime_error("Not implemented");
   }
@@ -323,6 +428,8 @@ tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
 }
 
 } // namespace tet1d
+
+/*
 
 #include <cassert>
 #include <exception>
@@ -766,5 +873,7 @@ __kernel__ void eval_if_kernel(CondTree const &cond_tree,
 // ----------------------------------------------------------------------------
 
 } // namespace nsimd
+
+*/
 
 #endif

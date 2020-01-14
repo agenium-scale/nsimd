@@ -28,7 +28,8 @@ SOFTWARE.
 #include <vector>
 
 int main() {
-  std::vector<float, nsimd::allocator<float> > v;
+
+  std::vector<float, nsimd::cuda_allocator<float> > v;
 
   v.clear();
   v.resize(100);
