@@ -812,8 +812,8 @@ def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check)
         int ii = 0;
         while(ii < SIZE)
         {{
-          {typ} a = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
-          {typ} b = (({typ})(random_sign_flip() * rand()) % {max_}) % {min_};
+          {typ} a = ({typ})((random_sign_flip() * rand()) % {max_} % {min_});
+          {typ} b = ({typ})((random_sign_flip() * rand()) % {max_} % {min_});
           if({check}(a, b))
           {{
             vin1[ii] = a;
@@ -1409,7 +1409,7 @@ def test_subs_unsigned_no_underflow(typ, max_):
         int ii = 0;
 
         /* vin1[ii] */
-        for(ii = 0; ii < SIZE; ++ii){{ vin1[ii] = ({typ})(rand() % {max_}); }}
+        for(ii = 0; ii < SIZE; ++ii){{ vin1[ii] = ({typ})(({typ})rand() % {max_}); }}
 
         /*
         vin1[ii] >= vin2[ii]
