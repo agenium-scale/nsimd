@@ -2627,7 +2627,7 @@ def adds(simd_ext, typ):
             // u{num_bits} tmp = (u{num_bits})sMAX + 1
             // i{num_bits} sMIN = *(i{num_bits}*)(&tmp)
 
-            const nsimd_{simd_ext}_vu{num_bits} u_max = nsimd_set1_{simd_ext}_u{num_bits}((u_{num_bits}){max_c_macro});
+            const nsimd_{simd_ext}_vu{num_bits} u_max = nsimd_set1_{simd_ext}_u{num_bits}((u{num_bits}){type_max});
             const nsimd_{simd_ext}_vu{num_bits} u_max_min = nsimd_add_{simd_ext}_u{num_bits}(u_max, u_zeros_ones);
             const nsimd_{simd_ext}_vi{num_bits} i_max_min = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_max_min);
 
