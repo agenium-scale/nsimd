@@ -2554,8 +2554,6 @@ def adds(simd_ext, typ):
             format(**fmtspec))
 
     num_bits = typ[1:3]
-    max_c_macro_map = { 'i': 'INT_MAX', 'u': 'UINT_MAX' }
-    max_c_macro = max_c_macro_map[typ[0]]
 
     if 'avx512' in simd_ext:
         avx512_dependent_block = \
@@ -2647,9 +2645,10 @@ def adds(simd_ext, typ):
             const nsimd_{simd_ext}_vi{num_bits} ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
             return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min);
           '''. \
-            format(num_bits=num_bits, max_c_macro=max_c_macro,
-             avx512_dependent_block=avx512_dependent_block,
-              avx512_dependent_mask=avx512_dependent_mask, **fmtspec)
+            format( num_bits=num_bits,
+                    type_max=common.limits[typ]['max'],
+                    avx512_dependent_block=avx512_dependent_block,
+                    avx512_dependent_mask=avx512_dependent_mask, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # subs
