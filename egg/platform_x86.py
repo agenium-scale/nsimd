@@ -2677,13 +2677,12 @@ def subs(simd_ext, typ):
 
         // unsigned only
         // a > 0; b > 0 ==> a - b --> possibility for underflow only
-        // res = a - b
-        // if res > a <==> b > a --> underflow
+        // if b > a --> underflow
 
         const nsimd_{simd_ext}_v{typ} ures = nsimd_sub_{simd_ext}_{typ}({in0}, {in1});
-        const nsimd_{simd_ext}_vl{typ} umask = nsimd_gt_{simd_ext}_{typ}(ures, {in0});
+        const nsimd_{simd_ext}_vl{typ} is_underflow = nsimd_gt_{simd_ext}_{typ}({in1}, {in0});
         const nsimd_{simd_ext}_v{typ} umin = nsimd_set1_{simd_ext}_{typ}(({typ}){min_});
-        return nsimd_if_else1_{simd_ext}_{typ}(umask, ures, umin);
+        return nsimd_if_else1_{simd_ext}_{typ}(is_underflow, umin, ures);
     '''.format(min_=min_, **fmtspec)
 
 # -----------------------------------------------------------------------------
