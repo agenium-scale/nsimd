@@ -717,7 +717,10 @@ def aligned_alloc_error():
 
 def equal(typ):
       return f'''
-      int equal({typ} mpfr_out, {typ} nsimd_out) {{ return mpfr_out == nsimd_out; }}
+      int equal({typ} expected_result, {typ} computed_result)
+      {{
+        return expected_result == computed_result;
+      }}
       '''
 
 def adds_subs_check_case():
