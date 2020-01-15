@@ -1222,7 +1222,6 @@ def gen_unpack_half(opts, op, typ, lang):
         else:
             comp_unpack ='''(vout[i] != vin1[j]) ||
             (vout[i + 1] != vin2[j])'''
-
     if typ == 'f16':
         comp_unpack_1 = 'nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin{n}[i])'.\
             format(n = '1' if op.name == 'ziplo' else '2')
@@ -1407,7 +1406,7 @@ def gen_unpack(opts, op, typ, lang):
     }}
     
     {extra_code}
-    
+
     /* {simd} */
     ''' .format(year=date.today().year, typ=typ,
                 includes=get_includes(lang),
