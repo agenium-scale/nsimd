@@ -1222,7 +1222,14 @@ def gen_unpack_half(opts, op, typ, lang):
         else:
             comp_unpack ='''(vout[i] != vin1[j]) ||
             (vout[i + 1] != vin2[j])'''
-      
+
+    if typ == 'f16':
+        comp_unpack_1 = 'nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin{n}[i])'.\
+            format(n = '1' if op.name == 'ziplo' else '2')
+    else:
+        comp_unpack_1 = 'vout[i] != vin{n}[i]'.\
+            format(n = '1' if op.name == 'ziplo' else '2')
+        
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     head = '''#define _POSIX_C_SOURCE 200112L
 
@@ -1244,7 +1251,7 @@ def gen_unpack_half(opts, op, typ, lang):
 
               {extra_code}
 
-              // {simd}
+              /* {simd} */
             ''' .format(year=date.today().year, typ=typ,
                           includes=get_includes(lang),
                           extra_code=extra_code, 
@@ -1305,6 +1312,13 @@ def gen_unpack_half(opts, op, typ, lang):
                    j++;
                   }}
                 }}
+              }} else {{
+                for (vi = 0; vi < SIZE; vi += step){{
+                  if({comp_unpack_1}) {{
+                    fprintf(stderr, "test of {op_name} over {typ}... FAIL\\n");
+                    exit(EXIT_FAILURE);
+                  }}
+                }}
               }}
 
               fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
@@ -1315,7 +1329,7 @@ def gen_unpack_half(opts, op, typ, lang):
             typ=typ, year=date.today().year,sizeof=common.sizeof(typ),
             rand=rand, head=head, comp_unpack=comp_unpack,
             vout1_comp= vout1_comp, op_test=op_test, typ_nsimd=typ_nsimd,
-            offset=offset,
+            offset=offset, comp_unpack_1=comp_unpack_1,
             cond='vi + step' if op.name in['ziplo', 'ziphi'] else 'vi + step / 2',
             init_j='vi + offset' if op.name in['ziplo', 'ziphi'] else '0',
             inc='i += 2' if op.name in['ziphi', 'ziplo'] else 'i++',
@@ -1394,7 +1408,7 @@ def gen_unpack(opts, op, typ, lang):
     
     {extra_code}
     
-    // {simd}
+    /* {simd} */
     ''' .format(year=date.today().year, typ=typ,
                 includes=get_includes(lang),
                 extra_code=extra_code, 
@@ -1417,14 +1431,19 @@ def gen_unpack(opts, op, typ, lang):
         }}
         '''
     else:
-        scalar_code = '''\
-        for(i = 0; i < step / 2; i++)
-        {{
-        out_ptr[i] = vin1_ptr[2 * i];
-        out_ptr[step / 2 + i] = vin2_ptr[2 * i];
-        out_ptr[step + i] = vin1_ptr[2 * i + 1];
-        out_ptr[step + step / 2 + i] = vin2_ptr[2 * i + 1];
-        }}'''
+        if typ in ['i64', 'u64', 'f64']:
+            scalar_code = '''\
+            out_ptr[0] = vin1_ptr[0];
+            out_ptr[1] = vin2_ptr[0];'''
+        else:
+            scalar_code = '''\
+            for(i = 0; i < step / 2; i++)
+            {
+            out_ptr[i] = vin1_ptr[2 * i];
+            out_ptr[step / 2 + i] = vin2_ptr[2 * i];
+            out_ptr[step + i] = vin1_ptr[2 * i + 1];
+            out_ptr[step + step / 2 + i] = vin2_ptr[2 * i + 1];
+            }'''
 
     if typ == 'f16':
         comp = 'nsimd_f16_to_f32(vout[vi]) !=  nsimd_f16_to_f32(vout_ref[vi])'

@@ -683,8 +683,14 @@ def to_mask1(typ):
 def zip_half(func, typ):
     n = get_nb_el(typ)
     if typ in ['i64', 'u64', 'f64']:
-      return '''(void)({in1});
-                return {in0};'''.format(**fmtspec)
+        vin = '{in0}' if func == 'ziplo' else '{in1}'
+        return '''\
+        /* Dummy trick to avoid unused variable warnings */
+        (void)({in0});
+        (void)({in1});
+        nsimd_cpu_v{typ} ret;
+        ret.v0 = {vin}.v0;
+        return ret;'''.format(**fmtspec, vin=vin.format(**fmtspec))
     else:
       if func == "ziplo":
         content = '\n'.join('ret.v{j1} = {in0}.v{i}; ret.v{j2} = {in1}.v{i};'. \
@@ -704,7 +710,16 @@ def zip_half(func, typ):
 def unzip_half(func, typ):
   n = get_nb_el(typ)
   content = ''
-  if int(n/2) != 0:
+  if typ in ['i64', 'u64', 'f64']:
+      vin = '{in0}' if func == 'unziplo' else '{in1}'
+      return '''\
+      /* Dummy trick to avoid unused variable warnings */
+      (void)({in0});
+      (void)({in1});
+      nsimd_cpu_v{typ} ret;
+      ret.v0 = {vin}.v0;
+      return ret;'''.format(**fmtspec, vin=vin.format(**fmtspec))
+  else:
     if func == "unziplo":
       content = '\n'.join('ret.v{i} = {in0}.v{j}; '. \
                   format(i=i, j=i*2, **fmtspec) \
@@ -723,9 +738,6 @@ def unzip_half(func, typ):
     return '''nsimd_cpu_v{typ} ret;
             {content}
             return ret;'''.format(content=content, **fmtspec)
-  else:
-    return '''(void)({in1});
-              return {in0};'''.format(**fmtspec)
 
 def zip(from_typ):
     return '''\
