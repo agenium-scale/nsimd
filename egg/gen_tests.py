@@ -748,7 +748,8 @@ def zero_out_arrays(typ):
       return f'''
       void zero_out_arrays({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
-        for(int ii = 0; ii < SIZE; ++ii)
+        int ii = 0;
+        for(ii = 0; ii < SIZE; ++ii)
         {{
            vin1[ii] = ({typ})0;
            vin2[ii] = ({typ})0;
@@ -838,7 +839,8 @@ def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_under
       return f'''
       int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
-        for(int ii = 0; ii < SIZE; ++ii)
+        int ii = 0;
+        for(ii = 0; ii < SIZE; ++ii)
         {{
           vin1[ii] = ({typ})((random_sign_flip() * rand()) % {max_} % {min_});
           vin2[ii] = ({typ})((random_sign_flip() * rand()) % {max_} % {min_});
