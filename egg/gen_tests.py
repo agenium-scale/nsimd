@@ -840,10 +840,8 @@ def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_under
       {{
         for(int ii = 0; ii < SIZE; ++ii)
         {{
-          vin1[ii] = (({typ})(random_sign_flip() * rand()) %
-                      {max_}) % {min_};
-          vin2[ii] = (({typ})(random_sign_flip() * rand()) %
-                      {max_}) % {min_};
+          vin1[ii] = ({typ})((random_sign_flip() * rand()) % {max_} % {min_});
+          vin2[ii] = ({typ})((random_sign_flip() * rand()) % {max_} % {min_});
           if({oper_is_overflow}(vin1[ii], vin2[ii]))
           {{
             vout_expected[ii] = {max_};
