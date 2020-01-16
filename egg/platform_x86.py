@@ -2555,21 +2555,6 @@ def adds(simd_ext, typ):
 
     num_bits = typ[1:3]
 
-    if 'avx512' in simd_ext:
-        avx512_dependent_block = \
-        '''
-        // Needed only after avx512 was introduced
-        const nsimd_{simd_ext}_vlu{num_bits} mask_l = nsimd_to_logical_{simd_ext}_u{num_bits}(mask);
-        '''.format(num_bits=num_bits, **fmtspec)
-        avx512_dependent_mask = 'mask_l'
-
-    else:
-        avx512_dependent_block = \
-        '''
-        // Before avx512: is_same(__m128i, vector<signed>, vector<unsigned>, vector<logical>)
-        '''
-        avx512_dependent_mask = 'mask'
-
     return'''
             // Algo pseudo code:
 
@@ -2638,17 +2623,18 @@ def adds(simd_ext, typ):
             const nsimd_{simd_ext}_vu{num_bits} not_xor_uy_res = nsimd_notb_{simd_ext}_u{num_bits}(xor_uy_res);
             const nsimd_{simd_ext}_vu{num_bits} mask = nsimd_orb_{simd_ext}_u{num_bits}(xor_ux_uy, not_xor_uy_res);
 
-            {avx512_dependent_block}
+            const nsimd_{simd_ext}_vu{num_bits} mask_strong_bit = nsimd_shr_{simd_ext}_u{num_bits}(mask, sizeof(u{num_bits}) * CHAR_BIT - 1);
+            const nsimd_{simd_ext}_vi{num_bits} imask_strong_bit = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(mask_strong_bit);
+            const nsimd_{simd_ext}_vli{num_bits} limask = nsimd_to_logical_{simd_ext}_i{num_bits}(imask_strong_bit);
 
             // ----------------------- Step 5: Apply the Mask ---------------------------
 
             const nsimd_{simd_ext}_vi{num_bits} ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
-            return nsimd_if_else1_{simd_ext}_i{num_bits}({avx512_dependent_mask}, ires, i_max_min);
+            return nsimd_if_else1_{simd_ext}_i{num_bits}(limask, ires, i_max_min);
           '''. \
             format( num_bits=num_bits,
                     type_max=common.limits[typ]['max'],
-                    avx512_dependent_block=avx512_dependent_block,
-                    avx512_dependent_mask=avx512_dependent_mask, **fmtspec)
+                    **fmtspec)
 
 # -----------------------------------------------------------------------------
 # subs
