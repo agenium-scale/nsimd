@@ -2900,7 +2900,7 @@ def zip_half(func, simd_ext, typ):
                            cast_low=cast_low, extract=extract, **fmtspec),
                        cast_high=cast_high,
                        cast_low=cast_low,
-                       insert=insert, i=i, **fmtspec) 
+                       insert=insert, i=i, **fmtspec)
 
 def zip(simd_ext, typ):
     return '''\
@@ -2909,7 +2909,7 @@ def zip(simd_ext, typ):
     ret.v1 = nsimd_ziphi_{simd_ext}_{typ}({in0}, {in1});
     return ret;
     '''.format(**fmtspec)
-    
+
 # -----------------------------------------------------------------------------
 # unzip functions
 
@@ -2991,7 +2991,7 @@ def unzip_half(func, simd_ext, typ):
             v0 = '_mm256_castsi256_ps({in0})' if typ in ['i32', 'u32'] else '{in0}'
             v1 = '_mm256_castsi256_ps({in1})' if typ in ['i32', 'u32'] else '{in1}'
             v_res = '_mm256_castps_si256(v_res)' if typ in ['i32', 'u32'] else 'v_res'
-            ret = 'ret' 
+            ret = 'ret'
             src = ret_template .\
                 format(mask='_MM_SHUFFLE(2, 0, 2, 0)' if func == 'unziplo' \
                        else '_MM_SHUFFLE(3, 1, 3, 1)',
@@ -3097,7 +3097,7 @@ def unzip(simd_ext, typ):
     ret.v1 = nsimd_unziphi_{simd_ext}_{typ}({in0}, {in1});
     return ret;
     '''.format(**fmtspec)
-    
+
 # -----------------------------------------------------------------------------
 # get_impl function
 
