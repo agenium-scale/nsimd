@@ -50,18 +50,17 @@ int main()
   }
 
   std::vector<float> r;
-  // tet1d::out(r) = -(tet1d::in(a) + tet1d::in(b) + tet1d::in(c));
   tet1d::out(r) =
     tet1d::fma( tet1d::in(d), -tet1d::in(e)
               , -(tet1d::in(a) + tet1d::in(b) + tet1d::in(c))
-              );
+            ) * tet1d::in(2.f);
 
   for (size_t i = 0; i < r.size(); ++i) {
     std::cout << "-("
               << d[i] << " x -" << e[i] << " + ("
               << std::setw(2) << a[i] << " + "
               << std::setw(2) << b[i] << " + "
-              << std::setw(2) << c[i] << ") = "
+              << std::setw(2) << c[i] << ") * 2 = "
               << r[i] << std::endl;
   }
 

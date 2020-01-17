@@ -34,10 +34,6 @@ SOFTWARE.
 
 namespace tet1d {
 
-// void_t
-
-struct void_t {};
-
 // Eval
 
 enum EvalMode { Scalar, Simd, Cuda, Hip };
@@ -51,26 +47,48 @@ template <typename T> struct in_t {
 
   T const &data;
 
-  in_t(T const &data_) : data(data_)
-  {
-    #ifdef NSIMD_IS_NVCC
+  in_t(T const &data_) : data(data_) {
+#ifdef NSIMD_IS_NVCC
     update_p_data_cuda();
-    #endif
+#endif
   }
 
   int size() const { return int(data.size()); }
 
+  bool is_scalar() const { return false; }
+
   value_type operator()(int const i) const { return data[i]; }
 
-  #ifdef NSIMD_IS_NVCC
-  value_type const * p_data_cuda;
+#ifdef NSIMD_IS_NVCC
+  value_type const *p_data_cuda;
   void update_p_data_cuda() { p_data_cuda = data.data(); }
-  __device__ value_type cuda_get(int const i) const { return *(p_data_cuda + i); }
-  #endif
+  __device__ value_type cuda_get(int const i) const {
+    return *(p_data_cuda + i);
+  }
+#endif
 };
 
-template <typename T> tet1d::in_t<T> in(T &data_) {
-  return tet1d::in_t<T>(data_);
+template <typename T> struct in_scalar_t {
+  typedef T value_type;
+  typedef value_type result_type;
+  typedef nsimd::pack<value_type> simd_pack_type;
+
+  T data; // Copy
+
+  in_scalar_t(T const data_) : data(data_) {}
+
+  int size() const { return 1; }
+
+  bool is_scalar() const { return true; }
+};
+
+template <typename T, typename A>
+tet1d::in_t<std::vector<T, A> > in(std::vector<T, A> const &data_) {
+  return tet1d::in_t<std::vector<T, A> >(data_);
+}
+
+template <typename T> tet1d::in_scalar_t<T> in(T const &data_) {
+  return tet1d::in_scalar_t<T>(data_);
 }
 
 // out
@@ -91,35 +109,64 @@ template <typename T> struct out_t {
   tet1d::EvalMode eval_mode;
 
   out_t(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd)
-      : data(data_), eval_mode(eval_mode_)
-  {
-    #ifdef NSIMD_IS_NVCC
+      : data(data_), eval_mode(eval_mode_) {
+#ifdef NSIMD_IS_NVCC
     update_p_data_cuda();
-    #endif
+#endif
   }
 
   void resize(size_t const size) { data.resize(size); }
 
   int size() const { return int(data.size()); }
 
+  bool is_scalar() const { return false; }
+
   value_type &operator()(int const i) { return data[i]; }
   value_type operator()(int const i) const { return data[i]; }
 
-  #ifdef NSIMD_IS_NVCC
-  value_type * p_data_cuda;
+#ifdef NSIMD_IS_NVCC
+  value_type *p_data_cuda;
   void update_p_data_cuda() { p_data_cuda = data.data(); }
   __device__ value_type &cuda_get(int const i) { return *(p_data_cuda + i); }
-  __device__ value_type cuda_get(int const i) const { return *(p_data_cuda + i); }
-  #endif
+  __device__ value_type cuda_get(int const i) const {
+    return *(p_data_cuda + i);
+  }
+#endif
 
   template <typename Node> tet1d::out_t<T> &operator=(Node const &node) {
     return tet1d::eval(*this, node, eval_mode);
   }
 };
 
+template <typename T> struct out_scalar_t {
+  typedef T value_type;
+
+  T &data;
+
+  tet1d::EvalMode eval_mode;
+
+  out_scalar_t(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd)
+      : data(data_), eval_mode(eval_mode_) {}
+
+  int size() const { return 1; }
+
+  bool is_scalar() const { return true; }
+
+  template <typename Node> tet1d::out_t<T> &operator=(Node const &node) {
+    return tet1d::eval(*this, node, eval_mode);
+  }
+};
+
+template <typename T, typename A>
+tet1d::out_t<std::vector<T, A> >
+out(std::vector<T, A> &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd) {
+  return tet1d::out_t<std::vector<T, A> >(data_, eval_mode_);
+}
+
 template <typename T>
-tet1d::out_t<T> out(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd) {
-  return tet1d::out_t<T>(data_, eval_mode_);
+tet1d::out_scalar_t<T> out(T &data_,
+                           tet1d::EvalMode const eval_mode_ = tet1d::Simd) {
+  return tet1d::out_scalar_t<T>(data_, eval_mode_);
 }
 
 // Common type
@@ -155,6 +202,8 @@ template <typename Op, typename A> struct op1_t {
   op1_t(Op op_, A a_) : op(op_), a(a_) {}
 
   int size() const { return a.size(); }
+
+  bool is_scalar() const { return a.is_scalar(); }
 };
 
 template <typename Op, typename A0, typename A1> struct op2_t {
@@ -169,11 +218,14 @@ template <typename Op, typename A0, typename A1> struct op2_t {
   A1 a1;
 
   op2_t(Op op_, A0 a0_, A1 a1_) : op(op_), a0(a0_), a1(a1_) {
-    char const * const error_message = "TODO";
-    assert(a0.size() == a1.size() && error_message);
+    char const *const error_message = "TODO";
+    assert((a0.is_scalar() || a1.is_scalar() || a0.size() == a1.size()) &&
+           error_message);
   }
 
-  int size() const { return a0.size(); }
+  int size() const { return a0.is_scalar() ? a1.size() : a0.size(); }
+
+  bool is_scalar() const { return a0.is_scalar() && a1.is_scalar(); }
 };
 
 template <typename Op, typename A0, typename A1, typename A2> struct op3_t {
@@ -188,11 +240,26 @@ template <typename Op, typename A0, typename A1, typename A2> struct op3_t {
   A2 a2;
 
   op3_t(Op op_, A0 a0_, A1 a1_, A2 a2_) : op(op_), a0(a0_), a1(a1_), a2(a2_) {
-    char const * const error_message = "TODO";
-    assert(a0.size() == a1.size() && a0.size() == a2.size() && error_message);
+    char const *const error_message = "TODO";
+    assert((a0.is_scalar() || a1.is_scalar() || a0.size() == a1.size()) &&
+           (a0.is_scalar() || a2.is_scalar() || a0.size() == a2.size()) &&
+           (a1.is_scalar() || a2.is_scalar() || a1.size() == a2.size()) &&
+           error_message);
   }
 
-  int size() const { return a0.size(); }
+  int size() const {
+    if (a0.is_scalar()) {
+      if (a1.is_scalar()) {
+        return a2.size();
+      } else {
+        return a1.size();
+      }
+    } else {
+      return a0.size();
+    }
+  }
+
+  bool is_scalar() const { return a0.is_scalar() && a1.is_scalar(); }
 };
 
 } // namespace tet1d
@@ -207,6 +274,13 @@ template <typename T>
 typename tet1d::in_t<T>::value_type eval_scalar_i(tet1d::in_t<T> const &in,
                                                   int const i) {
   return in(i);
+}
+
+template <typename T>
+T eval_scalar_i(tet1d::in_scalar_t<T> const &in,
+                int const i
+) {
+  return in.data;
 }
 
 template <typename T>
@@ -263,6 +337,14 @@ typename tet1d::in_t<T>::simd_pack_type eval_simd_i(tet1d::in_t<T> const &in,
   return nsimd::loadu<nsimd::pack<value_type> >(&in.data[i]);
 }
 
+template <typename T>
+typename tet1d::in_scalar_t<T>::simd_pack_type
+eval_simd_i(tet1d::in_scalar_t<T> const &in,
+            int const // i
+) {
+  return nsimd::pack<T>(in.data);
+}
+
 template <typename Op, typename A>
 typename op1_t<Op, A>::simd_pack_type eval_simd_i(op1_t<Op, A> const &node,
                                                   int const i);
@@ -304,6 +386,12 @@ template <typename T>
 __device__ typename tet1d::in_t<T>::value_type
 eval_cuda_i(tet1d::in_t<T> const &in, int const i) {
   return in.cuda_get(i);
+}
+
+template <typename T>
+__device__ T eval_cuda_i(tet1d::in_scalar_t<T> const &in, int const // i
+) {
+  return in.data;
 }
 
 template <typename T>
@@ -390,9 +478,10 @@ tet1d::out_t<T> &eval_simd(tet1d::out_t<T> &out, Node const &node) {
 
 #ifdef NSIMD_IS_NVCC
 template <typename T, typename Node>
-__global__ void eval_cuda_kernel( tet1d::out_t<T> out // Copy
-                                , Node const node // Copy
-                                ) {
+__global__ void eval_cuda_kernel(tet1d::out_t<T> out // Copy
+                                 ,
+                                 Node const node // Copy
+) {
   size_t const i = blockIdx.x;
   out.cuda_get(i) = tet1d::eval_cuda_i(node, i);
 }
@@ -401,7 +490,9 @@ template <typename T, typename Node>
 tet1d::out_t<T> &eval_cuda(tet1d::out_t<T> &out, Node const &node) {
   out.resize(node.size());
   out.update_p_data_cuda();
+  // clang-format off
   eval_cuda_kernel<<<node.size(), 1>>>(out, node);
+  // clang-format on
   cudaDeviceSynchronize();
   return out;
 }
@@ -416,11 +507,11 @@ tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
   case tet1d::Simd:
     return tet1d::eval_simd(out, node);
   case tet1d::Cuda:
-    #ifdef NSIMD_IS_NVCC
+#ifdef NSIMD_IS_NVCC
     return tet1d::eval_cuda(out, node);
-    #else
+#else
     throw std::runtime_error("Compiler is not nvcc");
-    #endif
+#endif
   case tet1d::Hip:
     throw std::runtime_error("Not implemented");
   }
@@ -428,452 +519,5 @@ tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
 }
 
 } // namespace tet1d
-
-/*
-
-#include <cassert>
-#include <exception>
-#include <nsimd/cxx_adv_api.hpp>
-#include <nsimd/nsimd.h>
-#include <stdexcept>
-#include <vector>
-
-namespace nsimd {
-
-// ----------------------------------------------------------------------------
-// Data placement
-
-const int on_both = -1;
-const int on_host = 0;
-const int on_device = 1;
-
-// ----------------------------------------------------------------------------
-// Overview
-
-// TODO: explain how it works
-
-// ----------------------------------------------------------------------------
-// A dead-end
-
-struct none_ {};
-
-// ----------------------------------------------------------------------------
-// Nodes used for constructing expression template and for CUDA evaluation
-// The return_type of these nodes are basic types (float, double, ...)
-
-// A node with 3 arguments
-template <typename O, typename A0, typename A1, typename A2> struct n0 {
-  A0 a0;
-  A1 a1;
-  A2 a2;
-
-  //   typedef typename O<typename A0::return_type, typename A1::return_type,
-  //   typename A2::return_type>::return_type return_type;
-
-  int get_data_placement() {
-    if (a0.get_data_placement() == a1.get_data_placement() &&
-        a1.get_data_placement() == a2.get_data_placement()) {
-      return a0.get_data_placement();
-    }
-    return on_both;
-  }
-
-  nat get_n() {
-    if (a0.get_n() == a1.get_n() && a1.get_n() == a2.get_n()) {
-      return a0.get_n();
-    }
-    return -1;
-  }
-
-#ifdef NSIMD_IS_NVCC
-  __device__ static return_type cuda_eval(nat i) {
-    return O::cuda_compute(a0.eval(i), a1.eval(i), a2.eval(i));
-  }
-#endif
-};
-
-// A node with 2 arguments
-template <typename O, typename A0, typename A1> struct n0<O, A0, A1, none_> {
-  A0 a0;
-  A1 a1;
-
-  //   typedef typename O<typename A0::return_type, typename
-  //   A1::return_type>::return_type return_type;
-
-  int get_data_placement() {
-    if (a0.get_data_placement() == a1.get_data_placement()) {
-      return a0.get_data_placement();
-    }
-    return on_both;
-  }
-
-  nat get_n() {
-    if (a0.get_n() == a1.get_n()) {
-      return a0.get_n();
-    }
-    return -1;
-  }
-
-#ifdef NSIMD_IS_NVCC
-  __device__ static return_type cuda_eval(nat i) {
-    return O::cuda_compute(a0.eval(i), a1.eval(i));
-  }
-#endif
-};
-
-// A node with 1 argument
-template <typename O, typename A0> struct n0<O, A0, none_, none_> {
-  A0 a0;
-
-  //   typedef typename O<typename A0::return_type>::return_type return_type;
-
-  int get_data_placement() { return a0.get_data_placement(); }
-
-  nat get_n() { return a0.get_n(); }
-
-#ifdef NSIMD_IS_NVCC
-  __device__ static return_type cuda_eval(nat i) {
-    return O::cuda_compute(a0.eval(i));
-  }
-#endif
-};
-
-// ----------------------------------------------------------------------------
-// Special nodes are here
-
-// A pointer to some data
-template <typename T> struct view_ {};
-
-template <typename T> struct n0<view_<T>, none_, none_, none_> {
-  const T *ptr_;
-  nat n_;
-  int data_placement_;
-  typedef T return_type;
-
-  int get_data_placement() { return data_placement_; }
-
-  nat get_n() { return n_; }
-
-#ifdef NSIMD_IS_NVCC
-  __device__ T cuda_eval(nat i) const {
-    assert(i >= 0 && i < n_);
-    return ptr_[i];
-  }
-#endif
-};
-
-// View creator from std::vector
-template <typename T>
-n0<view_<T>, none_, none_, none_> view(std::vector<T> const &src) {
-  n0<view_<T>, none_, none_, none_> ret;
-  ret.ptr = src.data();
-  ret.n = (nat)src.size();
-  ret.data_placement = on_host;
-  return ret;
-}
-
-// TODO: add creators that eat thrust vectors
-#ifdef NSIMD_IS_NVCC
-// TODO
-#endif
-
-// View creator from a pointer type
-template <typename T>
-n0<view_<T>, none_, none_, none_> view(T const *src, nat n,
-                                       int data_placement) {
-  assert(data_placement == on_host || data_placement == on_device);
-  n0<view_<T>, none_, none_, none_> ret;
-  ret.ptr = src;
-  ret.n = n;
-  ret.data_placement = data_placement;
-  return ret;
-}
-
-// ----------------------------------------------------------------------------
-// Nodes used for SIMD evaluation: no need for data_placement,
-// we are on the host
-// The return_type of these nodes are basic types (float, double, ...)
-
-// A node with 3 arguments
-template <int N, typename SimdExt, typename O, typename A0, typename A1,
-          typename A2>
-struct n1 {
-  A0 a0;
-  A1 a1;
-  A2 a2;
-
-  //   typedef typename O<A0::return_type, A1::return_type,
-  //   A2::return_type>::return_type return_type;
-
-  //   static pack<return_type, N, SimdExt> eval(nat i) {
-  //     return O::compute(a0.eval(i), a1.eval(i), a2.eval(i));
-  //   }
-};
-
-// A node with 2 arguments
-template <int N, typename SimdExt, typename O, typename A0, typename A1>
-struct n1<N, SimdExt, O, A0, A1, none_> {
-  A0 a0;
-  A1 a1;
-
-  //   typedef typename O<A0::return_type, A1::return_type>::return_type
-  //   return_type;
-
-  //   static pack<return_type, N, SimdExt> eval(nat i) {
-  //     return O::compute(a0.eval(i), a1.eval(i));
-  //   }
-};
-
-// A node with 1 argument
-template <int N, typename SimdVector, typename O, typename A0>
-struct n1<N, SimdVector, O, A0, none_, none_> {
-  A0 a0;
-
-  //   typedef typename O<A0::return_type>::return_type return_type;
-
-  //   static pack<return_type, N, SimdExt> eval(nat i) {
-  //     return O::compute(a0.eval(i));
-  //   }
-};
-
-// ----------------------------------------------------------------------------
-// Transform an n0-tree to an n1-tree
-
-// template <int N, typename SimdExt, typename Tree> struct n0_to_n1 {};
-//
-// template <N, SimdExt, typename O, typename A0, typename A1, typename A2>
-// struct n0_to_n1< N, SimdExt, n0<O, A0, A1, A2> > {
-//   typedef n1<N, SimdExt, O, A0, A1, A2> return_type;
-//   return_type doit(n0<O, A0, A1, A2> const &node) {
-//     return_type ret;
-//     ret.a0 = n0_to_n1<A0>::doit(node.a0);
-//     ret.a1 = n0_to_n1<A1>::doit(node.a1);
-//     ret.a2 = n0_to_n1<A2>::doit(node.a2);
-//     return ret;
-//   }
-// };
-//
-// template <N, SimdExt, typename O, typename A0, typename A1>
-// struct n0_to_n1< N, SimdExt, n0<O, A0, A1, none_> > {
-//   typedef n1<N, SimdExt, O, A0, A1, none_> return_type;
-//   return_type doit(n0<O, A0, A1, none_> const &node) {
-//     return_type ret;
-//     ret.a0 = n0_to_n1<A0>::doit(node.a0);
-//     ret.a1 = n0_to_n1<A1>::doit(node.a1);
-//     return ret;
-//   }
-// };
-//
-// template <N, SimdExt, typename O, typename A0>
-// struct n0_to_n1< N, SimdExt, n0<O, A0, none_, none_> > {
-//   typedef n1<N, SimdExt, O, A0, none_, none_> return_type;
-//   return_type doit(n0<O, A0, none_, none_> const &node) {
-//     return_type ret;
-//     ret.a0 = n0_to_n1<A0>::doit(node.a0);
-//     return ret;
-//   }
-// };
-
-// TODO: transform views
-
-// ----------------------------------------------------------------------------
-// struct containaing informations for eval on how to launch CUDA kernel
-
-template <int N = 1, typename SimdExt = NSIMD_SIMD> struct eval_infos {
-  int grid;
-  int block;
-#ifdef NSIMD_IS_NVCC
-  cudaStream_t stream;
-#endif
-  typedef SimdExt simd_ext;
-  static const int unroll = N;
-};
-
-// ----------------------------------------------------------------------------
-// CUDA kernel for eval, expect n0-tree
-
-#ifdef NSIMD_IS_NVCC
-template <typename T, typename Tree>
-__kernel__ void eval_kernel(Tree const &tree, T *dst, nat n) {
-  nat i = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i < n) {
-    dst[i] = (T)tree.cuda_eval(i);
-  }
-}
-#endif
-
-// ----------------------------------------------------------------------------
-// Eval helper function, expect n1-tree
-
-// template <int N, typename SimdExt, typename Tree, typename T>
-// void eval2(Tree const& tree, T *dst, nat n) {
-//   // Getting here means that checks on tree have been done and that all is
-//   ok
-//   // First construct the tree for unroll of N and SIMD extension SimdExt
-//   typedef pack<T, N, SimdExt> dst_pack;
-//   typedef typename n0_to_n1<N, SimdExt, Tree> tree_cvt;
-//   typename tree_cvt::return_type simd_tree = tree_cvt::doit(tree);
-//   typedef pack<Tree::return_type, N, SimdExt> tree_pack;
-//   int step = len<dst_pack>();
-//   int i;
-//   for (i = 0; i < n; i += step) {
-//     storeu(&dst[i], cvt<tree_pack, dst_pack>(simd_tree.eval(i)));
-//   }
-//   // Then scalars for the tail
-//   eval2<1, cpu, Tree, T>(tree, &dst[i], n - i);
-// }
-
-// ----------------------------------------------------------------------------
-// Eval function
-
-// template <typename Tree, typename T, typename EvalInfos>
-// void eval(Tree const &tree, T *dst, EvalInfos *eval_infos = NULL) {
-//   int data_placement = tree.get_data_placement();
-//   if (data_placement == on_both) {
-//     throw std::invalid_argument("inputs are not at the same place");
-//   }
-//   nat n = tree.get_n();
-//   if (n < 0) {
-//     throw std::invalid_argument("inputs have not the same length");
-//   }
-// #ifdef NSIMD_IS_NVCC
-//   if (data_placement == on_device) {
-//     if (eval_infos == NULL) {
-//       eval_kernel<<<(n + 127) / 128, 128>>>(tree, dst, n);
-//     } else {
-//       eval_kernel<<<eval_infos->grid, eval_infos->block,
-//       eval_infos->stream>>>(
-//           tree, dst, n);
-//     }
-//   } else {
-// #endif
-//     if (eval_infos == NULL) {
-//       eval2<1, NSIMD_SIMD, Tree, T>(tree, T, n);
-//     } else {
-//       eval2<EvalInfos::unroll, typename EvalInfos::simd_ext, Tree, T>(tree,
-//       T,
-//                                                                       n);
-//     }
-// #ifdef NSIMD_IS_NVCC
-//   }
-// #endif
-// }
-
-// ----------------------------------------------------------------------------
-// CUDA kernel for eval_if, expect n0-tree
-
-#ifdef NSIMD_IS_NVCC
-template <typename T, typename CondTree, typename CompTree>
-__kernel__ void eval_if_kernel(CondTree const &cond_tree,
-                               CompTree const &comp_tree, T *dst, nat n) {
-  nat i = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i < n) {
-    if (cond_tree.cuda_eval(i)) {
-      dst[i] = (T)comp_tree.cuda_eval(i);
-    }
-  }
-}
-#endif
-
-// ----------------------------------------------------------------------------
-// Eval_if helper function, expect n1-tree
-
-// template <int N, typename SimdExt, typename CondTree, typename CompTree,
-//           typename T>
-// void eval_if2(CondTree const &cond_tree, CompTree const &comp_tree, T *dst,
-//               nat n) {
-//   // Getting here means that checks on trees have been done and that all is
-//   ok
-//
-//   typedef pack<T, N, SimdExt> dst_pack;
-//
-//   typedef typename n0_to_n1<N, SimdExt, CondTree> cond_tree_cvt;
-//   typename cond_tree_cvt::return_type simd_cond_tree =
-//       cond_tree_cvt::doit(cond_tree);
-//   typedef packl<Tree::return_type, N, SimdExt> cond_tree_pack;
-//
-//   typedef typename n0_to_n1<N, SimdExt, CompTree> comp_tree_cvt;
-//   typename comp_tree_cvt::return_type simd_comp_tree =
-//       comp_tree_cvt::doit(comp_tree);
-//   typedef pack<Tree::return_type, N, SimdExt> comp_tree_pack;
-//
-//   int step = len<dst_pack>();
-//   int i;
-//   for (i = 0; i < n; i += step) {
-//     storeu(&dst[i],
-//            if_else(simd_cond_tree.eval(i),
-//                    cvt<comp_tree_pack, dst_pack>(simd_comp_tree.eval(i)),
-//                    loadu<dst_pack>(&dst[i])));
-//   }
-//
-//   // Then scalars for the tail
-//   eval_if2<1, cpu, CondTree, CompTree, T>(cond_tree, comp_tree, &dst[i], n -
-//   i);
-// }
-
-// ----------------------------------------------------------------------------
-// Eval_if function
-
-// template <typename CondTree, typename CompTree, typename T, typename
-// EvalInfos> void eval_if(CondTree const &cond_tree, CompTree const
-// &comp_tree, T *dst,
-//              EvalInfos *eval_infos = NULL) {
-//   int cond_data_placement = cond_tree.get_data_placement();
-//   if (cond_data_placement == on_both) {
-//     throw std::invalid_argument(
-//         "inputs for condition are not at the same place");
-//   }
-//   nat cond_n = cond_tree.get_n();
-//   if (n < 0) {
-//     throw std::invalid_argument(
-//         "inputs for condition have not the same length");
-//   }
-//   int comp_data_placement = comp_tree.get_data_placement();
-//   if (comp_data_placement == on_both) {
-//     throw std::invalid_argument(
-//         "inputs for computation are not at the same place");
-//   }
-//   nat comp_n = comp_tree.get_n();
-//   if (n < 0) {
-//     throw std::invalid_argument(
-//         "inputs for computation have not the same length");
-//   }
-//   if (cond_data_placement != comp_data_placement) {
-//     throw std::invalid_argument("inputs for condition and inputs for "
-//                                 "computation have not the same length");
-//   }
-//   if (cond_n != comp_n) {
-//     throw std::invalid_argument("inputs for condition and inputs for "
-//                                 "computation have not the same length");
-//   }
-// #ifdef NSIMD_IS_NVCC
-//   if (cond_data_placement == on_device) {
-//     if (eval_infos == NULL) {
-//       eval_if_kernel<<<(n + 127) / 128, 128>>>(cond_tree, comp_tree, dst,
-//       n);
-//     } else {
-//       eval_if_kernel<<<eval_infos->grid, eval_infos->block,
-//                        eval_infos->stream>>>(cond_tree, comp_tree, dst, n);
-//     }
-//   } else {
-// #endif
-//     if (eval_infos == NULL) {
-//       eval_if2<1, NSIMD_SIMD, CondTree, CompTree, T>(cond_tree, comp_tree,
-//       T,
-//                                                      n);
-//     } else {
-//       eval_if2<EvalInfos::unroll, typename EvalInfos::simd_ext, CondTree,
-//                CompTree, T>(cond_tree, comp_tree, T, n);
-//     }
-// #ifdef NSIMD_IS_NVCC
-//   }
-// #endif
-// }
-
-// ----------------------------------------------------------------------------
-
-} // namespace nsimd
-
-*/
 
 #endif
