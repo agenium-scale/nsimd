@@ -707,7 +707,7 @@ def aligned_alloc_error():
         errno = 0; \\
         if (!(a)) \\
         {{ \\
-          fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+          fprintf(stderr, \"ERROR: \" #a \":%d: %s\\n\", \\
                 __LINE__, strerror(errno)); \\
           fflush(stderr); \\
           exit(EXIT_FAILURE); \\
@@ -729,7 +729,7 @@ def adds_subs_check_case():
       {{ \\
         if(0 == (test_output)) \\
         {{ \\
-          fprintf(stdout, STATUS " ... " which_test " check FAIL\\n"); \\
+          fprintf(stdout, STATUS \" ... \" which_test \" check FAIL\\n\"); \\
           fflush(stdout); \\
           return -1; \\
         }} \\
