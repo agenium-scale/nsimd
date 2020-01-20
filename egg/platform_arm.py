@@ -201,6 +201,9 @@ def get_additional_include(func, platform, simd_ext):
     if simd_ext in neon and func in ['fms', 'fnms']:
         ret += '''#include <nsimd/arm/{simd_ext}/ne.h>
                   '''.format(**fmtspec)
+    if func == 'shra':
+        ret += '''#include <nsimd/arm/{simd_ext}/shr.h>
+                  '''.format(simd_ext=simd_ext)   
     if func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
                   # include <nsimd/arm/{simd_ext}/set1.h>
@@ -788,25 +791,40 @@ def sqrt1(simd_ext, typ):
 
 def shl_shr(op, simd_ext, typ):
     if simd_ext in neon:
-        if op == 'shl':
-            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
-                             (i{typnbits}){in1}));'''.format(**fmtspec)
+        sign = '-' if op == 'shr' else ''
+        if typ in common.utypes:
+            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}({sign}{in1}));'''.\
+                format(**fmtspec, sign=sign)
         else:
-            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
-                             (i{typnbits})(-{in1})));'''.format(**fmtspec)
+            return '''return vreinterpretq_s{typnbits}_u{typnbits}( 
+            vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}), 
+            vdupq_n_s{typnbits}((i{typnbits}){sign}{in1})));'''.format(**fmtspec, sign=sign)
     else:
-        armop = 'lsl' if op == 'shl' else 'lsr'
-        if op == 'shr' and typ in common.itypes:
-            return \
-            '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_z({svtrue},
-                          svreinterpret_{suf2}_{suf}({in0}),
-                          svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
-                          format(suf2=common.bitfield_type[typ], armop=armop,
-                                 **fmtspec)
-        else:
-            return '''return sv{armop}_{suf}_z({svtrue}, {in0},
-                               svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
-                               format(armop=armop, **fmtspec)
+       armop = 'lsl' if op == 'shl' else 'lsr'
+       if op == 'shr' and typ in common.itypes:
+           return \
+               '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_z({svtrue},
+               svreinterpret_{suf2}_{suf}({in0}),
+               svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
+                   format(suf2=common.bitfield_type[typ], armop=armop, **fmtspec)
+       else:
+           return '''return sv{armop}_{suf}_z({svtrue}, {in0},
+           svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
+               format(armop=armop, **fmtspec)
+
+def shra(simd_ext, typ):
+    if typ in common.utypes:
+        return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
+                format(**fmtspec)
+    
+    if simd_ext in neon:
+        return  '''return vshlq_{suf}(
+        {in0}, vdupq_n_s{typnbits}((i{typnbits})-{in1}));'''.\
+            format(**fmtspec)
+    else:
+        return '''return svasr_{typ}_z({svtrue}, {in0}, 
+        svdup_n_u{typnbits}((u{typnbits}){in1}));'''.\
+            format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Set1
@@ -2067,6 +2085,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'mul': lambda: mul2(simd_ext, from_typ),
         'shl': lambda: shl_shr("shl", simd_ext, from_typ),
         'shr': lambda: shl_shr("shr", simd_ext, from_typ),
+        'shra': lambda: shra(simd_ext, from_typ),
         'set1': lambda: set1(simd_ext, from_typ),
         'eq': lambda: cmp2("eq", simd_ext, from_typ),
         'lt': lambda: cmp2("lt", simd_ext, from_typ),

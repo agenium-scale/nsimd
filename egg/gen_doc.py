@@ -524,7 +524,13 @@ def gen_html(opts):
             if full_path_entry == '..' or full_path_entry == '.':
                 continue
             elif os.path.isdir(full_path_entry):
-                dirs.append(os.path.join(full_path_entry))
+                continue
+            # Commented because currently, the only subdir is 'modules', and we
+            # don't want to iterate on it here. If needed, just ensure that the
+            # 'modules' directory is not explored.
+            # -----------------------------------------------------------------
+            # elif os.path.isdir(full_path_entry):
+            #     dirs.append(os.path.join(full_path_entry))
             elif entry.endswith('.md'):
                 md_files.append(full_path_entry)
 
