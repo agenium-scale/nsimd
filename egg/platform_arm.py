@@ -2006,7 +2006,7 @@ def zip_unzip(func, simd_ext, typ):
                       f='zip' if func == 'zip' else 'unzip', **fmtspec)
        else:
            return content
-                        
+
 # -----------------------------------------------------------------------------
 # get_impl function
 
