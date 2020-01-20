@@ -701,7 +701,7 @@ def gen_addv(opts, op, typ, lang):
 # General tests helpers for adds/subs
 
 def aligned_alloc_error():
-      return f'''
+      return '''
       #define CHECK(a) \\
       {{ \\
         errno = 0; \\
@@ -716,15 +716,15 @@ def aligned_alloc_error():
       '''
 
 def equal(typ):
-      return f'''
+      return '''
       int equal({typ} expected_result, {typ} computed_result)
       {{
         return expected_result == computed_result;
       }}
-      '''
+      '''.format(typ=typ)
 
 def adds_subs_check_case():
-      return f'''
+      return '''
       #define CHECK_CASE(test_output, which_test) \\
       {{ \\
         if(0 == (test_output)) \\
@@ -737,7 +737,7 @@ def adds_subs_check_case():
       '''
 
 def random_sign_flip():
-      return f'''
+      return '''
       int random_sign_flip(void)
       {{
           return 2 * (rand() % 2) - 1;
@@ -745,7 +745,7 @@ def random_sign_flip():
       '''
 
 def zero_out_arrays(typ):
-      return f'''
+      return '''
       void zero_out_arrays({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
@@ -757,37 +757,37 @@ def zero_out_arrays(typ):
            vout_computed[ii] = ({typ})0;
         }}
       }}
-      '''
+      '''.format(typ=typ)
 
 def compute_op_given_language(typ, op, language):
       if 'c_base' == language:
-            return f'''
+            return '''
               vec({typ}) va1, va2, vc;
               va1 = vloadu(&vin1[outer], {typ});
               va2 = vloadu(&vin2[outer], {typ});
               vc = v{op}(va1, va2, {typ});
               vstoreu(&vout_computed[outer], vc, {typ});
-            '''
+            '''.format(typ=typ, op=op)
       elif 'cxx_base' == language:
-            return f'''
+            return '''
               vec({typ}) va1, va2, vc;
               va1 = nsimd::loadu(&vin1[outer], {typ}());
               va2 = nsimd::loadu(&vin2[outer], {typ}());
               vc = nsimd::{op}(va1, va2, {typ}());
               nsimd::storeu(&vout_computed[outer], vc, {typ}());
-            '''
+            '''.format(typ=typ, op=op)
       else:
-            return f'''
+            return '''
                 nsimd::pack<{typ}> va1, va2, vc;
                 va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[outer]);
                 va2 = nsimd::loadu<nsimd::pack<{typ}> >(&vin2[outer]);
                 vc = nsimd::{op}(va1, va2);
                 nsimd::storeu(&vout_computed[outer], vc);
-            '''
+            '''.format(typ=typ, op=op)
 
 def compare_expected_vs_computed(typ, op, language):
       values_computation = compute_op_given_language(typ, op, language)
-      return f'''
+      return '''
       int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
       {{
           const int step = vlen({typ});
@@ -807,10 +807,10 @@ def compare_expected_vs_computed(typ, op, language):
 
           return 1;
       }}
-      '''
+      '''.format(typ=typ, values_computation=values_computation)
 
 def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check):
-      return f'''
+      return '''
       int test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
@@ -833,10 +833,10 @@ def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check)
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, min_=min_, max_=max_, operator=operator, check=check)
 
 def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_underflow):
-      return f'''
+      return '''
       int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
@@ -860,42 +860,44 @@ def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_under
         /* Test all cases */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      ''' .format(typ=typ, min_=min_, max_=max_,
+                  oper=oper, oper_is_overflow=oper_is_overflow,
+                  oper_is_underflow=oper_is_underflow)
 
 # -----------------------------------------------------------------------------
 # Tests helpers for adds - is overflow/underflow/neither overflow nor underflow
 
 def adds_is_overflow(typ, max_):
-      return f'''
+      return '''
       int adds_is_overflow(const {typ} a, const {typ} b)
       {{
         return (a > 0) && (b > {max_} - a);
       }}
-      '''
+      '''.format(typ=typ, max_=max_)
 
 def adds_signed_is_underflow(typ, min_):
-      return f'''
+      return '''
       int adds_signed_is_underflow(const {typ} a, const {typ} b)
       {{
         return (a < 0) && (b < {min_} - a);
       }}
-      '''
+      '''.format(typ=typ, min_=min_)
 
 def adds_signed_is_neither_overflow_nor_underflow(typ):
-      return f'''
+      return '''
       int adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
       {{
         return ! adds_is_overflow(a, b) && ! adds_signed_is_underflow(a, b);
       }}
-      '''
+      '''.format(typ=typ)
 
 # -----------------------------------------------------------------------------
 # Tests helpers for adds with integer types
 
 # test integer overflow
 def test_adds_overflow(typ, max_):
-      rand_ = f'({typ})rand()' if typ in common.utypes else 'rand()'
-      return f'''
+      rand_ = '({typ})rand()'.format(typ=typ) if typ in common.utypes else 'rand()'
+      return '''
       int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         /* if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ overflow }} */
@@ -927,14 +929,14 @@ def test_adds_overflow(typ, max_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
      }}
-      '''
+      '''.format(typ=typ, max_=max_, rand_=rand_)
 
 # -----------------------------------------------------------------------------
 # Tests helpers for adds with signed integer types
 
 # test signed underflow
 def test_adds_signed_underflow(typ, min_):
-      return f'''
+      return '''
       int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         /* if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ underflow }} */
@@ -968,7 +970,7 @@ def test_adds_signed_underflow(typ, min_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, min_=min_)
 
 # test signed neither overflow nor underflow
 def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
@@ -1005,7 +1007,7 @@ def tests_adds_signed():
 
 # test signed neither overflow nor underflow
 def test_adds_unsigned_no_overflow(typ, max_):
-      return f'''
+      return '''
       int test_no_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
@@ -1028,11 +1030,11 @@ def test_adds_unsigned_no_overflow(typ, max_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, max_=max_)
 
 # test unsigned all cases
 def test_adds_unsigned_all_cases(typ, max_):
-      return f'''
+      return '''
       int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
@@ -1049,7 +1051,7 @@ def test_adds_unsigned_all_cases(typ, max_):
         /* Test all cases: */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, max_=max_)
 
 # all unsigned tests
 def tests_adds_unsigned():
@@ -1129,7 +1131,8 @@ def get_adds_tests_cases_given_type(typ):
             if typ in common.utypes:
                   return get_adds_tests_cases_for_unsigned_types(typ=typ, max_=max_)
       else:
-            raise TypeError(f'{typ} not implemented')
+            msg = '{typ} not implemented'.format(typ=typ)
+            raise TypeError(msg)
 
 # -----------------------------------------------------------------------------
 # gen_adds
@@ -1220,45 +1223,45 @@ def gen_adds(opts, op, typ, lang, ulps):
 # subs signed
 
 def subs_signed_is_overflow(typ, max_):
-      return f'''
+      return '''
       int subs_signed_is_overflow(const {typ} a, const {typ} b)
       {{
         return (b < 0) && (a > {max_} + b);
       }}
-      '''
+      '''.format(typ=typ, max_=max_)
 
 def subs_signed_is_underflow(typ, min_):
-      return f'''
+      return '''
       int subs_signed_is_underflow(const {typ} a, const {typ} b)
       {{
         return (b > 0) && (a < {min_} + b);
       }}
-      '''
+      '''.format(typ=typ, min_=min_)
 
 def subs_signed_is_neither_overflow_nor_underflow(typ):
-      return f'''
+      return '''
       int subs_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
       {{
         return ! subs_signed_is_overflow(a, b) && ! subs_signed_is_underflow(a, b);
       }}
-      '''
+      '''.format(typ=typ)
 
 # subs unsigned
 
 def subs_unsigned_is_underflow(typ):
-      return f'''
+      return '''
       int subs_unsigned_is_underflow(const {typ} a, const {typ} b)
       {{
         return a < b;
       }}
-      '''
+      '''.format(typ=typ)
 
 # -----------------------------------------------------------------------------
 # Tests helpers for subs with signed types
 
 # test signed integer overflow
 def test_subs_signed_overflow(typ, min_, max_):
-      return f'''
+      return '''
       int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         /* if ((vin2[ii] < 0) && (vin1[ii] > {max_} + vin2[ii])) {{ overflow }} */
@@ -1300,11 +1303,11 @@ def test_subs_signed_overflow(typ, min_, max_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
      }}
-      '''
+      '''.format(typ=typ, min_=min_, max_=max_)
 
 # test signed underflow
 def test_subs_signed_underflow(typ, min_, max_):
-      return f'''
+      return '''
       int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         /* if ((vin2[ii] > 0) && (vin1[ii] < {min_} + vin2[ii])) {{ underflow }} */
@@ -1336,7 +1339,7 @@ def test_subs_signed_underflow(typ, min_, max_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, min_=min_, max_=max_)
 
 # test signed neither overflow nor underflow
 def test_subs_signed_neither_overflow_nor_underflow(typ, min_, max_):
@@ -1373,7 +1376,7 @@ def tests_subs_signed():
 
 # test unsigned underflow
 def test_subs_unsigned_underflow(typ, min_, max_):
-      return f'''
+      return '''
       int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         /* if (vin1[ii] < vin2[ii]) {{ underflow }} */
@@ -1401,11 +1404,11 @@ def test_subs_unsigned_underflow(typ, min_, max_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, min_=min_, max_=max_)
 
 # test unsigned no underflow
 def test_subs_unsigned_no_underflow(typ, max_):
-      return f'''
+      return '''
       int test_no_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         /* if (vin1[ii] >= vin2[ii]) {{ no underflow }} */
@@ -1433,11 +1436,11 @@ def test_subs_unsigned_no_underflow(typ, max_):
         */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, max_=max_)
 
 # test signed all cases
 def test_subs_unsigned_all_cases(typ, min_, max_):
-      return f'''
+      return '''
       int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
       {{
         int ii = 0;
@@ -1454,7 +1457,7 @@ def test_subs_unsigned_all_cases(typ, min_, max_):
         /* Test all cases: */
         return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
       }}
-      '''
+      '''.format(typ=typ, min_=min_, max_=max_)
 
 # all unsigned tests
 def tests_subs_unsigned():
@@ -1529,7 +1532,8 @@ def get_subs_tests_cases_given_type(typ):
             if typ in common.utypes:
                   return get_subs_tests_cases_for_unsigned_types(typ=typ, min_=min_, max_=max_)
       else:
-            raise TypeError(f'{typ} not implemented')
+            msg = '{typ} not implemented'.format(typ=typ)
+            raise TypeError(msg)
 
 # -----------------------------------------------------------------------------
 # gen_subs
