@@ -1744,7 +1744,7 @@ def adds(simd_ext, from_typ):
 # subs
 
 def subs():
-    return '''nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}))'''. \
+    return '''return nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}));'''. \
         format(**fmtspec)
 
 # -----------------------------------------------------------------------------
