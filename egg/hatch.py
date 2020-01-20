@@ -112,7 +112,6 @@ import gen_base_apis
 import gen_advanced_api
 import gen_tests
 import gen_benches
-import gen_module_tet1d
 import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
@@ -147,52 +146,55 @@ def parse_args(args):
             return None
         else:
             return re.compile(value)
+    # In pratice, we either generate all or all except benches and we never
+    # change default directories for code generation. So we remove unused
+    # options and regroup some into --library.
     parser = argparse.ArgumentParser(
                  description='This is NSIMD generation script.')
     parser.add_argument('--force', '-f', action='store_true',
         help='Generate all files even if they already exist')
-    parser.add_argument('--archis', '-a', action='store_true',
-        help='Generate code for all architectures')
+    #parser.add_argument('--archis', '-a', action='store_true',
+    #    help='Generate code for all architectures')
     parser.add_argument('--all', '-A', action='store_true',
-        help='Generate code for all architectures, C and C++ APIs')
-    parser.add_argument('--base-apis', '-c', action='store_true',
-        help='Generate the base C and C++ APIs')
-    parser.add_argument('--cxx-api', '-C', action='store_true',
-        help='Generate the "pack" C++ish API')
+        help='Generate code for the library and its benches')
+    parser.add_argument('--library', '-l', action='store_true',
+        help='Generate code of the library (C and C++ APIs)')
+    #parser.add_argument('--base-apis', '-c', action='store_true',
+    #    help='Generate the base C and C++ APIs')
+    #parser.add_argument('--cxx-api', '-C', action='store_true',
+    #    help='Generate the "pack" C++ish API')
     parser.add_argument('--ulps', '-u', action='store_true',
         help='Generate code to compute precision on big functions')
-    parser.add_argument('--ulps-dir', '-U', type=str,
-        default=os.path.join(script_dir, '..', 'ulps'),
-        help='Generate code to compute precision on big functions')
-    parser.add_argument('--friendly-but-not-optimized', '-o',
-        action='store_true',
-        help='Generate friendly but not optimized overloads for C++')
+    #parser.add_argument('--ulps-dir', '-U', type=str,
+    #    default=os.path.join(script_dir, '..', 'ulps'),
+    #    help='Generate code to compute precision on big functions')
+    #parser.add_argument('--friendly-but-not-optimized', '-o',
+    #    action='store_true',
+    #    help='Generate friendly but not optimized overloads for C++')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
     parser.add_argument('--tests-fp', action='store_true',
         help='Generate tests in C and C++ for the fixed precision module')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
-    parser.add_argument('--module_tet1d', action='store_true',
-        help='Generate module tet1d')
-    parser.add_argument('--include-dir', '-i', type=str,
-        default=os.path.join(script_dir, '..', 'include', 'nsimd'),
-        help='Base directory for headers')
-    parser.add_argument('--benches-dir', '-B', type=str,
-        default=os.path.join(script_dir, '..', 'benches'),
-        help='Base directory for benches')
-    parser.add_argument('--tests-dir', '-T', type=str,
-        default=os.path.join(script_dir, '..', 'tests'),
-        help='Base directory for tests')
+    #parser.add_argument('--include-dir', '-i', type=str,
+    #    default=os.path.join(script_dir, '..', 'include', 'nsimd'),
+    #    help='Base directory for headers')
+    #parser.add_argument('--benches-dir', '-B', type=str,
+    #    default=os.path.join(script_dir, '..', 'benches'),
+    #    help='Base directory for benches')
+    #parser.add_argument('--tests-dir', '-T', type=str,
+    #    default=os.path.join(script_dir, '..', 'tests'),
+    #    help='Base directory for tests')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
     parser.add_argument('--disable-clang-format', '-F', action='store_true',
         help='Disable Clang Format (mainly for speed on Windows)')
-    parser.add_argument('--src', '-s', action='store_true',
-        help='Generate all of the src function bindings')
-    parser.add_argument('--src-dir', '-S', action='store_true',
-        default=os.path.join(script_dir, '..', 'src'),
-        help='Base directory for src')
+    #parser.add_argument('--src', '-s', action='store_true',
+    #    help='Generate all of the src function bindings')
+    #parser.add_argument('--src-dir', '-S', action='store_true',
+    #    default=os.path.join(script_dir, '..', 'src'),
+    #    help='Base directory for src')
     parser.add_argument('--simd', '-D',
         type=parse_simd,
         default='all',
@@ -205,11 +207,26 @@ def parse_args(args):
         action = 'store_true',
         default=None,
         help='Enable verbose mode')
-    parser.add_argument('--simple-license', '-l',
+    parser.add_argument('--simple-license', '-L',
         action='store_true',
         default=False,
         help='Put a simple copyright statement instead of the whole license')
-    return parser.parse_args(args)
+    opts = parser.parse_args(args)
+    # We set variables here because all the code depends on them + we do want
+    # to keep the possibility to change them in the future
+    print('DEBUG: opts = {}'.format(opts))
+    opts.archis = opts.library
+    opts.base_apis = opts.library
+    opts.cxx_api = opts.library
+    opts.friendly_but_not_optimized = opts.library
+    opts.src = opts.library
+    opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
+    opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
+    opts.benches_dir = os.path.join(script_dir, '..', 'benches')
+    opts.tests_dir = os.path.join(script_dir, '..', 'tests')
+    opts.src_dir = os.path.join(script_dir, '..', 'src')
+    print('DEBUG: opts = {}'.format(opts))
+    return opts
 
 # -----------------------------------------------------------------------------
 # Entry point
@@ -233,8 +250,6 @@ def main():
         gen_tests.doit(opts)
     if opts.benches == True or opts.all == True:
         gen_benches.doit(opts)
-    if opts.module_tet1d == True or opts.all == True:
-        gen_module_tet1d.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
