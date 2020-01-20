@@ -27,4 +27,6 @@ def doit(opts):
     for module_dir in os.listdir(path):
         print ('-- Found new module: {}'.format(module_dir))
         mod = __import__('modules.{}.hatch'.format(module_dir))
-        mod.doit(opts)
+        print('DEBUG: __import__(modules.{}.hatch)'.format(module_dir))
+        print('DEBUG: mod = {}'.format(mod))
+        exec('mod.{}.hatch.doit(opts)'.format(module_dir))

@@ -116,6 +116,7 @@ import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
 import gen_ulps
+import gen_modules
 
 # Dir of this script
 script_dir = os.path.dirname(__file__)
@@ -159,6 +160,8 @@ def parse_args(args):
         help='Generate code for the library and its benches')
     parser.add_argument('--library', '-l', action='store_true',
         help='Generate code of the library (C and C++ APIs)')
+    #parser.add_argument('--modules', '-M', action='store_true',
+    #    help='Generate code of the modules')
     #parser.add_argument('--base-apis', '-c', action='store_true',
     #    help='Generate the base C and C++ APIs')
     #parser.add_argument('--cxx-api', '-C', action='store_true',
@@ -220,6 +223,7 @@ def parse_args(args):
     opts.cxx_api = opts.library
     opts.friendly_but_not_optimized = opts.library
     opts.src = opts.library
+    opts.modules = opts.library
     opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
     opts.benches_dir = os.path.join(script_dir, '..', 'benches')
@@ -252,6 +256,8 @@ def main():
         gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
+    if opts.modules == True or opts.all == True:
+        gen_modules.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
         gen_friendly_but_not_optimized.doit(opts)
     if opts.doc == True or opts.all == True:
