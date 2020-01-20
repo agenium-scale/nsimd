@@ -2527,17 +2527,17 @@ def adds_subs_intrinsic_instructions_i8_i16_u8_u16(which_op, simd_ext, typ):
 def get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ, num_bits):
     if 'avx512' in simd_ext or 'sse2' in simd_ext:
         mask_processing = \
-        f'''
+        '''
         // For avx512/sse2
         const nsimd_{simd_ext}_vu{num_bits} mask_strong_bit = nsimd_shr_{simd_ext}_u{num_bits}(mask, sizeof(u{num_bits}) * CHAR_BIT - 1);
         const nsimd_{simd_ext}_vi{num_bits} imask_strong_bit = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(mask_strong_bit);
         const nsimd_{simd_ext}_vli{num_bits} limask_strong_bit = nsimd_to_logical_{simd_ext}_i{num_bits}(imask_strong_bit);
-        '''
+        '''.format(simd_ext=simd_ext, num_bits=num_bits)
         if_else = \
-        f'''
+        '''
         // For avx512/sse2
         return nsimd_if_else1_{simd_ext}_i{num_bits}(limask_strong_bit, ires, i_max_min);
-        '''
+        '''.format(simd_ext=simd_ext, num_bits=num_bits)
     else:
         mask_processing = \
         '''
@@ -2545,12 +2545,13 @@ def get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ, num_bits):
         '''
         suf2 = 'ps' if typ in ['i32', 'u32'] else 'pd'
         if_else = \
-        f'''
-        return {pre(simd_ext)}cast{suf2}_si{nbits(simd_ext)}({pre(simd_ext)}blendv_{suf2}(
-        {pre(simd_ext)}castsi{nbits(simd_ext)}_{suf2}(i_max_min),
-        {pre(simd_ext)}castsi{nbits(simd_ext)}_{suf2}(ires),
-        {pre(simd_ext)}castsi{nbits(simd_ext)}_{suf2}(mask)));
         '''
+        return {pre}cast{suf2}_si{nbits}({pre}blendv_{suf2}(
+        {pre}castsi{nbits}_{suf2}(i_max_min),
+        {pre}castsi{nbits}_{suf2}(ires),
+        {pre}castsi{nbits}_{suf2}(mask)));
+        '''.format(suf2=suf2, **fmtspec)
+
     return { 'mask_processing': mask_processing, 'if_else': if_else }
 
 # -----------------------------------------------------------------------------
