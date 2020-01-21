@@ -1139,6 +1139,10 @@ def get_adds_tests_cases_given_type(typ):
 
 def gen_adds(opts, op, typ, lang, ulps):
 
+    # Do not test for floats since adds(floats) == add(floats)
+    if typ in common.ftypes:
+        return
+
     filename = get_filename(opts, op, typ, lang)
 
     if filename == None:
@@ -1539,6 +1543,10 @@ def get_subs_tests_cases_given_type(typ):
 # gen_subs
 
 def gen_subs(opts, op, typ, lang, ulps):
+
+    # Do not test for floats since subs(floats) == sub(floats)
+    if typ in common.ftypes:
+          return
 
     filename = get_filename(opts, op, typ, lang)
 
