@@ -203,7 +203,7 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(**fmtspec)
     if func == 'shra':
         ret += '''#include <nsimd/arm/{simd_ext}/shr.h>
-                  '''.format(simd_ext=simd_ext)   
+                  '''.format(simd_ext=simd_ext)
     if func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
                   # include <nsimd/arm/{simd_ext}/set1.h>
@@ -790,8 +790,8 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}({sign}{in1}));'''.\
                 format(**fmtspec, sign=sign)
         else:
-            return '''return vreinterpretq_s{typnbits}_u{typnbits}( 
-            vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}), 
+            return '''return vreinterpretq_s{typnbits}_u{typnbits}(
+            vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
             vdupq_n_s{typnbits}((i{typnbits}){sign}{in1})));'''.format(**fmtspec, sign=sign)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
@@ -810,13 +810,13 @@ def shra(simd_ext, typ):
     if typ in common.utypes:
         return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
                 format(**fmtspec)
-    
+
     if simd_ext in neon:
         return  '''return vshlq_{suf}(
         {in0}, vdupq_n_s{typnbits}((i{typnbits})-{in1}));'''.\
             format(**fmtspec)
     else:
-        return '''return svasr_{typ}_z({svtrue}, {in0}, 
+        return '''return svasr_{typ}_z({svtrue}, {in0},
         svdup_n_u{typnbits}((u{typnbits}){in1}));'''.\
             format(**fmtspec)
 
