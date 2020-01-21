@@ -1173,7 +1173,6 @@ class ToLogical(Operator):
 class Adds(Operator):
     full_name = 'addition using saturation'
     signature = 'v adds v v'
-    types = common.iutypes
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated sum of the two vectors given as arguments'
@@ -1183,7 +1182,6 @@ class Adds(Operator):
 class Subs(Operator):
     full_name = 'subtraction using saturation'
     signature = 'v subs v v'
-    types = common.iutypes
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
