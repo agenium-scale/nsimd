@@ -221,10 +221,6 @@ def get_additional_include(func, platform, simd_ext):
                   ''' .format(**fmtspec)
     if func == 'adds':
         ret += '''#include <nsimd/arm/{simd_ext}/add.h>'''.format(**fmtspec)
-    if func == 'subs':
-        ret += '''#include <nsimd/arm/{simd_ext}/adds.h>
-                  #include <nsimd/arm/{simd_ext}/neg.h>
-                '''.format(**fmtspec)
     if func == 'zip':
         ret += '''#include <nsimd/arm/{simd_ext}/ziplo.h>
                   #include <nsimd/arm/{simd_ext}/ziphi.h>
@@ -1761,9 +1757,15 @@ def adds(simd_ext, from_typ):
 # -----------------------------------------------------------------------------
 # subs
 
-def subs():
-    return '''return nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}));'''. \
-        format(**fmtspec)
+def subs(simd_ext, from_typ):
+    if from_typ in common.ftypes:
+        return 'return nsimd_sub_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+
+    elif simd_ext in neon:
+        return 'return vqsubq_{suf}({in0}, {in1});'.format(**fmtspec)
+
+    else:
+        return 'return svqsub_{suf}({in0}, {in1});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # to_mask
@@ -2078,7 +2080,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'add': lambda: addsub("add", simd_ext, from_typ),
         'sub': lambda: addsub("sub", simd_ext, from_typ),
         'adds': lambda: adds(simd_ext, from_typ),
-        'subs': lambda: subs(),
+        'subs': lambda: subs(simd_ext, from_typ),
         'div': lambda: div2(simd_ext, from_typ),
         'sqrt': lambda: sqrt1(simd_ext, from_typ),
         'len': lambda: len1(simd_ext, from_typ),
