@@ -219,8 +219,6 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
                   ''' .format(**fmtspec)
-    if func == 'adds':
-        ret += '''#include <nsimd/arm/{simd_ext}/add.h>'''.format(**fmtspec)
     if func == 'zip':
         ret += '''#include <nsimd/arm/{simd_ext}/ziplo.h>
                   #include <nsimd/arm/{simd_ext}/ziphi.h>
