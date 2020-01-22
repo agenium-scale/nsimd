@@ -426,30 +426,30 @@ typedef i32 nat;
 
 /* 8 bits */
 #define NSIMD_I8_MAX ((i8)0x7f)
-#define NSIMD_U8_MAX ((u8)(NSIMD_I8_MAX * 2 + 1))
+#define NSIMD_U8_MAX ((u8)((u8)NSIMD_I8_MAX * 2 + 1))
 
 #define NSIMD_I8_MIN ((i8)(-NSIMD_I8_MAX - 1))
 #define NSIMD_U8_MIN ((u8)0)
 
 /* 16 bits */
 #define NSIMD_I16_MAX ((i16)0x7fff)
-#define NSIMD_U16_MAX ((u16)(NSIMD_I16_MAX * 2 + 1))
+#define NSIMD_U16_MAX ((u16)((u16)NSIMD_I16_MAX * 2 + 1))
 
 #define NSIMD_I16_MIN ((i16)(-NSIMD_I16_MAX - 1))
 #define NSIMD_U16_MIN ((u16)0)
 
 /* 32 bits */
 #define NSIMD_I32_MAX ((i32)0x7fffffff)
-#define NSIMD_U32_MAX ((u32)(NSIMD_I32_MAX * 2 + 1))
+#define NSIMD_U32_MAX (((u32)NSIMD_I32_MAX * 2 + 1))
 
-#define NSIMD_I32_MIN ((i32)(-NSIMD_I32_MAX - 1))
+#define NSIMD_I32_MIN (-NSIMD_I32_MAX - 1)
 #define NSIMD_U32_MIN ((u32)0)
 
 /* 64 bits */
 #define NSIMD_I64_MAX ((i64)0x7fffffffffffffff)
-#define NSIMD_U64_MAX ((u64)(NSIMD_I64_MAX * 2 + 1))
+#define NSIMD_U64_MAX (((u64)NSIMD_I64_MAX * 2 + 1))
 
-#define NSIMD_I64_MIN ((i64)(-NSIMD_I64_MAX - 1))
+#define NSIMD_I64_MIN (-NSIMD_I64_MAX - 1)
 #define NSIMD_U64_MIN ((u64)0)
 
 #endif
