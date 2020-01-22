@@ -986,14 +986,14 @@ def sleef_name(name, simd, typ, ulp=None):
 # Integer limits per type using macros defined in <limits.h> or <climits>
 
 limits = {
-    'i8': {'min': 'SCHAR_MIN', 'max': 'SCHAR_MAX'}, 
-    'i16': {'min': 'SHRT_MIN', 'max': 'SHRT_MAX'},
-    'i32': {'min': 'INT_MIN', 'max': 'INT_MAX'},
-    'i64': {'min': 'LONG_MIN', 'max': 'LONG_MAX'},
-    'u8': {'min': '0', 'max': 'UCHAR_MAX'},
-    'u16': {'min': '0', 'max': 'USHRT_MAX'},
-    'u32': {'min': '0', 'max': 'UINT_MAX'},
-    'u64': {'min': '0', 'max': 'ULONG_MAX'}
+    'i8':   {'min': 'NSIMD_I8_MIN',     'max': 'NSIMD_I8_MAX'   },
+    'i16':  {'min': 'NSIMD_I16_MIN',    'max': 'NSIMD_I16_MAX'  },
+    'i32':  {'min': 'NSIMD_I32_MIN',    'max': 'NSIMD_I32_MAX'  },
+    'i64':  {'min': 'NSIMD_I64_MIN',    'max': 'NSIMD_I64_MAX'  },
+    'u8':   {'min': 'NSIMD_U8_MIN',     'max': 'NSIMD_U8_MAX'   },
+    'u16':  {'min': 'NSIMD_U16_MIN',    'max': 'NSIMD_U16_MAX'  },
+    'u32':  {'min': 'NSIMD_U32_MIN',    'max': 'NSIMD_U32_MAX'  },
+    'u64':  {'min': 'NSIMD_U64_MIN',    'max': 'NSIMD_U64_MAX'  }
   }
 
 # -----------------------------------------------------------------------------
