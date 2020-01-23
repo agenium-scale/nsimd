@@ -446,7 +446,7 @@ typedef i32 nat;
 #define NSIMD_U32_MIN ((u32)0)
 
 /* 64 bits */
-#define NSIMD_I64_MAX ((i64)0x7fffffffffffffff)
+#define NSIMD_I64_MAX (~(((i64)1) << 63))
 #define NSIMD_U64_MAX (((u64)NSIMD_I64_MAX * 2 + 1))
 
 #define NSIMD_I64_MIN (-NSIMD_I64_MAX - 1)
