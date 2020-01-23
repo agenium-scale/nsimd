@@ -231,7 +231,8 @@ def main():
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
     if opts.modules == True or opts.all == True:
-        gen_modules.doit(opts)
+        pass
+        #gen_modules.doit(opts)
     if opts.scalar_utilities == True or opts.all == True:
         gen_scalar_utilities.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:

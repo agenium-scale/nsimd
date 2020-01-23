@@ -39,7 +39,6 @@ import os
 import sys
 import io
 import collections
-import scalar_cpu
 
 # -----------------------------------------------------------------------------
 # check if file exists

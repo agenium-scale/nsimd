@@ -216,10 +216,18 @@ def minmax2(minmax, typ):
 # -----------------------------------------------------------------------------
 
 def libm_opn(func, typ):
+    if typ in common.iutypes:
+        if func in ['floor', 'ceil', 'trunc', 'round_to_even']:
+            return 'return {in0};'.format(**fmtspec)
+        else:
+            return func_body(
+                   '''ret.v{{i}} = ({typ})({in0}.v{{i}} * {in1}.v{{i}}
+                                   + {in2}.v{{i}});'''. \
+                                   format(**fmtspec), typ)
     typ2 = 'f32' if typ == 'f16' else typ
-    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) + '.{{i}}' \
+    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) + '.v{i}' \
                       for i in range(3 if func == 'fma' else 1)])
-    return func_body('ret.v{{i}} = nsimd_{func}_{typ}({args})'. \
+    return func_body('ret.v{{i}} = nsimd_{func}_{typ}({args});'. \
                      format(typ=typ2, func=func, args=args), typ)
 
 # -----------------------------------------------------------------------------
@@ -379,14 +387,22 @@ def abs1(typ):
 # -----------------------------------------------------------------------------
 
 def fma_fms(func, typ):
-    op = '' if func in ['fnma'] else '-'
-    neg = '-' if func in ['fnma', 'fnms'] else ''
-    typ2 = 'f32' if typ == 'f16' else typ
-    return \
-    func_body(
-    '''ret.v{{i}} = nsimd_fma_{typ2}({neg}{in0}.v{{i}}, {in1}.v{{i}},
-                      {op}{in2}.v{{i}});'''.format(op=op, neg=neg, typ2=typ2,
-                                                   **fmtspec), typ)
+    if typ in common.iutypes:
+        op = '+' if func in ['fma', 'fnma'] else '-'
+        neg = '-' if func in ['fnma', 'fnms'] else ''
+        return func_body(
+               '''ret.v{{i}} = ({typ})({neg}({in0}.v{{i}} * {in1}.v{{i}})
+                               {op} {in2}.v{{i}});'''.format(op=op,
+                               neg=neg, **fmtspec), typ)
+    else:
+        op = '' if func in ['fnma'] else '-'
+        neg = '-' if func in ['fnma', 'fnms'] else ''
+        typ2 = 'f32' if typ == 'f16' else typ
+        return \
+        func_body(
+        '''ret.v{{i}} = nsimd_fma_{typ2}({neg}{in0}.v{{i}}, {in1}.v{{i}},
+                          {op}{in2}.v{{i}});'''.format(
+                          op=op, neg=neg, typ2=typ2, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 

@@ -159,23 +159,23 @@ def round_to_even(typ):
            }}}}'''.format(typ=typ, f='f' if typ == 'f32' else '')
     else:
         return \
-        '''f32 in0 = nsimd_f16_to_f32({{in0}});
+        '''f32 in0 = nsimd_f16_to_f32({in0});
            f32 fl = nsimd_floor_f32(in0);
            f32 ce = nsimd_ceil_f32(in0);
            f32 df = in0 - fl; /* exactly representable in IEEE754 */
            f32 dc = ce - in0; /* exactly representable in IEEE754 */
-           if (df < dc) {{{{
+           if (df < dc) {{
              return nsimd_f32_to_f16(fl);
-           }}}} else if (df > dc) {{{{
+           }} else if (df > dc) {{
              return nsimd_f32_to_f16(ce);
-           }}}} else {{{{
+           }} else {{
              f32 fld2 = fl * 0.5f; /* exactly representable in IEEE754 */
-             if (fld2 == nsimd_floor_f32(fld2)) {{{{
+             if (fld2 == nsimd_floor_f32(fld2)) {{
                return nsimd_f32_to_f16(fl);
-             }}}} else {{{{
+             }} else {{
                return nsimd_f32_to_f16(ce);
-             }}}}
-           }}}}'''
+             }}
+           }}'''
 
 # -----------------------------------------------------------------------------
 
@@ -187,7 +187,7 @@ def get_impl(operator, totyp, typ, until_cpp11 = False, c89_code = ''):
                                               nsimd_floor_f32(buf) :
                                               nsimd_ceil_f32(buf));'''
         else:
-            return '''return buf >= 0.0{f} ? nsimd_floor_{typ}({{in0}})
+            return '''return {{in0}} >= 0.0{f} ? nsimd_floor_{typ}({{in0}})
                              : nsimd_ceil_{typ}({{in0}});'''. \
                              format(typ=typ, f='f' if typ == 'f32' else '')
         return libm_opn('trunc', 3, typ, True, c89_code)
@@ -246,7 +246,7 @@ def reinterprets(opts):
 
     tmpl_ne = \
     '''NSIMD_INLINE {totyp} nsimd_reinterpret_{totyp}_{typ}({typ} {in0}) {{
-      union {{ {totyp} to; {typ} from }} buf;
+      union {{ {totyp} to; {typ} from; }} buf;
       buf.from = {in0};
       return ({totyp})buf.to;
     }}'''
@@ -256,14 +256,14 @@ def reinterprets(opts):
 
     tmpl_cxx = 'NSIMD_INLINE {totyp} ' + \
                'reinterpret_{totyp}_{typ}({typ} {in0}) {{' + \
-               ' return nsimd_reinterpret_{totyp}_{typ}(a); }}\n'
+               ' return nsimd_reinterpret_{totyp}_{typ}({in0}); }}\n'
 
     for typ in common.types:
         totyp = 'u{}'.format(typ[1:])
         if typ == 'f16':
-            ret += '''NSIMD_INLINE nsimd_reinterpret_u16_f16(f16 {in0}) {{
+            ret += '''NSIMD_INLINE u16 nsimd_reinterpret_u16_f16(f16 {in0}) {{
                       #ifdef NSIMD_FP16
-                        union {{ u16 to; f16 from }} buf;
+                        union {{ u16 to; f16 from; }} buf;
                         buf.from = {in0};
                         return buf.to;
                       #else
@@ -271,13 +271,13 @@ def reinterprets(opts):
                       #endif
                       }}
 
-                      NSIMD_INLINE nsimd_reinterpret_f16_u16(u16 {in0}) {{
+                      NSIMD_INLINE f16 nsimd_reinterpret_f16_u16(u16 {in0}) {{
                       #ifdef NSIMD_FP16
-                        union {{ f16 to; u16 from }} buf;
+                        union {{ f16 to; u16 from; }} buf;
                         buf.from = {in0};
                         return buf.to;
                       #else
-                        f16 ret
+                        f16 ret;
                         ret.u = {in0};
                         return ret;
                       #endif
@@ -349,7 +349,10 @@ def doit(opts):
         return
     print('-- Generating scalar utilities')
     with common.open_utf8(opts, filename) as out:
-        out.write('''#if NSIMD_CXX > 0
+        out.write('''#ifndef NSIMD_SCALAR_UTILITIES_H
+                     #define NSIMD_SCALAR_UTILITIES_H
+
+                     #if NSIMD_CXX > 0
                      #include <cmath>
                      #else
                      #include <math.h>
@@ -358,4 +361,5 @@ def doit(opts):
                      ''')
         out.write(reinterprets(opts))
         out.write(libms(opts))
+        out.write('\n\n#endif\n')
     common.clang_format(opts, filename)
