@@ -27,6 +27,7 @@
 # with an 'if' before to handle the FP16 special case.
 
 import common
+import gen_scalar_utilities
 
 # -----------------------------------------------------------------------------
 # Emulation parameters
@@ -86,12 +87,10 @@ def has_compatible_SoA_types(simd_ext):
     return False
 
 def get_additional_include(func, platform, simd_ext):
-    if func in ['sqrt', 'ceil', 'floor', 'trunc']:
-        return '''#if NSIMD_CXX > 0
-                    #include <cmath>
-                  #else
-                    #include <math.h>
-                  #endif'''
+    if func in ['sqrt', 'ceil', 'floor', 'trunc', 'fma', 'fnma', 'fms',
+                'fnms', 'round_to_even']:
+        return '''#include <nsimd/scalar_utilities.h>
+                  '''
     elif func in ['']:
         return '''#include <nsimd/cpu/cpu/reinterpret.h>
                   '''
@@ -105,7 +104,7 @@ def get_additional_include(func, platform, simd_ext):
                   '''
     elif func == 'shra':
         return '''#include <nsimd/cpu/{simd_ext}/shr.h>
-                  '''.format(simd_ext=simd_ext)   
+                  '''.format(simd_ext=simd_ext)
     return ''
 
 # -----------------------------------------------------------------------------
@@ -216,126 +215,12 @@ def minmax2(minmax, typ):
 
 # -----------------------------------------------------------------------------
 
-def libm_op1(func, typ, until_cpp11 = False, c89_code = ''):
-    cxx_version = '> 0' if not until_cpp11 else '>= 2011'
-    comment = \
-    '''/* {func} is not available in C89 but is given by POSIX 2001 */
-       /* and C99. But we do not want to pollute the user includes  */
-       /* and POSIX value if set so we play dirty.                  */'''. \
-       format(func=func)
-    if c89_code != '':
-        c89_code = repeat_stmt(c89_code, typ)
-    if typ in ['f16', 'f32']:
-        c99_code = repeat_stmt('ret.v{{i}} = {func}f({in0}.v{{i}});'. \
-                               format(func=func, **fmtspec), typ)
-        if c89_code == '':
-            c89_code = repeat_stmt(
-                       'ret.v{{i}} = (f32){func}((f64){in0}.v{{i}});'. \
-                       format(func=func, **fmtspec), typ)
-        return \
-        '''  {comment}
-             nsimd_cpu_v{typ} ret;
-           #if defined(NSIMD_IS_MSVC) && _MSC_VER <= 1800 /* VS 2012 */
-             {c89_code}
-           #else
-             #if NSIMD_CXX {cxx_version} || NSIMD_C >= 1999 || \
-                 _POSIX_C_SOURCE >= 200112L
-               {c99_code}
-             #else
-               {c89_code}
-             #endif
-           #endif
-             return ret;'''. \
-             format(comment=comment, func=func, cxx_version=cxx_version,
-                    c89_code=c89_code, c99_code=c99_code, **fmtspec)
-    else:
-        c99_code = repeat_stmt('ret.v{{i}} = {func}({in0}.v{{i}});'. \
-                               format(func=func, **fmtspec), typ)
-        if c89_code == '':
-            return '''nsimd_cpu_vf64 ret;
-                      {c99_code}
-                      return ret;'''.format(c99_code=c99_code)
-        return \
-        '''  {comment}
-             nsimd_cpu_vf64 ret;
-           #if NSIMD_CXX {cxx_version} || NSIMD_C >= 1999 || \
-               _POSIX_C_SOURCE >= 200112L
-             {c99_code}
-           #else
-             {c89_code}
-           #endif
-           return ret;'''. \
-           format(comment=comment, c89_code=c89_code, c99_code=c99_code,
-                  cxx_version=cxx_version, **fmtspec)
-
-# -----------------------------------------------------------------------------
-
-def sqrt1(typ):
-    return libm_op1('sqrt', typ)
-
-# -----------------------------------------------------------------------------
-
-def ceil1(typ):
-    if typ in ['f16', 'f32', 'f64']:
-        return libm_op1('ceil', typ)
-    return 'return {in0};'.format(**fmtspec)
-
-# -----------------------------------------------------------------------------
-
-def floor1(typ):
-    if typ in ['f16', 'f32', 'f64']:
-        return libm_op1('floor', typ)
-    return 'return {in0};'.format(**fmtspec)
-
-# -----------------------------------------------------------------------------
-
-def trunc1(typ):
-    if typ == 'f16':
-        c89_code = '''ret = {in0}.v{{i}} >= 0.0f
-                                 ? nsimd_floor_cpu_{typ}({in0})
-                                 : nsimd_ceil_cpu_{typ}({in0});'''. \
-                                 format(**fmtspec)
-        return libm_op1('trunc', typ, True, c89_code)
-    elif typ in common.ftypes:
-        c89_code = '''ret = {in0}.v{{i}} >= ({typ})0
-                                 ? nsimd_floor_cpu_{typ}({in0})
-                                 : nsimd_ceil_cpu_{typ}({in0});'''. \
-                                 format(**fmtspec)
-        return libm_op1('trunc', typ, True, c89_code)
-    return 'return {in0};'.format(**fmtspec)
-
-# -----------------------------------------------------------------------------
-
-def round_to_even1(typ):
-    if typ in common.iutypes:
-        return 'return {in0};'.format(**fmtspec)
-    stmt = '''{{{{
-              {typ2} fl_p_half = fl.v{{i}} + 0.5{suffix};
-              if (fl.v{{i}} == {in0}.v{{i}}) {{{{
-                ret.v{{i}} = {in0}.v{{i}};
-              }}}}
-              if ({in0}.v{{i}} == fl_p_half) {{{{
-                f64 flo2 = (f64)(fl.v{{i}} * 0.5{suffix});
-                if (floor(flo2) == flo2) {{{{
-                  ret.v{{i}} = fl.v{{i}};
-                }}}} else {{{{
-                  ret.v{{i}} = ce.v{{i}};
-                }}}}
-              }}}} else if ({in0}.v{{i}} > fl_p_half) {{{{
-                ret.v{{i}} = ce.v{{i}};
-              }}}} else {{{{
-                ret.v{{i}} = fl.v{{i}};
-              }}}}
-              }}}}'''.format(typ2 = 'f32' if typ in ['f16', 'f32'] else 'f64',
-                             suffix = 'f' if typ in ['f16', 'f32'] else '',
-                             **fmtspec)
-    return \
-    '''nsimd_cpu_v{typ} fl = nsimd_floor_cpu_{typ}({in0});
-       nsimd_cpu_v{typ} ce = nsimd_ceil_cpu_{typ}({in0});
-       nsimd_cpu_v{typ} ret;
-       '''.format(**fmtspec) + \
-       repeat_stmt(stmt, typ) + '\n' + \
-       'return ret;'
+def libm_opn(func, typ):
+    typ2 = 'f32' if typ == 'f16' else typ
+    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) + '.{{i}}' \
+                      for i in range(3 if func == 'fma' else 1)])
+    return func_body('ret.v{{i}} = nsimd_{func}_{typ}({args})'. \
+                     format(typ=typ2, func=func, args=args), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -494,13 +379,14 @@ def abs1(typ):
 # -----------------------------------------------------------------------------
 
 def fma_fms(func, typ):
-    op = '+' if func in ['fma', 'fnma'] else '-'
+    op = '' if func in ['fnma'] else '-'
     neg = '-' if func in ['fnma', 'fnms'] else ''
     typ2 = 'f32' if typ == 'f16' else typ
-    return func_body(
-           '''ret.v{{i}} = ({typ2})({neg}({in0}.v{{i}} * {in1}.v{{i}})
-                         {op} {in2}.v{{i}});'''.format(op=op, neg=neg,
-                         typ2=typ2, **fmtspec), typ)
+    return \
+    func_body(
+    '''ret.v{{i}} = nsimd_fma_{typ2}({neg}{in0}.v{{i}}, {in1}.v{{i}},
+                      {op}{in2}.v{{i}});'''.format(op=op, neg=neg, typ2=typ2,
+                                                   **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -776,11 +662,11 @@ def shra(typ):
         union {{i{typnbits} ival; u{typnbits} uval;}} val;
         union {{i{typnbits} ival; u{typnbits} uval;}} sign;
         u{typnbits} shifted;
-        
+
         {content}
-        
+
         return ret;'''.format(content=content, **fmtspec)
-    
+
 # -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
@@ -837,7 +723,7 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'max': lambda: minmax2('max', from_typ),
         'notb': lambda: not1(from_typ),
         'notl': lambda: lnot1(from_typ),
-        'sqrt': lambda: sqrt1(from_typ),
+        'sqrt': lambda: libm_opn('sqrt', from_typ),
         'set1': lambda: set1(from_typ),
         'shr': lambda: bitwise1_param('>>', from_typ),
         'shl': lambda: bitwise1_param('<<', from_typ),
@@ -851,14 +737,14 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'len': lambda: len1(from_typ),
         'if_else1': lambda: if_else1(from_typ),
         'abs': lambda: abs1(from_typ),
-        'fma': lambda: fma_fms('fma', from_typ),
+        'fma': lambda: libm_opn('fma', from_typ),
         'fnma': lambda: fma_fms('fnma', from_typ),
         'fms': lambda: fma_fms('fms', from_typ),
         'fnms': lambda: fma_fms('fnms', from_typ),
-        'ceil': lambda: ceil1(from_typ),
-        'floor': lambda: floor1(from_typ),
-        'trunc': lambda: trunc1(from_typ),
-        'round_to_even': lambda: round_to_even1(from_typ),
+        'ceil': lambda: libm_opn('ceil', from_typ),
+        'floor': lambda: libm_opn('floor', from_typ),
+        'trunc': lambda: libm_opn('trunc', from_typ),
+        'round_to_even': lambda: libm_opn('round_to_even', from_typ),
         'all': lambda: all_any(from_typ, 'all'),
         'any': lambda: all_any(from_typ, 'any'),
         'reinterpret': lambda: reinterpret1(from_typ, to_typ),

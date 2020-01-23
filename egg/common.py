@@ -39,6 +39,7 @@ import os
 import sys
 import io
 import collections
+import scalar_cpu
 
 # -----------------------------------------------------------------------------
 # check if file exists
@@ -990,3 +991,14 @@ def ext_from_lang(lang):
 
 def nsimd_category(category):
     return 'nsimd_' + category
+
+# -----------------------------------------------------------------------------
+# Scalar implementation of some operators for CPUs and GPUs.
+
+def get_scalar_implementation(chip, op_name, totyp, typ, variables = None):
+    # chip must be one of cpu, cuda, hip, oneapi.
+    default = { 'in0': common.in0, 'in1': common.in1, 'in2': common.in2,
+                'in3': common.in3, 'in4': common.in4, 'in5': common.in5 }
+    fmtspec = variables if variables != None else default
+    return self.scalar_implementation_template. \
+           format(typnbits=typ[1:], typ=typ, **fmtspec)

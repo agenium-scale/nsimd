@@ -117,8 +117,7 @@ import gen_doc
 import gen_friendly_but_not_optimized
 import gen_ulps
 import gen_modules
-
-import modules.hatch
+import gen_scalar_utilities
 
 # Dir of this script
 script_dir = os.path.dirname(__file__)
@@ -156,50 +155,22 @@ def parse_args(args):
                  description='This is NSIMD generation script.')
     parser.add_argument('--force', '-f', action='store_true',
         help='Generate all files even if they already exist')
-    #parser.add_argument('--archis', '-a', action='store_true',
-    #    help='Generate code for all architectures')
     parser.add_argument('--all', '-A', action='store_true',
         help='Generate code for the library and its benches')
     parser.add_argument('--library', '-l', action='store_true',
         help='Generate code of the library (C and C++ APIs)')
-    #parser.add_argument('--modules', '-M', action='store_true',
-    #    help='Generate code of the modules')
-    #parser.add_argument('--base-apis', '-c', action='store_true',
-    #    help='Generate the base C and C++ APIs')
-    #parser.add_argument('--cxx-api', '-C', action='store_true',
-    #    help='Generate the "pack" C++ish API')
     parser.add_argument('--ulps', '-u', action='store_true',
         help='Generate code to compute precision on big functions')
-    #parser.add_argument('--ulps-dir', '-U', type=str,
-    #    default=os.path.join(script_dir, '..', 'ulps'),
-    #    help='Generate code to compute precision on big functions')
-    #parser.add_argument('--friendly-but-not-optimized', '-o',
-    #    action='store_true',
-    #    help='Generate friendly but not optimized overloads for C++')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--build-modules', '-M', action='store_true',
-        help='Build modules')
+    parser.add_argument('--tests-fp', action='store_true',
+        help='Generate tests in C and C++ for the fixed precision module')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
-    #parser.add_argument('--include-dir', '-i', type=str,
-    #    default=os.path.join(script_dir, '..', 'include', 'nsimd'),
-    #    help='Base directory for headers')
-    #parser.add_argument('--benches-dir', '-B', type=str,
-    #    default=os.path.join(script_dir, '..', 'benches'),
-    #    help='Base directory for benches')
-    #parser.add_argument('--tests-dir', '-T', type=str,
-    #    default=os.path.join(script_dir, '..', 'tests'),
-    #    help='Base directory for tests')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
     parser.add_argument('--disable-clang-format', '-F', action='store_true',
         help='Disable Clang Format (mainly for speed on Windows)')
-    #parser.add_argument('--src', '-s', action='store_true',
-    #    help='Generate all of the src function bindings')
-    #parser.add_argument('--src-dir', '-S', action='store_true',
-    #    default=os.path.join(script_dir, '..', 'src'),
-    #    help='Base directory for src')
     parser.add_argument('--simd', '-D',
         type=parse_simd,
         default='all',
@@ -226,6 +197,7 @@ def parse_args(args):
     opts.friendly_but_not_optimized = opts.library
     opts.src = opts.library
     opts.modules = opts.library
+    opts.scalar_utilities = opts.library
     opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
     opts.benches_dir = os.path.join(script_dir, '..', 'benches')
@@ -260,14 +232,12 @@ def main():
         gen_src.doit(opts)
     if opts.modules == True or opts.all == True:
         gen_modules.doit(opts)
+    if opts.scalar_utilities == True or opts.all == True:
+        gen_scalar_utilities.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
         gen_friendly_but_not_optimized.doit(opts)
     if opts.doc == True or opts.all == True:
         gen_doc.doit(opts)
-
-    ## Gen modules
-    if opts.build_modules == True or opts.all == True:
-        modules.hatch.doit(opts)
 
 if __name__ == '__main__':
     main()

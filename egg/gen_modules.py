@@ -25,8 +25,10 @@ def doit(opts):
     path = os.path.join(opts.script_dir, 'modules')
     print('-- Searching modules in "{}"'.format(path))
     for module_dir in os.listdir(path):
+        if (not os.path.isdir(os.path.join(path, module_dir))) or \
+           module_dir == '.' or module_dir == '..' or \
+           (not os.path.exists(os.path.join(path, module_dir, 'hatch.py'))):
+            continue
         print ('-- Found new module: {}'.format(module_dir))
         mod = __import__('modules.{}.hatch'.format(module_dir))
-        print('DEBUG: __import__(modules.{}.hatch)'.format(module_dir))
-        print('DEBUG: mod = {}'.format(mod))
         exec('mod.{}.hatch.doit(opts)'.format(module_dir))

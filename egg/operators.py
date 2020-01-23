@@ -773,7 +773,7 @@ class Shra(Operator):
     domain = Domain('R+xN')
     categories = [DocBitsOperators]
     desc = 'Performs a right shift operation with sign extension.'
-    
+
 class Eq(Operator):
     full_name = 'compare for equality'
     signature = 'l eq v v'
@@ -1112,7 +1112,7 @@ class Ziplo(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class Ziphi(Operator):
     full_name = 'ziphi'
     signature = 'v ziphi v v'
@@ -1128,7 +1128,7 @@ class Zip(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class Unziplo(Operator):
     full_name = 'unziplo'
     signature = 'v unziplo v v'
@@ -1136,7 +1136,7 @@ class Unziplo(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class Unziphi(Operator):
     full_name = 'unziphi'
     signature = 'v unziphi v v'
@@ -1152,7 +1152,7 @@ class Unzip(Operator):
     fomain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class ToMask(Operator):
     full_name = 'build mask from logicals'
     signature = 'v to_mask l'
