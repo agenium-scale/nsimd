@@ -282,7 +282,7 @@ def write_cpp(opts, simd_ext, emulate_fp16):
     filename = os.path.join(opts.src_dir, 'api_{}.cpp'.format(simd_ext))
     if not common.can_create_filename(opts, filename):
         return
-    with common.open_utf8(filename) as out:
+    with common.open_utf8(opts, filename) as out:
         out.write('''#define NSIMD_INSIDE
                      #include <nsimd/nsimd.h>
                      #include <nsimd/cxx_adv_api.hpp>

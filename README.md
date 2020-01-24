@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/agenium-scale/nsimd.svg?branch=master)](https://travis-ci.org/agenium-scale/nsimd)
+
+Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
+
 NSIMD
 =====
 

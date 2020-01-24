@@ -245,15 +245,15 @@ Here is a list of available FUNCNAME.
   Only available for i64, i32, i16, i8, u64, u32, u16, u8
 - `vlSCALAR eq(vSCALAR a0, vSCALAR a1);`
   (a0, a1) ∈ ℝ × ℝ
-- `vlSCALAR neq(vSCALAR a0, vSCALAR a1);`
+- `vlSCALAR ne(vSCALAR a0, vSCALAR a1);`
   (a0, a1) ∈ ℝ × ℝ
 - `vlSCALAR gt(vSCALAR a0, vSCALAR a1);`
   (a0, a1) ∈ ℝ × ℝ
-- `vlSCALAR geq(vSCALAR a0, vSCALAR a1);`
+- `vlSCALAR ge(vSCALAR a0, vSCALAR a1);`
   (a0, a1) ∈ ℝ × ℝ
 - `vlSCALAR lt(vSCALAR a0, vSCALAR a1);`
   (a0, a1) ∈ ℝ × ℝ
-- `vlSCALAR leq(vSCALAR a0, vSCALAR a1);`
+- `vlSCALAR le(vSCALAR a0, vSCALAR a1);`
   (a0, a1) ∈ ℝ × ℝ
 - `vSCALAR if_else1(vlSCALAR a0, vSCALAR a1, vSCALAR a2);`
   (a0, a1, a2) ∈ 𝔹 × ℝ × ℝ
@@ -287,6 +287,12 @@ Here is a list of available FUNCNAME.
   a0 ∈ 𝔹
 - `vSCALAR cvt(vSCALAR a0);`
   a0 ∈ ℝ
+- `vSCALARx2 upcvt(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for i8, u8, i16, u16, f16, i32, u32, f32
+- `vSCALAR downcvt(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+  Only available for i16, u16, f16, i32, u32, f32, i64, u64, f64
 - `vSCALAR rec(vSCALAR a0);`
   a0 ∈ ℝ∖{0}
   Only available for f64, f32, f16
@@ -299,6 +305,241 @@ Here is a list of available FUNCNAME.
 - `vSCALAR rsqrt11(vSCALAR a0);`
   a0 ∈ [0, +∞)
   Only available for f64, f32, f16
+- `vSCALAR ziplo(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+- `vSCALAR ziphi(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+- `vSCALARx2 zip(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+- `vSCALAR unziplo(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+- `vSCALAR unziphi(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+- `vSCALARx2 unzip(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ
+- `vSCALAR to_mask(vlSCALAR a0);`
+  a0 ∈ ℝ
+- `vlSCALAR to_logical(vSCALAR a0);`
+  a0 ∈ ℝ
+- `vSCALAR cos(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR cosd(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR cospi(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR acos(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR acosd(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR acospi(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR cosh(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR acosh(vSCALAR a0);`
+  a0 ∈ (1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR sin(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR sinpi(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR sind(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR asin(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR asind(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR asinpi(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR sinh(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR asinh(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR tan(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `vSCALAR tand(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `vSCALAR tanpi(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `vSCALAR atan(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR atand(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR atanpi(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR tanh(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR atanh(vSCALAR a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `vSCALAR sinc(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR sincpi(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR sinhc(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR atan2(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `vSCALAR atan2d(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `vSCALAR atan2pi(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `vSCALAR cot(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `vSCALAR cotd(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `vSCALAR cotpi(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `vSCALAR acot(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR acotd(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR acotpi(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR coth(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR acoth(vSCALAR a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR csc(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `vSCALAR cscd(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `vSCALAR cscpi(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `vSCALAR acsc(vSCALAR a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR acscd(vSCALAR a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR acscpi(vSCALAR a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR csch(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR acsch(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR sec(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `vSCALAR secd(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR secpi(vSCALAR a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `vSCALAR asec(vSCALAR a0);`
+  a0 ∈ (-∞, -1] ⋃ [1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR asecd(vSCALAR a0);`
+  a0 ∈ (-∞, -1] ⋃ [1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR asecpi(vSCALAR a0);`
+  a0 ∈ (-∞, -1] ⋃ [1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR sech(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR asech(vSCALAR a0);`
+  a0 ∈ (0, 1]
+  Only available for f64, f32, f16
+- `vSCALAR pow_abs(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `vSCALAR pow(vSCALAR a0, vSCALAR a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `vSCALAR exp(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR exp2(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR exp10(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR expm1(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR exprecnegc(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR exprecneg(vSCALAR a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `vSCALAR expx2(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR log(vSCALAR a0);`
+  a0 ∈ (0, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR log2(vSCALAR a0);`
+  a0 ∈ (0, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR log10(vSCALAR a0);`
+  a0 ∈ (0, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR log1p(vSCALAR a0);`
+  a0 ∈ (-1, +∞)
+  Only available for f64, f32, f16
+- `vSCALAR gamma(vSCALAR a0);`
+  a0 ∈ ℝ∖{n∈ℕ:-n}
+  Only available for f64, f32, f16
+- `vSCALAR lgamma(vSCALAR a0);`
+  a0 ∈ ℝ∖{n∈ℕ:-n}
+  Only available for f64, f32, f16
+- `vSCALAR stirling(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR erf(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR erfc(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `vSCALAR erfcx(vSCALAR a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
 
 
 ## C++ advanced API
@@ -307,7 +548,7 @@ The C++ advanced API is called advanced not because it requires C++11 or above
 but because it makes use of the particular implementation of ARM SVE by ARM
 in their compiler. We do not know if GCC (and possibly MSVC in the distant
 future) will use the same approach. Anyway the current implementation allows
-us to put SVE SIMD vectors inside some kind of structs that behave like
+us to put SVE SIMD vectors inside some kinf of structs that behave like
 standard structs. If you want to be sure to write portable code do *not* use
 this API. Two new types are available.
 
@@ -425,26 +666,28 @@ Here is the list of functions that act on packs.
   (a0, a1) ∈ ℝ × ℝ
 - `pack<T, N, SimdExt> shr(pack<T, N, SimdExt> const& a0, int a1);`
   (a0, a1) ∈ ℝ × ℕ
+  Available as operator>>
   Only available for i64, i32, i16, i8, u64, u32, u16, u8
 - `pack<T, N, SimdExt> shl(pack<T, N, SimdExt> const& a0, int a1);`
   (a0, a1) ∈ ℝ × ℕ
+  Available as operator<<
   Only available for i64, i32, i16, i8, u64, u32, u16, u8
 - `packl<T, N, SimdExt> eq(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
   (a0, a1) ∈ ℝ × ℝ
   Available as operator==
-- `packl<T, N, SimdExt> neq(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+- `packl<T, N, SimdExt> ne(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
   (a0, a1) ∈ ℝ × ℝ
   Available as operator!=
 - `packl<T, N, SimdExt> gt(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
   (a0, a1) ∈ ℝ × ℝ
   Available as operator>
-- `packl<T, N, SimdExt> geq(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+- `packl<T, N, SimdExt> ge(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
   (a0, a1) ∈ ℝ × ℝ
   Available as operator>=
 - `packl<T, N, SimdExt> lt(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
   (a0, a1) ∈ ℝ × ℝ
   Available as operator<
-- `packl<T, N, SimdExt> leq(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+- `packl<T, N, SimdExt> le(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
   (a0, a1) ∈ ℝ × ℝ
   Available as operator<=
 - `pack<T, N, SimdExt> if_else1(packl<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1, pack<T, N, SimdExt> const& a2);`
@@ -479,6 +722,12 @@ Here is the list of functions that act on packs.
   a0 ∈ 𝔹
 - `pack<T, N, SimdExt> cvt(pack<T, N, SimdExt> const& a0);`
   a0 ∈ ℝ
+- `pack<T, N, SimdExt> upcvt(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for i8, u8, i16, u16, f16, i32, u32, f32
+- `pack<T, N, SimdExt> downcvt(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+  Only available for i16, u16, f16, i32, u32, f32, i64, u64, f64
 - `pack<T, N, SimdExt> rec(pack<T, N, SimdExt> const& a0);`
   a0 ∈ ℝ∖{0}
   Only available for f64, f32, f16
@@ -490,4 +739,239 @@ Here is the list of functions that act on packs.
   Only available for f64, f32, f16
 - `pack<T, N, SimdExt> rsqrt11(pack<T, N, SimdExt> const& a0);`
   a0 ∈ [0, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> ziplo(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+- `pack<T, N, SimdExt> ziphi(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+- `pack<T, N, SimdExt> zip(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+- `pack<T, N, SimdExt> unziplo(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+- `pack<T, N, SimdExt> unziphi(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+- `pack<T, N, SimdExt> unzip(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ
+- `pack<T, N, SimdExt> to_mask(packl<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+- `packl<T, N, SimdExt> to_logical(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+- `pack<T, N, SimdExt> cos(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cosd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cospi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acos(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acosd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acospi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cosh(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acosh(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sin(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sinpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sind(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asin(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asind(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asinpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sinh(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asinh(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> tan(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> tand(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> tanpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atan(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atand(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atanpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> tanh(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atanh(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, 1)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sinc(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sincpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sinhc(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atan2(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atan2d(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> atan2pi(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cot(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cotd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cotpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acot(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acotd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acotpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> coth(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acoth(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> csc(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cscd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> cscpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅z}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acsc(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acscd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acscpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1) ⋃ (1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> csch(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> acsch(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sec(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> secd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> secpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{z∈ℤ:π⋅(z+0.5)}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asec(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1] ⋃ [1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asecd(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1] ⋃ [1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asecpi(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-∞, -1] ⋃ [1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> sech(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> asech(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (0, 1]
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> pow_abs(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> pow(pack<T, N, SimdExt> const& a0, pack<T, N, SimdExt> const& a1);`
+  (a0, a1) ∈ ℝ × ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> exp(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> exp2(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> exp10(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> expm1(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> exprecnegc(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> exprecneg(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{0}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> expx2(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> log(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (0, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> log2(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (0, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> log10(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (0, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> log1p(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ (-1, +∞)
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> gamma(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{n∈ℕ:-n}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> lgamma(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ∖{n∈ℕ:-n}
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> stirling(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> erf(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> erfc(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
+  Only available for f64, f32, f16
+- `pack<T, N, SimdExt> erfcx(pack<T, N, SimdExt> const& a0);`
+  a0 ∈ ℝ
   Only available for f64, f32, f16

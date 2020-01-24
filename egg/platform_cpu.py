@@ -95,6 +95,14 @@ def get_additional_include(func, platform, simd_ext):
     elif func in ['']:
         return '''#include <nsimd/cpu/cpu/reinterpret.h>
                   '''
+    elif func == 'zip':
+        return '''#include <nsimd/cpu/cpu/ziplo.h>
+                  #include <nsimd/cpu/cpu/ziphi.h>
+                  '''
+    elif func == 'unzip':
+         return '''#include <nsimd/cpu/cpu/unziplo.h>
+                   #include <nsimd/cpu/cpu/unziphi.h>
+                  '''
     return ''
 
 # -----------------------------------------------------------------------------
@@ -690,7 +698,7 @@ def zip_half(func, typ):
 
 # -----------------------------------------------------------------------------
 
-def unzip(func, typ):
+def unzip_half(func, typ):
   n = get_nb_el(typ)
   content = ''
   if int(n/2) != 0:
@@ -716,6 +724,21 @@ def unzip(func, typ):
     return '''(void)({in1});
               return {in0};'''.format(**fmtspec)
 
+def zip(from_typ):
+    return '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_ziplo_cpu_{typ}({in0}, {in1});
+    ret.v1 = nsimd_ziphi_cpu_{typ}({in0}, {in1});
+    return ret;
+    '''.format(**fmtspec)
+
+def unzip(from_typ):
+    return '''\
+    nsimd_{simd_ext}_v{typ}x2 ret;
+    ret.v0 = nsimd_unziplo_cpu_{typ}({in0}, {in1});
+    ret.v1 = nsimd_unziphi_cpu_{typ}({in0}, {in1});
+    return ret;
+    '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -814,8 +837,10 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'to_mask': lambda: to_mask1(from_typ),
         'ziplo': lambda: zip_half('ziplo', from_typ),
         'ziphi': lambda: zip_half('ziphi', from_typ),
-        'unziplo': lambda: unzip('unziplo', from_typ),
-        'unziphi': lambda: unzip('unziphi', from_typ)
+        'unziplo': lambda: unzip_half('unziplo', from_typ),
+        'unziphi': lambda: unzip_half('unziphi', from_typ),
+        'zip' : lambda : zip(from_typ),
+        'unzip' : lambda : unzip(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

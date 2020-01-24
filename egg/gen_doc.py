@@ -22,14 +22,15 @@
 # SOFTWARE.
 
 import os
+import platform
 import io
 import sys
 import subprocess
 import common
 import collections
-import json
 import operators
 import re
+import string
 
 categories = operators.categories
 operators = operators.operators
@@ -44,13 +45,15 @@ def get_command_output(args):
 
 # -----------------------------------------------------------------------------
 
-def gen_readme(opts):
-    print('-- Generating documentation in DOC.md')
-    filename = os.path.join(opts.script_dir, '..', 'DOC.md')
+def gen_overview(opts):
+    filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
+                            'overview.md')
     if not common.can_create_filename(opts, filename):
         return
-    with io.open(filename, mode='w', encoding='utf-8') as fout:
-        fout.write('''## NSIMD scalar types
+    with common.open_utf8(opts, filename) as fout:
+        fout.write('''# Overview
+
+## NSIMD scalar types
 
 Their names follows the following pattern: `Sxx` where
 
@@ -263,7 +266,7 @@ Here is the list of functions that act on packs.
                     fout.write('  ({}) ∈ {}\n'.format(param, operator.domain))
 
             if operator.cxx_operator:
-                fout.write('  Available as {}\n'.format(operator.cxx_operator))
+                fout.write('  Available as `{}`\n'.format(operator.cxx_operator))
 
             if len(operator.types) < len(common.types):
                 typs = ', '.join(['{}'.format(t) for t in operator.types])
@@ -271,135 +274,288 @@ Here is the list of functions that act on packs.
 
 # -----------------------------------------------------------------------------
 
+#def gen_doc_json(opts):
+#    sys.stdout.write('-- Generating doc for each functions\n')
+#    dirname = os.path.join(opts.script_dir, '..','doc')
+#    common.mkdir_p(dirname)
+#
+#    # Root node first
+#    obj = collections.OrderedDict()
+#    obj['title'] = 'Root node'
+#    obj['sig'] = []
+#    obj['lang'] = ''
+#    obj['categories'] = []
+#    obj['desc'] = []
+#    obj['parent'] = ''
+#    obj['id'] = '/'
+#    obj['type'] = 'root'
+#    obj['title'] = 'Root node'
+#    filename = os.path.join(dirname, 'root.json')
+#    if common.can_create_filename(opts, filename):
+#        with io.open(filename, mode='w', encoding='utf-8') as fout:
+#            fout.write(json.dumps(obj, ensure_ascii=False))
+#
+#    # Categories first
+#    for name, cat in categories.items():
+#        filename = os.path.join(dirname, '{}.json'.format(name))
+#        ## Check if we need to create the file
+#        if not common.can_create_filename(opts, filename):
+#            continue
+#
+#        obj = collections.OrderedDict()
+#        obj['title'] = cat.name
+#        obj['sig'] = []
+#        obj['lang'] = ''
+#        obj['categories'] = []
+#        obj['desc'] = []
+#        obj['parent'] = '/'
+#        obj['id'] = '/{}'.format(name)
+#        obj['type'] = 'category'
+#        obj['title'] = cat.title
+#        with io.open(filename, mode='w', encoding='utf-8') as fout:
+#            fout.write(json.dumps(obj, ensure_ascii=False))
+#
+#    # APIs
+#    for api in ['c_base', 'cxx_base', 'cxx_adv']:
+#        filename = os.path.join(dirname, '{}.json'.format(api))
+#        if common.can_create_filename(opts, filename):
+#            l = collections.OrderedDict()
+#            l['title'] = {'c_base': 'C API', 'cxx_base': 'C++ base API',
+#                          'cxx_adv': 'C++ advanced API'}[api]
+#            l['id'] = '/{}'.format(api)
+#            l['parent'] = '/'
+#            l['sig'] = []
+#            l['type'] = ''
+#            l['desc'] = []
+#            l['categories'] = []
+#            l['lang'] = 'C' if api == 'c' else 'C++'
+#            with io.open(filename, mode='w', encoding='utf-8') as fout:
+#                fout.write(json.dumps(l, ensure_ascii=False))
+#
+#    # Operators (one file per operator otherwise too much files)
+#    for op_name, operator in operators.items():
+#        ## Skip non-matching doc
+#        if opts.match and not opts.match.match(op_name):
+#            continue
+#
+#        filename = os.path.join(dirname, '{}.json'.format(op_name))
+#        cats = ['/{}'.format(c.name) for c in operator.categories]
+#        withdoc_id = '/{}'.format(op_name)
+#        doc_blocks = []
+#        obj = collections.OrderedDict()
+#
+#        # All is withdoc'ed with this docblock which has no desc, no sig...
+#        obj = collections.OrderedDict()
+#        obj['id'] = withdoc_id
+#        obj['desc'] = [operator.desc]
+#        obj['sig'] = []
+#        obj['parent'] = '/'
+#        obj['categories'] = cats
+#        obj['type'] = 'function'
+#        obj['title'] = operator.full_name
+#        obj['lang'] = ''
+#        doc_blocks.append(obj)
+#
+#        def to_list(var):
+#            ret = [var] if type(var) == str or not hasattr(var, '__iter__') \
+#                        else list(var)
+#            for i in range(0, len(ret)):
+#                ret[i] = re.sub('[ \n\t\r]+', ' ', ret[i])
+#            return ret
+#
+#        # All base C/C++ functions (for each architecture and type)
+#        for api in ['c_base', 'cxx_base']:
+#            for simd_ext in common.simds:
+#                for typ in operator.types:
+#                    obj = collections.OrderedDict()
+#                    obj['id'] = '/{}-{}-{}-{}'.format(op_name, api, simd_ext,
+#                                                      typ)
+#                    obj['desc'] = []
+#                    obj['parent'] = '/{}'.format(api)
+#                    obj['categories'] = cats
+#                    obj['type'] = 'function'
+#                    obj['withdoc'] = withdoc_id
+#                    obj['sig'] = to_list(operator.get_signature(typ, api,
+#                                                                simd_ext))
+#                    obj['title'] = ''
+#                    obj['lang'] = common.ext_from_lang(api)
+#                    doc_blocks.append(obj)
+#
+#        # C/C++ base/advanced generic functions
+#        for api in ['c_base', 'cxx_base', 'cxx_adv']:
+#            obj = collections.OrderedDict()
+#            obj['id'] = '/{}-{}'.format(op_name, api)
+#            obj['desc'] = []
+#            obj['parent'] = '/{}'.format(api)
+#            obj['categories'] = cats
+#            obj['type'] = 'function'
+#            obj['withdoc'] = withdoc_id
+#            obj['sig'] = to_list(operator.get_generic_signature(api) \
+#                                 if api != 'cxx_adv' else \
+#                                 operator.get_generic_signature(api).values())
+#            obj['title'] = ''
+#            obj['lang'] = common.ext_from_lang(api)
+#            doc_blocks.append(obj)
+#
+#        # Finally dump JSON
+#        with io.open(filename, mode='w', encoding='utf-8') as fout:
+#            fout.write(json.dumps(doc_blocks, ensure_ascii=False))
+
+# -----------------------------------------------------------------------------
+
 def gen_doc(opts):
-    sys.stdout.write('-- Generating doc for each functions\n')
-    dirname = os.path.join(opts.script_dir, '..','doc')
-    common.mkdir_p(dirname)
+    sys.stdout.write('-- Generating doc for each function\n')
 
-    # Root node first
-    obj = collections.OrderedDict()
-    obj['title'] = 'Root node'
-    obj['sig'] = []
-    obj['lang'] = ''
-    obj['categories'] = []
-    obj['desc'] = []
-    obj['parent'] = ''
-    obj['id'] = '/'
-    obj['type'] = 'root'
-    obj['title'] = 'Root node'
-    filename = os.path.join(dirname, 'root.json')
+    # Build tree for api.md
+    api = dict()
+    for _, operator in operators.items():
+        for c in operator.categories:
+            if c not in api:
+                api[c] = [operator]
+            else:
+                api[c].append(operator)
+
+    # helper to construct filename for operator
+    def to_filename(op_name):
+        valid = string.ascii_letters + string.digits
+        ret = ''
+        for c in op_name:
+            ret += '-' if c not in valid else c
+        return ret
+
+    # api.md
+    filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
     if common.can_create_filename(opts, filename):
-        with io.open(filename, mode='w', encoding='utf-8') as fout:
-            fout.write(json.dumps(obj, ensure_ascii=False))
+        with common.open_utf8(opts, filename) as fout:
+            fout.write('# API\n')
+            for c, ops in api.items():
+                if len(ops) == 0:
+                    continue
+                fout.write('\n## {}\n\n'.format(c.title))
+                for op in ops:
+                    Full_name = op.full_name[0].upper() + op.full_name[1:]
+                    fout.write('- [{} ({})](api_{}.md)\n'.format(
+                        Full_name, op.name, to_filename(op.name)))
 
-    # Categories first
-    for name, cat in categories.items():
-        filename = os.path.join(dirname, '{}.json'.format(name))
-        ## Check if we need to create the file
-        if not common.can_create_filename(opts, filename):
-            continue
+    # helper to get list of function signatures
+    def to_string(var):
+        sigs = [var] if type(var) == str or not hasattr(var, '__iter__') \
+                     else list(var)
+        for i in range(0, len(sigs)):
+            sigs[i] = re.sub('[ \n\t\r]+', ' ', sigs[i])
+        return '\n'.join(sigs)
 
-        obj = collections.OrderedDict()
-        obj['title'] = cat.name
-        obj['sig'] = []
-        obj['lang'] = ''
-        obj['categories'] = []
-        obj['desc'] = []
-        obj['parent'] = '/'
-        obj['id'] = '/{}'.format(name)
-        obj['type'] = 'category'
-        obj['title'] = cat.title
-        with io.open(filename, mode='w', encoding='utf-8') as fout:
-            fout.write(json.dumps(obj, ensure_ascii=False))
-
-    # APIs
-    for api in ['c_base', 'cxx_base', 'cxx_adv']:
-        filename = os.path.join(dirname, '{}.json'.format(api))
-        if common.can_create_filename(opts, filename):
-            l = collections.OrderedDict()
-            l['title'] = {'c_base': 'C API', 'cxx_base': 'C++ base API',
-                          'cxx_adv': 'C++ advanced API'}[api]
-            l['id'] = '/{}'.format(api)
-            l['parent'] = '/'
-            l['sig'] = []
-            l['type'] = ''
-            l['desc'] = []
-            l['categories'] = []
-            l['lang'] = 'C' if api == 'c' else 'C++'
-            with io.open(filename, mode='w', encoding='utf-8') as fout:
-                fout.write(json.dumps(l, ensure_ascii=False))
-
-    # Operators (one file per operator otherwise too much files)
+    # Operators (one file per operator)
+    dirname = os.path.join(opts.script_dir, '..','doc', 'markdown')
+    common.mkdir_p(dirname)
     for op_name, operator in operators.items():
-        ## Skip non-matching doc
+        # Skip non-matching doc
         if opts.match and not opts.match.match(op_name):
             continue
-
-        filename = os.path.join(dirname, '{}.json'.format(op_name))
-        cats = ['/{}'.format(c.name) for c in operator.categories]
-        withdoc_id = '/{}'.format(op_name)
-        doc_blocks = []
-        obj = collections.OrderedDict()
-
-        # All is withdoc'ed with this docblock which has no desc, no sig...
-        obj = collections.OrderedDict()
-        obj['id'] = withdoc_id
-        obj['desc'] = [operator.desc]
-        obj['sig'] = []
-        obj['parent'] = '/'
-        obj['categories'] = cats
-        obj['type'] = 'function'
-        obj['title'] = operator.full_name
-        obj['lang'] = ''
-        doc_blocks.append(obj)
-
-        def to_list(var):
-            ret = [var] if type(var) == str or not hasattr(var, '__iter__') \
-                        else list(var)
-            for i in range(0, len(ret)):
-                ret[i] = re.sub('[ \n\t\r]+', ' ', ret[i])
-            return ret
-
-        # All base C/C++ functions (for each architecture and type)
-        for api in ['c_base', 'cxx_base']:
-            for simd_ext in common.simds:
+        filename = os.path.join(dirname, 'api_{}.md'.format(to_filename(
+                       operator.name)))
+        if not common.can_create_filename(opts, filename):
+            continue
+        Full_name = operator.full_name[0].upper() + operator.full_name[1:]
+        with common.open_utf8(opts, filename) as fout:
+            fout.write('# {}\n\n'.format(Full_name))
+            fout.write('## Description\n\n')
+            fout.write(operator.desc)
+            fout.write('\n\n## C base API (generic)\n\n')
+            fout.write('```c\n')
+            fout.write(to_string(operator.get_generic_signature('c_base')))
+            fout.write('\n```\n\n')
+            fout.write('## C++ base API (generic)\n\n')
+            fout.write('```c++\n')
+            fout.write(to_string(operator.get_generic_signature('cxx_base')))
+            fout.write('\n```\n\n')
+            fout.write('## C++ advanced API\n\n')
+            fout.write('```c++\n')
+            fout.write(to_string(operator.get_generic_signature('cxx_adv'). \
+                                 values()))
+            fout.write('\n```\n\n')
+            fout.write('## C base API (architecture specifics)')
+            for simd_ext in opts.simd:
+                fout.write('\n\n### {}\n\n'.format(simd_ext.upper()))
+                fout.write('```c\n')
                 for typ in operator.types:
-                    obj = collections.OrderedDict()
-                    obj['id'] = '/{}-{}-{}-{}'.format(op_name, api, simd_ext,
-                                                      typ)
-                    obj['desc'] = []
-                    obj['parent'] = '/{}'.format(api)
-                    obj['categories'] = cats
-                    obj['type'] = 'function'
-                    obj['withdoc'] = withdoc_id
-                    obj['sig'] = to_list(operator.get_signature(typ, api,
-                                                                simd_ext))
-                    obj['title'] = ''
-                    obj['lang'] = common.ext_from_lang(api)
-                    doc_blocks.append(obj)
+                    fout.write(operator.get_signature(typ, 'c_base', simd_ext))
+                    fout.write(';\n')
+                fout.write('```')
+            fout.write('\n\n## C++ base API (architecture specifics)')
+            for simd_ext in opts.simd:
+                fout.write('\n\n### {}\n\n'.format(simd_ext.upper()))
+                fout.write('```c\n')
+                for typ in operator.types:
+                    fout.write(operator.get_signature(typ, 'cxx_base',
+                                                      simd_ext))
+                    fout.write(';\n')
+                fout.write('```')
 
-        # C/C++ base/advanced generic functions
-        for api in ['c_base', 'cxx_base', 'cxx_adv']:
-            obj = collections.OrderedDict()
-            obj['id'] = '/{}-{}'.format(op_name, api)
-            obj['desc'] = []
-            obj['parent'] = '/{}'.format(api)
-            obj['categories'] = cats
-            obj['type'] = 'function'
-            obj['withdoc'] = withdoc_id
-            obj['sig'] = to_list(operator.get_generic_signature(api) \
-                                 if api != 'cxx_adv' else \
-                                 operator.get_generic_signature(api).values())
-            obj['title'] = ''
-            obj['lang'] = common.ext_from_lang(api)
-            doc_blocks.append(obj)
+# -----------------------------------------------------------------------------
 
-        # Finally dump JSON
-        with io.open(filename, mode='w', encoding='utf-8') as fout:
-            fout.write(json.dumps(doc_blocks, ensure_ascii=False))
+def gen_html(opts):
+    print('-- Generating HTML documentation')
+
+    # check if md2html exists
+    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+    full_path_md2html = os.path.join(doc_dir, md2html)
+    if not os.path.isfile(full_path_md2html):
+        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
+        if platform.system() == 'Windows':
+            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+        else:
+            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
+        print(msg)
+        return
+
+    # get all markdown files
+    md_dir = os.path.join(doc_dir, 'markdown')
+    html_dir = os.path.join(doc_dir, 'html')
+    common.mkdir_p(html_dir)
+    dirs = [md_dir]
+    md_files = []
+    while len(dirs) > 0:
+        curr_dir = dirs.pop()
+        entries = os.listdir(curr_dir)
+        for entry in entries:
+            full_path_entry = os.path.join(curr_dir, entry)
+            if full_path_entry == '..' or full_path_entry == '.':
+                continue
+            elif os.path.isdir(full_path_entry):
+                dirs.append(os.path.join(full_path_entry))
+            elif entry.endswith('.md'):
+                md_files.append(full_path_entry)
+
+    # get footer and header
+    header = ''
+    with io.open(os.path.join(doc_dir, 'header.html'), mode='r',
+                 encoding='utf-8') as fin:
+        header = fin.read()
+    footer = ''
+    with io.open(os.path.join(doc_dir, 'footer.html'), mode='r',
+                 encoding='utf-8') as fin:
+        footer = fin.read()
+
+    # run md2html on all markdown files and build final htmls
+    tmp_file = os.path.join(doc_dir, 'tmp.html')
+    for filename in md_files:
+        i = filename.rfind('markdown')
+        if i == -1:
+            continue
+        output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
+        common.mkdir_p(os.path.dirname(output))
+        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
+        with common.open_utf8(opts, output) as fout:
+            fout.write(header)
+            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                fout.write(fin.read())
+            fout.write(footer)
 
 # -----------------------------------------------------------------------------
 
 def doit(opts):
-    gen_readme(opts)
+    gen_overview(opts)
     gen_doc(opts)
+    gen_html(opts)

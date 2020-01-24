@@ -203,6 +203,10 @@ def parse_args(args):
         action = 'store_true',
         default=None,
         help='Enable verbose mode')
+    parser.add_argument('--simple-license', '-l',
+        action='store_true',
+        default=False,
+        help='Put a simple copyright statement instead of the whole license')
     return parser.parse_args(args)
 
 # -----------------------------------------------------------------------------
