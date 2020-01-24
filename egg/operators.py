@@ -1176,8 +1176,6 @@ class Adds(Operator):
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated sum of the two vectors given as arguments'
-    bench_auto_against_std = True
-    bench_auto_against_mipp = True
 
 class Subs(Operator):
     full_name = 'subtraction using saturation'
@@ -1185,8 +1183,6 @@ class Subs(Operator):
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
-    bench_auto_against_std = True
-    bench_auto_against_mipp = True
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
