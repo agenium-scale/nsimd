@@ -1152,7 +1152,6 @@ def gen_adds(opts, op, typ, lang, ulps):
 
     head = '''
               {includes}
-              #include <limits.h>
               #include <assert.h>
 
               #define SIZE (2048 / {sizeof})
@@ -1557,7 +1556,6 @@ def gen_subs(opts, op, typ, lang, ulps):
 
     head = '''
               {includes}
-              #include <limits.h>
               #include <assert.h>
 
               #define SIZE (2048 / {sizeof})

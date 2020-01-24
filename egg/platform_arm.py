@@ -227,6 +227,12 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/unziplo.h>
                   #include <nsimd/arm/{simd_ext}/unziphi.h>
                   '''.format(**fmtspec)
+    if func == 'adds':
+        ret += '''#include <nsimd/arm/{simd_ext}/add.h>
+                '''.format(**fmtspec)
+    if func == 'subs':
+        ret += '''#include <nsimd/arm/{simd_ext}/sub.h>
+                '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------

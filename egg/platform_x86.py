@@ -238,9 +238,12 @@ def get_additional_include(func, platform, simd_ext):
                     # include <nsimd/x86/{simd_ext}/orb.h>
                     # include <nsimd/x86/{simd_ext}/xorb.h>
                     # include <nsimd/x86/{simd_ext}/notb.h>
-                    # include <nsimd/x86/{simd_ext}/reinterpretl.h>
-                    # include <nsimd/x86/{simd_ext}/ge.h>
                     # include <nsimd/x86/{simd_ext}/if_else1.h>
+                    #if NSIMD_CXX > 0
+                        #include <climits>
+                    #else
+                        #include <limits.h>
+                    #endif
                 ''' .format(**fmtspec)
         if simd_ext in avx512:
             ret += '''
@@ -250,6 +253,10 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''
                     # include <nsimd/x86/{simd_ext}/adds.h>
                     # include <nsimd/x86/{simd_ext}/neg.h>
+                    # include <nsimd/x86/{simd_ext}/sub.h>
+                    # include <nsimd/x86/{simd_ext}/gt.h>
+                    # include <nsimd/x86/{simd_ext}/set1.h>
+                    # include <nsimd/x86/{simd_ext}/if_else1.h>
                 '''.format(**fmtspec)
     return ret
 
