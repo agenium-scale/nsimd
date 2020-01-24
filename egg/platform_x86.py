@@ -1044,7 +1044,7 @@ def shra(simd_ext, typ):
         v1 = nsimd_shra_sse42_{typ}(v1, {in1});
         return _mm256_insertf128_si256(
           _mm256_castsi128_si256(v0), v1, 0x01);'''.format(**fmtspec)
-    
+
     if typ == 'i8':
         # Same thing for i8 on all Intel architectures
         return '''\
@@ -1055,7 +1055,7 @@ def shra(simd_ext, typ):
         {v_typ} v_tmp1 = {pre}srai_epi16({in0}, 8 + {in1});
         v_tmp1 = {pre}slli_epi16(v_tmp1, 8);
         return {pre}or_si{nbits}(v_tmp0, v_tmp1);
-        '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))       
+        '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
     elif typ  == 'i64':
         # For i64 we have to extend the sign manually.
         if simd_ext in ['sse2', 'sse42']:
@@ -1087,7 +1087,7 @@ def shra(simd_ext, typ):
             cast = '(unsigned int)'
         return '''return {pre}srai{suf}({in0}, {cast}{in1});'''. \
                         format(**fmtspec, cast=cast)
-                    
+
 # -----------------------------------------------------------------------------
 # set1 or splat function
 
