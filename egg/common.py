@@ -1,7 +1,7 @@
 # Use utf-8 encoding
 # -*- coding: utf-8 -*-
 
-# copyright (c) 2019 agenium scale
+# Copyright (c) 2020 Agenium Scale
 #
 # permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -78,7 +78,7 @@ def open_utf8(opts, filename):
             if opts.simple_license:
                 fout.write('''{}
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 {}
 
@@ -86,7 +86,7 @@ Copyright (c) 2019 Agenium Scale
             else:
                 fout.write('''{}
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -321,7 +321,7 @@ def enum(l):
     ret = []
     for i in range(0, len(l)):
         ret.append([i, l[i]])
-    return ret;
+    return ret
 
 # -----------------------------------------------------------------------------
 # List of supported SIMD operators/functions
@@ -981,6 +981,20 @@ def sleef_name(name, simd, typ, ulp=None):
             'aarch64': 'advsimd',
         }).get(simd, simd)
     return name
+
+# -----------------------------------------------------------------------------
+# Integer limits per type using macros defined in <limits.h> or <climits>
+
+limits = {
+    'i8':   {'min': 'NSIMD_I8_MIN',     'max': 'NSIMD_I8_MAX'   },
+    'i16':  {'min': 'NSIMD_I16_MIN',    'max': 'NSIMD_I16_MAX'  },
+    'i32':  {'min': 'NSIMD_I32_MIN',    'max': 'NSIMD_I32_MAX'  },
+    'i64':  {'min': 'NSIMD_I64_MIN',    'max': 'NSIMD_I64_MAX'  },
+    'u8':   {'min': 'NSIMD_U8_MIN',     'max': 'NSIMD_U8_MAX'   },
+    'u16':  {'min': 'NSIMD_U16_MIN',    'max': 'NSIMD_U16_MAX'  },
+    'u32':  {'min': 'NSIMD_U32_MIN',    'max': 'NSIMD_U32_MAX'  },
+    'u64':  {'min': 'NSIMD_U64_MIN',    'max': 'NSIMD_U64_MAX'  }
+  }
 
 # -----------------------------------------------------------------------------
 # Misc
