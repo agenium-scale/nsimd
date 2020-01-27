@@ -21,5 +21,12 @@ benches/cxx_adv
 _deps
 _install
 
+## Doc
+/doc/**/api*.md
+/doc/**/*.html
+/doc/md2html
+/doc/**/overview.md
+
+
 ## Ulps
 ulps/
