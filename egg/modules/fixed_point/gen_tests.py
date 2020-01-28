@@ -74,7 +74,7 @@ check = """\
 limits = """\
 template <uint8_t lf, uint8_t rt>
 static double __get_numeric_precision() {
-  return ldexpf(1.0, -(int)rt);
+  return (double)ldexpf(1.0, -(int)rt);
 }
 
 """
@@ -135,8 +135,8 @@ int main() {{
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
     tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
-    tab0_f[i] = float(tab0_fp[i]);
-    tab1_f[i] = float(tab1_fp[i]);
+    tab0_f[i] = double(tab0_fp[i]);
+    tab1_f[i] = double(tab1_fp[i]);
   }}
 
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
@@ -260,9 +260,9 @@ int main() {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
     tab1_fp[i] = __gen_random_val<{lf}, {rt}>();
     tab2_fp[i] = __gen_random_val<{lf}, {rt}>();
-    tab0_f[i] = float(tab0_fp[i]);
-    tab1_f[i] = float(tab1_fp[i]);
-    tab2_f[i] = float(tab2_fp[i]);
+    tab0_f[i] = double(tab0_fp[i]);
+    tab1_f[i] = double(tab1_fp[i]);
+    tab2_f[i] = double(tab2_fp[i]);
   }}
 
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
@@ -328,7 +328,7 @@ int main() {{
 
   for (size_t i = 0; i < v_size; i++) {{
     tab0_fp[i] = __gen_random_val<{lf}, {rt}>();
-    tab0_f[i] = float(tab0_fp[i]);
+    tab0_f[i] = double(tab0_fp[i]);
   }}
 
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);

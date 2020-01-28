@@ -200,6 +200,8 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(**fmtspec)
     if simd_ext in neon and func in ['fms', 'fnms']:
         ret += '''#include <nsimd/arm/{simd_ext}/ne.h>
+                  #include <nsimd/arm/{simd_ext}/fma.h>
+                  #include <nsimd/arm/{simd_ext}/fnma.h>
                   '''.format(**fmtspec)
     if func == 'shra':
         ret += '''#include <nsimd/arm/{simd_ext}/shr.h>
@@ -796,9 +798,10 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}({sign}{in1}));'''.\
                 format(**fmtspec, sign=sign)
         else:
+            
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
-            vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
-            vdupq_n_s{typnbits}((i{typnbits}){sign}{in1})));'''.format(**fmtspec, sign=sign)
+                                vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
+                                vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
@@ -1520,6 +1523,7 @@ def reverse1(simd_ext, typ):
 # Horizontal sum
 
 def addv(simd_ext, typ):
+
     if simd_ext == 'neon128':
         if typ == 'f64':
             return 'return ({typ})({in0}.v0 + {in0}.v1);'.format(**fmtspec)
@@ -1548,6 +1552,17 @@ def addv(simd_ext, typ):
                tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 1));
                return vget_lane_{suf}(tmp, 0);'''. \
                format(t=half_neon_typ(typ), **fmtspec)
+        elif typ[0] in ['i', 'u']:
+            le = 128 // int(typ[1:]);
+            return \
+            '''{typ} res = ({typ})0;
+               {typ} buf[{le}];
+               vst1q_{suf}(buf, {in0});
+               for (int i = 0; i < {le}; i++) {{
+                 res += buf[i];
+               }}
+               return res;'''. \
+               format(le=le, **fmtspec)
     elif simd_ext == 'aarch64':
         if typ == 'f16':
             return \

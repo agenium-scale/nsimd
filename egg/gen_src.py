@@ -51,7 +51,7 @@ def get_put_impl(simd_ext):
     for typ in common.types:
 
         if typ in ['i64', 'u64']:
-            fprintf = '''#ifdef NSIMD_IS_MSVC
+            fprintf = '''#if defined(NSIMD_IS_MSVC ) || (NSIMD_WORD_SIZE == 32)
                            code = fprintf(out, {fmt_msvc}, {val});
                          #else
                            code = fprintf(out, {fmt}, {val});
@@ -61,15 +61,14 @@ def get_put_impl(simd_ext):
             fprintf = 'code = fprintf(out, {fmt}, {val});'. \
                       format(fmt=args[typ][0], val=args[typ][1])
 
-        ret += \
-        '''NSIMD_DLLEXPORT
-           int nsimd_put_{simd_ext}_{typ}(FILE *out, const char *fmt,
-                                          nsimd_{simd_ext}_v{typ} v) {{
+        fmt = '''NSIMD_DLLEXPORT
+           int nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
+                                          nsimd_{simd_ext}_v{l}{typ} v) {{
              using namespace nsimd;
              {typ} buf[max_len<{typ}>];
 
              int n = len({typ}(), {simd_ext}());
-             storeu(buf, v, {typ}(), {simd_ext}());
+             store{l}u(buf, v, {typ}(), {simd_ext}());
              if (fputs("{{ ", out) == EOF) {{
                return -1;
              }}
@@ -97,10 +96,15 @@ def get_put_impl(simd_ext):
              }}
              return ret + 2;
            }}
-
            {hbar}
+           '''
 
-           '''.format(typ=typ, simd_ext=simd_ext, hbar=common.hbar,
+        ret += fmt\
+        .format(typ=typ, l='', simd_ext=simd_ext, hbar=common.hbar,
+                      fprintf=fprintf, val=args[typ][1])
+
+        ret += fmt\
+        .format(typ=typ, l='l', simd_ext=simd_ext, hbar=common.hbar,
                       fprintf=fprintf, val=args[typ][1])
     ret += \
     '''} // extern "C"

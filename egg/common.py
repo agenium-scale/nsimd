@@ -155,7 +155,9 @@ simds = [
     'avx512_skylake',
     'neon128',
     'aarch64',
-    'sve'
+    'sve',
+    'power7',
+    'power8',
 ]
 
 x86_simds = [
@@ -175,6 +177,11 @@ arm_simds = [
     'sve'
 ]
 
+ppc_simds = [
+    'power7',
+    'power8',
+]
+
 simds_deps = {
     'cpu': ['cpu'],
     'sse2': ['cpu', 'sse2'],
@@ -187,6 +194,8 @@ simds_deps = {
     'neon128': ['cpu', 'neon128'],
     'aarch64': ['cpu', 'aarch64'],
     'sve': ['cpu', 'aarch64', 'sve'],
+    'power7': ['cpu', 'power7'],
+    'power8': ['cpu', 'power8'],
 }
 
 ftypes = ['f64', 'f32', 'f16']
@@ -892,6 +901,79 @@ class Domain(object):
             '''.format(type=typ, prefix=prefix_fun_name, n=i, code=nested_code)
         return code
 
+    def gen_rand(self, typ):
+        typlen = typ[1:]
+        ret = ''
+
+        if typ[0] in ('i', 'u'):
+            #TODO: check that random number is in the function domain
+            for u, union in enumerate(self.intervals):
+                ret += \
+                    '''{typ} rand{u}() {{
+                            nat i, r;
+                            u8 *alias;
+                            {typ} ret;
+                            (void)i;
+                            (void)alias;
+                            (void)r;
+                            '''.format(u=u+1, typ=typ)
+
+                for i, interval in enumerate(union):
+                    if interval.logical_:
+                        ret += 'ret = (u8)(rand())%2;'
+                    else:
+                        if not interval.removed:
+                            test='0'
+                        else:
+                            test = '||\n'. \
+                                join(['ret == {}'.format(removed) \
+                                for removed in interval.removed])
+
+                        ret += \
+                         '''do {{
+                                alias = (u8*)(&ret);
+                                for(i=0, r=rand(); i<(r%{it})+1; ++i) {{
+                                    alias[i] = (u8)(rand() & 0xFF);
+                                }}
+                                for(;i<{it}; ++i) {{
+                                    alias[i] = 0u;
+                                }}
+                            }} while ({test});
+                            '''.format(test=test, it=int(typlen)//8)
+
+                ret += 'return ret;}'
+        elif typ in ftypes:
+            #TODO: check that random number is in the function domain
+            for u, union in enumerate(self.intervals):
+                ret += \
+                    '''{typ} rand{u}() {{
+                            nat i;
+                            u8 *alias;
+                            {typ} ret;
+                            (void)i;
+                            (void)alias;
+                            '''.format(u=u+1, typ=typ)
+
+                for i, interval in enumerate(union):
+                    if interval.logical_:
+                        if typ == 'f16':
+                            ret += '''u16 tmp = ((u16)rand()%2);
+                                      memcpy(&ret, &tmp, sizeof(ret));'''
+                        else:
+                            ret += 'ret = ({})(rand()%2);'.format(typ)
+                    else:
+                        ret += \
+                         '''alias = (u8*)(&ret);
+                            for(i=0; i<{it}; ++i) {{
+                                alias[i] = (u8)(rand() & 0xFF);
+                            }}
+                            '''.format(it=int(typlen)//8)
+
+                ret += 'return ret;}'
+
+        return ret
+
+
 # -----------------------------------------------------------------------------
 # Sleef
 
@@ -963,6 +1045,8 @@ def sleef_name(name, simd, typ, ulp=None):
         'neon128': types_128,
         'aarch64': types_128,
         'sve': types_unknown,
+        'power7': types_128,
+        'power8': types_128,
     })[simd][typ]
     ## 4. (We cannot really guess that...
     ##     Instead you have to add bench manually)
