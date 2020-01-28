@@ -20,6 +20,10 @@ tests/cxx_adv
 benches/cxx_adv
 _deps
 _install
+doc/html
+doc/markdown/api_*.md
+doc/md2html
+doc/tmp.html
 
 ## Doc
 /doc/**/api*.md

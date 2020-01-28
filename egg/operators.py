@@ -766,6 +766,14 @@ class Shl(Operator):
     def bench_mipp_name(self, typ):
         return 'mipp::lshift<{}>'.format(typ)
 
+class Shra(Operator):
+    full_name = 'arithmetic right shift'
+    signature = 'v shra v p'
+    types = common.iutypes
+    domain = Domain('R+xN')
+    categories = [DocBitsOperators]
+    desc = 'Performs a right shift operation with sign extension.'
+
 class Eq(Operator):
     full_name = 'compare for equality'
     signature = 'l eq v v'
@@ -1108,7 +1116,7 @@ class Ziplo(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class Ziphi(Operator):
     full_name = 'ziphi'
     signature = 'v ziphi v v'
@@ -1124,7 +1132,7 @@ class Zip(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class Unziplo(Operator):
     full_name = 'unziplo'
     signature = 'v unziplo v v'
@@ -1132,7 +1140,7 @@ class Unziplo(Operator):
     domain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class Unziphi(Operator):
     full_name = 'unziphi'
     signature = 'v unziphi v v'
@@ -1148,7 +1156,7 @@ class Unzip(Operator):
     fomain = Domain('R')
     categories = [DocMisc]
     do_bench = False
-    
+
 class ToMask(Operator):
     full_name = 'build mask from logicals'
     signature = 'v to_mask l'
@@ -1165,6 +1173,20 @@ class ToLogical(Operator):
     desc = 'Returns a vector of logicals. Set true when the corresponding ' + \
            'elements are non zero (at least one bit to 1) and false ' + \
            'otherwise.'
+
+class Adds(Operator):
+    full_name = 'addition using saturation'
+    signature = 'v adds v v'
+    domain = Domain('RxR')
+    categories = [DocBasicArithmetic]
+    desc = 'Returns the saturated sum of the two vectors given as arguments'
+
+class Subs(Operator):
+    full_name = 'subtraction using saturation'
+    signature = 'v subs v v'
+    domain = Domain('RxR')
+    categories = [DocBasicArithmetic]
+    desc = 'Returns the saturated subtraction of the two vectors given as arguments'
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
