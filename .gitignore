@@ -22,8 +22,9 @@ _install
 doc/html
 doc/md2html
 doc/tmp.html
-doc/markdown/api_.md
-doc/markdiwn/module_fixed_point_api*.md
+doc/markdown/api*.md
+doc/markdown/module_fixed_point_api*.md
+doc/markdown/module_fixed_point_overview.md
 
 ## Ulps
 ulps/
