@@ -98,7 +98,7 @@ Here is a minimal example([main.cpp](../src/module_fixed_point_example.cpp)) :
 
 To test with avx2 run : 
 ```bash
-export NSIMD_ROOT=<path/to/simd>
+export NSIMD_ROOT=<path/to/nsimd>
 g++ -o main -I$NSIMD_ROOT/include -mavx2 -DNSIMD_AVX2 main.cpp
 ./main
 ```
@@ -227,8 +227,9 @@ def gen_api(opts):
 
             for op in ops:
                 fout.write(
-                    '- [{full_name} ({op_name})](module_fixed_point_api_{op_name}.md)\n'\
-                           .format(full_name=op.full_name, op_name=op.name))
+                    '- [{} ({})](module_fixed_point_api_{}.md)\n'\
+                           .format(op.full_name, op.name,
+                                   common.to_filename(op.name)))
     
 def gen_doc(opts):
     for op in operators:

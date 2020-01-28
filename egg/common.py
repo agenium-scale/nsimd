@@ -40,6 +40,7 @@ import sys
 import io
 import collections
 import platform
+import string
 
 # -----------------------------------------------------------------------------
 # check if file exists
@@ -1056,6 +1057,13 @@ doc_footer = '''\
 </html>
 '''
 
+def to_filename(op_name):
+    valid = string.ascii_letters + string.digits
+    ret = ''
+    for c in op_name:
+        ret += '-' if c not in valid else c
+    return ret
+
 def get_html_header(title='', module='', links={}):
     additional_links=''
     if(module != ''):
@@ -1071,36 +1079,40 @@ def get_html_footer():
 def get_markdown_dir(opts):
     return os.path.join(opts.script_dir, '..', 'doc', 'markdown')
 
-def get_markdown_api_file(opts, operator, module=''):
+def get_markdown_api_file(opts, name, module=''):
     root = get_markdown_dir(opts)
+    op_name = to_filename(name)
     if module == '':
-        return os.path.join(root, 'api_{}.md'.format(operator))
+        return os.path.join(root, 'api_{}.md'.format(op_name))
     else:
-        return os.path.join(root, 'module_{}_api_{}.md'.format(module, operator))
+        return os.path.join(root, 'module_{}_api_{}.md'.format(module, op_name))
 
 def get_markdown_file(opts, name, module=''):
     root =  get_markdown_dir(opts)
+    op_name = to_filename(name)
     if module == '':
-        return os.path.join(root, '{}.md'.format(name))
+        return os.path.join(root, '{}.md'.format(op_name))
     else:
-        return os.path.join(root, 'module_{}_{}.md'.format(module, name))    
+        return os.path.join(root, 'module_{}_{}.md'.format(module, op_name))    
 
 def get_html_dir(opts):
     return os.path.join(opts.script_dir, '..', 'doc', 'html')
 
-def get_html_api_file(opts, operator, module=''):
+def get_html_api_file(opts, name, module=''):
     root = get_html_dir(opts)
+    op_name = to_filename(name)
     if module == '':
-        return os.path.join(root, 'api_{}.html'.format(operator))
+        return os.path.join(root, 'api_{}.html'.format(op_name))
     else:
-        return os.path.join(root, 'module_{}_api_{}.html'.format(module, operator))
+        return os.path.join(root, 'module_{}_api_{}.html'.format(module, op_name))
 
 def get_html_file(opts, name, module=''):
     root = get_html_dir(opts)
+    op_name = to_filename(name)
     if module == '':
-        return os.path.join(root, '{}.html'.format(name))
+        return os.path.join(root, '{}.html'.format(op_name))
     else:
-        return os.path.join(root, 'module_{}_{}.html'.format(module, name))
+        return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
 
 def gen_doc_html(opts, title, module='', links={}):
     # check if md2html exists

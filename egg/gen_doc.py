@@ -46,8 +46,9 @@ def get_command_output(args):
 # -----------------------------------------------------------------------------
 
 def gen_overview(opts):
-    filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-                            'overview.md')
+    # filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
+    #                         'overview.md')
+    filename = common.get_markdown_file(opts, 'overview')
     if not common.can_create_filename(opts, filename):
         return
     with common.open_utf8(opts, filename) as fout:
@@ -416,15 +417,16 @@ def gen_doc(opts):
                 api[c].append(operator)
 
     # helper to construct filename for operator
-    def to_filename(op_name):
-        valid = string.ascii_letters + string.digits
-        ret = ''
-        for c in op_name:
-            ret += '-' if c not in valid else c
-        return ret
+    # def to_filename(op_name):
+    #     valid = string.ascii_letters + string.digits
+    #     ret = ''
+    #     for c in op_name:
+    #         ret += '-' if c not in valid else c
+    #     return ret
 
     # api.md
-    filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
+    # filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
+    filename = common.get_markdown_file(opts, 'api')
     if common.can_create_filename(opts, filename):
         with common.open_utf8(opts, filename) as fout:
             fout.write('# API\n')
@@ -435,7 +437,7 @@ def gen_doc(opts):
                 for op in ops:
                     Full_name = op.full_name[0].upper() + op.full_name[1:]
                     fout.write('- [{} ({})](api_{}.md)\n'.format(
-                        Full_name, op.name, to_filename(op.name)))
+                        Full_name, op.name, common.to_filename(op.name)))
 
     # helper to get list of function signatures
     def to_string(var):
@@ -446,14 +448,16 @@ def gen_doc(opts):
         return '\n'.join(sigs)
 
     # Operators (one file per operator)
-    dirname = os.path.join(opts.script_dir, '..','doc', 'markdown')
+    # dirname = os.path.join(opts.script_dir, '..','doc', 'markdown')
+    dirname = common.get_markdown_dir(opts)
     common.mkdir_p(dirname)
     for op_name, operator in operators.items():
         # Skip non-matching doc
         if opts.match and not opts.match.match(op_name):
             continue
-        filename = os.path.join(dirname, 'api_{}.md'.format(to_filename(
-                       operator.name)))
+        # filename = os.path.join(dirname, 'api_{}.md'.format(common.to_filename(
+        #                operator.name)))
+        filename = common.get_markdown_api_file(opts, operator.name)
         if not common.can_create_filename(opts, filename):
             continue
         Full_name = operator.full_name[0].upper() + operator.full_name[1:]
