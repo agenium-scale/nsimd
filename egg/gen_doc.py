@@ -496,69 +496,70 @@ def gen_doc(opts):
 
 def gen_html(opts):
     print('-- Generating HTML documentation')
-
-    # check if md2html exists
-    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
-    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
-    full_path_md2html = os.path.join(doc_dir, md2html)
-    if not os.path.isfile(full_path_md2html):
-        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
-        if platform.system() == 'Windows':
-            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
-        else:
-            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
-        print(msg)
-        return
-
-    # get all markdown files
-    md_dir = os.path.join(doc_dir, 'markdown')
-    html_dir = os.path.join(doc_dir, 'html')
-    common.mkdir_p(html_dir)
-    dirs = [md_dir]
-    md_files = []
-    while len(dirs) > 0:
-        curr_dir = dirs.pop()
-        entries = os.listdir(curr_dir)
-        for entry in entries:
-            full_path_entry = os.path.join(curr_dir, entry)
-            if full_path_entry == '..' or full_path_entry == '.':
-                continue
-            elif os.path.isdir(full_path_entry):
-                continue
-            # Commented because currently, the only subdir is 'modules', and we
-            # don't want to iterate on it here. If needed, just ensure that the
-            # 'modules' directory is not explored.
-            # -----------------------------------------------------------------
-            # elif os.path.isdir(full_path_entry):
-            #     dirs.append(os.path.join(full_path_entry))
-            elif entry.endswith('.md'):
-                md_files.append(full_path_entry)
-
-    # get footer and header
-    header = ''
-    with io.open(os.path.join(doc_dir, 'header.html'), mode='r',
-                 encoding='utf-8') as fin:
-        header = fin.read()
-    footer = ''
-    with io.open(os.path.join(doc_dir, 'footer.html'), mode='r',
-                 encoding='utf-8') as fin:
-        footer = fin.read()
-
-    # run md2html on all markdown files and build final htmls
-    tmp_file = os.path.join(doc_dir, 'tmp.html')
-    for filename in md_files:
-        i = filename.rfind('markdown')
-        if i == -1:
-            continue
-        output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
-        common.mkdir_p(os.path.dirname(output))
-        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
-        with common.open_utf8(opts, output) as fout:
-            fout.write(header)
-            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
-                fout.write(fin.read())
-            fout.write(footer)
-
+    common.gen_doc_html(opts, 'NSIMD documentation')
+    
+# # check if md2html exists
+# md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+# doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+# full_path_md2html = os.path.join(doc_dir, md2html)
+# if not os.path.isfile(full_path_md2html):
+#     msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
+#     if platform.system() == 'Windows':
+#         msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+#     else:
+#         msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
+#     print(msg)
+#     return
+# 
+# # get all markdown files
+# md_dir = os.path.join(doc_dir, 'markdown')
+# html_dir = os.path.join(doc_dir, 'html')
+# common.mkdir_p(html_dir)
+# dirs = [md_dir]
+# md_files = []
+# while len(dirs) > 0:
+#     curr_dir = dirs.pop()
+#     entries = os.listdir(curr_dir)
+#     for entry in entries:
+#         full_path_entry = os.path.join(curr_dir, entry)
+#         if full_path_entry == '..' or full_path_entry == '.':
+#             continue
+#         elif os.path.isdir(full_path_entry):
+#             continue
+#         # Commented because currently, the only subdir is 'modules', and we
+#         # don't want to iterate on it here. If needed, just ensure that the
+#         # 'modules' directory is not explored.
+#         # -----------------------------------------------------------------
+#         # elif os.path.isdir(full_path_entry):
+#         #     dirs.append(os.path.join(full_path_entry))
+#         elif entry.endswith('.md'):
+#             md_files.append(full_path_entry)
+# 
+# # get footer and header
+# header = ''
+# with io.open(os.path.join(doc_dir, 'header.html'), mode='r',
+#              encoding='utf-8') as fin:
+#     header = fin.read()
+# footer = ''
+# with io.open(os.path.join(doc_dir, 'footer.html'), mode='r',
+#              encoding='utf-8') as fin:
+#     footer = fin.read()
+# 
+# # run md2html on all markdown files and build final htmls
+# tmp_file = os.path.join(doc_dir, 'tmp.html')
+# for filename in md_files:
+#     i = filename.rfind('markdown')
+#     if i == -1:
+#         continue
+#     output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
+#     common.mkdir_p(os.path.dirname(output))
+#     os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
+#     with common.open_utf8(opts, output) as fout:
+#         fout.write(header)
+#         with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+#             fout.write(fin.read())
+#         fout.write(footer)
+# 
 # -----------------------------------------------------------------------------
 
 def doit(opts):

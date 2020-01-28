@@ -20,9 +20,10 @@ benches/cxx_adv
 _deps
 _install
 doc/html
-doc/markdown/api_*.md
 doc/md2html
 doc/tmp.html
+doc/markdown/api_.md
+doc/markdiwn/module_fixed_point_api*.md
 
 ## Ulps
 ulps/

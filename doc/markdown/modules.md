@@ -22,8 +22,7 @@ SOFTWARE.
 
 -->
 
-
 # NSIMD modules list
 
-- [Fixed-point support](modules/fixed_point/overview.md)
+- [Fixed-point support](module_fixed_point_overview.md)
 

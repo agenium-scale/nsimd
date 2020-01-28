@@ -223,8 +223,8 @@ Fma.signatures = ['v fma cv& cv& cv&']
 Fma.categories = [DocBasicArithmetic]
 Fma.desc = 'Emulates the FMA operation with fixed-point arithmetic ' \
     + 'for compatibility.\n' \
-    + 'This function is just a wrapper that calls consecutively  an add then\n' \
-    + 'a mul operation.'
+    + 'This function is just a wrapper that calls consecutively a mul and \n' \
+    + 'an add operators.'
 fp_operators.append(Fma)
 
 ## -----------------------------------------------------------------------------

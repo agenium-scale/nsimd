@@ -31,26 +31,23 @@ import re
 import string
 
 import common
+import operators
+
+## List of the NSIMD operators currently suppported by the module
+# op_list = [
+#     'len', 'set1', 'loadu', 'loada', 'loadlu', 'loadla', 'storeu', 'storea',
+#     'add', 'sub', 'mul', 'div', 'fma', 'min', 'max', 'eq', 'ne', 'le', 'lt',
+#     'ge', 'gt', 'if_else1', 'andb', 'andnotb', 'notb', 'orb', 'xorb', 'andl',
+#     'andnotl', 'orl']
+
 from modules.fixed_point.operators import *
 
 operators = fp_operators
 
 # ------------------------------------------------------------------------------
-# Get output of command
-
-def get_command_output(args):
-    p = subprocess.Popen(args, stdout=subprocess.PIPE)
-    lines = p.communicate()[0].split('\n')[0:-1]
-    return '\n'.join(['    {}'.format(l) for l in lines])
 
 def gen_overview(opts):
-    dirname = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-                            'modules', 'fixed_point')
-    os.system('mkdir -p {}'.format(dirname))
-    filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-                            'modules', 'fixed_point', 'overview.md')
-    if not common.can_create_filename(opts, filename):
-        return
+    filename = common.get_markdown_file(opts, 'overview', 'fixed_point')
     with common.open_utf8(opts, filename) as fout:
         fout.write('''
 # NSIMD fixed point module
@@ -69,10 +66,10 @@ The fixed_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type
 storage, depending on the value of `lf + 2 * rt`. 
 
 All the functions of the module are under the namespace `nsimd::fixed_point`, 
-and match the same interface than `nsimd`.
+and match the same interface than `nsimd` C++ .
 
 The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd `fpsimd_t` 
-struct type is defined in `simd.hpp`.
+struct type are defined in `simd.hpp`.
 
 The modules redefines the `nsimd` pack type for fixed-point numbers, templated with `lf` 
 and `rt` :
@@ -92,56 +89,12 @@ Then, the pack can be manipulated as an `nsimd` pack like other scalar types.
 
 The fixed point module is a C++ only API, compatible with the C++98 standard.
 It has the same compilers and hardware support than the main `nsimd` API 
-(see the [API index](../../index.md)).
+(see the [API index](index.md)).
 
 ## Example
 
-Here is a minimal example(main.cpp) :
-
-```C++
-#include <ctime>
-#include <cstdlib>
-#include <iostream>
-#include <nsimd/modules/fixed_point.hpp>
-
-float rand_float() {
-  return 4.0f * ((float) rand() / (float) RAND_MAX) - 2.0f;        
-}
-
-int main() {
-  // We use fixed point numbers with 8 bits of integer part and 8 bits of 
-  // decimal part. It will use a 32 bits integer for internal storage.
-  typedef nsimd::fixed_point::fp_t<8, 8> fp_t;
-  typedef nsimd::fixed_point::pack<fp_t> fp_pack_t;
-  
-  const size_t v_size = nsimd::fixed_point::len(fp_t());
-
-  fp_t *input0 = (fp_t*)malloc(v_size * sizeof(fp_t));
-  fp_t *input1 = (fp_t *)malloc(v_size * sizeof(fp_t));
-  fp_t *res = (fp_t *)malloc(v_size * sizeof(fp_t));
-  
-  // Input and output initializations 
-  for(size_t i = 0; i < nsimd::fixed_point::len(fp_t()); i++) {
-    input0[i] = fp_t(rand_float());
-    input1[i] = fp_t(rand_float());
-  }
-  
-  fp_pack_t v0 = nsimd::fixed_point::loadu<fp_pack_t>(input0);
-  fp_pack_t v1 = nsimd::fixed_point::loadu<fp_pack_t>(input1);
-  fp_pack_t vres = nsimd::fixed_point::add(v0, v1);
-  nsimd::fixed_point::storeu(res, vres);
-  
-  for(size_t i = 0; i < nsimd::fixed_point::len(fp_t()); i++) {
-    std::cout << float(input0[i]) << \" | \"
-      << float(input1[i]) << \" | \"
-      << float(res[i]) << \"\\n\";
-  }
-  std::cout << std::endl;
-  
-  return EXIT_SUCCESS;
-}
-
-```
+Here is a minimal example([main.cpp](../src/module_fixed_point_example.cpp)) :
+@[INCLUDE_CODE:L21:L61](../src/module_fixed_point_example.cpp)
 
 To test with avx2 run : 
 ```bash
@@ -176,7 +129,7 @@ When using the following typedef :
 typedef nsimd::fixed_point::fp_t<lf, rt> fp_t
 ```
 
-The T template parameter is of the following type depending on the operator:
+The T template parameter is one of the following types depending on the operator:
 
 - `set1`, `loadu` and `loada`: 
 ```c++
@@ -262,9 +215,7 @@ def gen_decl(op):
     return ret
 
 def gen_api(opts):
-    filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-                            'modules', 'fixed_point',
-                            'api.md')
+    filename = common.get_markdown_file(opts, 'api', 'fixed_point')
     with common.open_utf8(opts, filename) as fout:
         fout.write('''# NSIMD fixed point API\n''')
         for cat in fp_categories:
@@ -275,137 +226,23 @@ def gen_api(opts):
             fout.write('\n## {}\n\n'.format(cat))
 
             for op in ops:
-                fout.write('- [{full_name} ({op_name})](api_{op_name}.md)\n'\
+                fout.write(
+                    '- [{full_name} ({op_name})](module_fixed_point_api_{op_name}.md)\n'\
                            .format(full_name=op.full_name, op_name=op.name))
     
 def gen_doc(opts):
     for op in operators:
-        filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-                                            'modules', 'fixed_point',
-                                            'api_{}.md'.format(op.name))
+        filename = common.get_markdown_api_file(opts, op.name, 'fixed_point')
         with common.open_utf8(opts, filename) as fout:
             fout.write(api_template.format(full_name=op.full_name,
                                            desc=op.desc, decl=gen_decl(op)))
 
-header_src = '''\
-<!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset=\"utf-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-    <title>{doc_title}</title>
-    <style type=\"text/css\">
-      body {{
-        /*margin:40px auto;*/
-        margin:10px auto;
-        /*max-width:650px;*/
-        max-width:800px;
-        /*line-height:1.6;*/
-        line-height:1.4;
-        /*font-size:18px;*/
-        color:#444;
-        padding:0 10px
-      }}
-      h1,h2,h3 {{
-        line-height:1.2
-      }}
-      table,th, td {{
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
-      }}
-    </style>
-    <!-- https://www.mathjax.org/#gettingstarted -->
-    <script src=\"{assets_dir}/polyfill.min.js\"></script>
-    <script id=\"MathJax-script\" async src=\"{assets_dir}/tex-mml-chtml.js\"></script>
-    <!-- Highlight.js -->
-    <link rel=\"stylesheet\" href= \"{assets_dir}/highlight.js.default.min.css\">
-    <script src=\"{assets_dir}/highlight.min.js\"></script>
-    <script src=\"{assets_dir}/cpp.min.js\"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-  </head>
-<body>
-
-<center>
-  <img src=\"{img_dir}/logo.svg\"><br>
-  <br>
-  <a href=\"../../index.html\">Index</a> |
-  <a href=\"../../quick_start.html\">Quick Start</a> |
-  <a href=\"../../tutorials.html\">Tutorials</a> |
-  <a href=\"../../faq.html\">FAQ</a> |
-  <a href=\"../../contribute.html\">Contribute</a> |
-  <a href=\"../../overview.html\">API overview</a> |
-  <a href=\"../../api.html\">API reference</a> |
-  <a href=\"../../modules.html\">Modules</a>
-  <br><hr>
-  <b>Fixed point support : </b>
-  <a href=\"overview.html\">Overview</a> |
-  <a href=\"api.html\">Reference</a>
-</center>
-'''
-
-footer_src = '''\
-  </body>
-</html>
-'''
-
 def gen_html(opts):
-    # check if md2html exists
-    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
-    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
-    full_path_md2html = os.path.join(doc_dir, md2html)
-    if not os.path.isfile(full_path_md2html):
-        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
-        if platform.system() == 'Windows':
-            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
-        else:
-            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
-        print(msg)
-        return
-
-    # get all markdown files
-    md_dir = os.path.join(doc_dir, 'markdown/modules/fixed_point')
-    html_dir = os.path.join(doc_dir, 'html/modules/fixed_point')
-    common.mkdir_p(html_dir)
-    dirs = [md_dir]
-    md_files = []
-    while len(dirs) > 0:
-        curr_dir = dirs.pop()
-        entries = os.listdir(curr_dir)
-        for entry in entries:
-            full_path_entry = os.path.join(curr_dir, entry)
-            if full_path_entry == '..' or full_path_entry == '.':
-                continue
-            elif os.path.isdir(full_path_entry):
-                continue
-            elif entry.endswith('.md'):
-                md_files.append(full_path_entry)
-
-    # header and footer
-    doc_title = '`nsimd` fixed point module documentation'
-    root_dir = '../..'
-    assets_dir = '../../assets'
-    img_dir = '../../img'
-    header = header_src.format(doc_title=doc_title,
-                               root_dir=root_dir,
-                               img_dir=img_dir,
-                               assets_dir=assets_dir)
-    footer = footer_src
-    tmp_file = os.path.join(doc_dir, 'tmp.html')
-    for filename in md_files:
-        i = filename.rfind('markdown')
-        if i == -1:
-            continue
-        output = filename[0:i] + 'html' + filename[i + 8:-2] + 'html'
-        common.mkdir_p(os.path.dirname(output))
-        os.system('{} "{}" "{}"'.format(full_path_md2html, filename, tmp_file))
-        with common.open_utf8(opts, output) as fout:
-            fout.write(header)
-            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
-                fout.write(fin.read())
-            fout.write(footer)
-    
+    links = {
+        'overview': 'Overview',
+        'api': 'Reference'}
+    common.gen_doc_html(opts, 'Fixed point support', 'fixed_point', links)
+ 
 def doit(opts):
     print('-- Generating doc for module fixed_point')
     gen_overview(opts)
