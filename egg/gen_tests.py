@@ -461,29 +461,29 @@ def get_content(op, typ, lang):
         vin_rand = 'vin1[i] = rand1();'.format(typ=typ)
         vout_ref_comp = '''nsimd_cpu_v{typ} va1, vc;
                         va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
-                        vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % 7);
+                        vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % {typnbytes});
                         nsimd_storeu_cpu_{typ}(&vout_ref[i], vc);'''. \
-                        format(typ=typ, op_name=op.name)
+                                format(typ=typ, op_name=op.name, typnbytes=typ[1:])
         if lang == 'c_base':
             vout_nsimd_comp = '''vec({typ}) va1, vc;
                             va1 = vloadu(&vin1[i], {typ});
-                            vc = v{op_name}(va1, (i / step) % 7, {typ});
+                            vc = v{op_name}(va1, (i / step) % {typnbytes}, {typ});
                             vstoreu(&vout_nsimd[i], vc, {typ});'''. \
-                            format(typ=typ, op_name=op.name)
+                                    format(typ=typ, op_name=op.name, typnbytes=typ[1:])
         if lang == 'cxx_base':
             vout_nsimd_comp = \
             '''vec({typ}) va1, vc;
                va1 = nsimd::loadu(&vin1[i], {typ}());
-               vc = nsimd::{op_name}(va1, (i / step) % 7, {typ}());
+               vc = nsimd::{op_name}(va1, (i / step) % {typnbytes}, {typ}());
                nsimd::storeu(&vout_nsimd[i], vc, {typ}());'''. \
-               format(typ=typ, op_name=op.name)
+                       format(typ=typ, op_name=op.name, typnbytes=typ[1:])
         if lang == 'cxx_adv':
             if op.cxx_operator:
-                do_computation = 'vc = va1 {} ((i / step) % 7);'. \
-                                 format(op.cxx_operator[8:])
+                do_computation = 'vc = va1 {} ((i / step) % {typnbytes});'. \
+                        format(op.cxx_operator[8:], typnbytes=typ[1:])
             else:
-                do_computation = 'vc = nsimd::{}(va1, (i / step) % 7);'. \
-                                 format(op.name)
+                do_computation = 'vc = nsimd::{}(va1, (i / step) % {typnbytes});'. \
+                        format(op.name, typnbytes=typ[1:])
             vout_nsimd_comp = \
             '''nsimd::pack<{typ}> va1, vc;
                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);

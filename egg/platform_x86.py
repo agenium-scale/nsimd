@@ -1079,14 +1079,24 @@ def shra(simd_ext, typ):
             return _mm256_or_si256(v_tmp0, v_mask);
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
         else:
-            return '''return {pre}srai{suf}({in0}, (unsigned int){in1});'''. \
-                format(**fmtspec)
+            return \
+            '''#ifdef NSIMD_IS_CLANG
+                return {pre}srai{suf}({in0}, {in1});
+               #else
+                return {pre}srai{suf}({in0}, (unsigned int){in1});
+               #endif
+            '''.format(**fmtspec)
     elif typ in ['i16', 'i32']:
         cast = ''
         if simd_ext in ['avx512_skylake', 'avx512_knl'] and typ == 'i32':
             cast = '(unsigned int)'
-        return '''return {pre}srai{suf}({in0}, {cast}{in1});'''. \
-                        format(**fmtspec, cast=cast)
+        return \
+        '''#ifdef NSIMD_IS_CLANG
+            return {pre}srai{suf}({in0}, {in1});
+           #else
+            return {pre}srai{suf}({in0}, {cast}{in1});
+           #endif
+        '''.format(**fmtspec, cast=cast)
 
 # -----------------------------------------------------------------------------
 # set1 or splat function
