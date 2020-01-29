@@ -133,6 +133,7 @@ def parse_args(args):
         values = {
             'x86': common.x86_simds,
             'arm': common.arm_simds,
+            'ppc': common.ppc_simds,
             'all': common.simds,
         }.get(value, value.split(','))
         ## Check that all simd are valid

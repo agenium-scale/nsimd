@@ -32,7 +32,7 @@ function(compiler_flags in out)
 
     # Sanity check first
     set(known_flags CPU SSE2 SSE42 AVX AVX2 AVX512_KNL AVX512_SKYLAKE NEON128
-                    AARCH64 SVE FMA FP16 C++14 O3 G)
+        AARCH64 SVE FMA POWER7 FP16 C++14 O3 G)
 
     list(FIND known_flags "${flag}" i)
     if (i EQUAL -1)
@@ -82,6 +82,7 @@ function(compiler_flags in out)
         set(flags_for_AVX512_SKYLAKE "-mavx512f -mavx512dq -mavx512cd -mavx512bw -mavx512vl -DAVX512_SKYLAKE")
         set(flags_for_C++14          "-std=c++14")
         set(flags_for_NEON128        "-mfpu=neon -DNEON128")
+        set(flags_for_POWER7         "-maltivec -mcpu=power7 -DPOWER7")
         set(flags_for_AARCH64        "-DAARCH64")
         set(flags_for_SVE            "-march=armv8-a+sve -DSVE")
         if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(arm|ARM)")

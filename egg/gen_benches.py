@@ -65,6 +65,9 @@ def asm_marker(simd, bench_name):
     elif simd in common.arm_simds:
         r += '__asm__ __volatile__("bl __asm_marker__{bench_name}");'. \
                format(bench_name=bench_name)
+    elif simd in common.ppc_simds:
+        #TODO
+        return ''. format(bench_name=bench_name)
     else:
         raise BenchError('Unable to write marker for SIMD: {}'.format(simd))
     r += '\n'

@@ -25,19 +25,21 @@ SOFTWARE.
 #ifndef NSIMD_H
 #define NSIMD_H
 
+/* clang-format off */
+
 /* ------------------------------------------------------------------------- */
-/* Compiler detection (order matters https://stackoverflow.com/a/28166605) */
+/* Compiler detection (order matters https://stackoverflow.com/a/28166605)   */
 
 #if defined(_MSC_VER)
-#define NSIMD_IS_MSVC
+  #define NSIMD_IS_MSVC
 #elif defined(__NVCC__)
-#define NSIMD_IS_NVCC
+  #define NSIMD_IS_NVCC
 #elif defined(__INTEL_COMPILER)
-#define NSIMD_IS_ICC
+  #define NSIMD_IS_ICC
 #elif defined(__clang__)
-#define NSIMD_IS_CLANG
+  #define NSIMD_IS_CLANG
 #elif defined(__GNUC__) || defined(__GNUG__)
-#define NSIMD_IS_GCC
+  #define NSIMD_IS_GCC
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -46,9 +48,9 @@ SOFTWARE.
 #if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||         \
     defined(__amd64) || defined(_M_AMD64) || defined(__aarch64__) ||          \
     defined(_M_ARM64) || defined(__PPC64__)
-#define NSIMD_WORD_SIZE 64
+  #define NSIMD_WORD_SIZE 64
 #else
-#define NSIMD_WORD_SIZE 32
+  #define NSIMD_WORD_SIZE 32
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -60,94 +62,94 @@ SOFTWARE.
     defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||            \
     defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||          \
     defined(_M_X64)
-#define NSIMD_X86
+  #define NSIMD_X86
 #elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||           \
     defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
     defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
-#define NSIMD_ARM
+  #define NSIMD_ARM
 #else
-#define NSIMD_CPU
+  #define NSIMD_CPU
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* C standard detection */
 
 #ifdef NSIMD_IS_MSVC
-#define NSIMD_C 1999
+  #define NSIMD_C 1999
 #else
-#ifdef __STDC_VERSION__
-#if __STDC_VERSION__ == 199901L
-#define NSIMD_C 1999
-#elif __STDC_VERSION__ >= 201112L
-#define NSIMD_C 2011
-#else
-#define NSIMD_C 1989
-#endif
-#else
-#define NSIMD_C 1989
-#endif
+  #ifdef __STDC_VERSION__
+    #if __STDC_VERSION__ == 199901L
+      #define NSIMD_C 1999
+    #elif __STDC_VERSION__ >= 201112L
+      #define NSIMD_C 2011
+    #else
+      #define NSIMD_C 1989
+    #endif
+  #else
+    #define NSIMD_C 1989
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* C++ standard detection */
 
 #ifdef NSIMD_IS_MSVC
-#define NSIMD__cplusplus _MSVC_LANG
+  #define NSIMD__cplusplus _MSVC_LANG
 #else
-#ifdef __cplusplus
-#define NSIMD__cplusplus __cplusplus
-#else
-#define NSIMD__cplusplus 0
-#endif
+  #ifdef __cplusplus
+    #define NSIMD__cplusplus __cplusplus
+  #else
+    #define NSIMD__cplusplus 0
+  #endif
 #endif
 
 #if NSIMD__cplusplus > 0 && NSIMD__cplusplus < 201103L
-#define NSIMD_CXX 1998
+  #define NSIMD_CXX 1998
 #elif NSIMD__cplusplus >= 201103L && NSIMD__cplusplus < 201402L
-#define NSIMD_CXX 2011
+  #define NSIMD_CXX 2011
 #elif NSIMD__cplusplus >= 201402L && NSIMD__cplusplus < 201703L
-#define NSIMD_CXX 2014
+  #define NSIMD_CXX 2014
 #elif NSIMD__cplusplus >= 201703L
-#define NSIMD_CXX 2017
+  #define NSIMD_CXX 2017
 #else
-#define NSIMD_CXX 0
+  #define NSIMD_CXX 0
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* Microsoft DLL specifics */
 
 #ifdef NSIMD_IS_MSVC
-#define NSIMD_DLLEXPORT __declspec(dllexport)
-#define NSIMD_DLLIMPORT __declspec(dllimport)
+  #define NSIMD_DLLEXPORT __declspec(dllexport)
+  #define NSIMD_DLLIMPORT __declspec(dllimport)
 #else
-#define NSIMD_DLLEXPORT
-#define NSIMD_DLLIMPORT extern
+  #define NSIMD_DLLEXPORT
+  #define NSIMD_DLLIMPORT extern
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* DLL specifics when inside/outside the library */
 
 #ifdef NSIMD_INSIDE
-#define NSIMD_DLLSPEC NSIMD_DLLEXPORT
+  #define NSIMD_DLLSPEC NSIMD_DLLEXPORT
 #else
-#define NSIMD_DLLSPEC NSIMD_DLLIMPORT
+  #define NSIMD_DLLSPEC NSIMD_DLLIMPORT
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* inline in nsimd is ONLY useful for linkage */
 
 #if NSIMD_CXX > 0 || NSIMD_C > 1989
-#if NSIMD_C > 0 && defined(NSIMD_IS_MSVC)
-#define NSIMD_INLINE static __inline
+  #if NSIMD_C > 0 && defined(NSIMD_IS_MSVC)
+    #define NSIMD_INLINE static __inline
+  #else
+    #define NSIMD_INLINE static inline
+  #endif
 #else
-#define NSIMD_INLINE static inline
-#endif
-#else
-#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-#define NSIMD_INLINE __extension__ __inline__
-#else
-#define NSIMD_INLINE
-#endif
+  #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+    #define NSIMD_INLINE __extension__ __inline__
+  #else
+    #define NSIMD_INLINE
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -177,65 +179,65 @@ SOFTWARE.
 /* Intel */
 
 #if defined(SSE2) && !defined(NSIMD_SSE2)
-#define NSIMD_SSE2
+  #define NSIMD_SSE2
 #endif
 
 #if defined(SSE42) && !defined(NSIMD_SSE42)
-#define NSIMD_SSE42
+  #define NSIMD_SSE42
 #endif
 
 #if defined(AVX) && !defined(NSIMD_AVX)
-#define NSIMD_AVX
+  #define NSIMD_AVX
 #endif
 
 #if defined(AVX2) && !defined(NSIMD_AVX2)
-#define NSIMD_AVX2
+  #define NSIMD_AVX2
 #endif
 
 #if defined(AVX512_KNL) && !defined(NSIMD_AVX512_KNL)
-#define NSIMD_AVX512_KNL
+  #define NSIMD_AVX512_KNL
 #endif
 
 #if defined(AVX512_SKYLAKE) && !defined(NSIMD_AVX512_SKYLAKE)
-#define NSIMD_AVX512_SKYLAKE
+  #define NSIMD_AVX512_SKYLAKE
 #endif
 
 #if defined(FP16) && !defined(NSIMD_FP16)
-#define NSIMD_FP16
+  #define NSIMD_FP16
 #endif
 
 #if defined(FMA) && !defined(NSIMD_FMA)
-#define NSIMD_FMA
+  #define NSIMD_FMA
 #endif
 
 /* ARM */
 
 #if defined(NEON128) && !defined(NSIMD_NEON128)
-#define NSIMD_NEON128
+  #define NSIMD_NEON128
 #endif
 
 #if defined(AARCH64) && !defined(NSIMD_AARCH64)
-#define NSIMD_AARCH64
+  #define NSIMD_AARCH64
 #endif
 
 #if defined(SVE) && !defined(NSIMD_SVE)
-#define NSIMD_SVE
+  #define NSIMD_SVE
 #endif
 
 /* PPC */
 
-#if (defined(VMX) || defined(ALTIVEC)) && !defined(NSIMD_VMX)
-#define NSIMD_VMX
+#if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
+  #define NSIMD_POWER8
 #endif
 
-#if defined(VSX) && !defined(NSIMD_VSX)
-#define NSIMD_VSX
+#if defined(POWER7) && !defined(NSIMD_POWER7)
+  #define NSIMD_POWER7
 #endif
 
 /* CUDA */
 
 #if defined(CUDA) && !defined(NSIMD_CUDA)
-#define NSIMD_CUDA
+  #define NSIMD_CUDA
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -243,85 +245,109 @@ SOFTWARE.
 
 #if defined(NSIMD_SSE2)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD sse2
-#include <emmintrin.h>
-#if defined(NSIMD_FMA) || defined(NSIMD_FP16)
-#include <immintrin.h>
-#endif
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD sse2
+  #include <emmintrin.h>
+  #if defined(NSIMD_FMA) || defined(NSIMD_FP16)
+    #include <immintrin.h>
+  #endif
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
 
 #elif defined(NSIMD_SSE42)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD sse42
-#include <nmmintrin.h>
-#if defined(NSIMD_FMA) || defined(NSIMD_FP16)
-#include <immintrin.h>
-#endif
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD sse42
+  #include <nmmintrin.h>
+  #if defined(NSIMD_FMA) || defined(NSIMD_FP16)
+    #include <immintrin.h>
+  #endif
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
 
 #elif defined(NSIMD_AVX)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx
-#include <immintrin.h>
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx
+  #include <immintrin.h>
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
 
 #elif defined(NSIMD_AVX2)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx2
-#include <immintrin.h>
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx2
+  #include <immintrin.h>
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
 
 #elif defined(NSIMD_AVX512_KNL)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx512_knl
-#include <immintrin.h>
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx512_knl
+  #include <immintrin.h>
 
 #elif defined(NSIMD_AVX512_SKYLAKE)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx512_skylake
-#include <immintrin.h>
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx512_skylake
+  #include <immintrin.h>
 
 #elif defined(NSIMD_NEON128)
 
-#define NSIMD_PLATFORM arm
-#define NSIMD_SIMD neon128
-#include <arm_neon.h>
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD neon128
+  #include <arm_neon.h>
 
 #elif defined(NSIMD_AARCH64)
 
-#define NSIMD_PLATFORM arm
-#define NSIMD_SIMD aarch64
-#include <arm_neon.h>
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD aarch64
+  #include <arm_neon.h>
 
 #elif defined(NSIMD_SVE)
 
-#define NSIMD_PLATFORM arm
-#define NSIMD_SIMD sve
-#include <arm_neon.h>
-#include <arm_sve.h>
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_POWER7)
+
+  #define NSIMD_PLATFORM ppc
+  #define NSIMD_SIMD power7
+
+  #ifdef NSIMD_IS_CLANG
+  // New version of clang are spamming useless warning comming from their
+  // altivec.h file
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wc++11-long-long"
+  #endif
+
+  #include <altivec.h>
+
+  #ifdef bool
+    #undef bool
+  #endif
+  #ifdef pixel
+    #undef pixel
+  #endif
+  #ifdef vector
+    #undef vector
+  #endif
 
 #else
 
-#define NSIMD_SIMD cpu
-#define NSIMD_PLATFORM cpu
+  #define NSIMD_SIMD cpu
+  #define NSIMD_PLATFORM cpu
 
 #endif
 
@@ -329,63 +355,136 @@ SOFTWARE.
 /* Shorter typedefs for integers */
 
 #ifdef NSIMD_IS_MSVC
-typedef unsigned __int8 u8;
-typedef signed __int8 i8;
-typedef unsigned __int16 u16;
-typedef signed __int16 i16;
-typedef unsigned __int32 u32;
-typedef signed __int32 i32;
-typedef unsigned __int64 u64;
-typedef signed __int64 i64;
+  typedef unsigned __int8  u8;
+  typedef signed   __int8  i8;
+  typedef unsigned __int16 u16;
+  typedef signed   __int16 i16;
+  typedef unsigned __int32 u32;
+  typedef signed   __int32 i32;
+  typedef unsigned __int64 u64;
+  typedef signed   __int64 i64;
 #else
-typedef unsigned char u8;
-typedef signed char i8;
-typedef unsigned short u16;
-typedef signed short i16;
-typedef unsigned int u32;
-typedef signed int i32;
-#if NSIMD_WORD_SIZE == 64
-typedef unsigned long u64;
-typedef signed long i64;
-#else
-#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-__extension__ typedef unsigned long long u64;
-__extension__ typedef signed long long i64;
-#else
-typedef unsigned long long u64;
-typedef signed long long i64;
-#endif
-#endif
+  typedef unsigned char  u8;
+  typedef signed   char  i8;
+  typedef unsigned short u16;
+  typedef signed   short i16;
+  typedef unsigned int   u32;
+  typedef signed   int   i32;
+  #if NSIMD_WORD_SIZE == 64
+    typedef unsigned long u64;
+    typedef signed long   i64;
+  #else
+    #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+      __extension__ typedef unsigned long long u64;
+      __extension__ typedef signed long long   i64;
+    #else
+      typedef unsigned long long u64;
+      typedef signed long long   i64;
+    #endif
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* Sorter typedefs for floatting point types */
 
 #if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                    \
-     defined(NSIMD_FP16)) ||                                                  \
-    defined(NSIMD_SVE)
-#define NSIMD_NATIVE_FP16
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE)
+  #define NSIMD_NATIVE_FP16
 #endif
 
 #ifdef NSIMD_NATIVE_FP16
-typedef __fp16 f16;
+  typedef __fp16 f16;
 #else
-typedef struct {
-  u16 u;
-} f16;
+  typedef struct { u16 u; } f16;
 #endif
 
-typedef float f32;
+typedef float  f32;
 typedef double f64;
 
 /* ------------------------------------------------------------------------- */
 /* Native register size (for now only 32 and 64 bits) types */
 
 #if NSIMD_WORD_SIZE == 64
-typedef i64 nat;
+  typedef i64 nat;
 #else
-typedef i32 nat;
+  typedef i32 nat;
 #endif
+
+/* ------------------------------------------------------------------------- */
+/* Constants for integers limits */
+
+#ifdef NSIMD_IS_MSVC
+
+  #include <limits.h>
+
+  /* 8 bits */
+  #define NSIMD_I8_MAX SCHAR_MAX
+  #define NSIMD_U8_MAX UCHAR_MAX
+
+  #define NSIMD_I8_MIN SCHAR_MIN
+  #define NSIMD_U8_MIN ((u8)0)
+
+  /* 16 bits */
+  #define NSIMD_I16_MAX SHRT_MAX
+  #define NSIMD_U16_MAX USHRT_MAX
+
+  #define NSIMD_I16_MIN SHRT_MIN
+  #define NSIMD_U16_MIN ((u16)0)
+
+  /* 32 bits */
+  #define NSIMD_I32_MAX INT_MAX
+  #define NSIMD_U32_MAX UINT_MAX
+
+  #define NSIMD_I32_MIN INT_MIN
+  #define NSIMD_U32_MIN ((u32)0)
+
+  /* 64 bits */
+  #define NSIMD_I64_MAX LLONG_MAX
+  #define NSIMD_U64_MAX ULLONG_MAX
+
+  #define NSIMD_I64_MIN LLONG_MIN
+  #define NSIMD_U64_MIN ((u64)0)
+
+#else
+
+  /* 8 bits */
+  #define NSIMD_I8_MAX ((i8)0x7f)
+  #define NSIMD_U8_MAX ((u8)((u8)NSIMD_I8_MAX * 2 + 1))
+
+  #define NSIMD_I8_MIN ((i8)(-NSIMD_I8_MAX - 1))
+  #define NSIMD_U8_MIN ((u8)0)
+
+  /* 16 bits */
+  #define NSIMD_I16_MAX ((i16)0x7fff)
+  #define NSIMD_U16_MAX ((u16)((u16)NSIMD_I16_MAX * 2 + 1))
+
+  #define NSIMD_I16_MIN ((i16)(-NSIMD_I16_MAX - 1))
+  #define NSIMD_U16_MIN ((u16)0)
+
+  /* 32 bits */
+  #define NSIMD_I32_MAX ((i32)0x7fffffff)
+  #define NSIMD_U32_MAX (((u32)NSIMD_I32_MAX * 2 + 1))
+
+  #define NSIMD_I32_MIN (-NSIMD_I32_MAX - 1)
+  #define NSIMD_U32_MIN ((u32)0)
+
+  /* 64 bits */
+  #define NSIMD_I64_MAX (~(((i64)1) << 63))
+  #define NSIMD_U64_MAX (((u64)NSIMD_I64_MAX * 2 + 1))
+
+  #define NSIMD_I64_MIN (-NSIMD_I64_MAX - 1)
+  #define NSIMD_U64_MIN ((u64)0)
+
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Set if denormalized float are set to 0                                    */
+
+#ifdef NSIMD_NEON128
+  #define NSIMD_DNZ_FLUSH_TO_ZERO
+#endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 /* POPCNT: GCC and Clang have intrinsics */
@@ -446,13 +545,17 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
 /* ------------------------------------------------------------------------- */
 /* Standard includes */
 
+/* clang-format off */
+
 #if NSIMD_CXX > 0
-#include <cerrno>
-#include <cstdlib>
+  #include <cerrno>
+  #include <cstdlib>
 #else
-#include <errno.h>
-#include <stdlib.h>
+  #include <errno.h>
+  #include <stdlib.h>
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 /* Now includes detected SIMD types */
@@ -562,13 +665,19 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 
 #endif
 
+/* clang-format off */
+
 #if defined(NSIMD_X86)
-#define NSIMD_MAX_ALIGNMENT 64
+  #define NSIMD_MAX_ALIGNMENT 64
 #elif defined(NSIMD_ARM)
-#define NSIMD_MAX_ALIGNMENT 256
+  #define NSIMD_MAX_ALIGNMENT 256
+#elif defined(NSIMD_POWERPC)
+  #define NSIMD_MAX_ALIGNMENT 64
 #else
-#define NSIMD_MAX_ALIGNMENT 16
+  #define NSIMD_MAX_ALIGNMENT 16
 #endif
+
+/* clang-format on */
 
 #define NSIMD_NB_REGISTERS NSIMD_PP_CAT_3(NSIMD_, NSIMD_SIMD, _NB_REGISTERS)
 
@@ -638,10 +747,14 @@ template <typename T> constexpr int max_len = max_len_t<T>::value;
 /* ------------------------------------------------------------------------- */
 /* Memory functions */
 
+/* clang-format off */
+
 #if NSIMD_CXX > 0
-#include <cstddef>
-#include <new>
+  #include <cstddef>
+  #include <new>
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 
@@ -1266,10 +1379,6 @@ void storel(A0 a0, A1 a1, T, SimdExt, unaligned) {
 } // namespace nsimd
 #endif
 
-/* ------------------------------------------------------------------------- */
-/* Endianess */
-/* TODO */
-#define ENDIAN_LITTLE_BYTE 1
 /* ------------------------------------------------------------------------- */
 
 #endif
