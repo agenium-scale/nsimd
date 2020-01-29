@@ -24,22 +24,7 @@ import operators
 
 # -----------------------------------------------------------------------------
 
-def uniop(func, typ):
-    normal = 'return ({{typ}})({func});'.format(func=func.format(in0='{in0}'))
-    if typ == 'f16':
-        return \
-        '''#ifdef NSIMD_FP16
-             {normal}
-           #else
-             return nsimd_f32_to_f16({func});
-           #endif'''.format(normal=normal, func=func.\
-           format(in0='nsimd_f16_to_f32({in0})'))
-    else:
-        return normal
-
-# -----------------------------------------------------------------------------
-
-def binop(func, typ):
+def opnum(func, typ):
     normal = 'return ({{typ}})({func});'. \
              format(func=func.format(in0='{in0}', in1='{in1}'))
     if typ == 'f16':
@@ -56,7 +41,7 @@ def binop(func, typ):
 
 # -----------------------------------------------------------------------------
 
-def binop_bin(func, typ):
+def opbit(func, typ):
     in0 = '{in0}' if typ in common.utypes else \
           'nsimd_reinterpret_u{}_{}({{in0}})'.format(typ[1:], typ)
     in1 = '{in1}' if typ in common.utypes else \
@@ -191,53 +176,61 @@ def get_impl(operator, totyp, typ, until_cpp11 = False, c89_code = ''):
                              : nsimd_ceil_{typ}({{in0}});'''. \
                              format(typ=typ, f='f' if typ == 'f32' else '')
         return libm_opn('trunc', 3, typ, True, c89_code)
+    if operator.name == 'abs':
+        if typ == 'f16':
+            return '''f32 tmp = nsimd_f16_to_f32({in0});
+                      return nsimd_f32_to_f16(tmp >= 0.0f ? tmp : -tmp);'''
+        else:
+            return 'return {{in0}} >= 0.0{f} ? {{in0}} : -{{in0}};'. \
+                   format(f='f' if typ == 'f32' else '')
+    if operator.name in ['min', 'max']:
+        op = '<' if operator.name == 'min' else '>'
+        if typ == 'f16':
+            return '''f32 in0 = nsimd_f16_to_f32({{in0}});
+                      f32 in1 = nsimd_f16_to_f32({{in1}});
+                      return nsimd_f32_to_f16(in1 {op} in2 ? in1 : in2);'''. \
+                      format(op=op)
+        else:
+            return 'return {{in0}} {op} {{in1}} ? {{in0}} : {{in1}};'. \
+                   format(op=op)
     if operator.name == 'round_to_even':
         return round_to_even(typ)
     if operator.name in ['floor', 'ceil', 'sqrt', 'fma']:
         return libm_opn(operator.name, 3 if operator.name == 'fma' else 1,
                         typ, False, '')
-    #func = {
-    #    'orb' = '{in0} | {in1}'
-    #    'andb' = '{in0} & {in1}'
-    #    'andnotb' = '{in0} & (~{in1})'
-    #    'notb' = '~{in0}'
-    #    'xorb' = '{in0} ^ {in1}'
-    #    'add' = '{in0} + {in1}'
-    #    'sub' = '{in0} - {in1}'
-    #    'mul' = '{in0} * {in1}'
-    #    'div' = '{in0} / {in1}'
-    #    'neg' = '-{in0}'
-    #    'min' = '{in0} < {in1} ? {in0} : {in1}'
-    #    'max' = '{in0} > {in1} ? {in0} : {in1}'
-    #    'abs' = '{in0}' if typ in common.utypes \
-    #                    else '{in0} >= 0 ? {in0} : -{in0}'
-    #    'fma' = 'return a0 * a1 + a2;'
-    #    'fnma' = 'return -a0 * a1 + a2;'
-    #    'fms' = 'return a0 * a1 - a2;'
-    #    'fnms' = 'return -a0 * a1 - a2;'
-    #    'ceil' = 'return std::ceil(a);'
-    #    'floor'] = 'return std::floor(a);'
-    #    impl['trunc'] = '''#if NSIMD_CXX >= 2011
-    #                                  return std::trunc(a);
-    #                                  #else
-    #                                  return (a > 0) ? std::floor(a) : std::ceil(a);
-    #                                  #endif
-    #                               '''
-    #    impl['round_to_even'] = '''#if NSIMD_CXX >= 2011
-    #                               return std::round(a / 2) * 2;
-    #                               #else
-    #                               return std::floor((a / 2) + 0.5) * 2;
-    #                               #endif
-    #                            '''
-    #    impl['reinterpret'] = 'return a;' # FIXME
-    #    impl['cvt'] = 'return a;' # FIXME
-    #    impl['rec'] = 'return 1 / a;'
-    #    impl['rec11'] = 'return 1 / a;'
-    #    impl['rec8'] = 'return 1 / a;'
-    #    impl['sqrt'] = 'return std::sqrt(a);'
-    #    impl['rsqrt'] = 'return 1 / std::sqrt(a);'
-    #    impl['rsqrt11'] = 'return 1 / std::sqrt(a);'
-    #    impl['rsqrt8'] = 'return 1 / std::sqrt(a);'
+    f = 'f' if typ in ['f16', 'f32'] else ''
+    typ2 = 'f32' if typ == 'f16' else typ
+    func = {
+        'orb': lambda: opbit('{in0} | {in1}', typ),
+        'andb': lambda: opbit('{in0} & {in1}', typ),
+        'andnotb': lambda: opbit('{in0} & (~{in1})', typ),
+        'notb': lambda: opbit('~{in0}', typ),
+        'xorb': lambda: opbit('{in0} ^ {in1}', typ),
+        'add': lambda: opnum('{in0} + {in1}', typ),
+        'sub': lambda: opnum('{in0} - {in1}', typ),
+        'mul': lambda: opnum('{in0} * {in1}', typ),
+        'div': lambda: opnum('{in0} / {in1}', typ),
+        'neg': lambda: opnum('-{in0}', typ),
+        'fnma': lambda: opnum(
+                        'nsimd_fnma_{typ2}(-{{in0}}, {{in1}}, {{in2}});'. \
+                        format(typ2=typ2), typ),
+        'fms': lambda: opnum(
+                       'nsimd_fms_{typ2}({{in0}}, {{in1}}, -{{in2}});'. \
+                       format(typ2=typ2), typ),
+        'fnms': lambda: opnum(
+                        'nsimd_fnms_{typ2}(-{{in0}}, {{in1}}, -{{in2}});'. \
+                        format(typ2=typ2), typ),
+        'rec': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
+        'rec8': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
+        'rec11': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
+        'rsqrt': lambda: opnum('1.0{f} / nsimd_sqrt_{typ2}({{in0}});'. \
+                               format(f=f, typ2=typ2), typ)
+        'rsqrt8': lambda: opnum('1.0{f} / nsimd_sqrt_{typ2}({{in0}});'. \
+                                format(f=f, typ2=typ2), typ)
+        'rsqrt11': lambda: opnum('1.0{f} / nsimd_sqrt_{typ2}({{in0}});'. \
+                                 format(f=f, typ2=typ2), typ)
+    }
+    return func[operator.name]()
 
 # -----------------------------------------------------------------------------
 

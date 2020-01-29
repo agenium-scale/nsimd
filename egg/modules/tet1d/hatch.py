@@ -22,124 +22,15 @@ import os
 import operators
 import common
 
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+
 def doit(opts):
     print('-- Generating module tet1d')
 
-    scalar_impl = {}
-    scalar_impl['orb'] = 'return a0 | a1;'
-    scalar_impl['andb'] = 'return a0 & a1;'
-    scalar_impl['andnotb'] = 'return a0 & ~a1;'
-    scalar_impl['notb'] = 'return ~a;'
-    scalar_impl['xorb'] = 'return a0 ^ a1;'
-    scalar_impl['add'] = 'return a0 + a1;'
-    scalar_impl['sub'] = 'return a0 - a1;'
-    scalar_impl['mul'] = 'return a0 * a1;'
-    scalar_impl['div'] = 'return a0 / a1;'
-    scalar_impl['neg'] = 'return -a;'
-    scalar_impl['min'] = 'return std::min(a0, a1);'
-    scalar_impl['max'] = 'return std::max(a0, a1);'
-    scalar_impl['abs'] = 'return tet1d::scalar_abs(a);'
-    scalar_impl['fma'] = 'return a0 * a1 + a2;'
-    scalar_impl['fnma'] = 'return -a0 * a1 + a2;'
-    scalar_impl['fms'] = 'return a0 * a1 - a2;'
-    scalar_impl['fnms'] = 'return -a0 * a1 - a2;'
-    scalar_impl['ceil'] = 'return std::ceil(a);'
-    scalar_impl['floor'] = 'return std::floor(a);'
-    scalar_impl['trunc'] = '''#if NSIMD_CXX >= 2011
-                              return std::trunc(a);
-                              #else
-                              return (a > 0) ? std::floor(a) : std::ceil(a);
-                              #endif
-                           '''
-    scalar_impl['round_to_even'] = '''#if NSIMD_CXX >= 2011
-                                      return std::round(a / 2) * 2;
-                                      #else
-                                      return std::floor((a / 2) + 0.5) * 2;
-                                      #endif
-                                   '''
-    scalar_impl['reinterpret'] = 'return a;' # FIXME
-    scalar_impl['cvt'] = 'return a;' # FIXME
-    scalar_impl['rec'] = 'return 1 / a;'
-    scalar_impl['rec11'] = 'return 1 / a;'
-    scalar_impl['rec8'] = 'return 1 / a;'
-    scalar_impl['sqrt'] = 'return std::sqrt(a);'
-    scalar_impl['rsqrt'] = 'return 1 / std::sqrt(a);'
-    scalar_impl['rsqrt11'] = 'return 1 / std::sqrt(a);'
-    scalar_impl['rsqrt8'] = 'return 1 / std::sqrt(a);'
-
-    cuda_impl = {}
-    cuda_impl['orb'] = 'return a0 | a1;'
-    cuda_impl['andb'] = 'return a0 & a1;'
-    cuda_impl['andnotb'] = 'return a0 & ~a1;'
-    cuda_impl['notb'] = 'return ~a;'
-    cuda_impl['xorb'] = 'return a0 ^ a1;'
-    cuda_impl['add'] = 'return a0 + a1;'
-    cuda_impl['sub'] = 'return a0 - a1;'
-    cuda_impl['mul'] = 'return a0 * a1;'
-    cuda_impl['div'] = 'return a0 / a1;'
-    cuda_impl['neg'] = 'return -a;'
-    cuda_impl['min'] = 'return (a0 <= a1 ? a0 : a1);'
-    cuda_impl['max'] = 'return (a0 >= a1 ? a0 : a1);'
-    cuda_impl['abs'] = 'return a; // return (a < 0 ? -a : a);' # std::abs(const unsigned int&) is ambiguous
-    cuda_impl['fma'] = 'return a0 * a1 + a2;'
-    cuda_impl['fnma'] = 'return -a0 * a1 + a2;'
-    cuda_impl['fms'] = 'return a0 * a1 - a2;'
-    cuda_impl['fnms'] = 'return -a0 * a1 - a2;'
-    cuda_impl['ceil'] = 'return tet1d::cuda_ceil(a);'
-    cuda_impl['floor'] = 'return tet1d::cuda_floor(a);'
-    cuda_impl['trunc'] = 'return tet1d::cuda_trunc(a);'
-    cuda_impl['round_to_even'] = 'return tet1d::cuda_round(a / 2) * 2;'
-    cuda_impl['reinterpret'] = 'return a;' # FIXME
-    cuda_impl['cvt'] = 'return a;' # FIXME
-    cuda_impl['rec'] = 'return 1 / a;'
-    cuda_impl['rec11'] = 'return 1 / a;'
-    cuda_impl['rec8'] = 'return 1 / a;'
-    cuda_impl['sqrt'] = 'return ::sqrt(a);'
-    cuda_impl['rsqrt'] = 'return 1 / ::sqrt(a);'
-    cuda_impl['rsqrt11'] = 'return 1 / ::sqrt(a);'
-    cuda_impl['rsqrt8'] = 'return 1 / ::sqrt(a);'
-
-    # Code contains the functions as tet1d nodes
-    code = ''
-    code += '''#include <cmath>
-
-               namespace tet1d
-               {
-                 // std::abs(const unsigned int&) is ambiguous
-                 template <typename T>
-                 T scalar_abs(T const & a) { return a < T(0) ? -a : a; }
-                 u8 scalar_abs(u8 const a) { return a; }
-                 u16 scalar_abs(u16 const a) { return a; }
-                 u32 scalar_abs(u32 const a) { return a; }
-                 u64 scalar_abs(u64 const a) { return a; }
-
-                 #ifdef NSIMD_IS_NVCC
-
-                 template <typename T>
-                 __device__ T cuda_ceil(T const a) { return a; }
-                 __device__ float cuda_ceil(float const a) { return ::ceil(a); }
-                 __device__ double cuda_ceil(double const a) { return ::ceil(a); }
-
-                 template <typename T>
-                 __device__ T cuda_floor(T const a) { return a; }
-                 __device__ float cuda_floor(float const a) { return ::floor(a); }
-                 __device__ double cuda_floor(double const a) { return ::floor(a); }
-
-                 template <typename T>
-                 __device__ T cuda_trunc(T const a) { return a; }
-                 __device__ float cuda_trunc(float const a) { return ::trunc(a); }
-                 __device__ double cuda_trunc(double const a) { return ::trunc(a); }
-
-                 template <typename T>
-                 __device__ T cuda_round(T const a) { return a; }
-                 __device__ float cuda_round(float const a) { return ::round(a); }
-                 __device__ double cuda_round(double const a) { return ::round(a); }
-
-                 #endif
-
-            '''
-
     # Generate code and tests
+    code = ''
     for op_name, operator in operators.operators.items():
       #print('-- ', op_name, operator.signature)
 
