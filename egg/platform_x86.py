@@ -189,7 +189,7 @@ def get_additional_include(func, platform, simd_ext):
                   # if NSIMD_CXX > 0
                   }} // extern "C"
                   # endif
-                  '''.format(func=func, **fmtspec)
+                  '''.format(func=func, simd_ext=simd_ext)
     if func in ['load2u', 'load3u', 'load4u', 'load2a', 'load3a', 'load4a']:
         ret += '''
                   # include <nsimd/x86/{simd_ext}/loadu.h>
@@ -205,11 +205,11 @@ def get_additional_include(func, platform, simd_ext):
                   # if NSIMD_CXX > 0
                   }} // extern "C"
                   # endif
-                  '''.format(func=func, deg=func[4], **fmtspec)
+                  '''.format(func=func, deg=func[4], simd_ext=simd_ext)
     if func in ['store2u', 'store3u', 'store4u', 'store2a', 'store3a',
                 'store4a']:
         deg = func[5]
-        args = ','.join(['nsimd_{simd_ext}_vu16'.format(**fmtspec)
+        args = ','.join(['nsimd_{simd_ext}_vu16'.format(simd_ext=simd_ext)
                          for i in range(1, int(deg) + 1)])
         ret += '''
                   # include <nsimd/x86/{simd_ext}/loadu.h>
@@ -224,7 +224,7 @@ def get_additional_include(func, platform, simd_ext):
                   # if NSIMD_CXX > 0
                   }} // extern "C"
                   # endif
-                  '''.format(func=func, deg=deg, args=args, **fmtspec)
+                  '''.format(func=func, deg=deg, args=args, simd_ext=simd_ext)
     if func == 'to_logical':
         ret += '''#include <nsimd/x86/{simd_ext}/ne.h>
                   # include <nsimd/x86/{simd_ext}/reinterpretl.h>
@@ -244,11 +244,11 @@ def get_additional_include(func, platform, simd_ext):
                     #else
                         #include <limits.h>
                     #endif
-                ''' .format(**fmtspec)
+                ''' .format(simd_ext=simd_ext)
         if simd_ext in avx512:
             ret += '''
                     # include <nsimd/x86/{simd_ext}/to_logical.h>
-                   '''.format(**fmtspec)
+                   '''.format(simd_ext=simd_ext)
     if func == 'subs':
         ret += '''
                     # include <nsimd/x86/{simd_ext}/adds.h>
@@ -257,7 +257,7 @@ def get_additional_include(func, platform, simd_ext):
                     # include <nsimd/x86/{simd_ext}/gt.h>
                     # include <nsimd/x86/{simd_ext}/set1.h>
                     # include <nsimd/x86/{simd_ext}/if_else1.h>
-                '''.format(**fmtspec)
+                '''.format(simd_ext=simd_ext)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -1522,8 +1522,8 @@ def abs1(simd_ext, typ):
        format(typnbitsm1=int(typ[1:]) - 1, **fmtspec)
     with_blendv = \
     '''return _mm256_castpd_si256(_mm256_blendv_pd(
-        _mm256_castsi256_pd({in0}), 
-        _mm256_castsi256_pd(_mm256_sub_epi64(_mm256_setzero_si256(), {in0})), 
+        _mm256_castsi256_pd({in0}),
+        _mm256_castsi256_pd(_mm256_sub_epi64(_mm256_setzero_si256(), {in0})),
         _mm256_castsi256_pd({in0})));'''.format(**fmtspec)
     if simd_ext in sse:
         if typ in ['i16', 'i32']:

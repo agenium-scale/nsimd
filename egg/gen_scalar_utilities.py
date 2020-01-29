@@ -224,9 +224,9 @@ def get_impl(operator, totyp, typ, until_cpp11 = False, c89_code = ''):
         'rec8': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
         'rec11': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
         'rsqrt': lambda: opnum('1.0{f} / nsimd_sqrt_{typ2}({{in0}});'. \
-                               format(f=f, typ2=typ2), typ)
+                               format(f=f, typ2=typ2), typ),
         'rsqrt8': lambda: opnum('1.0{f} / nsimd_sqrt_{typ2}({{in0}});'. \
-                                format(f=f, typ2=typ2), typ)
+                                format(f=f, typ2=typ2), typ),
         'rsqrt11': lambda: opnum('1.0{f} / nsimd_sqrt_{typ2}({{in0}});'. \
                                  format(f=f, typ2=typ2), typ)
     }

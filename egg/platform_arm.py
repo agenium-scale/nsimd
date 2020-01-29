@@ -190,19 +190,19 @@ def get_additional_include(func, platform, simd_ext):
                   }} // extern "C"
                   # endif
 
-                  '''.format(func=func, deg=deg, **fmtspec)
+                  '''.format(func=func, deg=deg, simd_ext=simd_ext)
     if simd_ext == 'neon128' and func == 'notl':
         ret += '''#include <nsimd/arm/neon128/notb.h>
                   '''
     if simd_ext in neon and func == 'ne':
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
                   # include <nsimd/arm/{simd_ext}/notl.h>
-                  '''.format(**fmtspec)
+                  '''.format(simd_ext=simd_ext)
     if simd_ext in neon and func in ['fms', 'fnms']:
         ret += '''#include <nsimd/arm/{simd_ext}/ne.h>
                   #include <nsimd/arm/{simd_ext}/fma.h>
                   #include <nsimd/arm/{simd_ext}/fnma.h>
-                  '''.format(**fmtspec)
+                  '''.format(simd_ext=simd_ext)
     if func == 'shra':
         ret += '''#include <nsimd/arm/{simd_ext}/shr.h>
                   '''.format(simd_ext=simd_ext)
@@ -211,30 +211,30 @@ def get_additional_include(func, platform, simd_ext):
                   # include <nsimd/arm/{simd_ext}/set1.h>
                   # include <nsimd/arm/{simd_ext}/{load}.h>
                   # include <nsimd/arm/{simd_ext}/notl.h>
-                  '''.format(load='load' + func[5], **fmtspec)
+                  '''.format(load='load' + func[5], simd_ext=simd_ext)
     if func in ['storelu', 'storela']:
         ret += '''#include <nsimd/arm/{simd_ext}/if_else1.h>
                   # include <nsimd/arm/{simd_ext}/set1.h>
                   # include <nsimd/arm/{simd_ext}/{store}.h>
-                  '''.format(store='store' + func[6], **fmtspec)
+                  '''.format(store='store' + func[6], simd_ext=simd_ext)
     if func == 'to_logical':
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
-                  ''' .format(**fmtspec)
+                  ''' .format(simd_ext=simd_ext)
     if func == 'zip':
         ret += '''#include <nsimd/arm/{simd_ext}/ziplo.h>
                   #include <nsimd/arm/{simd_ext}/ziphi.h>
-                  '''.format(**fmtspec)
+                  '''.format(simd_ext=simd_ext)
     if func == 'unzip':
         ret += '''#include <nsimd/arm/{simd_ext}/unziplo.h>
                   #include <nsimd/arm/{simd_ext}/unziphi.h>
-                  '''.format(**fmtspec)
+                  '''.format(simd_ext=simd_ext)
     if func == 'adds':
         ret += '''#include <nsimd/arm/{simd_ext}/add.h>
-                '''.format(**fmtspec)
+                  '''.format(simd_ext=simd_ext)
     if func == 'subs':
         ret += '''#include <nsimd/arm/{simd_ext}/sub.h>
-                '''.format(**fmtspec)
+                  '''.format(simd_ext=simd_ext)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -798,7 +798,7 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}({sign}{in1}));'''.\
                 format(**fmtspec, sign=sign)
         else:
-            
+
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
                                 vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
                                 vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
