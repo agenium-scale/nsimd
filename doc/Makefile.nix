@@ -28,7 +28,7 @@ CXX_LDFLAGS      = -L$${PWD} -lns2 '-Wl,-rpath=$$ORIGIN'
 all: md2html
 
 md2html: libns2.so md2html.cpp Makefile.nix
-	$(CXX) $(CXX_FLAGS) $(CXX_LDFLAGS) md2html.cpp -o $@
+	$(CXX) $(CXX_FLAGS) md2html.cpp -o $@ $(CXX_LDFLAGS)
 
 libns2.so: $(NS2_LIBRARY_DIR)/libns2.so Makefile.nix
 	cp -f "$(NS2_LIBRARY_DIR)/$@" "$@"

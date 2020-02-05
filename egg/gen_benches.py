@@ -74,6 +74,9 @@ def asm_marker(simd, bench_name):
                 #elif defined(NSIMD_ARM)
                   {}
                 #endif'''.format(for_intel, for_arm)
+    elif simd in common.ppc_simds:
+        #TODO
+        return ''. format(bench_name=bench_name)
     else:
         raise BenchError('Unable to write marker for SIMD: {}'.format(simd))
     r += '\n'

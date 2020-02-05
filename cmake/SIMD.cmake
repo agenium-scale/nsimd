@@ -31,6 +31,7 @@ function(get_simd_infos out simd simd_optional)
         NEON64 NEON128
         AARCH64
         SVE SVE128 SVE256 SVE512 SVE1024 SVE2048
+        POWER7
     )
     set(simd_optionals
         FMA FP16
@@ -77,6 +78,7 @@ function(get_simd_infos out simd simd_optional)
     set(list_for_sve512         "${list_for_aarch64};SVE512")
     set(list_for_sve1024        "${list_for_aarch64};SVE1024")
     set(list_for_sve2048        "${list_for_aarch64};SVE2048")
+    set(list_for_power7         "${list_for_cpu};POWER7")
     
     set(${out}_LIST "${list_for_${hatch_flag}}" PARENT_SCOPE)
 
@@ -109,6 +111,8 @@ function(get_simd_infos out simd simd_optional)
         else()
             set(${out}_PLATFORM "x86_64" PARENT_SCOPE)
         endif()
+    elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "ppc")
+        set(${out}_PLATFORM "power7" PARENT_SCOPE)
     else()
         message(FATAL_ERROR
                 "Unsupported platform: '${CMAKE_SYSTEM_PROCESSOR}'")

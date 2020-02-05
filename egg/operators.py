@@ -200,7 +200,7 @@ class Operator(object, metaclass=MAddToOperators):
 
     # Defaults values (for tests)
     tests_mpfr = False
-    tests_ulps = None
+    tests_ulps = {}
 
     @property
     def returns(self):
@@ -697,11 +697,11 @@ class Sub(Operator):
 class Addv(Operator):
     full_name = 'horizontal sum'
     signature = 's addv v'
-    types = common.ftypes
     domain = Domain('R')
     categories = [DocMisc]
     desc = 'Returns the sum of all the elements contained in v'
     do_bench = False
+    types = common.ftypes
 
 class Mul(Operator):
     full_name = 'multiplication'
@@ -765,6 +765,14 @@ class Shl(Operator):
 
     def bench_mipp_name(self, typ):
         return 'mipp::lshift<{}>'.format(typ)
+
+class Shra(Operator):
+    full_name = 'arithmetic right shift'
+    signature = 'v shra v p'
+    types = common.iutypes
+    domain = Domain('R+xN')
+    categories = [DocBitsOperators]
+    desc = 'Performs a right shift operation with sign extension.'
 
 class Eq(Operator):
     full_name = 'compare for equality'
@@ -871,6 +879,7 @@ class Fma(Operator):
     signature = 'v fma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Multiply the first and second inputs and then adds the third ' + \
            'input.'
 
@@ -879,6 +888,7 @@ class Fnma(Operator):
     signature = 'v fnma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Multiply the first and second inputs, negate the intermediate ' + \
            'result and then adds the third input.'
 
@@ -887,6 +897,7 @@ class Fms(Operator):
     signature = 'v fms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Substracts the third input to multiplication the first and ' + \
            'second inputs.'
 
@@ -895,6 +906,7 @@ class Fnms(Operator):
     signature = 'v fnms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
+    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Multiply the first and second inputs, negate the intermediate ' + \
            'result and then substracts the third input to the ' + \
            'intermediate result.'
@@ -1022,7 +1034,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = 11
+    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
 
 class Rec8(Operator):
     full_name = 'reciprocal with relative error at most 2^{-8}'
@@ -1030,7 +1042,7 @@ class Rec8(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = 8
+    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -1049,7 +1061,7 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = 11
+    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
 
 class Rsqrt8(Operator):
     full_name = 'square root with relative error at most $2^{-8}$'
@@ -1057,7 +1069,7 @@ class Rsqrt8(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = 8
+    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
 
 class Ziplo(Operator):
     full_name = 'zip low halves'
@@ -1097,6 +1109,54 @@ class Unziphi(Operator):
     categories = [DocMisc]
     do_bench = False
 
+class Ziplo(Operator):
+    full_name = 'ziplo'
+    signature = 'v ziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Ziphi(Operator):
+    full_name = 'ziphi'
+    signature = 'v ziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Zip(Operator):
+    full_name = 'zip'
+    signature = 'vx2 zip v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unziplo(Operator):
+    full_name = 'unziplo'
+    signature = 'v unziplo v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unziphi(Operator):
+    full_name = 'unziphi'
+    signature = 'v unziphi v v'
+    types = common.types
+    domain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
+class Unzip(Operator):
+    full_name = 'unzip'
+    signature = 'vx2 unzip v v'
+    types = common.types
+    fomain = Domain('R')
+    categories = [DocMisc]
+    do_bench = False
+
 class ToMask(Operator):
     full_name = 'build mask from logicals'
     signature = 'v to_mask l'
@@ -1113,6 +1173,20 @@ class ToLogical(Operator):
     desc = 'Returns a vector of logicals. Set true when the corresponding ' + \
            'elements are non zero (at least one bit to 1) and false ' + \
            'otherwise.'
+
+class Adds(Operator):
+    full_name = 'addition using saturation'
+    signature = 'v adds v v'
+    domain = Domain('RxR')
+    categories = [DocBasicArithmetic]
+    desc = 'Returns the saturated sum of the two vectors given as arguments'
+
+class Subs(Operator):
+    full_name = 'subtraction using saturation'
+    signature = 'v subs v v'
+    domain = Domain('RxR')
+    categories = [DocBasicArithmetic]
+    desc = 'Returns the saturated subtraction of the two vectors given as arguments'
 
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
