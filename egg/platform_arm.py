@@ -1887,58 +1887,6 @@ def zip_unzip_half(func, simd_ext, typ):
                        i = '0' if func in ['zip1', 'uzp1'] else '1')
 
 def zip_unzip(func, simd_ext, typ):
-    content = '''\
-    nsimd_{simd_ext}_v{typ}x2 ret;
-    ret.v0 = {s}vzip1q_{suf}({in0}, {in1});
-    ret.v1 = {s}vzip2q_{suf}({in0}, {in1});
-    return ret;'''.format(s = 's' if simd_ext == 'sve' else '', **fmtspec)
-    if simd_ext in ['aarch64', 'sve']:
-        if typ == 'f16':
-            return '''\
-            #ifdef NSIMD_FP16
-            {c}
-            #else
-            nsimd_{simd_ext}_vf16x2 ret;
-            ret[0].v0 = {s}vzip1q_f32({in0}.v0, {in1}.v0);
-            ret[0].v1 = {s}vzip1q_f32({in0}.v1, {in1}.v1);
-            ret[1].v0 = {s}vzip2q_f32({in0}.v0, {in1}.v0);
-            ret[1].v1 = {s}vzip2q_f32({in0}.v1, {in1}.v1);
-            return ret;
-            #endif
-            '''.format(c=content,
-                       s = 's' if simd_ext == 'sve' else '', **fmtspec)
-        else:
-            return content
-    else:
-       content = 'return vzipq_{suf}({in0}, {in1});'.format(**fmtspec)
-       if typ in ['u64', 's64', 'f64']:
-           return '''\
-           nsimd_{simd_ext}_v{typ}x2 ret;
-           ret[0].v0 = {in0}.v0;
-           ret[0].v1 = {in1}.v0;
-           ret[1].v0 = {in0}.v1;
-           ret[1].v1 = {in1}.v1;
-           return ret;
-           '''.format(**fmtspec)
-       elif typ == 'f16':
-           return '''\
-           #ifdef NSIMD_FP16
-           {}
-           #else
-           nsimd_{simd_ext}_vf16x2 ret;
-           float32x4x2_t v_tmp0 = vzipq_f32({in0}.v0, {in1}.v0);
-           float32x4x2_t v_tmp1 = vzipq_f32({in0}.v1, {in1}.v1);
-           ret[1].v0 = v_tmp0.v0;
-           ret[1].v1 = v_tmp0.v1;
-           ret[0].v0 = v_tmp1.v0;
-           ret[0].v1 = v_tmp1.v1;
-           return ret;
-           #endif
-           '''.format(content, **fmtspec)
-       else:
-           return content
-
-def zip_unzip(func, simd_ext, typ):
     prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
     lo_hi = '''\
     nsimd_{simd_ext}_v{typ}x2 ret;
