@@ -2542,7 +2542,7 @@ def gen_unpack(opts, op, typ, lang):
         '''{head}
 
         int main(void){{
-          int i, vi, step, nb_lanes;
+          int i, vi, step;
           {typ} *vin1, *vin2;
           {typ} *vout;
           {typ} *vout_ref;
@@ -2553,10 +2553,6 @@ def gen_unpack(opts, op, typ, lang):
           CHECK(vout_ref = ({typ} *)nsimd_aligned_alloc(2 * SIZE * {sizeof}));
 
           step = vlen({typ});
-          nb_lanes = sizeof({typ_nsimd})/16;
-          if(nb_lanes == 0){{
-            nb_lanes = 1;
-          }}
 
           fprintf(stdout, "test of {op_name} over {typ}...\\n");
 

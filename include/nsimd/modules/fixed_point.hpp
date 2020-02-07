@@ -37,14 +37,14 @@ namespace fixed_point {
 // ------------------------ Types definitions and len --------------------------
 // -----------------------------------------------------------------------------
 
-template <typename T> struct pack {
+template <typename T> NSIMD_STRUCT pack {
   static const uint8_t lf = T::lf;
   static const uint8_t rt = T::rt;
   typedef fp_t<lf, rt> value_type;
   fpsimd_t<lf, rt> val;
 };
 
-template <typename T> struct packl {
+template <typename T> NSIMD_STRUCT packl {
   static const uint8_t lf = T::lf;
   static const uint8_t rt = T::rt;
   typedef typename fp_t<lf, rt>::logical_type value_type;
