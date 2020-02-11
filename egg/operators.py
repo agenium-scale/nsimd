@@ -1188,6 +1188,22 @@ class Subs(Operator):
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
 
+class Shrv(Operator):
+    full_name = 'right shift in zeros variably'
+    signature = 'v shrv v v'
+    types = common.iutypes
+    domain = Domain('RxN')
+    categories = [DocBitsOperators]
+    desc = 'Shift each value right by the corresponding distance'
+
+class Shlv(Operator):
+    full_name = 'left shift variably'
+    signature = 'v shlv v v'
+    types = common.iutypes
+    domain = Domain('RxN')
+    categories = [DocBitsOperators]
+    desc = 'Shift each value left by the corresponding distance'
+
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
 # opened for this

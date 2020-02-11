@@ -436,6 +436,24 @@ def emulate_op1(func, simd_ext, typ):
               return {pre}loadu{sufsi}({cast}buf0);'''. \
               format(cast=cast, func=func, **fmtspec)
 
+def emulate_arg2(func, simd_ext, typ):
+    if typ in common.iutypes:
+        cast = '({}*)'.format(get_type(simd_ext, typ))
+    else:
+        cast = ''
+    return '''int i;
+              {typ} buf0[{le}];
+              {typ} buf1[{le}];
+              {pre}storeu{sufsi}({cast}buf0, {in0});
+              {pre}storeu{sufsi}({cast}buf1, {in1});
+              for (i = 0; i < {le}; i += nsimd_len_cpu_{typ}()) {{
+                nsimd_storeu_cpu_{typ}(&buf0[i], nsimd_{func}_cpu_{typ}(
+                  nsimd_loadu_cpu_{typ}(&buf0[i])
+                , nsimd_loadu_cpu_{typ}(&buf1[i])));
+              }}
+              return {pre}loadu{sufsi}({cast}buf0);'''. \
+              format(cast=cast, func=func, **fmtspec)
+
 def split_cmp2(func, simd_ext, typ):
     simd_ext2 = 'sse42' if simd_ext in avx else 'avx2'
     leo2 = int(fmtspec['le']) // 2
@@ -3195,6 +3213,46 @@ def unzip(simd_ext, typ):
     '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+
+# TODO: Test if upcvt is better than emulation for 16/8 bits
+def shlv(simd_ext, from_typ):
+  if   simd_ext in [ 'avx2' ]:
+    if   from_typ in [ 'i32' , 'u32' , 'i64' , 'u64' ]:
+      return '''\
+      return _mm256_sllv_epi{typnbits}( {in0} , {in1} );
+      '''.format(**fmtspec)
+    else:
+      return emulate_arg2('shlv', simd_ext, from_typ)
+  elif simd_ext in avx512:
+    if   from_typ in [ 'i16' , 'u16' , 'i32' , 'u32' , 'i64' , 'u64' ]:
+      return '''\
+      return _mm{nbits}_sllv_epi{typnbits}( {in0} , {in1} );
+      '''.format(**fmtspec)
+    else:
+      return emulate_arg2('shlv', simd_ext, from_typ)
+  else:
+    return emulate_arg2('shlv', simd_ext, from_typ)
+
+def shrv(simd_ext, from_typ):
+  if   simd_ext in [ 'avx2' ]:
+    if   from_typ in [ 'i32' , 'u32' ]:
+      return '''\
+      return _mm256_srav_epi{typnbits}( {in0} , {in1} );
+      '''.format(**fmtspec)
+    else:
+      return emulate_arg2('shrv', simd_ext, from_typ)
+  elif simd_ext in avx512:
+    if   from_typ in [ 'i16' , 'u16' , 'i32' , 'u32' , 'i64' , 'u64' ]:
+      return '''\
+      return _mm{nbits}_srav_epi{typnbits}( {in0} , {in1} );
+      '''.format(**fmtspec)
+    else:
+      return emulate_arg2('shrv', simd_ext, from_typ)
+  else:
+    return emulate_arg2('shrv', simd_ext, from_typ)
+
+
+# -----------------------------------------------------------------------------
 # get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
@@ -3304,7 +3362,9 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'unziplo': lambda: unzip_half('unziplo', simd_ext, from_typ),
         'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ),
         'zip' : lambda : zip(simd_ext, from_typ),
-        'unzip' : lambda : unzip(simd_ext, from_typ)
+        'unzip' : lambda : unzip(simd_ext, from_typ),
+        'shlv' : lambda : shlv(simd_ext, from_typ),
+        'shrv' : lambda : shrv(simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
