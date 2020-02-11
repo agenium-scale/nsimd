@@ -872,6 +872,58 @@ def shra(typ):
 
 # -----------------------------------------------------------------------------
 
+# Barely modified from shra
+def shrv(typ):
+    n = get_nb_el(typ)
+    content = ''
+    # Sign extension for a right shift has implementation-defined behaviour.
+    # To be sure it is performed, we do it manually.
+    content = '\n'.join('''\
+    /* -------------------------------------------- */
+    const int shift{i} = {typnbits} - {in1}.v{i};
+    val.ival = {in0}.v{i};
+    if(val.ival < 0){{
+      sign.ival = -1;
+      sign.uval = (u{typnbits})(sign.uval << shift{i});
+    }} else {{
+      sign.uval = 0u;
+    }}
+    shifted = (u{typnbits})(val.uval >> {in1}.v{i});
+    ret.v{i} = (i{typnbits}) (shifted | sign.uval);'''.\
+                    format(**fmtspec, i=i)for i in range(0, n))
+    if typ in common.utypes:
+        return func_body('ret.v{{i}} = ({typ})({in0}.v{{i}} {op} {in1}.v{{i}});'. \
+                         format(op='>>', **fmtspec), typ)
+    else:
+        return '''\
+        nsimd_cpu_v{typ} ret;
+        union {{i{typnbits} ival; u{typnbits} uval;}} val;
+        union {{i{typnbits} ival; u{typnbits} uval;}} sign;
+        u{typnbits} shifted;
+
+        {content}
+
+        return ret;'''.format(content=content, **fmtspec)
+
+
+def shlv(from_typ):
+    if from_typ in common.utypes:
+        return func_body('ret.v{{i}} = ({typ})({in0}.v{{i}} {op} {in1}.v{{i}});'. \
+                         format(op='<<', **fmtspec), from_typ)
+    else:
+        return '''nsimd_cpu_v{typ} ret;
+                  union {{ {typ} i; {utyp} u; }} buf;
+                  {content}
+                  return ret;'''. \
+                  format(content=repeat_stmt(
+                  '''buf.i = {in0}.v{{i}};
+                     buf.u = ({utyp})(buf.u {op} {in1}.v{{i}});
+                     ret.v{{i}} = buf.i;'''.format(op='<<', **fmtspec), typ=from_typ),
+                     **fmtspec)
+
+
+# -----------------------------------------------------------------------------
+
 def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -973,7 +1025,9 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'unziplo': lambda: unzip_half('unziplo', from_typ),
         'unziphi': lambda: unzip_half('unziphi', from_typ),
         'zip' : lambda : zip(from_typ),
-        'unzip' : lambda : unzip(from_typ)
+        'unzip' : lambda : unzip(from_typ),
+        'shlv' : lambda : shlv(from_typ),
+        'shrv' : lambda : shrv(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
