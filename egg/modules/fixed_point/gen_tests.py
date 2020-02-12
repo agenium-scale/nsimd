@@ -300,6 +300,12 @@ def gen_ternary_ops_tests(lf, rt, opts):
             fp.write(content_src)
         common.clang_format(opts, filename)
 
+
+rec_emulation = """\
+// Rec operator on floating points (avoids to write a particular test for rec)
+static inline double rec(const double x){{return 1.0 / x;}}
+"""
+
 # ------------------------------------------------------------------------------
 # Template for math operators
 
@@ -309,8 +315,6 @@ math_test_template = """\
 
 {decls}
 
-// Rec operator on floating points (avoids to write a particular test for rec)
-static inline double rec(const double x){{return 1.0 / x;}}
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -352,6 +356,8 @@ math_ops = ["rec", "abs"]
 def gen_math_functions_tests(lf, rt, opts):
     for op_name in math_ops:
         decls = check + limits + comparison_fp + gen_random_val
+        if op_name == "rec":
+            decls += rec_emulation
         content_src = math_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls)

@@ -1070,13 +1070,19 @@ def shra(simd_ext, typ):
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
         elif simd_ext == 'avx2':
             return '''\
-            const unsigned int shift = (unsigned int)(64 - {in1});
-            __m256i v_sign = _mm256_set1_epi64x((unsigned int)-1 << shift);
-            __m256i v_tmp0 = _mm256_srli_epi64({in0}, {in1});
-            __m256i v_test = _mm256_cmpgt_epi64(
-              _mm256_sub_epi64(_mm256_setzero_si256(), {in0}), _mm256_setzero_si256());
-            __m256i v_mask = _mm256_and_si256(v_sign, v_test);
-            return _mm256_or_si256(v_tmp0, v_mask);
+            const int shift = 63 - a1;
+
+            __m256i v_false = _mm256_set1_epi8(-1);
+            __m256i v_one = _mm256_set1_epi64x(1l);
+            __m256i v_mask = _mm256_srli_epi64(a0, 63);
+
+            v_mask = _mm256_sub_epi64(v_mask, v_one);
+            v_mask = _mm256_andnot_si256(v_mask, v_false);
+            v_mask = _mm256_slli_epi64(v_mask, shift);
+
+            __m256i v_ret = _mm256_srli_epi64(a0, a1);
+
+            return _mm256_or_si256(v_ret, v_mask);
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
         else:
             return \
