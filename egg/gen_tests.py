@@ -304,6 +304,9 @@ def get_content(op, typ, lang):
         if op.name == 'lgamma' and typ == 'f64':
             vin_rand = 'vin1[i] = rand()%64;'
 
+        if op.name in [ 'shrv' , 'shlv' ]:
+            vin_rand = 'vin1[i] = rand();\nvin2[i] = rand() % {};\nvin2[i] = vin2[i] > 0 ? vin2[i] : -vin2[i];'.format(typ[1:])
+
         # Make vout_ref_comp
         # We use MPFR on Linux to compare numerical results, but it is only on
         # Linux as MPFR does not play well on Windows. On Windows we compare
