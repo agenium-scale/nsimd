@@ -3224,6 +3224,18 @@ def unzip(simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 
+def clz(simd_ext, from_typ):
+  if simd_ext in avx512:
+    if from_typ in [ 'i32' , 'u32' , 'i64' , 'u64' ]:
+      return '''\
+      return _mm{nbits}_lzcnt_epi_{typnbits}( {in0} );
+      '''.format(**fmtspec)
+    else:
+      return emulate_op1('clz', simd_ext, from_typ)
+  else:
+    return emulate_op1('clz', simd_ext, from_typ)
+
+
 # TODO: Test if upcvt is better than emulation for 16/8 bits
 def shlv(simd_ext, from_typ):
   if   simd_ext in [ 'avx2' ]:
@@ -3373,6 +3385,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unziphi': lambda: unzip_half(opts, 'unziphi', simd_ext, from_typ),
         'zip' : lambda : zip(simd_ext, from_typ),
         'unzip' : lambda : unzip(simd_ext, from_typ),
+        'clz' : lambda : clz(simd_ext, from_typ),
         'shlv' : lambda : shlv(simd_ext, from_typ),
         'shrv' : lambda : shrv(simd_ext, from_typ)
     }
