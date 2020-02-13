@@ -116,6 +116,10 @@ def get_additional_include(func, platform, simd_ext):
     elif func == 'shra':
         return '''#include <nsimd/cpu/{simd_ext}/shr.h>
                   '''.format(simd_ext=simd_ext)
+    elif func == 'clz':
+        return  '''
+                #include <nsimd/cpu/cpu/shrv.h>
+                '''
     return ''
 
 # -----------------------------------------------------------------------------
@@ -877,6 +881,160 @@ def shra(typ):
 
 # -----------------------------------------------------------------------------
 
+def clz_helper( depth ):
+  compare = [ '0x3' , '0xF' , '0xFF' , '0xFFFF' , '0xFFFFFFFF' ]
+  shift   = [ '1' , '2' , '3' , '4' , '5' ]
+  maxes   = [ 1 , 3 , 7 , 15 , 31 , 63 ]
+  nmx = str(maxes[depth])
+
+  compare = compare[0:depth]
+  shift   = shift  [0:depth]
+
+  compare = compare[::-1]
+  shift   = shift  [::-1]
+
+  prelude = '''\
+  nsimd_{simd_ext}_v{from_typ} ones   = nsimd_set1_{simd_ext}_{from_typ}(1);
+  nsimd_{simd_ext}_v{from_typ} zeroes = nsimd_set1_{simd_ext}_{from_typ}(0);
+  nsimd_{simd_ext}_vl{from_typ} q_gt, lt_zero;
+  nsimd_{simd_ext}_v{from_typ} q, r;
+  nsimd_{simd_ext}_v{from_typ} x = {in0};
+  '''.format(**fmtspec)
+
+  intro = '''\
+
+  q_gt = nsimd_gt_{simd_ext}_{from_typ}( x , nsimd_set1_{simd_ext}_{from_typ}({comp}) );
+  q    = nsimd_shl_{simd_ext}_{from_typ}( nsimd_if_else1_{simd_ext}_{from_typ}( q_gt , ones , zeroes ) , {sh} );
+  x = nsimd_shrv_{simd_ext}_{from_typ}( x , q );
+  r = q;
+  '''.format(**fmtspec, comp=compare[0], sh=shift[0])
+
+  compare = compare[1:]
+  shift   = shift  [1:]
+
+  body = ''
+  for i in range( 0 , len(compare) ):
+    body += '''\
+
+    q_gt = nsimd_gt_{simd_ext}_{from_typ}( x , nsimd_set1_{simd_ext}_{from_typ}({comp}) );
+    q    = nsimd_shl_{simd_ext}_{from_typ}( nsimd_if_else1_{simd_ext}_{from_typ}( q_gt , ones , zeroes ) , {sh} );
+    x = nsimd_shrv_{simd_ext}_{from_typ}( x , q );
+    r = nsimd_orb_{simd_ext}_{from_typ}( r , q );
+    '''.format(**fmtspec, comp=compare[i], sh=shift[i])
+
+  outro = '''\
+
+  r = nsimd_orb_{simd_ext}_{from_typ}( r , nsimd_shr_{simd_ext}_{from_typ}( x , 1 ) );
+  r = nsimd_sub_{simd_ext}_{from_typ}( nsimd_set1_{simd_ext}_{from_typ}({nearmax}) , r );
+  lt_zero = nsimd_lt_{simd_ext}_{from_typ}( x , zeroes );
+  r = nsimd_if_else1_{simd_ext}_{from_typ}( lt_zero , zeroes , r );
+  return r;
+  '''.format(**fmtspec, nearmax=nmx)
+
+  return (prelude + intro + body + outro)
+
+
+# Using algorithm from:
+#   https://en.wikipedia.org/wiki/Find_first_set#CLZ - clz5
+#   No benchmarking was done to compare performance of the different algorithms
+# Note: builtins have different behaviour for 0, so we should avoid 0 in tests
+def clz(from_typ):
+  r = ''
+  if from_typ in [ 'i8'  , 'u8'  ]:
+    return clz_helper(2)
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 8;'. \
+                                format(op='__builtin_clzs', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 24;'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 8;'. \
+                                format(op='__builtin_lzcnt16', **fmtspec), from_typ)
+              )
+    r += clz_helper( 2 )
+    r += '''
+    #endif
+    '''
+    return r
+  if from_typ in [ 'i16' , 'u16' ]:
+    return clz_helper(3)
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clzs', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 16;'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_lzcnt16', **fmtspec), from_typ)
+              )
+    r += clz_helper( 3 )
+    r += '''
+    #endif
+    '''
+    return r
+  if from_typ in [ 'i32' , 'u32' ]:
+    return clz_helper(4)
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_lzcnt32', **fmtspec), from_typ)
+              )
+    r += clz_helper( 4 )
+    r += '''
+    #endif
+    '''
+    return r
+  if from_typ in [ 'i64' , 'u64' ]:
+    return clz_helper(5)
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clzl', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clzl', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_lzcnt64', **fmtspec), from_typ)
+              )
+    r += clz_helper( 5 )
+    r += '''
+    #endif
+    '''
+    return r
+
+# -----------------------------------------------------------------------------
+
 # Barely modified from shra
 def shrv(typ):
     n = get_nb_el(typ)
@@ -1031,6 +1189,7 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'unziphi': lambda: unzip_half('unziphi', from_typ),
         'zip' : lambda : zip(from_typ),
         'unzip' : lambda : unzip(from_typ),
+        'clz' : lambda : clz(from_typ),
         'shlv' : lambda : shlv(from_typ),
         'shrv' : lambda : shrv(from_typ)
     }

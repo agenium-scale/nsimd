@@ -2048,6 +2048,13 @@ def zip_unzip(func, simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 
+def clz(simd_ext, from_typ):
+      return '''\
+      nsimd_{simd_ext}_v{typ} ret;
+      ret.v0 = clz_{suf}( {in0}.v0 );
+      return ret;
+      '''.format(**fmtspec)
+
 def shlv(simd_ext, from_typ):
       return '''\
       nsimd_{simd_ext}_v{typ} ret;
@@ -2170,6 +2177,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'unziphi': lambda: zip_unzip_half("uzp2", simd_ext, from_typ),
         'zip' : lambda: zip_unzip("zip", simd_ext, from_typ),
         'unzip' : lambda: zip_unzip("uzp", simd_ext, from_typ),
+        'clz' : lambda : clz(simd_ext, from_typ),
         'shlv' : lambda : shlv(simd_ext, from_typ),
         'shrv' : lambda : shrv(simd_ext, from_typ)
     }

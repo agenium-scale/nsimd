@@ -1188,6 +1188,15 @@ class Subs(Operator):
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
 
+class Clz(Operator):
+    full_name = 'count leading zeroes'
+    signature = 'v clz v'
+    domain = Domain('RxR')
+    categories = [DocMisc]
+    #types = [ 'i8' , 'u8' ]
+    types = common.iutypes
+    desc = 'Count number of zero bits before the largest set bit'
+
 class Shrv(Operator):
     full_name = 'right shift in zeros variably'
     signature = 'v shrv v v'
