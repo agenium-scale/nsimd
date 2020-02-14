@@ -1043,26 +1043,22 @@ def shrv(typ):
     # To be sure it is performed, we do it manually.
     content = '\n'.join('''\
     /* -------------------------------------------- */
-    const int shift{i} = {typnbits} - {in1}.v{i};
-    val.ival = {in0}.v{i};
-    if(val.ival < 0){{
-      sign.ival = -1;
-      sign.uval = (u{typnbits})(sign.uval << shift{i});
-    }} else {{
-      sign.uval = 0u;
-    }}
-    shifted = (u{typnbits})(val.uval >> {in1}.v{i});
-    ret.v{i} = (i{typnbits}) (shifted | sign.uval);'''.\
+    const int shift{i} = {typnbits} - 1 - {in1}.v{i};
+
+    val.i = {in0}.v{i};
+    mask = (u{typnbits})((val.u >> ({typnbits} - 1)) * ~(u{typnbits})(0) << shift{i});
+
+    ret.v{i} = ({typ})((val.u >> {in1}.v{i}) | mask);'''.\
                     format(**fmtspec, i=i)for i in range(0, n))
     if typ in common.utypes:
         return func_body('ret.v{{i}} = ({typ})({in0}.v{{i}} {op} {in1}.v{{i}});'. \
                          format(op='>>', **fmtspec), typ)
     else:
         return '''\
+        union {{i{typnbits} i; u{typnbits} u;}} val;
+
         nsimd_cpu_v{typ} ret;
-        union {{i{typnbits} ival; u{typnbits} uval;}} val;
-        union {{i{typnbits} ival; u{typnbits} uval;}} sign;
-        u{typnbits} shifted;
+        u{typnbits} mask;
 
         {content}
 
