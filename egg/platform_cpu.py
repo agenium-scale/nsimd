@@ -1083,6 +1083,50 @@ def shlv(from_typ):
 
 # -----------------------------------------------------------------------------
 
+# Note: while loop should never be longer than nbits. Can we use this?
+def powi(from_typ):
+  return '''\
+  nsimd_{simd_ext}_v{typ} x = {in0};
+  nsimd_{simd_ext}_v{typ} one = nsimd_set1_{simd_ext}_{typ}(1);
+  nsimd_{simd_ext}_v{typ} y = one;
+  nsimd_{simd_ext}_v{typ} n = {in1};
+
+  nsimd_{simd_ext}_vl{typ} gt1 = nsimd_gt_{simd_ext}_{typ}( n , one );
+  nsimd_{simd_ext}_v{typ} odd;
+  nsimd_{simd_ext}_v{typ} tmp;
+  nsimd_{simd_ext}_v{typ} x_final;
+  nsimd_{simd_ext}_v{typ} y_final;
+  while( nsimd_any_{simd_ext}_{typ}( gt1 ) ) {{
+    nsimd_{simd_ext}_vl{typ} to_store = nsimd_eq_{simd_ext}_{typ}( n , one );
+    x_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , x , x_final );
+    y_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , y , y_final );
+
+    odd = nsimd_andb_{simd_ext}_{typ}( one , n );
+    tmp = nsimd_sub_{simd_ext}_{typ}( x , one );
+    tmp = nsimd_mul_{simd_ext}_{typ}( tmp , odd );
+    tmp = nsimd_add_{simd_ext}_{typ}( tmp , one );
+    y = nsimd_mul_{simd_ext}_{typ}( y , tmp );
+    x = nsimd_mul_{simd_ext}_{typ}( x , x );
+    n = nsimd_shr_{simd_ext}_{typ}( n , 1 );
+
+    gt1 = nsimd_gt_{simd_ext}_{typ}( n , one );
+  }}
+  nsimd_{simd_ext}_vl{typ} to_store = nsimd_eq_{simd_ext}_{typ}( n , one );
+  x_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , x , x_final );
+  y_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , y , y_final );
+
+
+  nsimd_{simd_ext}_v{typ} ret =  nsimd_mul_{simd_ext}_{typ}( x_final , y_final );
+
+  nsimd_{simd_ext}_v{typ} zero; zero = nsimd_xorb_{simd_ext}_{typ}( zero , zero );
+  nsimd_{simd_ext}_vl{typ} is_zero = nsimd_eq_{simd_ext}_{typ}( {in1} , zero );
+  ret = nsimd_if_else1_{simd_ext}_{typ}( is_zero , one , ret );
+
+  return ret;
+  '''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+
 def get_impl(func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -1187,7 +1231,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'unzip' : lambda : unzip(from_typ),
         'clz' : lambda : clz(from_typ),
         'shlv' : lambda : shlv(from_typ),
-        'shrv' : lambda : shrv(from_typ)
+        'shrv' : lambda : shrv(from_typ),
+        'powi' : lambda : powi(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
