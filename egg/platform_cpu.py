@@ -863,7 +863,7 @@ def shra(typ):
         union {{i{typnbits} i; u{typnbits} u;}} val;
 
         nsimd_cpu_v{typ} ret;
-        const int shift = {typnbits} - 1 - a1;
+        const int shift = {typnbits} - 1 - {in1};
         u{typnbits} mask;
 
         {content}

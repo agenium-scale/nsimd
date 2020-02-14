@@ -589,7 +589,7 @@ def load_deg234(simd_ext, typ, align, deg):
         '''nsimd_{simd_ext}_v{typ}x{deg} ret;
            u16 buf[{le}];
            nsimd_{simd_ext}_vu16x{deg} tmp =
-               nsimd_load{deg}{a}_{simd_ext}_u16((u16*)a0);
+               nsimd_load{deg}{a}_{simd_ext}_u16((u16*){in0});
            {code}
            return ret;'''.format(code=code, a=a, deg=deg, **fmtspec)
     if simd_ext in sse:
@@ -1070,17 +1070,17 @@ def shra(simd_ext, typ):
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
         elif simd_ext == 'avx2':
             return '''\
-            const int shift = 63 - a1;
+            const int shift = 63 - {in1};
 
             __m256i v_false = _mm256_set1_epi8(-1);
             __m256i v_one = _mm256_set1_epi64x(1l);
-            __m256i v_mask = _mm256_srli_epi64(a0, 63);
+            __m256i v_mask = _mm256_srli_epi64({in0}, 63);
 
             v_mask = _mm256_sub_epi64(v_mask, v_one);
             v_mask = _mm256_andnot_si256(v_mask, v_false);
             v_mask = _mm256_slli_epi64(v_mask, shift);
 
-            __m256i v_ret = _mm256_srli_epi64(a0, a1);
+            __m256i v_ret = _mm256_srli_epi64({in0}, {in1});
 
             return _mm256_or_si256(v_ret, v_mask);
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))

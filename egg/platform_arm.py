@@ -1510,8 +1510,8 @@ def reverse1(simd_ext, typ):
                                            format(armtyp=armtyp, **fmtspec)
     elif typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
-                  ret.v0 = nsimd_reverse_{simd_ext}_f32(a0.v1);
-                  ret.v1 = nsimd_reverse_{simd_ext}_f32(a0.v0);
+                  ret.v0 = nsimd_reverse_{simd_ext}_f32({in0}.v1);
+                  ret.v1 = nsimd_reverse_{simd_ext}_f32({in0}.v0);
                   return ret;'''.format(**fmtspec)
     else:
         return '''{in0} = vrev64q_{armtyp}({in0});
