@@ -3267,7 +3267,7 @@ def shrv(simd_ext, from_typ):
 
 # Same as cpu code
 def powi(simd_ext, from_typ):
-  return '''\
+  algo = '''\
   nsimd_{simd_ext}_v{typ} x = {in0};
   nsimd_{simd_ext}_v{typ} one = nsimd_set1_{simd_ext}_{typ}(1);
   nsimd_{simd_ext}_v{typ} y = one;
@@ -3306,6 +3306,13 @@ def powi(simd_ext, from_typ):
 
   return ret;
   '''.format(**fmtspec)
+  if simd_ext in avx512:
+    return algo
+  else:
+    if '64' in from_typ:
+      return emulate_arg2('powi', simd_ext, from_typ)
+    else:
+      return algo
 
 
 # -----------------------------------------------------------------------------
