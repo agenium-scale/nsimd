@@ -1181,6 +1181,15 @@ class Shlv(Operator):
     categories = [DocBitsOperators]
     desc = 'Shift each value left by the corresponding distance'
 
+class Powi(Operator):
+    full_name = 'integer exponentiation'
+    signature = 'v powi v v'
+    types = common.iutypes
+    domain = Domain('RxN')
+    categories = [DocBitsOperators]
+    desc = 'Integer power of an integer. Both arguments are vectors'
+
+
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not Pythonic and an issue was
 # opened for this
