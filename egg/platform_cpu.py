@@ -936,7 +936,6 @@ def clz_helper( depth ):
 def clz(from_typ):
   r = ''
   if from_typ in [ 'i8'  , 'u8'  ]:
-    return clz_helper(2)
     r += '''\
     #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
       {clicc}
@@ -959,7 +958,6 @@ def clz(from_typ):
     '''
     return r
   if from_typ in [ 'i16' , 'u16' ]:
-    return clz_helper(3)
     r += '''\
     #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
       {clicc}
@@ -982,7 +980,6 @@ def clz(from_typ):
     '''
     return r
   if from_typ in [ 'i32' , 'u32' ]:
-    return clz_helper(4)
     r += '''\
     #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
       {clicc}
@@ -1005,7 +1002,6 @@ def clz(from_typ):
     '''
     return r
   if from_typ in [ 'i64' , 'u64' ]:
-    return clz_helper(5)
     r += '''\
     #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
       {clicc}
