@@ -28,495 +28,295 @@ SOFTWARE.
 #include <nsimd/nsimd-all.hpp>
 
 #include <cassert>
-#include <stdexcept>
-#include <utility>
 #include <vector>
 
 namespace tet1d {
 
-// Eval
+// ----------------------------------------------------------------------------
+// general definitions
 
-enum EvalMode { Scalar, Simd, Cuda, Hip };
+struct none_t {};
 
-// in
+template <typename Op, typename Left, typename Right, typename Extra>
+struct node {};
 
-template <typename T> struct in_t {
-  typedef typename T::value_type value_type;
-  typedef value_type result_type;
-  typedef nsimd::pack<value_type> simd_pack_type;
+const nsimd::nat end = nsimd::nat(-1);
 
-  T const &data;
+// ----------------------------------------------------------------------------
+// supported kernels
 
-  in_t(T const &data_) : data(data_) {
-#ifdef NSIMD_IS_NVCC
-    update_p_data_cuda();
-#endif
+#if defined(NSIMD_CUDA)
+
+// CUDA component wise kernel
+template <typename T, typename Expr>
+__global__ void gpu_kernel_component_wise(T *dst, Expr const &expr,
+                                          nsimd::nat n) {
+  int i = threadIdx.x + blockIdx.x *  blockDim.x;
+  if (i < n) {
+    dst[i] = expr.gpu_get(i);
   }
-
-  int size() const { return int(data.size()); }
-
-  bool is_scalar() const { return false; }
-
-  value_type operator()(int const i) const { return data[i]; }
-
-#ifdef NSIMD_IS_NVCC
-  value_type const *p_data_cuda;
-  void update_p_data_cuda() { p_data_cuda = data.data(); }
-  __device__ value_type cuda_get(int const i) const {
-    return *(p_data_cuda + i);
-  }
-#endif
-};
-
-template <typename T> struct in_scalar_t {
-  typedef T value_type;
-  typedef value_type result_type;
-  typedef nsimd::pack<value_type> simd_pack_type;
-
-  T data; // Copy
-
-  in_scalar_t(T const data_) : data(data_) {}
-
-  int size() const { return 1; }
-
-  bool is_scalar() const { return true; }
-};
-
-template <typename T, typename A>
-tet1d::in_t<std::vector<T, A> > in(std::vector<T, A> const &data_) {
-  return tet1d::in_t<std::vector<T, A> >(data_);
 }
 
-template <typename T> tet1d::in_scalar_t<T> in(T const &data_) {
-  return tet1d::in_scalar_t<T>(data_);
+// CUDA component wise kernel with masked output
+template <typename T, typename Mask, typename Expr>
+__global__ void gpu_kernel_component_wise_mask(T *dst, Mask const &mask,
+                                               Expr const &expr,
+                                               nsimd::nat n) {
+  int i = threadIdx.x + blockIdx.x *  blockDim.x;
+  if (i < n && mask.gpu_get(i)) {
+    dst[i] = expr.gpu_get(i);
+  }
 }
 
-// out
+#elif defined(NSIMD_HIP)
 
-template <typename T> struct out_t;
-
-template <typename T, typename Node>
-tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
-                      tet1d::EvalMode const eval_mode);
-
-template <typename T> struct out_t {
-  typedef typename T::value_type value_type;
-  typedef value_type result_type;
-  typedef nsimd::pack<value_type> simd_pack_type;
-
-  T &data;
-
-  tet1d::EvalMode eval_mode;
-
-  out_t(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd)
-      : data(data_), eval_mode(eval_mode_) {
-#ifdef NSIMD_IS_NVCC
-    update_p_data_cuda();
-#endif
+// HIP component wise kernel
+template <typename T, typename Expr>
+__global__ void gpu_kernel_component_wise(hipLaunchParm lp, T *dst,
+                                          Expr const &expr, nsimd::nat n) {
+  int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+  if (i < n) {
+    dst[i] = expr.gpu_get(i);
   }
-
-  void resize(size_t const size) { data.resize(size); }
-
-  int size() const { return int(data.size()); }
-
-  bool is_scalar() const { return false; }
-
-  value_type &operator()(int const i) { return data[i]; }
-  value_type operator()(int const i) const { return data[i]; }
-
-#ifdef NSIMD_IS_NVCC
-  value_type *p_data_cuda;
-  void update_p_data_cuda() { p_data_cuda = data.data(); }
-  __device__ value_type &cuda_get(int const i) { return *(p_data_cuda + i); }
-  __device__ value_type cuda_get(int const i) const {
-    return *(p_data_cuda + i);
-  }
-#endif
-
-  template <typename Node> tet1d::out_t<T> &operator=(Node const &node) {
-    return tet1d::eval(*this, node, eval_mode);
-  }
-};
-
-template <typename T> struct out_scalar_t {
-  typedef T value_type;
-
-  T &data;
-
-  tet1d::EvalMode eval_mode;
-
-  out_scalar_t(T &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd)
-      : data(data_), eval_mode(eval_mode_) {}
-
-  int size() const { return 1; }
-
-  bool is_scalar() const { return true; }
-
-  template <typename Node> tet1d::out_t<T> &operator=(Node const &node) {
-    return tet1d::eval(*this, node, eval_mode);
-  }
-};
-
-template <typename T, typename A>
-tet1d::out_t<std::vector<T, A> >
-out(std::vector<T, A> &data_, tet1d::EvalMode const eval_mode_ = tet1d::Simd) {
-  return tet1d::out_t<std::vector<T, A> >(data_, eval_mode_);
 }
 
-template <typename T>
-tet1d::out_scalar_t<T> out(T &data_,
-                           tet1d::EvalMode const eval_mode_ = tet1d::Simd) {
-  return tet1d::out_scalar_t<T>(data_, eval_mode_);
+// HIP component wise kernel with masked output
+template <typename T, typename Mask, typename Expr>
+__global__ void
+gpu_kernel_component_wise_mask(hipLaunchParm lp, T *dst, Mask const &mask,
+                               Expr const &expr, nsimd::nat n) {
+  int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+  if (i < n && mask.gpu_get(i)) {
+    dst[i] = expr.gpu_get(i);
+  }
 }
 
-// Common type
+#else
 
-template <typename A0, typename A1> struct common_type {};
-
-template <typename T> struct common_type<T, T> { typedef T result_type; };
-
-// TODO
-// template <> struct common_type<float, double> { typedef double result_type;
-// }; template <> struct common_type<double, float> { typedef double
-// result_type; };
-
-// Operation result type
-
-template <typename Op, typename A> struct op1_result_type_t {};
-
-template <typename Op, typename A0, typename A1> struct op2_result_type_t {};
-
-template <typename Op, typename A0, typename A1, typename A2>
-struct op3_result_type_t {};
-
-// Node
-
-template <typename Op, typename A> struct op1_t {
-  typedef typename tet1d::op1_result_type_t<
-      Op, typename A::result_type>::result_type result_type;
-  typedef nsimd::pack<result_type> simd_pack_type;
-
-  Op op;
-  A a;
-
-  op1_t(Op op_, A a_) : op(op_), a(a_) {}
-
-  int size() const { return a.size(); }
-
-  bool is_scalar() const { return a.is_scalar(); }
-};
-
-template <typename Op, typename A0, typename A1> struct op2_t {
-  typedef
-      typename tet1d::op2_result_type_t<Op, typename A0::result_type,
-                                        typename A1::result_type>::result_type
-          result_type;
-  typedef nsimd::pack<result_type> simd_pack_type;
-
-  Op op;
-  A0 a0;
-  A1 a1;
-
-  op2_t(Op op_, A0 a0_, A1 a1_) : op(op_), a0(a0_), a1(a1_) {
-    char const *const error_message = "TODO";
-    assert((a0.is_scalar() || a1.is_scalar() || a0.size() == a1.size()) &&
-           error_message);
+// CPU component wise kernel
+template <typename T, typename Expr, typename Pack>
+void cpu_kernel_component_wise(T *dst, Expr const &expr, nsimd::nat n) {
+  nsimd::nat i;
+  int len = nsimd::len(Pack());
+  for (i = 0; i < n; i += len) {
+    nsimd::storeu(&dst[i], expr.template simd_get<Pack>(i));
   }
-
-  int size() const { return a0.is_scalar() ? a1.size() : a0.size(); }
-
-  bool is_scalar() const { return a0.is_scalar() && a1.is_scalar(); }
-};
-
-template <typename Op, typename A0, typename A1, typename A2> struct op3_t {
-  typedef typename tet1d::op3_result_type_t<
-      Op, typename A0::result_type, typename A1::result_type,
-      typename A2::result_type>::result_type result_type;
-  typedef nsimd::pack<result_type> simd_pack_type;
-
-  Op op;
-  A0 a0;
-  A1 a1;
-  A2 a2;
-
-  op3_t(Op op_, A0 a0_, A1 a1_, A2 a2_) : op(op_), a0(a0_), a1(a1_), a2(a2_) {
-    char const *const error_message = "TODO";
-    assert((a0.is_scalar() || a1.is_scalar() || a0.size() == a1.size()) &&
-           (a0.is_scalar() || a2.is_scalar() || a0.size() == a2.size()) &&
-           (a1.is_scalar() || a2.is_scalar() || a1.size() == a2.size()) &&
-           error_message);
+  for (; i < n; i++) {
+    dst[i] = expr.scalar_get(i);
   }
+}
 
-  int size() const {
-    if (a0.is_scalar()) {
-      if (a1.is_scalar()) {
-        return a2.size();
-      } else {
-        return a1.size();
-      }
-    } else {
-      return a0.size();
+// CPU component wise kernel with masked output
+template <typename T, typename Mask, typename Expr, typename Pack>
+void cpu_kernel_component_wise_mask(T *dst, Mask const &mask, Expr const &expr,
+                                    nsimd::nat n) {
+  nsimd::nat i;
+  int len = nsimd::len(Pack());
+  for (i = 0; i < n; i += len) {
+    nsimd::storeu(&dst[i], nsimd::if_else(mask.template simd_get<Pack>(i),
+                                          expr.template simd_get<Pack>(i),
+                                          nsimd::loadu<Pack>(&dst[i])));
+  }
+  for (; i < n; i++) {
+    if (mask.template get(i)) {
+      dst[i] = expr.scalar_get(i);
     }
   }
+}
 
-  bool is_scalar() const { return a0.is_scalar() && a1.is_scalar(); }
+#endif
+
+// ----------------------------------------------------------------------------
+// meta for building a pack from another ignoring the base type
+
+template <typename T, typename Pack> struct to_pack_t {
+  static const int unroll = Pack::unroll;
+  typedef typename Pack::simd_ext simd_ext;
+  typedef nsimd::pack<T, unroll, simd_ext> type;
 };
 
-} // namespace tet1d
+template <typename T, int Unroll, typename SimdExt, typename Pack>
+struct to_pack_t<nsimd::pack<T, Unroll, SimdExt>, Pack> {
+  static const int unroll = Pack::unroll;
+  typedef typename Pack::simd_ext simd_ext;
+  typedef nsimd::pack<T, unroll, simd_ext> type;
+};
 
-#include "tet1d/functions.hpp"
+// ----------------------------------------------------------------------------
+// meta for supporting scalars + scalar node
 
-namespace tet1d {
+struct scalar_t {};
 
-// Eval scalar
+template <typename T> struct node<scalar_t, none_t, none_t, T> {
+  T value;
 
-template <typename T>
-typename tet1d::in_t<T>::value_type eval_scalar_i(tet1d::in_t<T> const &in,
-                                                  int const i) {
-  return in(i);
-}
-
-template <typename T>
-T eval_scalar_i(tet1d::in_scalar_t<T> const &in,
-                int const i
-) {
-  return in.data;
-}
-
-template <typename T>
-typename tet1d::out_t<T>::value_type &eval_scalar_i(tet1d::out_t<T> &out,
-                                                    int const i) {
-  return out(i);
-}
-
-template <typename T>
-typename tet1d::out_t<T>::value_type eval_scalar_i(tet1d::out_t<T> const &out,
-                                                   int const i) {
-  return out(i);
-}
-
-template <typename Op, typename A>
-typename op1_t<Op, A>::result_type eval_scalar_i(op1_t<Op, A> const &node,
-                                                 int const i);
-
-template <typename Op, typename A0, typename A1>
-typename op2_t<Op, A0, A1>::result_type
-eval_scalar_i(op2_t<Op, A0, A1> const &node, int const i);
-
-template <typename Op, typename A0, typename A1, typename A2>
-typename op3_t<Op, A0, A1, A2>::result_type
-eval_scalar_i(op3_t<Op, A0, A1, A2> const &node, int const i);
-
-template <typename Op, typename A>
-typename op1_t<Op, A>::result_type eval_scalar_i(op1_t<Op, A> const &node,
-                                                 int const i) {
-  return node.op.eval_scalar(tet1d::eval_scalar_i(node.a, i));
-}
-
-template <typename Op, typename A0, typename A1>
-typename op2_t<Op, A0, A1>::result_type
-eval_scalar_i(op2_t<Op, A0, A1> const &node, int const i) {
-  return node.op.eval_scalar(tet1d::eval_scalar_i(node.a0, i),
-                             tet1d::eval_scalar_i(node.a1, i));
-}
-
-template <typename Op, typename A0, typename A1, typename A2>
-typename op3_t<Op, A0, A1, A2>::result_type
-eval_scalar_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
-  return node.op.eval_scalar(tet1d::eval_scalar_i(node.a0, i),
-                             tet1d::eval_scalar_i(node.a1, i),
-                             tet1d::eval_scalar_i(node.a2, i));
-}
-
-// Eval simd
-
-template <typename T>
-typename tet1d::in_t<T>::simd_pack_type eval_simd_i(tet1d::in_t<T> const &in,
-                                                    int const i) {
-  typedef typename tet1d::in_t<T>::value_type value_type;
-  return nsimd::loadu<nsimd::pack<value_type> >(&in.data[i]);
-}
-
-template <typename T>
-typename tet1d::in_scalar_t<T>::simd_pack_type
-eval_simd_i(tet1d::in_scalar_t<T> const &in,
-            int const // i
-) {
-  return nsimd::pack<T>(in.data);
-}
-
-template <typename Op, typename A>
-typename op1_t<Op, A>::simd_pack_type eval_simd_i(op1_t<Op, A> const &node,
-                                                  int const i);
-
-template <typename Op, typename A0, typename A1>
-typename op2_t<Op, A0, A1>::simd_pack_type
-eval_simd_i(op2_t<Op, A0, A1> const &node, int const i);
-
-template <typename Op, typename A0, typename A1, typename A2>
-typename op3_t<Op, A0, A1, A2>::simd_pack_type
-eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i);
-
-template <typename Op, typename A>
-typename op1_t<Op, A>::simd_pack_type eval_simd_i(op1_t<Op, A> const &node,
-                                                  int const i) {
-  return node.op.eval_simd_i(tet1d::eval_simd_i(node.a, i));
-}
-
-template <typename Op, typename A0, typename A1>
-typename op2_t<Op, A0, A1>::simd_pack_type
-eval_simd_i(op2_t<Op, A0, A1> const &node, int const i) {
-  return node.op.eval_simd_i(tet1d::eval_simd_i(node.a0, i),
-                             tet1d::eval_simd_i(node.a1, i));
-}
-
-template <typename Op, typename A0, typename A1, typename A2>
-typename op3_t<Op, A0, A1, A2>::simd_pack_type
-eval_simd_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
-  return node.op.eval_simd_i(tet1d::eval_simd_i(node.a0, i),
-                             tet1d::eval_simd_i(node.a1, i),
-                             tet1d::eval_simd_i(node.a2, i));
-}
-
-// Eval CUDA
-
-#ifdef NSIMD_IS_NVCC
-
-template <typename T>
-__device__ typename tet1d::in_t<T>::value_type
-eval_cuda_i(tet1d::in_t<T> const &in, int const i) {
-  return in.cuda_get(i);
-}
-
-template <typename T>
-__device__ T eval_cuda_i(tet1d::in_scalar_t<T> const &in, int const // i
-) {
-  return in.data;
-}
-
-template <typename T>
-__device__ typename tet1d::out_t<T>::value_type &
-eval_cuda_i(tet1d::out_t<T> &out, int const i) {
-  return out.cuda_get(i);
-}
-
-template <typename T>
-__device__ typename tet1d::out_t<T>::value_type
-eval_cuda_i(tet1d::out_t<T> const &out, int const i) {
-  return out.cuda_get(i);
-}
-
-template <typename Op, typename A>
-__device__ typename op1_t<Op, A>::result_type
-eval_cuda_i(op1_t<Op, A> const &node, int const i);
-
-template <typename Op, typename A0, typename A1>
-__device__ typename op2_t<Op, A0, A1>::result_type
-eval_cuda_i(op2_t<Op, A0, A1> const &node, int const i);
-
-template <typename Op, typename A0, typename A1, typename A2>
-__device__ typename op3_t<Op, A0, A1, A2>::result_type
-eval_cuda_i(op3_t<Op, A0, A1, A2> const &node, int const i);
-
-template <typename Op, typename A>
-__device__ typename op1_t<Op, A>::result_type
-eval_cuda_i(op1_t<Op, A> const &node, int const i) {
-  return node.op.eval_cuda_i(tet1d::eval_cuda_i(node.a, i));
-}
-
-template <typename Op, typename A0, typename A1>
-__device__ typename op2_t<Op, A0, A1>::result_type
-eval_cuda_i(op2_t<Op, A0, A1> const &node, int const i) {
-  return node.op.eval_cuda_i(tet1d::eval_cuda_i(node.a0, i),
-                             tet1d::eval_cuda_i(node.a1, i));
-}
-
-template <typename Op, typename A0, typename A1, typename A2>
-__device__ typename op3_t<Op, A0, A1, A2>::result_type
-eval_cuda_i(op3_t<Op, A0, A1, A2> const &node, int const i) {
-  return node.op.eval_cuda_i(tet1d::eval_cuda_i(node.a0, i),
-                             tet1d::eval_cuda_i(node.a1, i),
-                             tet1d::eval_cuda_i(node.a2, i));
-}
-
-#endif
-
-// Eval
-
-template <typename T, typename Node>
-tet1d::out_t<T> &eval_scalar(tet1d::out_t<T> &out, Node const &node) {
-  out.resize(node.size());
-
-  for (int i = 0; i < node.size(); ++i) {
-    out(i) = tet1d::eval_scalar_i(node, i);
-  }
-
-  return out;
-}
-
-template <typename T, typename Node>
-tet1d::out_t<T> &eval_simd(tet1d::out_t<T> &out, Node const &node) {
-  out.resize(node.size());
-
-  int i = 0;
-  // simd
-  typedef typename tet1d::out_t<T>::value_type value_type;
-  typedef typename tet1d::out_t<T>::simd_pack_type simd_pack_type;
-
-  size_t len = size_t(nsimd::len(value_type()));
-  for (; i + len < node.size(); i += len) {
-    simd_pack_type r = tet1d::eval_simd_i(node, i);
-    nsimd::storeu(&(out.data[i]), r);
-  }
-  // scalar
-  for (; i < node.size(); ++i) {
-    out(i) = tet1d::eval_scalar_i(node, i);
-  }
-
-  return out;
-}
-
-#ifdef NSIMD_IS_NVCC
-template <typename T, typename Node>
-__global__ void eval_cuda_kernel(tet1d::out_t<T> out // Copy
-                                 ,
-                                 Node const node // Copy
-) {
-  size_t const i = blockIdx.x;
-  out.cuda_get(i) = tet1d::eval_cuda_i(node, i);
-}
-
-template <typename T, typename Node>
-tet1d::out_t<T> &eval_cuda(tet1d::out_t<T> &out, Node const &node) {
-  out.resize(node.size());
-  out.update_p_data_cuda();
-  // clang-format off
-  eval_cuda_kernel<<<node.size(), 1>>>(out, node);
-  // clang-format on
-  cudaDeviceSynchronize();
-  return out;
-}
-#endif
-
-template <typename T, typename Node>
-tet1d::out_t<T> &eval(tet1d::out_t<T> &out, Node const &node,
-                      tet1d::EvalMode const eval_mode) {
-  switch (eval_mode) {
-  case tet1d::Scalar:
-    return tet1d::eval_scalar(out, node);
-  case tet1d::Simd:
-    return tet1d::eval_simd(out, node);
-  case tet1d::Cuda:
-#ifdef NSIMD_IS_NVCC
-    return tet1d::eval_cuda(out, node);
+#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+  __device__ T gpu_get(nsimd::nat) const { return value; }
 #else
-    throw std::runtime_error("Compiler is not nvcc");
-#endif
-  case tet1d::Hip:
-    throw std::runtime_error("Not implemented");
+  T scalar_get(nsimd::nat) const { return value; }
+  template <typename Pack>
+  typename to_pack_t<T, Pack>::type simd_get(nsimd::nat) const {
+    typedef typename to_pack_t<T, Pack>::type pack;
+    return pack(value);
   }
-  return out; // GCC warning
+#endif
+};
+
+// ----------------------------------------------------------------------------
+// input node
+
+struct in_t {};
+
+template <typename T> struct node<in_t, none_t, none_t, T> {
+  const T *data;
+  nsimd::nat sz;
+
+#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+  __device__ T gpu_get(nsimd::nat i) const { return data[i]; }
+#else
+  T scalar_get(nsimd::nat i) const { return data[i]; }
+  template <typename Pack>
+  typename to_pack_t<T, Pack>::type simd_get(nsimd::nat i) const {
+    typedef typename to_pack_t<T, Pack>::type pack;
+    return nsimd::loadu<pack>(&data[i]);
+  }
+#endif
+
+  nsimd::nat size() const { return sz; }
+
+  template <typename I0, typename I1>
+  node<in_t, none_t, none_t, T> operator()(I0 i0_, I1 i1_) const {
+    node<in_t, none_t, none_t, T> ret;
+    nsimd::nat i0 = nsimd::nat(i0_);
+    nsimd::nat i1 = nsimd::nat(i1_);
+    i0 = i0 >= 0 ? i0 : sz + i0;
+    i1 = i1 >= 0 ? i1 : sz + i1;
+    assert(0 <= i0 && i0 < i1 && i1 < sz);
+    ret.data = &data[i0];
+    ret.sz = i1 - i0 + 1;
+    return ret;
+  }
+};
+
+// return an input node from a pointer
+template <typename T, typename I>
+inline node<in_t, none_t, none_t, T> in(const T *data, I sz) {
+  node<in_t, none_t, none_t, T> ret;
+  ret.data = data;
+  ret.sz = nsimd::nat(sz);
+  return ret;
 }
+
+// ----------------------------------------------------------------------------
+// output with condition node: I(I > 50) = ...
+
+struct mask_out_t {};
+
+template <typename Mask, typename Pack>
+struct node<Mask, none_t, none_t, Pack> {
+  typedef typename Pack::base_type T;
+  T *data;
+  nsimd::nat threads_per_block;
+  void *device;
+  Mask mask;
+
+  template <typename Op, typename Left, typename Right, typename Extra>
+  node<mask_out_t, none_t, none_t, Pack>
+  operator=(node<Op, Left, Right, Extra> const &expr) {
+#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+    nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
+    nsimd::nat nb = expr.size() + (nt - 1) / nt;
+#if defined(NSIMD_CUDA)
+    cudaStream_t stream =
+        device_stream == NULL ? NULL : *(cudaStream_t *)device_stream;
+    // clang-format off
+    gpu_kernel_component_wise_mask<T, Mask, Expr><<<nb, nt, stream>>>(
+        data, mask, expr, expr.size());
+    // clang-format on
+#elif defined(NSIMD_HIP)
+    hipStream_t stream =
+        device_stream == NULL ? NULL : *(hipStream_t *)device_stream;
+    hipLaunchKernel(gpu_kernel_component_wise_mask, dim3(nb), dim3(nt), 0, 0,
+                    data, mask, expr, expr.size());
+#endif
+#else
+    cpu_kernel_component_wise_mask<T, Mask, node<Op, Left, Right, Extra>,
+                                   Pack>(data, mask, expr, expr.size());
+#endif
+  }
+};
+
+// ----------------------------------------------------------------------------
+// output node
+
+struct out_t {};
+
+template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
+  typedef typename Pack::value_type T;
+  const T *data;
+  nsimd::nat threads_per_block;
+  void *stream;
+
+  template <typename Mask>
+  node<mask_out_t, Mask, none_t, Pack> operator()(Mask mask) const {
+    node<mask_out_t, Mask, none_t, Pack> ret;
+    ret.data = data;
+    ret.mask = mask;
+    ret.threads_per_block = threads_per_block;
+    ret.stream = stream;
+    return ret;
+  }
+
+  template <typename Op, typename Left, typename Right, typename Extra>
+  node<out_t, none_t, none_t, Pack>
+  operator=(node<Op, Left, Right, Extra> const &expr) {
+#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+    nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
+    nsimd::nat nb = expr.size() + (nt - 1) / nt;
+#if defined(NSIMD_CUDA)
+    cudaStream_t stream =
+        device_stream == NULL ? NULL : *(cudaStream_t *)device_stream;
+    // clang-format off
+    gpu_kernel_component_wise<T, Expr><<<nb, nt, stream>>>(data, expr,
+                                                           expr.size());
+    // clang-format on
+#elif defined(NSIMD_HIP)
+    hipStream_t stream =
+        device_stream == NULL ? NULL : *(hipStream_t *)device_stream;
+    hipLaunchKernel(gpu_kernel_component_wise, dim3(nb), dim3(nt), 0, 0, data,
+                    expr, expr.size());
+#endif
+#else
+    cpu_kernel_component_wise<T, Pack>(data, expr, expr.size());
+#endif
+  }
+};
+
+// return an output node from a pointer
+template <typename T, typename Pack>
+node<out_t, none_t, none_t, Pack>
+out(T *data, nsimd::nat threads_per_block = -1, void * stream = NULL) {
+  node<out_t, none_t, none_t, Pack> ret;
+  ret.data = data;
+  ret.threads_per_block = threads_per_block;
+  ret.stream = stream;
+  return ret;
+}
+
+// ----------------------------------------------------------------------------
+// helper for computing sizes
+
+nsimd::nat compute_size(nsimd::nat sz1, nsimd::nat sz2) {
+  assert(sz1 >= 0 || sz2 >= 0);
+  assert((sz1 < 0 && sz2 >= 0) || (sz1 >= 0 && sz2 < 0) || (sz1 == sz2));
+  if (sz1 < 0) {
+    return sz2;
+  } else {
+    return sz1;
+  }
+}
+
+// ----------------------------------------------------------------------------
 
 } // namespace tet1d
 

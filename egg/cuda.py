@@ -47,40 +47,78 @@ def get_impl_f16(operator, totyp, typ):
 # -----------------------------------------------------------------------------
 
 def get_impl(operator, totyp, typ):
+    # bool first, no special treatment for f16's
+    bool_operators = {
+        'andl': '{in0} && {in1}',
+        'orl': '{in0} || {in1}',
+        'xorl': '{in0} ^ {in1}',
+        'andnotl': '{in0} && (!{in1})',
+        'notl': '!{in0}',
+    }
+    if operator.name in bool_operators:
+        return bool_operators[operator.name]
+    # for all other operators, f16 has a special treatment
     if typ == 'f16':
         return get_impl_f16(operator, totyp, typ)
-    func = {
-        'orb': lambda: opbit('{in0} | {in1}', typ),
-        'andb': lambda: opbit('{in0} & {in1}', typ),
-        'andnotb': lambda: opbit('{in0} & (~{in1})', typ),
-        'notb': lambda: opbit('~{in0}', typ),
-        'xorb': lambda: opbit('{in0} ^ {in1}', typ),
-        'add': lambda: opnum('{in0} + {in1}', typ),
-        'sub': lambda: opnum('{in0} - {in1}', typ),
-        'mul': lambda: opnum('{in0} * {in1}', typ),
-        'div': lambda: opnum('{in0} / {in1}', typ),
-        'neg': lambda: opnum('-{in0}', typ),
-        'rec': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
-        'rec8': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
-        'rec11': lambda: opnum('1.0{f} / {{in0}};'.format(f=f), typ),
+    # then deal with f32's operators
+    # first infix operators
+    c_operators = {
+        'add': '{in0} + {in1}',
+        'sub': '{in0} - {in1}',
+        'mul': '{in0} * {in1}',
+        'div': '{in0} / {in1}',
+        'neg': '-{in0}',
+        'rec': '1.0{f} / {{in0}};',
+        'rec8': '1.0{f} / {{in0}};',
+        'rec11': '1.0{f} / {{in0}};',
+        'lt': '{in0} < {in1}',
+        'gt': '{in0} > {in1}',
+        'le': '{in0} <= {in1}',
+        'ge': '{in0} >= {in1}',
+        'ne': '{in0} != {in1}',
+        'eq': '{in0} == {in1}'
     }
-    if operator.name in func:
-        return func[operator.name]()
-    elif operator.name in ['fma', 'fms', 'fnma', 'fnms']:
+    if operator.name in c_operators:
+        return c_operators[operator.name]
+    # infix operators that needs type punning
+    def pun_code(code, arity, typ):
+        utyp = common.bitfield_type[typ]
+        to_utyp = '\n'.join(
+                  ['''{utyp} buf{i};
+                      memcpy(&buf{i}, &{{in{i}}}, sizeof({{in{i}}}));'''. \
+                      format(i=i, totyp=totyp) for i in range(arity)])
+        return '''{to_utyp}
+                  {utyp} tmp = {code};
+                  {typ} ret;
+                  memcpy(&ret, &tmp, sizeof(tmp));
+                  return ret;'''.format(to_utyp=to_utyp, utyp=utyp, typ=typ,
+                                        code=code.format(in0='buf0',
+                                                         in1='buf1'))
+    pun_operators = {
+        'orb': lambda: pun_code('{in0} | {in1}', 2, typ),
+        'andb': lambda: pun_code('{in0} & {in1}', 2, typ),
+        'andnotb': lambda: pun_code('{in0} & (~{in1})', 2, typ),
+        'notb': lambda: pun_code('~{in0}', 1, typ),
+        'xorb': lambda: pun_code('{in0} ^ {in1}', 2, typ),
+    }
+    if operator.name in pun_operators:
+        return pun_operators[operator.name]()
+    # fma's
+    if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
         return 'return fma{f}({neg}{{in0}}, {{in1}}, {op}{{in2}});'. \
                format(f='f' if typ == 'f32' else '', neg=neg, op=op)
-    else:
-        cuda_name = {
-            'round_to_even': 'rint',
-            'min': 'fmin',
-            'max': 'fmax',
-            'abs': 'fabs'
-        }
-        args = ', '.join(['{{in{}}}'.format(i) \
-                          for i in range(len(operator.args))])
-        return 'return {name}{f}({args});'. \
-               format(name=cuda_func[operator.name] \
-                      if operator.name in cuda_name else operator.name,
-                      name=cuda_func,f='f' if typ == 'f32' else '', args=args)
+    # other operators
+    cuda_name = {
+        'round_to_even': 'rint',
+        'min': 'fmin',
+        'max': 'fmax',
+        'abs': 'fabs'
+    }
+    args = ', '.join(['{{in{}}}'.format(i) \
+                      for i in range(len(operator.args))])
+    return 'return {name}{f}({args});'. \
+           format(name=cuda_func[operator.name] \
+                  if operator.name in cuda_name else operator.name,
+                  name=cuda_func,f='f' if typ == 'f32' else '', args=args)

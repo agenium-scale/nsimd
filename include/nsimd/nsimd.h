@@ -32,7 +32,9 @@ SOFTWARE.
 
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
-#elif defined(__NVCC__)
+#elif defined(__HCC__) || defined(__HIP__)
+  #define NSIMD_IS_HIPCC
+#elif defined(__NVCC__) || defined(__CUDACC__)
   #define NSIMD_IS_NVCC
 #elif defined(__INTEL_COMPILER)
   #define NSIMD_IS_ICC
@@ -240,6 +242,12 @@ SOFTWARE.
   #define NSIMD_CUDA
 #endif
 
+/* HIP */
+
+#if defined(HIP) && !defined(NSIMD_HIP)
+  #define NSIMD_HIP
+#endif
+
 /* ------------------------------------------------------------------------- */
 /* Set NSIMD_SIMD and NSIMD_PLATFORM macro, include the correct header. */
 
@@ -405,9 +413,15 @@ typedef double f64;
 /* Native register size (for now only 32 and 64 bits) types */
 
 #if NSIMD_WORD_SIZE == 64
-  typedef i64 nat;
+  typedef i64 nsimd_nat;
 #else
-  typedef i32 nat;
+  typedef i32 nsimd_nat;
+#endif
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+typedef nsimd_nat nat;
+} // namespace nsimd
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -762,7 +776,7 @@ template <typename T> constexpr int max_len = max_len_t<T>::value;
 extern "C" {
 #endif
 
-NSIMD_DLLSPEC void *nsimd_aligned_alloc(nat);
+NSIMD_DLLSPEC void *nsimd_aligned_alloc(nsimd_nat);
 NSIMD_DLLSPEC void nsimd_aligned_free(void *);
 
 #if NSIMD_CXX > 0
@@ -775,11 +789,11 @@ NSIMD_DLLSPEC void nsimd_aligned_free(void *);
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-NSIMD_DLLSPEC void *aligned_alloc(nat);
+NSIMD_DLLSPEC void *aligned_alloc(nsimd_nat);
 NSIMD_DLLSPEC void aligned_free(void *);
 
-template <typename T> T *aligned_alloc_for(nat n) {
-  return (T *)aligned_alloc(n * (nat)sizeof(T));
+template <typename T> T *aligned_alloc_for(nsimd_nat n) {
+  return (T *)aligned_alloc(n * (nsimd_nat)sizeof(T));
 }
 
 template <typename T> void aligned_free_for(void *ptr) {
@@ -819,7 +833,7 @@ public:
   const_pointer address(const_reference r) { return &r; }
 
   pointer allocate(size_type n) {
-    return reinterpret_cast<pointer>(aligned_alloc_for<T>((nat)n));
+    return reinterpret_cast<pointer>(aligned_alloc_for<T>((nsimd_nat)n));
   }
 
   pointer allocate(size_type n, const void *) { return allocate(n); }
@@ -939,7 +953,7 @@ template <typename T> struct allocator {
     if (n > std::size_t(-1) / sizeof(T)) {
       throw std::bad_alloc();
     }
-    T *ptr = aligned_alloc_for<T>((nat)n);
+    T *ptr = aligned_alloc_for<T>((nsimd_nat)n);
     if (ptr != NULL) {
       return ptr;
     }

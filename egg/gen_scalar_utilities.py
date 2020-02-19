@@ -211,6 +211,17 @@ def get_impl(operator, totyp, typ, until_cpp11 = False, c89_code = ''):
         'mul': lambda: opnum('{in0} * {in1}', typ),
         'div': lambda: opnum('{in0} / {in1}', typ),
         'neg': lambda: opnum('-{in0}', typ),
+        'lt': lambda: opnum('{in0} < {in1}', typ),
+        'gt': lambda: opnum('{in0} > {in1}', typ),
+        'le': lambda: opnum('{in0} <= {in1}', typ),
+        'ge': lambda: opnum('{in0} >= {in1}', typ),
+        'ne': lambda: opnum('{in0} != {in1}', typ),
+        'eq': lambda: opnum('{in0} == {in1}', typ),
+        'andl': '{in0} && {in1}',
+        'orl': '{in0} || {in1}',
+        'xorl': '{in0} ^ {in1}',
+        'andnotl': '{in0} && (!{in1})',
+        'notl': '!{in0}',
         'fnma': lambda: opnum(
                         'nsimd_fnma_{typ2}(-{{in0}}, {{in1}}, {{in2}});'. \
                         format(typ2=typ2), typ),
