@@ -271,6 +271,19 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''
                     # include <nsimd/x86/{simd_ext}/cvt.h>
                '''.format(**fmtspec)
+    if func == 'div':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/sub.h>
+                    # include <nsimd/x86/{simd_ext}/mul.h>
+                    # include <nsimd/x86/{simd_ext}/upcvt.h>
+                    # include <nsimd/x86/{simd_ext}/downcvt.h>
+                    # include <nsimd/x86/{simd_ext}/shr.h>
+                    # include <nsimd/x86/{simd_ext}/shlv.h>
+                    # include <nsimd/x86/{simd_ext}/shl.h>
+                    # include <nsimd/x86/{simd_ext}/clz.h>
+                    # include <nsimd/x86/{simd_ext}/if_else1.h>
+                    # include <nsimd/x86/{simd_ext}/lt.h>
+               '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -930,6 +943,46 @@ def len1(simd_ext, typ):
 def div2(simd_ext, typ):
     if typ in common.ftypes:
         return how_it_should_be_op2('div', simd_ext, typ)
+    if typ in [ 'i8' , 'u8' , 'i16' , 'u16' , 'i32' , 'u32' ]:
+      typ_up = typ[0] + str( 2*int(typ[1:]) )
+      return '''\
+      // Algorithm works only on positive bottom fractions
+      nsimd_{simd_ext}_vl{typ} is_neg;
+      is_neg = nsimd_lt_{simd_ext}_{typ}( nsimd_set1_{simd_ext}_{typ}(0) , {in1} );
+      nsimd_{simd_ext}_v{typ} neg = nsimd_if_else1_{simd_ext}_{typ}( is_neg , nsimd_set1_{simd_ext}_{typ}( 1 ) , nsimd_set1_{simd_ext}_{typ}( -1 ) );
+      nsimd_{simd_ext}_v{typ} b = nsimd_mul_{simd_ext}_{typ}( {in1} , neg );
+
+      // Compute reciprocal of divisor, then multiply by top
+      nsimd_{simd_ext}_v{typ_up}x2 b_up = nsimd_upcvt_{simd_ext}_{typ_up}_{typ}( b );
+      nsimd_{simd_ext}_v{typ_up}x2 lz;
+
+      nsimd_{simd_ext}_v{typ_up} v32 = nsimd_set1_{simd_ext}_{typ_up}( 32 );
+
+      lz.v0 = nsimd_sub_{simd_ext}_{typ_up}( nsimd_clz_{simd_ext}_{typ_up}( b_up.v0 ) , v32 );
+      lz.v1 = nsimd_sub_{simd_ext}_{typ_up}( nsimd_clz_{simd_ext}_{typ_up}( b_up.v1 ) , v32 );
+
+      nsimd_{simd_ext}_v{typ_up} ones = nsimd_set1_{simd_ext}_{typ_up}( 1 );
+      nsimd_{simd_ext}_v{typ_up} twos = nsimd_shl_{simd_ext}_{typ_up}( ones , (1 + 32) );
+
+      nsimd_{simd_ext}_v{typ_up}x2 x0, x1;
+      x0.v0 = nsimd_shlv_{simd_ext}_{typ_up}( ones , lz.v0 );
+      x0.v1 = nsimd_shlv_{simd_ext}_{typ_up}( ones , lz.v1 );
+
+      // So far passes tests (within 1 ulp) with 5 iterations
+      for ( int i = 0 ; i < 5 ; ++i ) {{
+        x1.v0 = nsimd_shr_{simd_ext}_{typ_up}( nsimd_mul_{simd_ext}_{typ_up}( x0.v0 , nsimd_sub_{simd_ext}_{typ_up}( twos , nsimd_mul_{simd_ext}_{typ_up}( b_up.v0 , x0.v0 ) ) ) , 32 );
+        x1.v1 = nsimd_shr_{simd_ext}_{typ_up}( nsimd_mul_{simd_ext}_{typ_up}( x0.v1 , nsimd_sub_{simd_ext}_{typ_up}( twos , nsimd_mul_{simd_ext}_{typ_up}( b_up.v1 , x0.v1 ) ) ) , 32 );
+
+        x0.v0 = x1.v0;
+        x0.v1 = x1.v1;
+      }}
+
+      nsimd_{simd_ext}_v{typ_up}x2 t_up = nsimd_upcvt_{simd_ext}_{typ_up}_{typ}( {in0} );
+      x0.v0 = nsimd_shr_{simd_ext}_{typ_up}( nsimd_mul_{simd_ext}_{typ_up}( t_up.v0 , x0.v0 ) , 32 );
+      x0.v1 = nsimd_shr_{simd_ext}_{typ_up}( nsimd_mul_{simd_ext}_{typ_up}( t_up.v1 , x0.v1 ) , 32 );
+
+      return nsimd_mul_{simd_ext}_{typ}( nsimd_downcvt_{simd_ext}_{typ}_{typ_up}( x0.v0 , x0.v1 ) , neg );
+      '''.format(**fmtspec,typ_up=typ_up)
     return emulate_op2('/', simd_ext, typ)
 
 # -----------------------------------------------------------------------------
