@@ -258,6 +258,19 @@ def get_additional_include(func, platform, simd_ext):
                     # include <nsimd/x86/{simd_ext}/set1.h>
                     # include <nsimd/x86/{simd_ext}/if_else1.h>
                 '''.format(**fmtspec)
+    if func == 'shrv':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/powi.h>
+               '''.format(**fmtspec)
+    if func == 'powi':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/any.h>
+                    # include <nsimd/x86/{simd_ext}/gt.h>
+               '''.format(**fmtspec)
+    if func == 'downcvt':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/cvt.h>
+               '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
