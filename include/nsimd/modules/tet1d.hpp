@@ -217,7 +217,7 @@ struct node<Mask, none_t, none_t, Pack> {
   typedef typename Pack::base_type T;
   T *data;
   nsimd::nat threads_per_block;
-  void *device;
+  void *stream;
   Mask mask;
 
   template <typename Op, typename Left, typename Right, typename Extra>
@@ -226,12 +226,13 @@ struct node<Mask, none_t, none_t, Pack> {
 #if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
     nsimd::nat nb = expr.size() + (nt - 1) / nt;
+    assert(nt > 0 && nt <= UINT_MAX);
+    assert(nb > 0 && nb <= UINT_MAX);
 #if defined(NSIMD_CUDA)
-    cudaStream_t stream =
-        device_stream == NULL ? NULL : *(cudaStream_t *)device_stream;
+    cudaStream_t s = (stream == NULL ? NULL : *(cudaStream_t *)stream);
     // clang-format off
-    gpu_kernel_component_wise_mask<T, Mask, Expr><<<nb, nt, stream>>>(
-        data, mask, expr, expr.size());
+    gpu_kernel_component_wise_mask<<<(unsigned int)(nb), (unsigned int)(nt),
+                                     0, s>>>(data, mask, expr, expr.size());
     // clang-format on
 #elif defined(NSIMD_HIP)
     hipStream_t stream =
@@ -243,6 +244,7 @@ struct node<Mask, none_t, none_t, Pack> {
     cpu_kernel_component_wise_mask<T, Mask, node<Op, Left, Right, Extra>,
                                    Pack>(data, mask, expr, expr.size());
 #endif
+    return *this;
   }
 };
 
@@ -253,7 +255,7 @@ struct out_t {};
 
 template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
   typedef typename Pack::value_type T;
-  const T *data;
+  T *data;
   nsimd::nat threads_per_block;
   void *stream;
 
@@ -273,29 +275,30 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
 #if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
     nsimd::nat nb = expr.size() + (nt - 1) / nt;
+    assert(nt > 0 && nt <= UINT_MAX);
+    assert(nb > 0 && nb <= UINT_MAX);
 #if defined(NSIMD_CUDA)
-    cudaStream_t stream =
-        device_stream == NULL ? NULL : *(cudaStream_t *)device_stream;
+    cudaStream_t s = stream == NULL ? NULL : *(cudaStream_t *)stream;
     // clang-format off
-    gpu_kernel_component_wise<T, Expr><<<nb, nt, stream>>>(data, expr,
-                                                           expr.size());
+    gpu_kernel_component_wise<<<(unsigned int)(nb), (unsigned int)(nt),
+                                0, s>>>(data, expr, expr.size());
     // clang-format on
 #elif defined(NSIMD_HIP)
-    hipStream_t stream =
-        device_stream == NULL ? NULL : *(hipStream_t *)device_stream;
+    hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
     hipLaunchKernel(gpu_kernel_component_wise, dim3(nb), dim3(nt), 0, 0, data,
                     expr, expr.size());
 #endif
 #else
     cpu_kernel_component_wise<T, Pack>(data, expr, expr.size());
 #endif
+    return *this;
   }
 };
 
 // return an output node from a pointer
-template <typename T, typename Pack>
+template <typename T, typename Pack = nsimd::pack<T> >
 node<out_t, none_t, none_t, Pack>
-out(T *data, nsimd::nat threads_per_block = -1, void * stream = NULL) {
+out(T *data, nsimd::nat threads_per_block = -1, void *stream = NULL) {
   node<out_t, none_t, none_t, Pack> ret;
   ret.data = data;
   ret.threads_per_block = threads_per_block;

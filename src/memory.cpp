@@ -40,7 +40,7 @@ SOFTWARE.
 
 extern "C" {
 
-NSIMD_DLLEXPORT void *nsimd_aligned_alloc(nat n) {
+NSIMD_DLLEXPORT void *nsimd_aligned_alloc(nsimd_nat n) {
 #ifdef NSIMD_IS_MSVC
   return _aligned_malloc(n, NSIMD_MAX_ALIGNMENT);
 #else
@@ -67,7 +67,7 @@ NSIMD_DLLEXPORT void nsimd_aligned_free(void *ptr) {
 
 namespace nsimd {
 
-NSIMD_DLLEXPORT void *aligned_alloc(nat n) {
+NSIMD_DLLEXPORT void *aligned_alloc(nsimd_nat n) {
   return nsimd_aligned_alloc(n);
 }
 
