@@ -2307,16 +2307,16 @@ def gen_unpack_half(opts, op, typ, lang):
         nsimd::storeu(&vout[i], vc);'''. \
             format(typ=typ, op_name=op.name)
 
-    op_test =  'step/(2*nb_lane)'
+    op_test =  'step/(2 * nb_lane)'
     if op.name in['ziphi', 'ziplo']:
-        offset = 'int offset = {val};'.\
-            format(val= '0' if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
+        offset = 'int offset = {val};'.format(val= '0' \
+                 if op.name == 'ziplo' else 'vlen({typ}) / 2'.format(typ=typ))
     else:
         offset = ''
 
     if op.name in ['unziplo', 'unziphi']:
         if typ == 'f16':
-            comp_unpack = '''\
+            comp_unpack = '''
             (nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vin1[vi + 2 * j + {i}]))
             || (nsimd_f16_to_f32(vout[i + step / 2]) != nsimd_f16_to_f32(vin2[vi + 2 * j + {i}]))
             '''.format(i = '0' if op.name == 'unziplo' else '1')
@@ -2373,7 +2373,7 @@ def gen_unpack_half(opts, op, typ, lang):
         '''{head}
 
            int main(void) {{
-              int vi, i, j, step, nb_lane;
+              int vi, i, j, step;
               {typ} *vin1, *vin2;
               {typ} *vout;
 
@@ -2382,10 +2382,6 @@ def gen_unpack_half(opts, op, typ, lang):
               CHECK(vout = ({typ} *)nsimd_aligned_alloc(SIZE * {sizeof}));
 
               step = vlen({typ});
-              nb_lane = sizeof({typ_nsimd})/16;
-              if (nb_lane == 0){{
-                nb_lane = 1;
-              }}
 
               fprintf(stdout, "test of {op_name} over {typ}...\\n");
 
@@ -2546,7 +2542,7 @@ def gen_unpack(opts, op, typ, lang):
         '''{head}
 
         int main(void){{
-          int i, vi, step, nb_lanes;
+          int i, vi, step;
           {typ} *vin1, *vin2;
           {typ} *vout;
           {typ} *vout_ref;
@@ -2557,10 +2553,6 @@ def gen_unpack(opts, op, typ, lang):
           CHECK(vout_ref = ({typ} *)nsimd_aligned_alloc(2 * SIZE * {sizeof}));
 
           step = vlen({typ});
-          nb_lanes = sizeof({typ_nsimd})/16;
-          if(nb_lanes == 0){{
-            nb_lanes = 1;
-          }}
 
           fprintf(stdout, "test of {op_name} over {typ}...\\n");
 
