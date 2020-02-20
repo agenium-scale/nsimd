@@ -41,24 +41,30 @@ import common
 # -----------------------------------------------------------------------------
 # Helpers
 
+
 def neon_typ(typ):
-    prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
+    prefix = {'i': 'int', 'u': 'uint', 'f': 'float'}
     return '{}{}x{}_t'.format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
 
-## Returns the 64 bits vector associated to a data type (eg:float32x2 for float32_t)
+# Returns the 64 bits vector associated to a data type (eg:float32x2 for float32_t)
+
+
 def half_neon_typ(typ):
-    prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }
+    prefix = {'i': 'int', 'u': 'uint', 'f': 'float'}
     return '{}{}x{}_t'.format(prefix[typ[0]], typ[1:], 64 // int(typ[1:]))
 
+
 def sve_typ(typ):
-    prefix = { 'i': 'svint', 'u': 'svuint', 'f': 'svfloat' }
+    prefix = {'i': 'svint', 'u': 'svuint', 'f': 'svfloat'}
     return '{}{}_t'.format(prefix[typ[0]], typ[1:])
+
 
 def suf(typ):
     if typ[0] == 'i':
         return 's{}'.format(typ[1:])
     else:
         return typ
+
 
 neon = ['neon128', 'aarch64']
 sve = ['sve']
@@ -67,8 +73,10 @@ fmtspec = {}
 # -----------------------------------------------------------------------------
 # Implementation of mandatory functions for this module
 
+
 def get_simd_exts():
     return ['neon128', 'aarch64', 'sve']
+
 
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
@@ -77,6 +85,7 @@ def emulate_fp16(simd_ext):
         return False
     else:
         return True
+
 
 def get_type(simd_ext, typ):
     if simd_ext in neon:
@@ -88,11 +97,11 @@ def get_type(simd_ext, typ):
         elif typ == 'f16':
             return \
             '''
-            #ifdef NSIMD_FP16
+            # ifdef NSIMD_FP16
               float16x8_t
-            #else
+            # else
               struct { float32x4_t v0; float32x4_t v1; }
-            #endif
+            # endif
             '''
         else:
             return neon_typ(typ)
@@ -100,6 +109,7 @@ def get_type(simd_ext, typ):
         return sve_typ(typ)
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+
 
 def get_logical_type(simd_ext, typ):
     if typ not in common.types:
@@ -116,11 +126,11 @@ def get_logical_type(simd_ext, typ):
         if typ == 'f16':
             return \
             '''
-            #ifdef NSIMD_FP16
+            # ifdef NSIMD_FP16
               uint16x8_t
-            #else
+            # else
               struct { uint32x4_t v0; uint32x4_t v1; }
-            #endif
+            # endif
             '''
         elif typ == 'f64':
             return 'struct { u64 v0; u64 v1; }'
@@ -134,6 +144,7 @@ def get_logical_type(simd_ext, typ):
     elif simd_ext == 'sve':
         return 'svbool_t'
 
+
 def get_nb_registers(simd_ext):
     if simd_ext in neon:
         return '16'
@@ -142,10 +153,12 @@ def get_nb_registers(simd_ext):
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
+
 def get_SoA_type(simd_ext, typ, deg):
     if simd_ext != 'sve':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     return '{}x{}_t'.format(sve_typ(typ)[0:-2], deg)
+
 
 def has_compatible_SoA_types(simd_ext):
     if simd_ext in neon:
@@ -157,6 +170,7 @@ def has_compatible_SoA_types(simd_ext):
 
 # -----------------------------------------------------------------------------
 
+
 def get_additional_include(func, platform, simd_ext):
     ret = '''#include <nsimd/cpu/cpu/{}.h>
              '''.format(func)
@@ -167,14 +181,14 @@ def get_additional_include(func, platform, simd_ext):
         deg = func[4]
         ret += '''#if NSIMD_CXX > 0
                   extern "C" {{
-                  #endif
+                  # endif
 
                   NSIMD_INLINE nsimd_{simd_ext}_vu16x{deg}
                   nsimd_{func}_{simd_ext}_u16(const u16*);
 
-                  #if NSIMD_CXX > 0
+                  # if NSIMD_CXX > 0
                   }} // extern "C"
-                  #endif
+                  # endif
 
                   '''.format(func=func, deg=deg, **fmtspec)
     if simd_ext == 'neon128' and func == 'notl':
@@ -182,29 +196,32 @@ def get_additional_include(func, platform, simd_ext):
                   '''
     if simd_ext in neon and func == 'ne':
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
-                  #include <nsimd/arm/{simd_ext}/notl.h>
+                  # include <nsimd/arm/{simd_ext}/notl.h>
                   '''.format(**fmtspec)
     if simd_ext in neon and func in ['fms', 'fnms']:
         ret += '''#include <nsimd/arm/{simd_ext}/ne.h>
+                  #include <nsimd/arm/{simd_ext}/fma.h>
+                  #include <nsimd/arm/{simd_ext}/fnma.h>
                   '''.format(**fmtspec)
     if func == 'shra':
         ret += '''#include <nsimd/arm/{simd_ext}/shr.h>
-                  '''.format(simd_ext=simd_ext)   
+        '''.format(simd_ext=simd_ext)   
+
     if func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
-                  #include <nsimd/arm/{simd_ext}/set1.h>
-                  #include <nsimd/arm/{simd_ext}/{load}.h>
-                  #include <nsimd/arm/{simd_ext}/notl.h>
+                  # include <nsimd/arm/{simd_ext}/set1.h>
+                  # include <nsimd/arm/{simd_ext}/{load}.h>
+                  # include <nsimd/arm/{simd_ext}/notl.h>
                   '''.format(load='load' + func[5], **fmtspec)
     if func in ['storelu', 'storela']:
         ret += '''#include <nsimd/arm/{simd_ext}/if_else1.h>
-                  #include <nsimd/arm/{simd_ext}/set1.h>
-                  #include <nsimd/arm/{simd_ext}/{store}.h>
+                  # include <nsimd/arm/{simd_ext}/set1.h>
+                  # include <nsimd/arm/{simd_ext}/{store}.h>
                   '''.format(store='store' + func[6], **fmtspec)
     if func == 'to_logical':
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
-                  '''.format(**fmtspec)
+                  ''' .format(**fmtspec)
     if func == 'zip':
         ret += '''#include <nsimd/arm/{simd_ext}/ziplo.h>
                   #include <nsimd/arm/{simd_ext}/ziphi.h>
@@ -213,6 +230,12 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/unziplo.h>
                   #include <nsimd/arm/{simd_ext}/unziphi.h>
                   '''.format(**fmtspec)
+    if func == 'adds':
+        ret += '''#include <nsimd/arm/{simd_ext}/add.h>
+                '''.format(**fmtspec)
+    if func == 'subs':
+        ret += '''#include <nsimd/arm/{simd_ext}/sub.h>
+                '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -224,23 +247,21 @@ def emulate_op1(op, simd_ext, typ):
         return '''int i;
                   {typ} buf[{le}];
                   vst1q_{suf}(buf, {in0});
-                  for (i = 0; i < {le}; i += nsimd_len_cpu_{typ}()) {{
-                    nsimd_storeu_cpu_{typ}(&buf[i], nsimd_{op}_cpu_{typ}(
-                      nsimd_loadu_cpu_{typ}(&buf[i])));
-                  }}
-                  return vld1q_{suf}(buf);'''. \
+                  for (i=0; i < {le}; i += nsimd_len_cpu_{typ}()) {{
+                    nsimd_storeu_cpu_{typ}( & buf[i], nsimd_{op}_cpu_{typ}(
+                      nsimd_loadu_cpu_{typ}(&buf[i])));}}
+                  return vld1q_{suf}(buf); '''. \
                   format(op=op, le=le, **fmtspec)
     if simd_ext == 'sve':
         le = 2048 // int(typ[1:]);
         return '''int i;
                   {typ} buf[{le}];
                   svst1_{suf}({svtrue}, buf, {in0});
-                  for (i = 0; i < simd_len_{simd_ext}_{typ}();
+                  for (i=0; i < simd_len_{simd_ext}_{typ}();
                        i += nsimd_len_cpu_{typ}()) {{
-                    nsimd_storeu_cpu_{typ}(&buf[i], nsimd_{op}_cpu_{typ}(
-                      nsimd_loadu_cpu_{typ}(&buf[i])));
-                  }}
-                  return svld1_{suf}({svtrue}, buf);'''. \
+                    nsimd_storeu_cpu_{typ}( & buf[i], nsimd_{op}_cpu_{typ}(
+                      nsimd_loadu_cpu_{typ}(&buf[i])));}}
+                  return svld1_{suf}({svtrue}, buf); '''. \
                   format(op=op, le=le, **fmtspec)
 
 def emulate_op2(op, simd_ext, typ):
@@ -250,10 +271,9 @@ def emulate_op2(op, simd_ext, typ):
                   {typ} buf0[{le}], buf1[{le}];
                   vst1q_{suf}(buf0, {in0});
                   vst1q_{suf}(buf1, {in1});
-                  for (i = 0; i < {le}; i++) {{
-                    buf0[i] = ({typ})(buf0[i] {op} buf1[i]);
-                  }}
-                  return vld1q_{suf}(buf0);'''. \
+                  for (i=0; i < {le}; i++) {{
+                    buf0[i] = ({typ})(buf0[i] {op} buf1[i]);}}
+                  return vld1q_{suf}(buf0); '''. \
                   format(op=op, le=le, **fmtspec)
     if simd_ext == 'sve':
         le = 2048 // int(typ[1:]);
@@ -261,10 +281,9 @@ def emulate_op2(op, simd_ext, typ):
                   {typ} buf0[{le}], buf1[{le}];
                   svst1_{suf}({svtrue}, buf0, {in0});
                   svst1_{suf}({svtrue}, buf1, {in1});
-                  for (i = 0; i < nsimd_len_{simd_ext}_{typ}(); i++) {{
-                    buf0[i] = ({typ})(buf0[i] {op} buf1[i]);
-                  }}
-                  return svld1_{suf}({svtrue}, buf0);'''. \
+                  for (i=0; i < nsimd_len_{simd_ext}_{typ}(); i++) {{
+                    buf0[i] = ({typ})(buf0[i] {op} buf1[i]);}}
+                  return svld1_{suf}({svtrue}, buf0); '''. \
                   format(op=op, le=le, **fmtspec)
 
 def emulate_lop2_neon(op, simd_ext, typ):
@@ -359,12 +378,12 @@ def f16f64(simd_ext, typ, op, armop, arity, forced_intrinsics = ''):
             fmtspec2['intrinsics'] = 'return v{}q_f16({});'.format(armop, temp)
         return '''#ifdef NSIMD_FP16
                     {intrinsics}
-                  #else
+                  # else
                     nsimd_{simd_ext}_vf16 ret;
                     ret.v0 = nsimd_{op}_{simd_ext}_f32({args1});
                     ret.v1 = nsimd_{op}_{simd_ext}_f32({args2});
                     return ret;
-                  #endif'''.format(**fmtspec2)
+                  # endif'''.format(**fmtspec2)
     elif simd_ext == 'neon128' and typ == 'f64':
         return emulate_f64_neon(simd_ext, op, ['v'] * (arity + 1))
     return ''
@@ -378,7 +397,7 @@ def get_soa_typ(simd_ext, typ, deg):
 
 # -----------------------------------------------------------------------------
 
-## Loads of degree 1, 2, 3 and 4
+# Loads of degree 1, 2, 3 and 4
 
 def load1234(simd_ext, typ, deg):
     if simd_ext in neon:
@@ -389,7 +408,7 @@ def load1234(simd_ext, typ, deg):
                 return \
                 '''#ifdef NSIMD_FP16
                      {normal}
-                   #else
+                   # else
                      /* Note that we can do much better but is it useful? */
                      nsimd_{simd_ext}_vf16 ret;
                      f32 buf[4];
@@ -404,7 +423,7 @@ def load1234(simd_ext, typ, deg):
                      buf[3] = nsimd_u16_to_f32(*((u16*){in0} + 7));
                      ret.v1 = vld1q_f32(buf);
                      return ret;
-                   #endif'''.format(normal=normal, **fmtspec)
+                   # endif'''.format(normal=normal, **fmtspec)
             elif typ == 'f64' and simd_ext == 'neon128':
                 return \
                 '''nsimd_neon128_vf64 ret;
@@ -462,7 +481,7 @@ def load1234(simd_ext, typ, deg):
                format(deg=deg, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Stores of degree 1, 2, 3 and 4
+# Stores of degree 1, 2, 3 and 4
 
 def store1234(simd_ext, typ, deg):
     if simd_ext in neon:
@@ -473,7 +492,7 @@ def store1234(simd_ext, typ, deg):
                 return \
                 '''#ifdef NSIMD_FP16
                      {normal}
-                   #else
+                   # else
                      f32 buf[4];
                      vst1q_f32(buf, {in1}.v0);
                      *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
@@ -485,7 +504,7 @@ def store1234(simd_ext, typ, deg):
                      *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
                      *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
                      *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
-                   #endif'''.format(normal=normal, **fmtspec)
+                   # endif'''.format(normal=normal, **fmtspec)
             elif typ == 'f64' and simd_ext == 'neon128':
                 return \
                 '''*{in0} = {in1}.v0;
@@ -508,12 +527,12 @@ def store1234(simd_ext, typ, deg):
                 return \
                 '''#ifdef NSIMD_FP16
                      {normal}
-                   #else
+                   # else
                      {soa_typ} temp;
                      u16 buf[8];
                      {assignment}
                      vst{deg}q_u16((u16 *){in0}, temp);
-                   #endif'''. \
+                   # endif'''. \
                    format(assignment='\n'.join([assignment.format(i). \
                           format(i - 1, **fmtspec) for i in range(1, deg + 1)]),
                           deg=deg, normal=normal,
@@ -554,7 +573,7 @@ def store1234(simd_ext, typ, deg):
                       range(1, deg + 1)]), **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Length
+# Length
 
 def len1(simd_ext, typ):
     if simd_ext in neon:
@@ -564,7 +583,7 @@ def len1(simd_ext, typ):
                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Add/sub
+# Add/sub
 
 def addsub(op, simd_ext, typ):
     ret = f16f64(simd_ext, typ, op, op, 2)
@@ -578,7 +597,7 @@ def addsub(op, simd_ext, typ):
                format(op=op, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Multiplication
+# Multiplication
 
 def mul2(simd_ext, typ):
     ret = f16f64(simd_ext, typ, 'mul', 'mul', 2)
@@ -594,7 +613,7 @@ def mul2(simd_ext, typ):
                    format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Division
+# Division
 
 def div2(simd_ext, typ):
     if simd_ext == 'aarch64' and typ in ['f32', 'f64']:
@@ -610,7 +629,7 @@ def div2(simd_ext, typ):
     return emulate_op2('/', simd_ext, typ)
 
 # -----------------------------------------------------------------------------
-## Binary operators: and, or, xor, andnot
+# Binary operators: and, or, xor, andnot
 
 def binop2(op, simd_ext, typ):
     armop = {'orb': 'orr', 'xorb': 'eor', 'andb': 'and', 'andnotb': 'bic'}
@@ -647,7 +666,7 @@ def binop2(op, simd_ext, typ):
                       format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Binary not
+# Binary not
 
 def not1(simd_ext, typ):
     if typ in common.iutypes:
@@ -683,7 +702,7 @@ def not1(simd_ext, typ):
                     format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Logical operators: and, or, xor, andnot
+# Logical operators: and, or, xor, andnot
 
 def lop2(op, simd_ext, typ):
     armop = {'orl': 'orr', 'xorl': 'eor', 'andl': 'and', 'andnotl': 'bic'}
@@ -692,12 +711,12 @@ def lop2(op, simd_ext, typ):
             return \
             '''#ifdef NSIMD_FP16
                  return v{armop}q_u16({in0}, {in1});
-               #else
+               # else
                  nsimd_{simd_ext}_vlf16 ret;
                  ret.v0 = v{armop}q_u32({in0}.v0, {in1}.v0);
                  ret.v1 = v{armop}q_u32({in0}.v1, {in1}.v1);
                  return ret;
-               #endif'''.format(armop=armop[op], **fmtspec)
+               # endif'''.format(armop=armop[op], **fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
             if op == 'andnotl':
                 return '''nsimd_{simd_ext}_vlf64 ret;
@@ -719,7 +738,7 @@ def lop2(op, simd_ext, typ):
         format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Logical not
+# Logical not
 
 def lnot1(simd_ext, typ):
     if simd_ext in neon:
@@ -727,12 +746,12 @@ def lnot1(simd_ext, typ):
             return \
             '''#ifdef NSIMD_FP16
                  return vmvnq_u16({in0});
-               #else
+               # else
                  nsimd_{simd_ext}_vlf16 ret;
                  ret.v0 = vmvnq_u32({in0}.v0);
                  ret.v1 = vmvnq_u32({in0}.v1);
                  return ret;
-               #endif'''.format(**fmtspec)
+               # endif'''.format(**fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
             return '''nsimd_neon128_vlf64 ret;
                       ret.v0 = ~{in0}.v0;
@@ -749,7 +768,7 @@ def lnot1(simd_ext, typ):
         'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Square root
+# Square root
 
 def sqrt1(simd_ext, typ):
     if simd_ext == 'neon128':
@@ -771,7 +790,7 @@ def sqrt1(simd_ext, typ):
         return 'return svsqrt_{suf}_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Shifts
+# Shifts
 
 def shl_shr(op, simd_ext, typ):
     if simd_ext in neon:
@@ -780,9 +799,16 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}({sign}{in1}));'''.\
                 format(**fmtspec, sign=sign)
         else:
+<<<<<<< HEAD
             return '''return vreinterpretq_s{typnbits}_u{typnbits}( 
             vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}), 
             vdupq_n_s{typnbits}((i{typnbits}){sign}{in1})));'''.format(**fmtspec, sign=sign)
+=======
+            
+            return '''return vreinterpretq_s{typnbits}_u{typnbits}(
+                                vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
+                                vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
+>>>>>>> master
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
@@ -800,13 +826,21 @@ def shra(simd_ext, typ):
     if typ in common.utypes:
         return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
                 format(**fmtspec)
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> master
     if simd_ext in neon:
         return  '''return vshlq_{suf}(
         {in0}, vdupq_n_s{typnbits}((i{typnbits})-{in1}));'''.\
             format(**fmtspec)
     else:
+<<<<<<< HEAD
         return '''return svasr_{typ}_z({svtrue}, {in0}, 
+=======
+        return '''return svasr_{typ}_z({svtrue}, {in0},
+>>>>>>> master
         svdup_n_u{typnbits}((u{typnbits}){in1}));'''.\
             format(**fmtspec)
 
@@ -818,13 +852,13 @@ def set1(simd_ext, typ):
         if typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return vdupq_n_f16({in0});
-                      #else
+                      # else
                         nsimd_{simd_ext}_vf16 ret;
                         f32 f = nsimd_f16_to_f32({in0});
                         ret.v0 = nsimd_set1_{simd_ext}_f32(f);
                         ret.v1 = nsimd_set1_{simd_ext}_f32(f);
                         return ret;
-                      #endif'''.format(**fmtspec)
+                      # endif'''.format(**fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
             return '''nsimd_neon128_vf64 ret;
                       ret.v0 = {in0};
@@ -836,7 +870,7 @@ def set1(simd_ext, typ):
         return 'return svdup_n_{suf}({in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Comparison operators: ==, <, <=, >, >=
+# Comparison operators: ==, <, <=, >, >=
 
 def cmp2(op, simd_ext, typ):
     binop = {'eq': '==', 'lt': '<', 'le': '<=', 'gt': '>', 'ge': '>='}
@@ -855,9 +889,9 @@ def cmp2(op, simd_ext, typ):
                 return \
                 '''#ifdef NSIMD_FP16
                      {}
-                   #else
+                   # else
                      {}
-                   #endif'''.format(normal, emul_f16)
+                   # endif'''.format(normal, emul_f16)
         if simd_ext == 'neon128' and typ == 'f64':
             return '''nsimd_{simd_ext}_vl{typ} ret;
                       ret.v0 = {in0}.v0 {op} {in1}.v0 ? (u64)-1 : 0;
@@ -879,7 +913,7 @@ def cmp2(op, simd_ext, typ):
                format(op=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Not equal
+# Not equal
 
 def neq2(simd_ext, typ):
     if simd_ext in neon:
@@ -891,7 +925,7 @@ def neq2(simd_ext, typ):
                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## If_else
+# If_else
 
 def if_else3(simd_ext, typ):
     if simd_ext in neon:
@@ -901,14 +935,14 @@ def if_else3(simd_ext, typ):
             return \
             '''#ifdef NSIMD_FP16
                  {intrinsic}
-               #else
+               # else
                  nsimd_{simd_ext}_vf16 ret;
                  ret.v0 = nsimd_if_else1_{simd_ext}_f32(
                             {in0}.v0, {in1}.v0, {in2}.v0);
                  ret.v1 = nsimd_if_else1_{simd_ext}_f32(
                             {in0}.v1, {in1}.v1, {in2}.v1);
                  return ret;
-               #endif'''.format(intrinsic=intrinsic, **fmtspec)
+               # endif'''.format(intrinsic=intrinsic, **fmtspec)
         elif simd_ext == 'neon128' and typ == 'f64':
             return '''nsimd_neon128_vf64 ret;
                       ret.v0 = {in0}.v0 != 0u ? {in1}.v0 : {in2}.v0;
@@ -920,7 +954,7 @@ def if_else3(simd_ext, typ):
         return 'return svsel_{suf}({in0}, {in1}, {in2});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Minimum and maximum
+# Minimum and maximum
 
 def minmax2(op, simd_ext, typ):
     ret = f16f64(simd_ext, typ, op, op, 2)
@@ -944,7 +978,7 @@ def minmax2(op, simd_ext, typ):
                format(op=op, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Abs
+# Abs
 
 def abs1(simd_ext, typ):
     if typ in common.utypes:
@@ -964,7 +998,7 @@ def abs1(simd_ext, typ):
                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Round, trunc, ceil and round_to_even
+# Round, trunc, ceil and round_to_even
 
 def round1(op, simd_ext, typ):
     if typ in common.iutypes:
@@ -990,7 +1024,7 @@ def round1(op, simd_ext, typ):
                format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## FMA and FNMA
+# FMA and FNMA
 
 def fmafnma3(op, simd_ext, typ):
     if typ in common.ftypes and simd_ext == 'aarch64':
@@ -1011,9 +1045,9 @@ def fmafnma3(op, simd_ext, typ):
                 return \
                 '''#ifdef NSIMD_FP16
                      {}
-                   #else
+                   # else
                      {}
-                   #endif'''.format(emul, using_f32)
+                   # endif'''.format(emul, using_f32)
             else:
                 return using_f32
         elif simd_ext == 'neon128' and typ == 'f64':
@@ -1029,7 +1063,7 @@ def fmafnma3(op, simd_ext, typ):
                format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## FMS and FNMS
+# FMS and FNMS
 
 def fmsfnms3(op, simd_ext, typ):
     emul = \
@@ -1047,7 +1081,7 @@ def fmsfnms3(op, simd_ext, typ):
                    format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Neg
+# Neg
 
 def neg1(simd_ext, typ):
     if simd_ext in neon:
@@ -1088,7 +1122,7 @@ def neg1(simd_ext, typ):
             return 'return svneg_{suf}_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Reciprocals
+# Reciprocals
 
 def recs1(op, simd_ext, typ):
     cte = '({typ})1'.format(**fmtspec) if typ != 'f16' \
@@ -1116,12 +1150,12 @@ def recs1(op, simd_ext, typ):
             return 'return v{armop}q_{suf}({in0});'. \
             format(armop=armop, **fmtspec)
 
-## Rec11 and rsqrt11
-## According to http://infocenter.arm.com/help/topic/com.arm.doc.faqs/ka14282.html
-## reciprocal estimates only work when inputs is restrained in some small
-## interval so we comment these for now and return full-precision reciprocals.
+# Rec11 and rsqrt11
+# According to http://infocenter.arm.com/help/topic/com.arm.doc.faqs/ka14282.html
+# reciprocal estimates only work when inputs is restrained in some small
+# interval so we comment these for now and return full-precision reciprocals.
 
-#def rec11rsqrt11(op, simd_ext, typ):
+# def rec11rsqrt11(op, simd_ext, typ):
 #    armop = {'rec11': 'recpe', 'rsqrt11': 'rsqrte'}
 #    if simd_ext in neon:
 #        ret = f16f64(simd_ext, typ, op, armop[op], 1)
@@ -1134,7 +1168,7 @@ def recs1(op, simd_ext, typ):
 #               format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Load of logicals
+# Load of logicals
 
 def loadl(aligned, simd_ext, typ):
     return \
@@ -1147,7 +1181,7 @@ def loadl(aligned, simd_ext, typ):
               else '({})0'.format(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Store of logicals
+# Store of logicals
 
 def storel(aligned, simd_ext, typ):
     return \
@@ -1163,7 +1197,7 @@ def storel(aligned, simd_ext, typ):
               else '({})0'.format(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
-## All and any
+# All and any
 
 def allany1(op, simd_ext, typ):
     binop = '&&' if  op == 'all' else '||'
@@ -1190,10 +1224,10 @@ def allany1(op, simd_ext, typ):
             return \
             '''#ifdef NSIMD_FP16
                  {normal}
-               #else
+               # else
                  return nsimd_{op}_aarch64_f32({in0}.v0) {binop}
                         nsimd_{op}_aarch64_f32({in0}.v1);
-               #endif'''.format(normal=normal, op=op, binop=binop, **fmtspec)
+               # endif'''.format(normal=normal, op=op, binop=binop, **fmtspec)
         elif typ in ['i64', 'u64', 'f64']:
             return \
             'return v{armop}vq_u32(vreinterpretq_u32_u64({in0})) != 0;'. \
@@ -1208,7 +1242,7 @@ def allany1(op, simd_ext, typ):
                                  {svtrue}, {in0}));'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## nbtrue
+# nbtrue
 
 def nbtrue1(simd_ext, typ):
     if simd_ext == 'neon128':
@@ -1238,10 +1272,10 @@ def nbtrue1(simd_ext, typ):
             return \
             '''#ifdef NSIMD_FP16
                  {normal}
-               #else
+               # else
                  return nsimd_nbtrue_aarch64_f32({in0}.v0) +
                         nsimd_nbtrue_aarch64_f32({in0}.v1);
-               #endif'''.format(normal=normal, **fmtspec)
+               # endif'''.format(normal=normal, **fmtspec)
         elif typ in ['i64', 'u64', 'f64']:
             return \
             '''return -(vaddvq_s32(vreinterpretq_s32_u64({in0})) >> 1);'''. \
@@ -1253,7 +1287,7 @@ def nbtrue1(simd_ext, typ):
                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Reinterpret logical
+# Reinterpret logical
 
 def reinterpretl1(simd_ext, from_typ, to_typ):
     if from_typ == to_typ or simd_ext == 'sve':
@@ -1304,20 +1338,20 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
         if to_typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return {in0};
-                      #else
+                      # else
                         {using_f32}
-                      #endif'''.format(using_f32=to_f16_with_f32, **fmtspec)
+                      # endif'''.format(using_f32=to_f16_with_f32, **fmtspec)
         elif from_typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return {in0};
-                      #else
+                      # else
                         {using_f32}
-                      #endif'''.format(using_f32=from_f16_with_f32, **fmtspec)
+                      # endif'''.format(using_f32=from_f16_with_f32, **fmtspec)
         else:
             return 'return {in0};'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## Convert
+# Convert
 
 def convert1(simd_ext, from_typ, to_typ):
     fmtspec2 = fmtspec.copy()
@@ -1382,21 +1416,21 @@ def convert1(simd_ext, from_typ, to_typ):
         if to_typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return vcvtq_{to_suf}_{from_suf}({in0});
-                      #else
+                      # else
                         {using_f32}
-                      #endif'''.format(using_f32=to_f16_with_f32, **fmtspec2)
+                      # endif'''.format(using_f32=to_f16_with_f32, **fmtspec2)
         elif from_typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return vcvtq_{to_suf}_{from_suf}({in0});
-                      #else
+                      # else
                         {using_f32}
-                      #endif'''.format(using_f32=from_f16_with_f32, **fmtspec2)
+                      # endif'''.format(using_f32=from_f16_with_f32, **fmtspec2)
         else:
             return 'return vcvtq_{to_suf}_{from_suf}({in0});'. \
                    format(**fmtspec2)
 
 # -----------------------------------------------------------------------------
-## Reinterpret
+# Reinterpret
 
 def reinterpret1(simd_ext, from_typ, to_typ):
     fmtspec2 = fmtspec.copy()
@@ -1460,21 +1494,21 @@ def reinterpret1(simd_ext, from_typ, to_typ):
         if to_typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return vreinterpretq_{to_suf}_{from_suf}({in0});
-                      #else
+                      # else
                         {using_f32}
-                      #endif'''.format(using_f32=to_f16_with_f32, **fmtspec2)
+                      # endif'''.format(using_f32=to_f16_with_f32, **fmtspec2)
         elif from_typ == 'f16':
             return '''#ifdef NSIMD_FP16
                         return vreinterpretq_{to_suf}_{from_suf}({in0});
-                      #else
+                      # else
                         {using_f32}
-                      #endif'''.format(using_f32=from_f16_with_f32, **fmtspec2)
+                      # endif'''.format(using_f32=from_f16_with_f32, **fmtspec2)
         else:
             return 'return vreinterpretq_{to_suf}_{from_suf}({in0});'. \
                    format(**fmtspec2)
 
 # -----------------------------------------------------------------------------
-## reverse
+# reverse
 
 def reverse1(simd_ext, typ):
     armtyp = suf(typ)
@@ -1501,9 +1535,10 @@ def reverse1(simd_ext, typ):
                                            format(armtyp=armtyp, **fmtspec)
 
 # -----------------------------------------------------------------------------
-## Horizontal sum
+# Horizontal sum
 
 def addv(simd_ext, typ):
+
     if simd_ext == 'neon128':
         if typ == 'f64':
             return 'return ({typ})({in0}.v0 + {in0}.v1);'.format(**fmtspec)
@@ -1515,7 +1550,7 @@ def addv(simd_ext, typ):
                  tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 4));
                  tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 1));
                  return vget_lane_{suf}(tmp, 0);
-               #else
+               # else
                  float32x2_t tmp0 = vadd_f32(vget_low_f32({in0}.v0),
                                              vget_high_f32({in0}.v0));
                  tmp0 = vadd_f32(tmp0, vext_f32(tmp0, tmp0, 1));
@@ -1524,7 +1559,7 @@ def addv(simd_ext, typ):
                  tmp1 = vadd_f32(tmp1, vext_f32(tmp1, tmp1, 1));
                  return nsimd_f32_to_f16(vget_lane_f32(tmp0, 0) +
                                          vget_lane_f32(tmp1, 0));
-               #endif''' .format(t=half_neon_typ(typ), **fmtspec)
+               # endif''' .format(t=half_neon_typ(typ), **fmtspec)
         elif typ == 'f32':
             return \
             '''{t} tmp = vadd_{suf}(vget_low_{suf}({in0}),
@@ -1532,6 +1567,17 @@ def addv(simd_ext, typ):
                tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 1));
                return vget_lane_{suf}(tmp, 0);'''. \
                format(t=half_neon_typ(typ), **fmtspec)
+        elif typ[0] in ['i', 'u']:
+            le = 128 // int(typ[1:]);
+            return \
+            '''{typ} res = ({typ})0;
+               {typ} buf[{le}];
+               vst1q_{suf}(buf, {in0});
+               for (int i = 0; i < {le}; i++) {{
+                 res += buf[i];
+               }}
+               return res;'''. \
+               format(le=le, **fmtspec)
     elif simd_ext == 'aarch64':
         if typ == 'f16':
             return \
@@ -1541,7 +1587,7 @@ def addv(simd_ext, typ):
                  tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 4));
                  tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 1));
                  return vget_lane_{suf}(tmp, 0);
-               #else
+               # else
                  float32x2_t tmp0 = vadd_f32(vget_low_f32({in0}.v0),
                                              vget_high_f32({in0}.v0));
                  tmp0 = vadd_f32(tmp0, vext_f32(tmp0, tmp0, 1));
@@ -1550,7 +1596,7 @@ def addv(simd_ext, typ):
                  tmp1 = vadd_f32(tmp1, vext_f32(tmp1, tmp1, 1));
                  return nsimd_f32_to_f16(vget_lane_f32(tmp0, 0) +
                                          vget_lane_f32(tmp1, 0));
-               #endif
+               # endif
                     ''' .format(t=half_neon_typ(typ), **fmtspec)
         elif typ in ['f32', 'f64']:
             return 'return vaddvq_{suf}({in0});'.format(**fmtspec)
@@ -1574,12 +1620,12 @@ def upcvt1(simd_ext, from_typ, to_typ):
                  ret.v0 = vcvt_f32_f16(vget_low_{suf}({in0}));
                  ret.v1 = vcvt_f32_f16(vget_high_{suf}({in0}));
                  return ret;
-               #else
+               # else
                  nsimd_{simd_ext}_vf32x2 ret;
                  ret.v0 = {in0}.v0;
                  ret.v1 = {in0}.v1;
                  return ret;
-               #endif'''.format(**fmtspec)
+               # endif'''.format(**fmtspec)
         elif from_typ == 'f32' and to_typ == 'f64':
             if simd_ext == 'neon128':
                 return \
@@ -1682,12 +1728,12 @@ def downcvt1(simd_ext, from_typ, to_typ):
             return '''#ifdef NSIMD_FP16
                         return vcombine_f16(vcvt_f16_f32({in0}),
                                             vcvt_f16_f32({in1}));
-                      #else
+                      # else
                         nsimd_{simd_ext}_vf16 ret;
                         ret.v0 = {in0};
                         ret.v1 = {in1};
                         return ret;
-                      #endif'''.format(**fmtspec)
+                      # endif'''.format(**fmtspec)
         elif (from_typ in common.itypes and to_typ in common.itypes) or \
              (from_typ in common.utypes and to_typ in common.utypes):
             return '''return vcombine_{suf_to_typ}(vmovn_{suf}({in0}),
@@ -1729,7 +1775,34 @@ def downcvt1(simd_ext, from_typ, to_typ):
                     format(suf_to_typ=suf(to_typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
-## to_mask
+# adds
+
+def adds(simd_ext, from_typ):
+    if from_typ in common.ftypes:
+        return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+
+    if simd_ext in neon:
+        return 'return vqaddq_{suf}({in0}, {in1});'. \
+               format(**fmtspec)
+    else:
+        return 'return svqadd_{suf}({in0}, {in1});'. \
+               format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# subs
+
+def subs(simd_ext, from_typ):
+    if from_typ in common.ftypes:
+        return 'return nsimd_sub_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+
+    elif simd_ext in neon:
+        return 'return vqsubq_{suf}({in0}, {in1});'.format(**fmtspec)
+
+    else:
+        return 'return svqsub_{suf}({in0}, {in1});'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# to_mask
 
 def to_mask1(simd_ext, typ):
     if typ in common.itypes + common.ftypes:
@@ -1751,9 +1824,9 @@ def to_mask1(simd_ext, typ):
     elif simd_ext == 'aarch64' and typ == 'f16':
         return '''#ifdef NSIMD_FP16
                     {normal}
-                  #else
+                  # else
                     {emulate_f16}
-                  #endif'''.format(normal=normal, emulate_f16=emulate_f16)
+                  # endif'''.format(normal=normal, emulate_f16=emulate_f16)
     elif simd_ext == 'sve':
         if typ in common.iutypes:
             return '''return svsel_{suf}({in0}, svdup_n_{suf}(
@@ -1769,7 +1842,7 @@ def to_mask1(simd_ext, typ):
         return normal
 
 # -----------------------------------------------------------------------------
-## to_logical
+# to_logical
 
 def to_logical1(simd_ext, typ):
     if typ in common.iutypes:
@@ -1792,43 +1865,43 @@ def to_logical1(simd_ext, typ):
     if simd_ext == 'aarch64':
         return '''#ifdef NSIMD_FP16
                     {normal_fp}
-                  #else
+                  # else
                     {emulate_fp16}
-                  #endif'''.format(normal_fp=normal_fp,
+                  # endif'''.format(normal_fp=normal_fp,
                                    emulate_fp16=emulate_fp16)
     elif simd_ext == 'neon128':
         return emulate_fp16
 
 # -----------------------------------------------------------------------------
-## unpack functions
+# unpack functions
 
 def zip_unzip_half(func, simd_ext, typ):
     if simd_ext in ['aarch64', 'sve']:
         if typ =='f16' and simd_ext == 'aarch64':
             if func in ['zip1', 'zip2']:
                 return '''\
-                #ifdef NSIMD_FP16
+                # ifdef NSIMD_FP16
                 return {s}v{op}{q}_{suf}({in0}, {in1});
-                #else
+                # else
                 nsimd_{simd_ext}_v{typ} ret;
                 ret.v0 = {s}vzip1{q}_f32({in0}.v{i}, {in1}.v{i});
                 ret.v1 = {s}vzip2{q}_f32({in0}.v{i}, {in1}.v{i});
                 return ret;
-                #endif
+                # endif
                 '''.format(op=func,
                            i = '0' if func in ['zip1', 'uzp1'] else '1',
                            s = 's' if simd_ext == 'sve' else '',
                            q = '' if simd_ext == 'sve' else 'q', **fmtspec)
             else:
                 return '''\
-                #ifdef NSIMD_FP16
+                # ifdef NSIMD_FP16
                 return {s}v{op}{q}_{suf}({in0}, {in1});
-                #else
+                # else
                 nsimd_{simd_ext}_v{typ} ret;
                 ret.v0 = {s}v{func}{q}_f32({in0}.v0, {in0}.v1);
                 ret.v1 = {s}v{func}{q}_f32({in1}.v0, {in1}.v1);
                 return ret;
-                #endif
+                # endif
                 '''. format(op=func, func=func,
                             s = 's' if simd_ext == 'sve' else '',
                             q = '' if simd_ext == 'sve' else 'q', **fmtspec)
@@ -1935,9 +2008,9 @@ def zip_unzip(func, simd_ext, typ):
                       f='zip' if func == 'zip' else 'unzip', **fmtspec)
        else:
            return content
-                        
+
 # -----------------------------------------------------------------------------
-## get_impl function
+# get_impl function
 
 def get_impl(func, simd_ext, from_typ, to_typ):
     global fmtspec
@@ -1988,6 +2061,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'andnotl': lambda: lop2("andnotl", simd_ext, from_typ),
         'add': lambda: addsub("add", simd_ext, from_typ),
         'sub': lambda: addsub("sub", simd_ext, from_typ),
+        'adds': lambda: adds(simd_ext, from_typ),
+        'subs': lambda: subs(simd_ext, from_typ),
         'div': lambda: div2(simd_ext, from_typ),
         'sqrt': lambda: sqrt1(simd_ext, from_typ),
         'len': lambda: len1(simd_ext, from_typ),

@@ -7,11 +7,12 @@ build
 *.pyc
 src/api_*.cpp
 include/nsimd/arm
-include/nsimd/x86
 include/nsimd/cpu
-include/nsimd/functions.h
 include/nsimd/cxx_adv_api_functions.hpp
 include/nsimd/friendly_but_not_optimized.hpp
+include/nsimd/functions.h
+include/nsimd/ppc
+include/nsimd/x86
 src/api_*
 tests/c_base
 tests/cxx_base
@@ -20,11 +21,17 @@ benches/cxx_adv
 _deps
 _install
 doc/html
+
+doc/markdown/api_*.md
+doc/markdown/module_fixed_point_api_*.md
 doc/md2html
 doc/tmp.html
-doc/markdown/api*.md
-doc/markdown/module_fixed_point_api*.md
-doc/markdown/module_fixed_point_overview.md
+
+## Doc
+/doc/**/api*.md
+/doc/**/*.html
+/doc/md2html
+/doc/**/overview.md
 
 ## Ulps
 ulps/

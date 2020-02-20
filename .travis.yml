@@ -173,7 +173,7 @@ before_script:
       fi
     - mkdir build
     - export HATCH_SIMD=$( echo "$SIMD" | tr '[:upper:]' '[:lower:]' )
-    - $PYTHON egg/hatch.py -Af --simd $HATCH_SIMD
+    - $PYTHON egg/hatch.py -fcCsaotMF --simd $HATCH_SIMD
     - cd build
     - cmake .. $CMAKE_ARGS
         -DCMAKE_CXX_COMPILER=$TOOLSET_CXX -DCMAKE_C_COMPILER=$TOOLSET_CC

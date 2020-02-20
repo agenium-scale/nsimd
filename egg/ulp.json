@@ -177,7 +177,7 @@
 },
 {
 	"func":"coth", "type":"f32",
-	"ulps" : "22", "Worst value": "0x3f1cd666",
+	"ulps" : "20", "Worst value": "0x3f1cd666",
 	"ulps for denormalized output" : "23", "Worst value for dnz output" : "0x0",
 	"NaN Error":"false", "Value causing NaN":"0x0",
 	"Inf Error":"false", "Value causing Inf error":"0x0"
@@ -272,6 +272,27 @@
 	"ulps for denormalized output" : "-1", "Worst value for dnz output" : "0x403aff26abc28405",
 	"NaN Error":"false", "Value causing NaN":"0x0",
 	"Inf Error":"true", "Value causing Inf error":"0xdf9731a2e63cf8af"
+},
+{
+	"func":"erfcx", "type":"f16",
+	"ulps" : "0", "Worst value": "0x0",
+	"ulps for denormalized output" : "0", "Worst value for dnz output" : "0x0",
+	"NaN Error":"false", "Value causing NaN":"0x0",
+	"Inf Error":"false", "Value causing Inf error":"0x0"
+},
+{
+	"func":"erfcx", "type":"f32",
+	"ulps" : "0", "Worst value": "0x4bc4454d",
+	"ulps for denormalized output" : "0", "Worst value for dnz output" : "0x4120dde8",
+	"NaN Error":"false", "Value causing NaN":"0x0",
+	"Inf Error":"false", "Value causing Inf error":"0x0"
+},
+{
+	"func":"erfcx", "type":"f64",
+	"ulps" : "0", "Worst value": "0x0",
+	"ulps for denormalized output" : "-1", "Worst value for dnz output" : "0x0",
+	"NaN Error":"false", "Value causing NaN":"0x0",
+	"Inf Error":"true", "Value causing Inf error":"0x0"
 },
 {
 	"func":"erf", "type":"f16",
@@ -378,6 +399,28 @@
 	"NaN Error":"false", "Value causing NaN":"0x0",
 	"Inf Error":"true", "Value causing Inf error":"0x40862cb68ae2a314"
 },
+{
+	"func":"gamma", "type":"f16",
+	"ulps" : "10", "Worst value": "0x0",
+	"ulps for denormalized output" : "10", "Worst value for dnz output" : "0x0",
+	"NaN Error":"false", "Value causing NaN":"0x0",
+	"Inf Error":"true", "Value causing Inf error":"0x83ff"
+},
+{
+	"func":"gamma", "type":"f32",
+	"ulps" : "20", "Worst value": "0x0",
+	"ulps for denormalized output" : "0", "Worst value for dnz output" : "0x0",
+	"NaN Error":"false", "Value causing NaN":"0x0",
+	"Inf Error":"true", "Value causing Inf error":"0x7f7fffef"
+},
+{
+	"func":"gamma", "type":"f64",
+	"ulps" : "48", "Worst value": "0x0",
+	"ulps for denormalized output" : "0", "Worst value for dnz output" : "0x0",
+	"NaN Error":"false", "Value causing NaN":"0x0",
+	"Inf Error":"true", "Value causing Inf error":"0x0"
+},
+
 {
 	"func":"log10", "type":"f16",
 	"ulps" : "10", "Worst value": "0x0",

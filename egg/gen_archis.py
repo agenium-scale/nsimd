@@ -149,6 +149,29 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
 
                {hbar}
 
+               #if NSIMD_CXX > 0
+               extern "C" {{
+               #endif
+
+               NSIMD_DLLSPEC
+               int nsimd_put_{simd_ext}_l{typ}(FILE *, const char *,
+                                              nsimd_{simd_ext}_vl{typ});
+
+               #if NSIMD_CXX > 0
+               }} // extern "C"
+               #endif
+
+               #if NSIMD_CXX > 0
+               namespace nsimd {{
+               NSIMD_INLINE int putl(FILE *out, const char *fmt,
+                                    nsimd_{simd_ext}_vl{typ} a0, {typ},
+                                    {simd_ext}) {{
+                 return nsimd_put_{simd_ext}_l{typ}(out, fmt, a0);
+               }}
+               }} // namespace nsimd
+               #endif
+
+               {hbar}
                '''.format(simd_ext=simd_ext, hbar=common.hbar, typ=typ))
         out.write('#endif')
     common.clang_format(opts, filename)
