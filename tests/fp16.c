@@ -90,10 +90,11 @@ int test_f16_to_f32(u16 val, u32 expected) {
 /* ------------------------------------------------------------------------- */
 
 int test_f32_to_f16(u32 val, u16 expected) {
-  f16 res = nsimd_f32_to_f16(*(f32 *)&val);
-  if (res.u != expected) {
+  f16 fres = nsimd_f32_to_f16(*(f32 *)&val);
+  u16 ures = *(u16 *)&fres;
+  if (ures != expected) {
     fprintf(stdout, "Error, nsimd_f16_to_f32: expected 0x%x but got 0x%x \n",
-            expected, res.u);
+            expected, ures);
     fflush(stdout);
     return 1;
   }
@@ -183,7 +184,7 @@ int main(void) {
 
   /* NaN special value (Copy Intel intrinsics which set the MSB of the mantissa
    * of NaNs to 1 when converting f16 to f32). */
-  if (test_f16_to_f32(0xfcf8, 0xffdf0000)) {
+  if (test_f16_to_f32(0xfcf8, 0xff9f0000)) {
     return EXIT_FAILURE;
   }
 

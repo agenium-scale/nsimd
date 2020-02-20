@@ -29,11 +29,12 @@ SOFTWARE.
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
 #include "nsimd/modules/fixed_point/fixed_math.hpp"
+#include "nsimd/cxx_adv_api.hpp"
 
 namespace nsimd {
 namespace fixed_point {
 
-template <uint8_t _lf, uint8_t _rt> struct fpsimd_t {
+template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimd_t {
   typedef typename fp_t<_lf, _rt>::value_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
   typedef typename fp_t<_lf, _rt>::simd_logical logic;
@@ -51,7 +52,7 @@ template <uint8_t _lf, uint8_t _rt> struct fpsimd_t {
   }
 };
 
-template <uint8_t _lf, uint8_t _rt> struct fpsimdl_t {
+template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimdl_t {
   typedef typename fp_t<_lf, _rt>::logical_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
   typedef typename fp_t<_lf, _rt>::simd_logical logic;

@@ -119,7 +119,7 @@ NSIMD_DLLEXPORT float nsimd_u16_to_f32(u16 a) {
     /* Force the first bit of the mantissa to 1 to be compatible with the way
      * Intel convert f16 to f32 */
     if (mantissa != 0) {
-      mantissa |= 0x200;
+      //mantissa |= 0x200;
     }
   } else if (exponent == 0 && mantissa == 0) {
     /* Nothing to do */
