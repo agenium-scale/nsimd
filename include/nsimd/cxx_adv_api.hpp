@@ -598,7 +598,7 @@ pack<T, 2 * N, SimdExt> to_pack(const packx2<T, N, SimdExt> &packx2_n) {
 
   pack_2xn.cdr.cdr = to_pack(packx2_n_1);
 
-  return pack_;
+  return pack_2xn;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -656,10 +656,10 @@ pack<T, 4 * N, SimdExt> to_pack(const packx4<T, N, SimdExt> &packx4_n) {
   pack_4xn.cdr.cdr.cdr.car = packx4_n.v3.car;
 
   packx4<T, N - 1, SimdExt> packx4_n_1;
-  packx4_n_1.v0 = packx3_n.v0.cdr;
-  packx4_n_1.v1 = packx3_n.v1.cdr;
-  packx4_n_1.v2 = packx3_n.v2.cdr;
-  packx4_n_1.v3 = packx3_n.v3.cdr;
+  packx4_n_1.v0 = packx4_n.v0.cdr;
+  packx4_n_1.v1 = packx4_n.v1.cdr;
+  packx4_n_1.v2 = packx4_n.v2.cdr;
+  packx4_n_1.v3 = packx4_n.v3.cdr;
 
   pack_4xn.cdr.cdr.cdr.cdr = to_pack(packx4_n_1);
 
