@@ -568,6 +568,111 @@ native_register(pack<T, 1, SimdExt> const &a) {
   return a.car;
 }
 
+/* ------------------------------------------------------------------------- */
+
+template<typename T, typename SimdExt>
+pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt>& pack_){
+  return pack_;
+}
+
+template<typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt>& pack_){
+  return pack_;
+}
+
+/* ------------------------------------------------------------------------- */
+
+template<typename T, typename SimdExt>
+pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt>& packx2_){
+
+  nsimd::pack<T, 2, SimdExt> pack_2;
+  pack_2.car = packx2_.v0.car;
+  pack_2.cdr.car = packx2_.v1.car;
+
+  return pack_2;
+}
+
+template<typename T, int N, typename SimdExt>
+pack<T, 2 * N, SimdExt> to_pack(const packx2<T, N, SimdExt>& packx2_n){
+
+  pack<T, 2 * N, SimdExt> pack_2xn ;
+  pack_2xn.car = packx2_n.v0.car;
+  pack_2xn.cdr.car = packx2_n.v1.car;
+
+  packx2<T, N-1, SimdExt> packx2_n_1;
+  packx2_n_1.v0 = packx2_n.v0.cdr;
+  packx2_n_1.v1 = packx2_n.v1.cdr;
+
+  pack_2xn.cdr.cdr = to_pack(packx2_n_1);
+
+  return pack_;
+}
+
+/* ------------------------------------------------------------------------- */
+
+template<typename T, typename SimdExt>
+pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt>& packx3_){
+
+  nsimd::pack<T, 3, SimdExt> pack_3;
+  pack_3.car = packx3_.v0.car;
+  pack_3.cdr.car = packx3_.v1.car;
+  pack_3.cdr.cdr.car = packx3_.v2.car;
+
+  return pack_3;
+}
+
+template<typename T, int N, typename SimdExt>
+pack<T, 3 * N, SimdExt> to_pack(const packx3<T, N, SimdExt>& packx3_n){
+
+  pack<T, 3 * N, SimdExt> pack_3xn ;
+  pack_3xn.car = packx3_n.v0.car;
+  pack_3xn.cdr.car = packx3_n.v1.car;
+  pack_3xn.cdr.cdr.car = packx3_n.v2.car;
+
+  packx3<T, N-1, SimdExt> packx3_n_1;
+  packx3_n_1.v0 = packx3_n.v0.cdr;
+  packx3_n_1.v1 = packx3_n.v1.cdr;
+  packx3_n_1.v2 = packx3_n.v2.cdr;
+
+  pack_3xn.cdr.cdr.cdr = to_pack(packx3_n_1);
+
+  return pack_3xn;
+}
+
+/* ------------------------------------------------------------------------- */
+
+template<typename T, typename SimdExt>
+pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt>& packx4_){
+
+  nsimd::pack<T, 4, SimdExt> pack_4;
+  pack_4.car = packx4_.v0.car;
+  pack_4.cdr.car = packx4_.v1.car;
+  pack_4.cdr.cdr.car = packx4_.v2.car;
+  pack_4.cdr.cdr.cdr.car = packx4_.v3.car;
+
+  return pack_4;
+}
+
+template<typename T, int N, typename SimdExt>
+pack<T, 4 * N, SimdExt> to_pack(const packx4<T, N, SimdExt>& packx4_n){
+
+  pack<T, 4 * N, SimdExt> pack_4xn ;
+  pack_4xn.car = packx4_n.v0.car;
+  pack_4xn.cdr.car = packx4_n.v1.car;
+  pack_4xn.cdr.cdr.car = packx4_n.v2.car;
+  pack_4xn.cdr.cdr.cdr.car = packx4_n.v3.car;
+
+  packx4<T, N-1, SimdExt> packx4_n_1;
+  packx4_n_1.v0 = packx3_n.v0.cdr;
+  packx4_n_1.v1 = packx3_n.v1.cdr;
+  packx4_n_1.v2 = packx3_n.v2.cdr;
+  packx4_n_1.v3 = packx3_n.v3.cdr;
+
+  pack_4xn.cdr.cdr.cdr.cdr = to_pack(packx4_n_1);
+
+  return pack_4xn;
+}
+
 } // namespace nsimd
 
 #endif
