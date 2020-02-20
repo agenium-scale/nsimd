@@ -870,19 +870,11 @@ def shra(typ):
         union {{i{typnbits} ival; u{typnbits} uval;}} val;
         union {{i{typnbits} ival; u{typnbits} uval;}} sign;
         u{typnbits} shifted;
-<<<<<<< HEAD
-        
-        {content}
-        
-        return ret;'''.format(content=content, **fmtspec)
-    
-=======
 
         {content}
 
         return ret;'''.format(content=content, **fmtspec)
 
->>>>>>> master
 # -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):

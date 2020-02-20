@@ -799,16 +799,10 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}({sign}{in1}));'''.\
                 format(**fmtspec, sign=sign)
         else:
-<<<<<<< HEAD
-            return '''return vreinterpretq_s{typnbits}_u{typnbits}( 
-            vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}), 
-            vdupq_n_s{typnbits}((i{typnbits}){sign}{in1})));'''.format(**fmtspec, sign=sign)
-=======
             
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
                                 vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
                                 vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
->>>>>>> master
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
@@ -826,21 +820,13 @@ def shra(simd_ext, typ):
     if typ in common.utypes:
         return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
                 format(**fmtspec)
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> master
     if simd_ext in neon:
         return  '''return vshlq_{suf}(
         {in0}, vdupq_n_s{typnbits}((i{typnbits})-{in1}));'''.\
             format(**fmtspec)
     else:
-<<<<<<< HEAD
-        return '''return svasr_{typ}_z({svtrue}, {in0}, 
-=======
         return '''return svasr_{typ}_z({svtrue}, {in0},
->>>>>>> master
         svdup_n_u{typnbits}((u{typnbits}){in1}));'''.\
             format(**fmtspec)
 
