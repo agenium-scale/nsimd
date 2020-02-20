@@ -34,9 +34,9 @@ namespace nsimd {
 // For ARM SVE we need a special struct
 
 #ifdef NSIMD_SVE
-  #define NSIMD_STRUCT __sizeless_struct
+#define NSIMD_STRUCT __sizeless_struct
 #else
-  #define NSIMD_STRUCT struct
+#define NSIMD_STRUCT struct
 #endif
 
 // ----------------------------------------------------------------------------
@@ -45,8 +45,7 @@ namespace nsimd {
 template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT pack;
 
-template <typename T, typename SimdExt>
-NSIMD_STRUCT pack<T, 1, SimdExt> {
+template <typename T, typename SimdExt> NSIMD_STRUCT pack<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -82,8 +81,7 @@ NSIMD_STRUCT pack<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
-NSIMD_STRUCT pack {
+template <typename T, int N, typename SimdExt> NSIMD_STRUCT pack {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -112,8 +110,7 @@ NSIMD_STRUCT pack {
 template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT packl;
 
-template <typename T, typename SimdExt>
-NSIMD_STRUCT packl<T, 1, SimdExt> {
+template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vectorl simd_vectorl;
   simd_vectorl car;
 
@@ -131,8 +128,7 @@ NSIMD_STRUCT packl<T, 1, SimdExt> {
   static const int unroll = 1;
 };
 
-template <typename T, int N, typename SimdExt>
-NSIMD_STRUCT packl {
+template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   typename simd_traits<T, SimdExt>::simd_vectorl car;
   packl<T, N - 1, SimdExt> cdr;
 
@@ -257,8 +253,7 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx4<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
-NSIMD_STRUCT packx4 {
+template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx4 {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -277,10 +272,9 @@ NSIMD_STRUCT packx4 {
     v3.car = v3_;
   }
 
-  void set_cdr(pack<T, N - 1, SimdExt> const &v0_,
-               pack<T, N - 1, SimdExt> const &v1_,
-               pack<T, N - 1, SimdExt> const &v2_,
-               pack<T, N - 1, SimdExt> const &v3_) {
+  void set_cdr(
+      pack<T, N - 1, SimdExt> const &v0_, pack<T, N - 1, SimdExt> const &v1_,
+      pack<T, N - 1, SimdExt> const &v2_, pack<T, N - 1, SimdExt> const &v3_) {
     v0.cdr = v0_;
     v1.cdr = v1_;
     v2.cdr = v2_;
@@ -319,8 +313,7 @@ int len(packx4<T, N, SimdExt> const &) {
 // ----------------------------------------------------------------------------
 // The addv function cannot be auto-generated
 
-template <typename T, typename SimdExt>
-T addv(pack<T, 1, SimdExt> const &a0) {
+template <typename T, typename SimdExt> T addv(pack<T, 1, SimdExt> const &a0) {
   return addv(a0.car, T(), SimdExt());
 }
 
@@ -570,20 +563,20 @@ native_register(pack<T, 1, SimdExt> const &a) {
 
 /* ------------------------------------------------------------------------- */
 
-template<typename T, typename SimdExt>
-pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt>& pack_){
+template <typename T, typename SimdExt>
+pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt> &pack_) {
   return pack_;
 }
 
-template<typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt>& pack_){
+template <typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
 
 /* ------------------------------------------------------------------------- */
 
-template<typename T, typename SimdExt>
-pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt>& packx2_){
+template <typename T, typename SimdExt>
+pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx2_) {
 
   nsimd::pack<T, 2, SimdExt> pack_2;
   pack_2.car = packx2_.v0.car;
@@ -592,14 +585,14 @@ pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt>& packx2_){
   return pack_2;
 }
 
-template<typename T, int N, typename SimdExt>
-pack<T, 2 * N, SimdExt> to_pack(const packx2<T, N, SimdExt>& packx2_n){
+template <typename T, int N, typename SimdExt>
+pack<T, 2 * N, SimdExt> to_pack(const packx2<T, N, SimdExt> &packx2_n) {
 
-  pack<T, 2 * N, SimdExt> pack_2xn ;
+  pack<T, 2 * N, SimdExt> pack_2xn;
   pack_2xn.car = packx2_n.v0.car;
   pack_2xn.cdr.car = packx2_n.v1.car;
 
-  packx2<T, N-1, SimdExt> packx2_n_1;
+  packx2<T, N - 1, SimdExt> packx2_n_1;
   packx2_n_1.v0 = packx2_n.v0.cdr;
   packx2_n_1.v1 = packx2_n.v1.cdr;
 
@@ -610,8 +603,8 @@ pack<T, 2 * N, SimdExt> to_pack(const packx2<T, N, SimdExt>& packx2_n){
 
 /* ------------------------------------------------------------------------- */
 
-template<typename T, typename SimdExt>
-pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt>& packx3_){
+template <typename T, typename SimdExt>
+pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt> &packx3_) {
 
   nsimd::pack<T, 3, SimdExt> pack_3;
   pack_3.car = packx3_.v0.car;
@@ -621,15 +614,15 @@ pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt>& packx3_){
   return pack_3;
 }
 
-template<typename T, int N, typename SimdExt>
-pack<T, 3 * N, SimdExt> to_pack(const packx3<T, N, SimdExt>& packx3_n){
+template <typename T, int N, typename SimdExt>
+pack<T, 3 * N, SimdExt> to_pack(const packx3<T, N, SimdExt> &packx3_n) {
 
-  pack<T, 3 * N, SimdExt> pack_3xn ;
+  pack<T, 3 * N, SimdExt> pack_3xn;
   pack_3xn.car = packx3_n.v0.car;
   pack_3xn.cdr.car = packx3_n.v1.car;
   pack_3xn.cdr.cdr.car = packx3_n.v2.car;
 
-  packx3<T, N-1, SimdExt> packx3_n_1;
+  packx3<T, N - 1, SimdExt> packx3_n_1;
   packx3_n_1.v0 = packx3_n.v0.cdr;
   packx3_n_1.v1 = packx3_n.v1.cdr;
   packx3_n_1.v2 = packx3_n.v2.cdr;
@@ -641,8 +634,8 @@ pack<T, 3 * N, SimdExt> to_pack(const packx3<T, N, SimdExt>& packx3_n){
 
 /* ------------------------------------------------------------------------- */
 
-template<typename T, typename SimdExt>
-pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt>& packx4_){
+template <typename T, typename SimdExt>
+pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt> &packx4_) {
 
   nsimd::pack<T, 4, SimdExt> pack_4;
   pack_4.car = packx4_.v0.car;
@@ -653,16 +646,16 @@ pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt>& packx4_){
   return pack_4;
 }
 
-template<typename T, int N, typename SimdExt>
-pack<T, 4 * N, SimdExt> to_pack(const packx4<T, N, SimdExt>& packx4_n){
+template <typename T, int N, typename SimdExt>
+pack<T, 4 * N, SimdExt> to_pack(const packx4<T, N, SimdExt> &packx4_n) {
 
-  pack<T, 4 * N, SimdExt> pack_4xn ;
+  pack<T, 4 * N, SimdExt> pack_4xn;
   pack_4xn.car = packx4_n.v0.car;
   pack_4xn.cdr.car = packx4_n.v1.car;
   pack_4xn.cdr.cdr.car = packx4_n.v2.car;
   pack_4xn.cdr.cdr.cdr.car = packx4_n.v3.car;
 
-  packx4<T, N-1, SimdExt> packx4_n_1;
+  packx4<T, N - 1, SimdExt> packx4_n_1;
   packx4_n_1.v0 = packx3_n.v0.cdr;
   packx4_n_1.v1 = packx3_n.v1.cdr;
   packx4_n_1.v2 = packx3_n.v2.cdr;
