@@ -667,19 +667,19 @@ pack<T, 2, SimdExt> to_pack_interleave(const packx2<T, 1, SimdExt> &packx2_) {
 
 template <typename T, int N, typename SimdExt = NSIMD_SIMD>
 pack<T, 2 * N, SimdExt>
-to_pack_interleave(const packx2<T, N, SimdExt> &packx2_n) {
+to_pack_interleave(const packx2<T, N, SimdExt> &packx2_N) {
 
-  pack<T, 2 * N, SimdExt> pack_2xn;
-  pack_2xn.car = packx2_n.v0.car;
-  pack_2xn.cdr.car = packx2_n.v1.car;
+  pack<T, 2 * N, SimdExt> pack_2xN;
+  pack_2xN.car = packx2_N.v0.car;
+  pack_2xN.cdr.car = packx2_N.v1.car;
 
   packx2<T, N - 1, SimdExt> packx2_n_1;
-  packx2_n_1.v0 = packx2_n.v0.cdr;
-  packx2_n_1.v1 = packx2_n.v1.cdr;
+  packx2_n_1.v0 = packx2_N.v0.cdr;
+  packx2_n_1.v1 = packx2_N.v1.cdr;
 
-  pack_2xn.cdr.cdr = to_pack_interleave(packx2_n_1);
+  pack_2xN.cdr.cdr = to_pack_interleave(packx2_n_1);
 
-  return pack_2xn;
+  return pack_2xN;
 }
 
 /* ------------------------------------------------------------------------- */
