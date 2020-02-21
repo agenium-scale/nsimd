@@ -596,13 +596,58 @@ struct get_pack_helper<T, N, SimdExt, packx2, 1> {
   }
 };
 
+// ----------------------------------------------------------------------------
+// get_pack_helper - packx3
+
+template <typename T, int N, typename SimdExt, int Ix>
+struct get_pack_helper<T, N, SimdExt, packx3, Ix> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx2<T, N, SimdExt> &packx_) const {
+    static_assert(0 <= Ix && Ix <= 3,
+                  "ERROR - get_pack_helper(const packx3<T, N, SimdExt> "
+                  "&packx_) - Ix not in valid range: 0 <= Ix <= 3");
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx3, 0> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx3<T, N, SimdExt> &packx_) const {
+    return packx_.v0;
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx3, 1> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx3<T, N, SimdExt> &packx_) const {
+    return packx_.v1;
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx3, 2> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx3<T, N, SimdExt> &packx_) const {
+    return packx_.v2;
+  }
+};
+
+// ----------------------------------------------------------------------------
+// get_pack functions
+
 template <typename T, int N, typename SimdExt, int Ix>
 pack<T, N, SimdExt> get_pack(const packx2<T, N, SimdExt> &packx_) {
   return get_pack_helper<T, N, SimdExt, packx2, Ix>{}(packx_);
 }
 
-/* -------------------------------------------------------------------------
- */
+template <typename T, int N, typename SimdExt, int Ix>
+pack<T, N, SimdExt> get_pack(const packx3<T, N, SimdExt> &packx_) {
+  return get_pack_helper<T, N, SimdExt, packx3, Ix>{}(packx_);
+}
+
+// ----------------------------------------------------------------------------
+// to_pack
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt> &pack_) {
