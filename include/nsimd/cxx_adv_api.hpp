@@ -561,7 +561,8 @@ native_register(pack<T, 1, SimdExt> const &a) {
   return a.car;
 }
 
-/* ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
+// get_pack
 
 template <typename T, int N, typename SimdExt,
           template <typename, int, typename> class packx, int Ix>
@@ -569,6 +570,9 @@ struct get_pack_helper {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx<T, N, SimdExt> &packx_) const {}
 };
+
+// ----------------------------------------------------------------------------
+// get_pack_helper - packx2
 
 template <typename T, int N, typename SimdExt, int Ix>
 struct get_pack_helper<T, N, SimdExt, packx2, Ix> {
@@ -659,7 +663,8 @@ pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
 
-/* ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
+// to_pack - packx2<N = 1, ...> to pack<N = 2, ...>
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx2_) {
@@ -670,6 +675,9 @@ pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx2_) {
 
   return pack_2;
 }
+
+// ----------------------------------------------------------------------------
+// to_pack - packx2<N, ...> to pack<2 * N, ...>
 
 // Can be made generic for all packx{2, 3, 4}
 // Advance
@@ -701,7 +709,7 @@ struct to_pack_recurs_helper<T, initN, 1, 1, VIx, SimdExt> {
   }
 };
 
-// packx{2, 3, 4} dependent
+// Can be made generic for all packx{2, 3, 4}
 // Switch
 template <typename T, int initN, int M, int VIx, typename SimdExt>
 struct to_pack_recurs_helper<T, initN, 1, M, VIx, SimdExt> {
@@ -729,7 +737,8 @@ pack<T, M, SimdExt> to_pack(const packx2<T, N, SimdExt> &packx2_initN) {
   return pack_2xN;
 }
 
-/* ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
+// to_pack_interleave
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 1, SimdExt> to_pack_interleave(const pack<T, 1, SimdExt> &pack_) {
@@ -741,7 +750,7 @@ pack<T, N, SimdExt> to_pack_interleave(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
 
-/* ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 2, SimdExt> to_pack_interleave(const packx2<T, 1, SimdExt> &packx2_) {
@@ -770,7 +779,7 @@ to_pack_interleave(const packx2<T, N, SimdExt> &packx2_N) {
   return pack_2xN;
 }
 
-/* ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 3, SimdExt> to_pack_interleave(const packx3<T, 1, SimdExt> &packx3_) {
@@ -802,7 +811,7 @@ to_pack_interleave(const packx3<T, N, SimdExt> &packx3_n) {
   return pack_3xn;
 }
 
-/* ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 4, SimdExt> to_pack_interleave(const packx4<T, 1, SimdExt> &packx4_) {
