@@ -578,7 +578,7 @@ template <typename T, int N, typename SimdExt, int Ix>
 struct get_pack_helper<T, N, SimdExt, packx2, Ix> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx2<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix <= 2,
+    static_assert(0 <= Ix && Ix < 2,
                   "ERROR - get_pack_helper(const packx2<T, N, SimdExt> "
                   "&packx_) - Ix not in valid range: 0 <= Ix <= 2");
   }
@@ -606,8 +606,8 @@ struct get_pack_helper<T, N, SimdExt, packx2, 1> {
 template <typename T, int N, typename SimdExt, int Ix>
 struct get_pack_helper<T, N, SimdExt, packx3, Ix> {
   const nsimd::pack<T, N, SimdExt> &
-  operator()(const packx2<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix <= 3,
+  operator()(const packx3<T, N, SimdExt> &packx_) const {
+    static_assert(0 <= Ix && Ix < 3,
                   "ERROR - get_pack_helper(const packx3<T, N, SimdExt> "
                   "&packx_) - Ix not in valid range: 0 <= Ix <= 3");
   }
