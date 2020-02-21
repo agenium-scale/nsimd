@@ -564,6 +564,86 @@ native_register(pack<T, 1, SimdExt> const &a) {
 /* ------------------------------------------------------------------------- */
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
+pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt> &pack_) {
+  return pack_;
+}
+
+template <typename T, int N, typename SimdExt = NSIMD_SIMD>
+pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
+  return pack_;
+}
+
+/* ------------------------------------------------------------------------- */
+
+template <typename T, typename SimdExt = NSIMD_SIMD>
+pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx2_) {
+
+  nsimd::pack<T, 2, SimdExt> pack_2;
+  pack_2.car = packx2_.v0.car;
+  pack_2.cdr.car = packx2_.v1.car;
+
+  return pack_2;
+}
+
+// Can be made generic for all packx{2, 3, 4}
+// Advance
+template <typename T, int initN, int N, int M, typename SimdExt = NSIMD_SIMD>
+struct to_pack_recurs_helper {
+  static pack<T, M, SimdExt>
+  to_pack(const packx2<T, initN, SimdExt> &packx2_initN,
+          const pack<T, N, SimdExt> &pack_N) {
+    pack<T, M, SimdExt> ret_pack_M;
+    ret_pack_M.car = pack_N.car;
+    ret_pack_M.cdr =
+        to_pack_recurs_helper<T, initN, N - 1, M - 1, SimdExt>::to_pack(
+            packx2_initN, pack_N.cdr);
+    return ret_pack_M;
+  }
+};
+
+// Can be made generic for all packx{2, 3, 4}
+// Base case
+template <typename T, int initN, typename SimdExt>
+struct to_pack_recurs_helper<T, initN, 1, 1, SimdExt> {
+  static pack<T, 1, SimdExt> to_pack(const packx2<T, initN, SimdExt> &packx2_N,
+                                     const pack<T, 1, SimdExt> &pack_) {
+    (void)packx2_N;
+    pack<T, 1, SimdExt> ret_pack_;
+    ret_pack_.car = pack_.car; // simd_vector
+    return ret_pack_;
+  }
+};
+
+// packx{2, 3, 4} dependent
+// Switch
+template <typename T, int initN, int M, typename SimdExt>
+struct to_pack_recurs_helper<T, initN, 1, M, SimdExt> {
+  static pack<T, M, SimdExt>
+  to_pack(const packx2<T, initN, SimdExt> &packx2_initN,
+          const pack<T, 1, SimdExt> &pack_N) {
+
+    pack<T, M, SimdExt> ret_pack_M;
+    ret_pack_M.car = pack_N.car; // simd_vector
+    ret_pack_M.cdr =
+        to_pack_recurs_helper<T, initN, initN, M - 1, SimdExt>::to_pack(
+            packx2_initN, packx2_initN.v1);
+    return ret_pack_M;
+  }
+};
+
+// Can be made generic for all packx{2, 3, 4}
+template <typename T, int N, int M = 2 * N, typename SimdExt = NSIMD_SIMD>
+pack<T, M, SimdExt> to_pack(const packx2<T, N, SimdExt> &packx2_initN) {
+  pack<T, M, SimdExt> pack_2xN;
+  pack_2xN.car = packx2_initN.v0.car; // simd_vector
+  pack_2xN.cdr = to_pack_recurs_helper<T, N, N - 1, M - 1, SimdExt>::to_pack(
+      packx2_initN, packx2_initN.v0.cdr);
+  return pack_2xN;
+}
+
+/* ------------------------------------------------------------------------- */
+
+template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 1, SimdExt> to_pack_interleave(const pack<T, 1, SimdExt> &pack_) {
   return pack_;
 }
