@@ -701,6 +701,11 @@ pack<T, N, SimdExt> get_pack(const packx3<T, N, SimdExt> &packx_) {
   return get_pack_helper<T, N, SimdExt, packx3, Ix>{}(packx_);
 }
 
+template <typename T, int N, typename SimdExt, int Ix>
+pack<T, N, SimdExt> get_pack(const packx4<T, N, SimdExt> &packx_) {
+  return get_pack_helper<T, N, SimdExt, packx4, Ix>{}(packx_);
+}
+
 // ----------------------------------------------------------------------------
 // to_pack
 
