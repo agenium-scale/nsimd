@@ -691,19 +691,10 @@ struct get_pack_helper<T, N, SimdExt, packx4, 3> {
 // ----------------------------------------------------------------------------
 // get_pack functions
 
-template <int Ix, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> get_pack(const packx2<T, N, SimdExt> &packx_) {
-  return get_pack_helper<T, N, SimdExt, packx2, Ix>{}(packx_);
-}
-
-template <int Ix, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> get_pack(const packx3<T, N, SimdExt> &packx_) {
-  return get_pack_helper<T, N, SimdExt, packx3, Ix>{}(packx_);
-}
-
-template <int Ix, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> get_pack(const packx4<T, N, SimdExt> &packx_) {
-  return get_pack_helper<T, N, SimdExt, packx4, Ix>{}(packx_);
+template <int Ix, typename T, int N, typename SimdExt,
+          template <typename, int, typename> class packx>
+pack<T, N, SimdExt> get_pack(const packx<T, N, SimdExt> &packx_) {
+  return get_pack_helper<T, N, SimdExt, packx, Ix>{}(packx_);
 }
 
 // ----------------------------------------------------------------------------
