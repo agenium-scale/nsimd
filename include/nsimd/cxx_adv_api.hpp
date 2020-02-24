@@ -148,6 +148,7 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx2<T, 1, SimdExt> {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = 1;
+  static const int soa_num_packs = 2;
 
   pack<T, 1, SimdExt> v0;
   pack<T, 1, SimdExt> v1;
@@ -163,6 +164,7 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx2 {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = N;
+  static const int soa_num_packs = 2;
 
   pack<T, N, SimdExt> v0;
   pack<T, N, SimdExt> v1;
@@ -190,6 +192,7 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx3<T, 1, SimdExt> {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = 1;
+  static const int soa_num_packs = 3;
 
   pack<T, 1, SimdExt> v0;
   pack<T, 1, SimdExt> v1;
@@ -207,6 +210,7 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx3 {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = N;
+  static const int soa_num_packs = 3;
 
   pack<T, N, SimdExt> v0;
   pack<T, N, SimdExt> v1;
@@ -238,6 +242,7 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx4<T, 1, SimdExt> {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = 1;
+  static const int soa_num_packs = 4;
 
   pack<T, 1, SimdExt> v0;
   pack<T, 1, SimdExt> v1;
@@ -258,6 +263,7 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx4 {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = N;
+  static const int soa_num_packs = 4;
 
   pack<T, N, SimdExt> v0;
   pack<T, N, SimdExt> v1;
@@ -578,9 +584,9 @@ template <typename T, int N, typename SimdExt, int Ix>
 struct get_pack_helper<T, N, SimdExt, packx2, Ix> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx2<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix < 2,
-                  "ERROR - get_pack_helper(const packx2<T, N, SimdExt> "
-                  "&packx_) - Ix not in valid range: 0 <= Ix <= 2");
+    static_assert(0 <= Ix && Ix < packx2<T, N, SimdExt>::soa_num_packs,
+                  "ERROR - get_pack_helper<Ix>{}(const packx2<T, N, SimdExt> "
+                  "&packx_) const - Ix not in valid range: 0 <= Ix < 2");
   }
 };
 
@@ -607,9 +613,9 @@ template <typename T, int N, typename SimdExt, int Ix>
 struct get_pack_helper<T, N, SimdExt, packx3, Ix> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx3<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix < 3,
-                  "ERROR - get_pack_helper(const packx3<T, N, SimdExt> "
-                  "&packx_) - Ix not in valid range: 0 <= Ix <= 3");
+    static_assert(0 <= Ix && Ix < packx3<T, N, SimdExt>::soa_num_packs,
+                  "ERROR - get_pack_helper<Ix>{}(const packx3<T, N, SimdExt> "
+                  "&packx_) const - Ix not in valid range: 0 <= Ix < 3");
   }
 };
 
