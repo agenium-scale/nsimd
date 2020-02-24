@@ -764,7 +764,8 @@ struct to_pack_recurs_helper<T, init_N, 1 /* == 1: base case condition */,
 template <typename T, int init_N, int to_pack_unroll_ix, int v_ix,
           typename SimdExt, template <typename, int, typename> class packx>
 struct to_pack_recurs_helper<
-    T, init_N, 1 /* == 1: switch from v_[i] to v_[i+1] condition */,
+    T, init_N,
+    1 /* packx_unroll_ix == 1: switch from v_[i] to v_[i+1] condition */,
     to_pack_unroll_ix /* > 1: switch from v_[i] to v_[i+1] condition */, v_ix,
     SimdExt, packx> {
   static pack<T, to_pack_unroll_ix, SimdExt>
