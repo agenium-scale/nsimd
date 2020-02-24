@@ -644,6 +644,51 @@ struct get_pack_helper<T, N, SimdExt, packx3, 2> {
 };
 
 // ----------------------------------------------------------------------------
+// get_pack_helper - packx4
+
+template <typename T, int N, typename SimdExt, int Ix>
+struct get_pack_helper<T, N, SimdExt, packx4, Ix> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx4<T, N, SimdExt> &packx_) const {
+    static_assert(0 <= Ix && Ix < packx4<T, N, SimdExt>::soa_num_packs,
+                  "ERROR - get_pack_helper<Ix>{}(const packx4<T, N, SimdExt> "
+                  "&packx_) const - Ix not in valid range: 0 <= Ix < 4");
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx4, 0> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx4<T, N, SimdExt> &packx_) const {
+    return packx_.v0;
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx4, 1> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx4<T, N, SimdExt> &packx_) const {
+    return packx_.v1;
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx4, 2> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx4<T, N, SimdExt> &packx_) const {
+    return packx_.v2;
+  }
+};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx4, 3> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx4<T, N, SimdExt> &packx_) const {
+    return packx_.v3;
+  }
+};
+
+// ----------------------------------------------------------------------------
 // get_pack functions
 
 template <typename T, int N, typename SimdExt, int Ix>
