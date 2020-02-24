@@ -691,17 +691,17 @@ struct get_pack_helper<T, N, SimdExt, packx4, 3> {
 // ----------------------------------------------------------------------------
 // get_pack functions
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <int Ix, typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> get_pack(const packx2<T, N, SimdExt> &packx_) {
   return get_pack_helper<T, N, SimdExt, packx2, Ix>{}(packx_);
 }
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <int Ix, typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> get_pack(const packx3<T, N, SimdExt> &packx_) {
   return get_pack_helper<T, N, SimdExt, packx3, Ix>{}(packx_);
 }
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <int Ix, typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> get_pack(const packx4<T, N, SimdExt> &packx_) {
   return get_pack_helper<T, N, SimdExt, packx4, Ix>{}(packx_);
 }
@@ -776,9 +776,9 @@ struct to_pack_recurs_helper<T, initN, 1, M, VIx, SimdExt> {
     pack<T, M, SimdExt> ret_pack_M;
     ret_pack_M.car = pack_N.car; // simd_vector
     ret_pack_M.cdr =
-        to_pack_recurs_helper<T, initN, initN, M - 1, VIx + 1, SimdExt>::
-            to_pack(packx2_initN,
-                    get_pack<T, initN, SimdExt, VIx>(packx2_initN));
+        to_pack_recurs_helper<T, initN, initN, M - 1, VIx + 1,
+                              SimdExt>::to_pack(packx2_initN,
+                                                get_pack<VIx>(packx2_initN));
     return ret_pack_M;
   }
 };
