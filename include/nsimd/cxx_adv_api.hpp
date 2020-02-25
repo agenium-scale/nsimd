@@ -689,7 +689,17 @@ struct get_pack_helper<T, N, SimdExt, packx4, 3> {
 };
 
 // ----------------------------------------------------------------------------
-// get_pack functions
+// get_pack
+// get_pack for packx[Y]<T, 1..N, SimdExt> with Y = 1
+
+template <int Ix, typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> get_pack(const pack<T, N, SimdExt> &pack_) {
+  return pack_;
+}
+
+// ----------------------------------------------------------------------------
+// get_pack
+// get_pack for packx[Y]<T, 1..N, SimdExt> with Y in {2, 3, 4}
 
 template <int Ix, typename T, int N, typename SimdExt,
           template <typename, int, typename> class packx>
