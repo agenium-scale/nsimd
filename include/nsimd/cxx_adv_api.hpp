@@ -818,9 +818,10 @@ struct to_pack_recurs_helper<
   }
 };
 
-template <typename T, int packx_unroll_ix /* N */,
-          int to_pack_unroll_ix = 2 * packx_unroll_ix, typename SimdExt,
-          template <typename, int, typename> class packx>
+template <typename T, int packx_unroll_ix /* N */, typename SimdExt,
+          template <typename, int, typename> class packx,
+          int to_pack_unroll_ix = packx<
+              T, packx_unroll_ix, SimdExt>::soa_num_packs *packx_unroll_ix>
 pack<T, to_pack_unroll_ix, SimdExt>
 to_pack(const packx<T, packx_unroll_ix, SimdExt> &from_packx_initN) {
   pack<T, to_pack_unroll_ix, SimdExt> to_pack_;
