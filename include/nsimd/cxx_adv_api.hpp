@@ -723,7 +723,7 @@ pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
 
 // ----------------------------------------------------------------------------
 // to_pack
-// to_pack for packx[Y]<T, 1, SimdExt> with Y in {2, 3, 4}
+// to_pack for packx[Y]<T, N = 1, SimdExt> with Y in {2, 3, 4}
 
 template <typename T, typename SimdExt = NSIMD_SIMD>
 pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx_) {
@@ -759,7 +759,7 @@ pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt> &packx_) {
 
 // ----------------------------------------------------------------------------
 // to_pack
-// to_pack for packx[Y]<T, N, SimdExt> with Y in {2, 3, 4}
+// to_pack for packx[Y]<T, (N > 1), SimdExt> with Y in {2, 3, 4}
 
 // Advance
 template <typename T, int init_N, int packx_unroll_ix, int to_pack_unroll_ix,
