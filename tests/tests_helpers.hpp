@@ -8,7 +8,7 @@
 #include <nsimd/cxx_adv_api.hpp>
 #include <nsimd/nsimd.h>
 
-#define NSIMD_LOG_DEBUG 1
+#define NSIMD_LOG_DEBUG 0
 
 #define LOG_TEST(test_name, T)                                                 \
   do {                                                                         \
