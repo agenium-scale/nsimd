@@ -749,7 +749,7 @@ def not1(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Logical operators: and, or, xor, andnot
 
-def lop2(op, simd_ext, typ):
+def lop2(opts, op, simd_ext, typ):
     armop = {'orl': 'orr', 'xorl': 'eor', 'andl': 'and', 'andnotl': 'bic'}
     if simd_ext in neon:
         if typ == 'f16':
@@ -778,18 +778,22 @@ def lop2(op, simd_ext, typ):
             return 'return v{armop}q_u{typnbits}({in0}, {in1});'. \
                    format(armop=armop[op], **fmtspec)
     else:
-        # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
-        # it needs to be deleted when the bug is corrected
-        return \
-        '''return sv{armop}_z({svtrue},
-                              (svuint{typnbits}_t){in0},
-                              (svuint{typnbits}_t){in1});'''. \
-        format(armop=armop[op], **fmtspec)
+        if opts.sve_emulate_bool:
+            # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            return \
+            '''return sv{armop}_z({svtrue},
+                                  (svuint{typnbits}_t){in0},
+                                  (svuint{typnbits}_t){in1});'''. \
+            format(armop=armop[op], **fmtspec)
+        else:
+            return '''return sv{armop}_z({svtrue}, {in0}, {in1});'''. \
+            format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Logical not
 
-def lnot1(simd_ext, typ):
+def lnot1(opts, simd_ext, typ):
     if simd_ext in neon:
         if typ == 'f16':
             return \
@@ -813,9 +817,12 @@ def lnot1(simd_ext, typ):
         else:
             return 'return vmvnq_u{typnbits}({in0});'.format(**fmtspec)
     elif simd_ext in sve:
-        # TODO: the cast is a workaround to avoid a bug in gcc trunk for sve
-        # it needs to be deleted when the bug is corrected
-        return 'return svnot_x({svtrue}, (svuint{typnbits}_t){in0});'.format(**fmtspec)
+        if opts.sve_emulate_bool:
+            # TODO: the cast is a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            return 'return svnot_x({svtrue}, (svuint{typnbits}_t){in0});'.format(**fmtspec)
+        else:
+            return 'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Square root
@@ -877,10 +884,10 @@ def shra(simd_ext, typ):
             format(**fmtspec)
     elif simd_ext in sve:
         if typ[0] == 'i':
-            return 'return svasr_n_s{typnbits}_x({svtrue}, {in0}, (u64){in1});'.\
+            return 'return svasr_n_{suf}_x({svtrue}, {in0}, (u64){in1});'.\
                 format(**fmtspec)
         elif typ[0] == 'u':
-            return 'return svlsl_n_u{typnbits}_x({svtrue}, {in0}, (u64){in1});'.\
+            return 'return svlsl_n_{suf}_x({svtrue}, {in0}, (u64){in1});'.\
                 format(**fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -948,11 +955,15 @@ def cmp2(opts, op, simd_ext, typ):
         else:
             return normal
     elif simd_ext in sve:
-        # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
-        # it needs to be deleted when the bug is corrected
-        comp = 'svcmp{op}_{suf}({svtrue}, ({svetyp}){in0}, ({svetyp}){in1})'. \
-            format(op=armop[op], **fmtspec)
-        return 'return {};'.format(convert_from_predicate(opts, comp))
+        if opts.sve_emulate_bool:
+            # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            comp = 'svcmp{op}_{suf}({svtrue}, ({svetyp}){in0}, ({svetyp}){in1})'. \
+                format(op=armop[op], **fmtspec)
+            return 'return {};'.format(convert_from_predicate(opts, comp))
+        else:
+            return 'return svcmp{op}_{suf}({svtrue}, {in0}, {in1});'. \
+                    format(op=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Not equal
@@ -995,12 +1006,16 @@ def if_else3(opts, simd_ext, typ):
         else:
             return intrinsic
     elif simd_ext in sve:
-        # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
-        # it needs to be deleted when the bug is corrected
-        return 'return svsel_{suf}({cond}, ({svetyp}){in1}, ({svetyp}){in2});' \
-                .format(cond=convert_to_predicate(opts,
-                            '{in0}'.format(**fmtspec)),
-                        **fmtspec)
+        if opts.sve_emulate_bool:
+            # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            return 'return svsel_{suf}({cond}, ({svetyp}){in1}, ({svetyp}){in2});' \
+                    .format(cond=convert_to_predicate(opts,
+                                '{in0}'.format(**fmtspec)),
+                            **fmtspec)
+        else:
+            return 'return svsel_{suf}({in0}, {in1}, {in2});' \
+                    .format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Minimum and maximum
@@ -2129,13 +2144,13 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'andb': lambda: binop2("andb", simd_ext2, from_typ),
         'xorb': lambda: binop2("xorb", simd_ext2, from_typ),
         'orb': lambda: binop2("orb", simd_ext2, from_typ),
-        'andl': lambda: lop2("andl", simd_ext2, from_typ),
-        'xorl': lambda: lop2("xorl", simd_ext2, from_typ),
-        'orl': lambda: lop2("orl", simd_ext2, from_typ),
+        'andl': lambda: lop2(opts, "andl", simd_ext2, from_typ),
+        'xorl': lambda: lop2(opts, "xorl", simd_ext2, from_typ),
+        'orl': lambda: lop2(opts, "orl", simd_ext2, from_typ),
         'notb': lambda: not1(simd_ext2, from_typ),
-        'notl': lambda: lnot1(simd_ext2, from_typ),
+        'notl': lambda: lnot1(opts, simd_ext2, from_typ),
         'andnotb': lambda: binop2("andnotb", simd_ext2, from_typ),
-        'andnotl': lambda: lop2("andnotl", simd_ext2, from_typ),
+        'andnotl': lambda: lop2(opts, "andnotl", simd_ext2, from_typ),
         'add': lambda: addsub("add", simd_ext2, from_typ),
         'sub': lambda: addsub("sub", simd_ext2, from_typ),
         'adds': lambda: adds(simd_ext2, from_typ),
