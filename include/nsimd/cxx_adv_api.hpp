@@ -694,6 +694,9 @@ struct get_pack_helper<T, N, SimdExt, packx4, 3> {
 
 template <int Ix, typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> get_pack(const pack<T, N, SimdExt> &pack_) {
+  static_assert(0 == Ix,
+                "ERROR - get_pack(const pack<T, N, SimdExt> &pack_) - Ix not "
+                "valid: Ix must be equal to 0");
   return pack_;
 }
 
