@@ -209,6 +209,10 @@ def parse_args(args):
         action='store_true',
         default=False,
         help='Put a simple copyright statement instead of the whole license')
+    parser.add_argument('--sve-emulate-bool',
+        action='store_true',
+        default=False,
+        help='Use normal sve vector to emulate predicates.')
     return parser.parse_args(args)
 
 # -----------------------------------------------------------------------------
