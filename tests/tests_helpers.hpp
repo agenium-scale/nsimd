@@ -8,11 +8,11 @@
 #include <nsimd/cxx_adv_api.hpp>
 #include <nsimd/nsimd.h>
 
-#define ___DEBUG 0
+#define NSIMD_LOG_DEBUG 1
 
 #define LOG_TEST(test_name, T)                                                 \
   do {                                                                         \
-    if (___DEBUG) {                                                            \
+    if (NSIMD_LOG_DEBUG) {                                                     \
       fprintf(stdout, "%s%s%s%s%s", "\n--------- ", get_type_str(T()), ": ",   \
               test_name, "---------------\n\n");                               \
     }                                                                          \
@@ -20,7 +20,7 @@
 
 #define LOG_PACK(vout, len, pack_type)                                         \
   do {                                                                         \
-    if (___DEBUG) {                                                            \
+    if (NSIMD_LOG_DEBUG) {                                                     \
       print(vout, len, pack_type);                                             \
     }                                                                          \
   } while (0)
