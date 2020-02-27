@@ -24,13 +24,13 @@ bool to_pack_interleave_from_packx2_N_1(T *const vout_expected,
   pack_from.v0 = v0;
   pack_from.v1 = v1;
 
-  const int len_ = nsimd::len(nsimd::packx2<T, 1>{});
+  const int len_ = nsimd::len(nsimd::packx2<T, 1>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
   LOG_PACK(vout_expected, len_, "nsimd::packx2<T, 1>");
 
   nsimd::pack<T, 2> pack_to = nsimd::to_pack_interleave(pack_from);
@@ -53,20 +53,20 @@ bool to_pack_interleave_from_packx2_N_2(T *const vout_expected,
   pack_from.v0 = v0;
   pack_from.v1 = v1;
 
-  const int len_ = nsimd::len(nsimd::packx2<T, 2>{});
+  const int len_ = nsimd::len(nsimd::packx2<T, 2>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.car));
 
   LOG_PACK(vout_expected, len_, "nsimd::packx2<T, 2>");
 
@@ -92,26 +92,26 @@ bool to_pack_interleave_from_packx3_N_2(T *const vout_expected,
   pack_from.v1 = v1;
   pack_from.v2 = v2;
 
-  const int len_ = nsimd::len(nsimd::packx3<T, 2>{});
+  const int len_ = nsimd::len(nsimd::packx3<T, 2>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.car));
 
   LOG_PACK(vout_expected, len_, "nsimd::packx3<T, 2>");
 
@@ -137,35 +137,35 @@ bool to_pack_interleave_from_packx3_N_3(T *const vout_expected,
   pack_from.v1 = v1;
   pack_from.v2 = v2;
 
-  const int len_ = nsimd::len(nsimd::packx3<T, 3>{});
+  const int len_ = nsimd::len(nsimd::packx3<T, 3>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.cdr.car));
 
   LOG_PACK(vout_expected, len_, "nsimd::packx3<T, 3>");
 
@@ -193,20 +193,20 @@ bool to_pack_interleave_from_packx4_N_1(T *const vout_expected,
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  const int len_ = nsimd::len(nsimd::packx4<T, 1>{});
+  const int len_ = nsimd::len(nsimd::packx4<T, 1>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v3.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.car));
 
   LOG_PACK(vout_expected, len_, "nsimd::packx4<T, 1>");
 
@@ -235,32 +235,32 @@ bool to_pack_interleave_from_packx4_N_2(T *const vout_expected,
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  const int len_ = nsimd::len(nsimd::packx4<T, 2>{});
+  const int len_ = nsimd::len(nsimd::packx4<T, 2>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v3.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v3.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.cdr.car));
 
   LOG_PACK(vout_expected, len_, "nsimd::packx4<T, 2>");
 
@@ -289,44 +289,44 @@ bool to_pack_interleave_from_packx4_N_3(T *const vout_expected,
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  const int len_ = nsimd::len(nsimd::packx4<T, 3>{});
+  const int len_ = nsimd::len(nsimd::packx4<T, 3>());
   init_array(vout_expected, vout_computed, len_);
 
   T *begin = vout_expected;
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.car});
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v3.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v3.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v0.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.cdr.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v1.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v2.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.cdr.car));
 
-  begin += nsimd::len(nsimd::pack<T, 1>{});
-  nsimd::storea(begin, nsimd::pack<T, 1>{pack_from.v3.cdr.cdr.car});
+  begin += nsimd::len(nsimd::pack<T, 1>());
+  nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.cdr.cdr.car));
 
   LOG_PACK(vout_expected, len_, "nsimd::packx4<T, 3>");
 
@@ -395,7 +395,7 @@ int main(void) {
     return -1;
   }
 
-  fprintf(stdout, "\n" STATUS "... OK\n\n");
+  fprintf(stdout, STATUS "... OK\n");
   fflush(stdout);
   return 0;
 }
