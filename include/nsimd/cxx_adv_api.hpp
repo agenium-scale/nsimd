@@ -714,12 +714,12 @@ pack<T, N, SimdExt> get_pack(const packx<T, N, SimdExt> &packx_) {
 // to_pack
 // to_pack for packx[Y]<T, 1..N, SimdExt> with Y = 1
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt> &pack_) {
   return pack_;
 }
 
-template <typename T, int N, typename SimdExt = NSIMD_SIMD>
+template <typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
@@ -728,7 +728,7 @@ pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
 // to_pack
 // to_pack for packx[Y]<T, N = 1, SimdExt> with Y in {2, 3, 4}
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 2, SimdExt> pack_;
@@ -738,7 +738,7 @@ pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx_) {
   return pack_;
 }
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 3, SimdExt> pack_;
@@ -748,7 +748,7 @@ pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt> &packx_) {
   return pack_;
 }
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 4, SimdExt> pack_;
@@ -816,7 +816,8 @@ struct to_pack_recurs_helper<
     // get next pack<T, init_N> with index v_ix
     to_pack_.cdr = to_pack_recurs_helper<
         T, init_N, init_N, to_pack_unroll_ix - 1, v_ix + 1, SimdExt,
-        packx>::to_pack(from_packx_initN, get_pack<v_ix + 1>(from_packx_initN));
+        packx>::to_pack(from_packx_initN,
+                        get_pack<v_ix + 1>(from_packx_initN));
     return to_pack_;
   }
 };
@@ -840,19 +841,19 @@ to_pack(const packx<T, packx_unroll_ix, SimdExt> &from_packx_initN) {
 // ----------------------------------------------------------------------------
 // to_pack_interleave
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 1, SimdExt> to_pack_interleave(const pack<T, 1, SimdExt> &pack_) {
   return pack_;
 }
 
-template <typename T, int N, typename SimdExt = NSIMD_SIMD>
+template <typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> to_pack_interleave(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 2, SimdExt> to_pack_interleave(const packx2<T, 1, SimdExt> &packx2_) {
 
   nsimd::pack<T, 2, SimdExt> pack_2;
@@ -862,7 +863,7 @@ pack<T, 2, SimdExt> to_pack_interleave(const packx2<T, 1, SimdExt> &packx2_) {
   return pack_2;
 }
 
-template <typename T, int N, typename SimdExt = NSIMD_SIMD>
+template <typename T, int N, typename SimdExt>
 pack<T, 2 * N, SimdExt>
 to_pack_interleave(const packx2<T, N, SimdExt> &packx2_N) {
 
@@ -881,7 +882,7 @@ to_pack_interleave(const packx2<T, N, SimdExt> &packx2_N) {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 3, SimdExt> to_pack_interleave(const packx3<T, 1, SimdExt> &packx3_) {
 
   nsimd::pack<T, 3, SimdExt> pack_3;
@@ -892,7 +893,7 @@ pack<T, 3, SimdExt> to_pack_interleave(const packx3<T, 1, SimdExt> &packx3_) {
   return pack_3;
 }
 
-template <typename T, int N, typename SimdExt = NSIMD_SIMD>
+template <typename T, int N, typename SimdExt>
 pack<T, 3 * N, SimdExt>
 to_pack_interleave(const packx3<T, N, SimdExt> &packx3_n) {
 
@@ -913,7 +914,7 @@ to_pack_interleave(const packx3<T, N, SimdExt> &packx3_n) {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt = NSIMD_SIMD>
+template <typename T, typename SimdExt>
 pack<T, 4, SimdExt> to_pack_interleave(const packx4<T, 1, SimdExt> &packx4_) {
 
   nsimd::pack<T, 4, SimdExt> pack_4;
@@ -925,7 +926,7 @@ pack<T, 4, SimdExt> to_pack_interleave(const packx4<T, 1, SimdExt> &packx4_) {
   return pack_4;
 }
 
-template <typename T, int N, typename SimdExt = NSIMD_SIMD>
+template <typename T, int N, typename SimdExt>
 pack<T, 4 * N, SimdExt>
 to_pack_interleave(const packx4<T, N, SimdExt> &packx4_n) {
 
