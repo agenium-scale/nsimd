@@ -194,7 +194,8 @@ bool to_pack_from_packx4_N_3(T *const vout_expected, T *const vout_computed) {
   nsimd::pack<T, 12> pack_to = nsimd::to_pack(pack_from);
 
   return check_pack_content(pack_from, pack_to, "nsimd::packx4<T, 3>",
-                            "nsimd::pack<T, 12>", vout_expected, vout_computed);
+                            "nsimd::pack<T, 12>", vout_expected,
+                            vout_computed);
 }
 
 template <typename T> bool test_all() {
@@ -262,7 +263,7 @@ int main(void) {
     return -1;
   }
 
-  fprintf(stdout, "\n" STATUS "... OK\n\n");
+  fprintf(stdout, STATUS "... OK\n");
   fflush(stdout);
   return 0;
 }

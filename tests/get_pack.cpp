@@ -150,7 +150,7 @@ int main(void) {
     return -1;
   }
 
-  fprintf(stdout, "\n" STATUS "... OK\n\n");
+  fprintf(stdout, STATUS "... OK\n");
   fflush(stdout);
   return 0;
 }
