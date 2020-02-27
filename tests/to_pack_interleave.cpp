@@ -1,4 +1,4 @@
-#define STATUS "to_pack_interleave"
+#define STATUS "test of to_pack_interleave over all types"
 
 #include "tests_helpers.hpp"
 

@@ -1,4 +1,4 @@
-#define STATUS "to_pack"
+#define STATUS "test of to_pack over all types"
 
 #include "tests_helpers.hpp"
 

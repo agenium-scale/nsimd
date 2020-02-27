@@ -1,4 +1,4 @@
-#define STATUS "get_pack"
+#define STATUS "test of get_pack over all types"
 
 #include "tests_helpers.hpp"
 
