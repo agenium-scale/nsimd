@@ -82,8 +82,9 @@ void print(T *const arr, const int len, const char *msg) {
   strcpy(formatter, "%s");
   strcat(formatter, fprintf_helper::specifier(T()));
   for (int ii = 0; ii < len; ++ii) {
-    fprintf(stdout, formatter, 0 == ii ? "{" : ", ",
-            (fprintf_helper::f64_if_f32_else_T<T>::value_type)arr[ii]);
+    fprintf(
+        stdout, formatter, 0 == ii ? "{" : ", ",
+        (typename fprintf_helper::f64_if_f32_else_T<T>::value_type)arr[ii]);
   }
   fprintf(stdout, "%s", "}\n");
   fflush(stdout);
