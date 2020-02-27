@@ -10,31 +10,31 @@
 
 #define NSIMD_LOG_DEBUG 0
 
-#define LOG_TEST(test_name, T)                                                 \
-  do {                                                                         \
-    if (NSIMD_LOG_DEBUG) {                                                     \
-      fprintf(stdout, "%s%s%s%s%s", "\n--------- ", get_type_str(T()), ": ",   \
-              test_name, "---------------\n\n");                               \
-    }                                                                          \
+#define LOG_TEST(test_name, T)                                                \
+  do {                                                                        \
+    if (NSIMD_LOG_DEBUG) {                                                    \
+      fprintf(stdout, "%s%s%s%s%s", "\n--------- ", get_type_str(T()), ": ",  \
+              test_name, "---------------\n\n");                              \
+    }                                                                         \
   } while (0)
 
-#define LOG_PACK(vout, len, pack_type)                                         \
-  do {                                                                         \
-    if (NSIMD_LOG_DEBUG) {                                                     \
-      print(vout, len, pack_type);                                             \
-    }                                                                          \
+#define LOG_PACK(vout, len, pack_type)                                        \
+  do {                                                                        \
+    if (NSIMD_LOG_DEBUG) {                                                    \
+      print(vout, len, pack_type);                                            \
+    }                                                                         \
   } while (0)
 
 #define SIZE (4096 / 8)
 
-#define CHECK(a)                                                               \
-  {                                                                            \
-    errno = 0;                                                                 \
-    if (!(a)) {                                                                \
-      fprintf(stderr, "ERROR: " #a ":%d: %s\n", __LINE__, strerror(errno));    \
-      fflush(stderr);                                                          \
-      exit(EXIT_FAILURE);                                                      \
-    }                                                                          \
+#define CHECK(a)                                                              \
+  {                                                                           \
+    errno = 0;                                                                \
+    if (!(a)) {                                                               \
+      fprintf(stderr, "ERROR: " #a ":%d: %s\n", __LINE__, strerror(errno));   \
+      fflush(stderr);                                                         \
+      exit(EXIT_FAILURE);                                                     \
+    }                                                                         \
   }
 
 /* -------------------------------------------------------------------------
@@ -44,6 +44,25 @@ template <typename T> int comp_function(const T expected, const T computed) {
   return expected != computed;
   ;
 }
+
+namespace fprintf_helper {
+// silent the warning for implicit conversion from ‘float’ to ‘double’ when
+// passing argument to fprintf
+template <typename T> struct f64_if_f32_else_T { typedef T value_type; };
+template <> struct f64_if_f32_else_T<f32> { typedef f64 value_type; };
+
+const char *specifier(i8) { return "%hhu"; }
+const char *specifier(u8) { return "%hhu"; }
+const char *specifier(i16) { return "%hd"; }
+const char *specifier(u16) { return "%hu"; }
+const char *specifier(i32) { return "%d"; }
+const char *specifier(u32) { return "%u"; }
+const char *specifier(i64) { return "%ld"; }
+const char *specifier(u64) { return "%lu"; }
+const char *specifier(f32) { return "%f"; }
+const char *specifier(f64) { return "%f"; }
+
+} // namespace fprintf_helper
 
 const char *get_type_str(i8) { return "i8"; }
 const char *get_type_str(u8) { return "u8"; }
@@ -56,32 +75,24 @@ const char *get_type_str(u64) { return "u64"; }
 const char *get_type_str(f32) { return "f32"; }
 const char *get_type_str(f64) { return "f64"; }
 
-const char *fprintf_specifier_helper(i8) { return "%hhu"; }
-const char *fprintf_specifier_helper(u8) { return "%hhu"; }
-const char *fprintf_specifier_helper(i16) { return "%hd"; }
-const char *fprintf_specifier_helper(u16) { return "%hu"; }
-const char *fprintf_specifier_helper(i32) { return "%d"; }
-const char *fprintf_specifier_helper(u32) { return "%u"; }
-const char *fprintf_specifier_helper(i64) { return "%ld"; }
-const char *fprintf_specifier_helper(u64) { return "%lu"; }
-const char *fprintf_specifier_helper(f32) { return "%f"; }
-const char *fprintf_specifier_helper(f64) { return "%f"; }
-
-template <typename T> void print(T *const arr, const int len, const char *msg) {
+template <typename T>
+void print(T *const arr, const int len, const char *msg) {
   fprintf(stdout, "%-24s: ", msg);
   char formatter[12];
   strcpy(formatter, "%s");
-  strcat(formatter, fprintf_specifier_helper(T()));
+  strcat(formatter, fprintf_helper::specifier(T()));
   for (int ii = 0; ii < len; ++ii) {
-    fprintf(stdout, formatter, 0 == ii ? "{" : ", ", arr[ii]);
+    fprintf(stdout, formatter, 0 == ii ? "{" : ", ",
+            (fprintf_helper::f64_if_f32_else_T<T>::value_type)arr[ii]);
   }
   fprintf(stdout, "%s", "}\n");
   fflush(stdout);
 }
 
 template <typename T>
-void init_array(T *const vout_expected, T *const vout_computed, const int len) {
-  for (int ii{0}; ii < len; ++ii) {
+void init_array(T *const vout_expected, T *const vout_computed,
+                const int len) {
+  for (int ii = 0; ii < len; ++ii) {
     vout_expected[ii] = (T)-1;
     vout_computed[ii] = (T)1;
   }
@@ -108,8 +119,8 @@ struct storea_recurs_helper<T, N, SimdExt, pack_t, VIx, false> {
   void operator()(T *const begin, const pack_t<T, N, SimdExt> &pack_) const {
     nsimd::storea(begin, nsimd::get_pack<VIx>(pack_));
     storea_recurs_helper<T, N, SimdExt, pack_t, VIx + 1,
-                         VIx + 1 == pack_t<T, N, SimdExt>::soa_num_packs>{}(
-        begin + nsimd::len(nsimd::pack<T, N, SimdExt>{}), pack_);
+                         VIx + 1 == pack_t<T, N, SimdExt>::soa_num_packs>()(
+        begin + nsimd::len(nsimd::pack<T, N, SimdExt>()), pack_);
   }
 };
 
@@ -128,7 +139,7 @@ template <typename T, int N, typename SimdExt,
           template <typename, int, typename> class pack_t>
 void storea__(T *const begin, const pack_t<T, N, SimdExt> &pack_) {
   storea_recurs_helper<T, N, SimdExt, pack_t, 0,
-                       0 == pack_t<T, N, SimdExt>::soa_num_packs>{}(begin,
+                       0 == pack_t<T, N, SimdExt>::soa_num_packs>()(begin,
                                                                     pack_);
 }
 
