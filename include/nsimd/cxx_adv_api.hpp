@@ -578,10 +578,7 @@ native_register(pack<T, 1, SimdExt> const &a) {
 
 template <typename T, int N, typename SimdExt,
           template <typename, int, typename> class packx, int Ix>
-struct get_pack_helper {
-  const nsimd::pack<T, N, SimdExt> &
-  operator()(const packx<T, N, SimdExt> &packx_) const {}
-};
+struct get_pack_helper {};
 
 // ----------------------------------------------------------------------------
 // get_pack_helper - packx2
