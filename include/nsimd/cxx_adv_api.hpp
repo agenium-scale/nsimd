@@ -40,6 +40,12 @@ namespace nsimd {
 #endif
 
 // ----------------------------------------------------------------------------
+// "mimic" static_assert in C++98
+
+template <bool> struct nsimd_static_assert;
+template <> struct nsimd_static_assert<true> {};
+
+// ----------------------------------------------------------------------------
 // Definition of pack
 
 template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
@@ -581,14 +587,7 @@ struct get_pack_helper {
 // get_pack_helper - packx2
 
 template <typename T, int N, typename SimdExt, int Ix>
-struct get_pack_helper<T, N, SimdExt, packx2, Ix> {
-  const nsimd::pack<T, N, SimdExt> &
-  operator()(const packx2<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix < packx2<T, N, SimdExt>::soa_num_packs,
-                  "ERROR - get_pack_helper<Ix>{}(const packx2<T, N, SimdExt> "
-                  "&packx_) const - Ix not in valid range: 0 <= Ix < 2");
-  }
-};
+struct get_pack_helper<T, N, SimdExt, packx2, Ix> {};
 
 template <typename T, int N, typename SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx2, 0> {
@@ -610,14 +609,7 @@ struct get_pack_helper<T, N, SimdExt, packx2, 1> {
 // get_pack_helper - packx3
 
 template <typename T, int N, typename SimdExt, int Ix>
-struct get_pack_helper<T, N, SimdExt, packx3, Ix> {
-  const nsimd::pack<T, N, SimdExt> &
-  operator()(const packx3<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix < packx3<T, N, SimdExt>::soa_num_packs,
-                  "ERROR - get_pack_helper<Ix>{}(const packx3<T, N, SimdExt> "
-                  "&packx_) const - Ix not in valid range: 0 <= Ix < 3");
-  }
-};
+struct get_pack_helper<T, N, SimdExt, packx3, Ix> {};
 
 template <typename T, int N, typename SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx3, 0> {
@@ -647,14 +639,7 @@ struct get_pack_helper<T, N, SimdExt, packx3, 2> {
 // get_pack_helper - packx4
 
 template <typename T, int N, typename SimdExt, int Ix>
-struct get_pack_helper<T, N, SimdExt, packx4, Ix> {
-  const nsimd::pack<T, N, SimdExt> &
-  operator()(const packx4<T, N, SimdExt> &packx_) const {
-    static_assert(0 <= Ix && Ix < packx4<T, N, SimdExt>::soa_num_packs,
-                  "ERROR - get_pack_helper<Ix>{}(const packx4<T, N, SimdExt> "
-                  "&packx_) const - Ix not in valid range: 0 <= Ix < 4");
-  }
-};
+struct get_pack_helper<T, N, SimdExt, packx4, Ix> {};
 
 template <typename T, int N, typename SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx4, 0> {
@@ -694,9 +679,7 @@ struct get_pack_helper<T, N, SimdExt, packx4, 3> {
 
 template <int Ix, typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> get_pack(const pack<T, N, SimdExt> &pack_) {
-  static_assert(0 == Ix,
-                "ERROR - get_pack(const pack<T, N, SimdExt> &pack_) - Ix not "
-                "valid: Ix must be equal to 0");
+  nsimd_static_assert<0 == Ix>();
   return pack_;
 }
 
@@ -707,7 +690,7 @@ pack<T, N, SimdExt> get_pack(const pack<T, N, SimdExt> &pack_) {
 template <int Ix, typename T, int N, typename SimdExt,
           template <typename, int, typename> class packx>
 pack<T, N, SimdExt> get_pack(const packx<T, N, SimdExt> &packx_) {
-  return get_pack_helper<T, N, SimdExt, packx, Ix>{}(packx_);
+  return get_pack_helper<T, N, SimdExt, packx, Ix>()(packx_);
 }
 
 // ----------------------------------------------------------------------------
@@ -823,11 +806,12 @@ struct to_pack_recurs_helper<
 };
 
 template <typename T, int packx_unroll_ix /* N */, typename SimdExt,
-          template <typename, int, typename> class packx,
-          int to_pack_unroll_ix = packx<
-              T, packx_unroll_ix, SimdExt>::soa_num_packs *packx_unroll_ix>
-pack<T, to_pack_unroll_ix, SimdExt>
+          template <typename, int, typename> class packx>
+pack<T, packx<T, packx_unroll_ix, SimdExt>::soa_num_packs * packx_unroll_ix,
+     SimdExt>
 to_pack(const packx<T, packx_unroll_ix, SimdExt> &from_packx_initN) {
+  static const int to_pack_unroll_ix =
+      packx<T, packx_unroll_ix, SimdExt>::soa_num_packs * packx_unroll_ix;
   pack<T, to_pack_unroll_ix, SimdExt> to_pack_;
   to_pack_.car = from_packx_initN.v0.car; // simd_vector
   to_pack_.cdr =
