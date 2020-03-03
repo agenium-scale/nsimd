@@ -67,7 +67,7 @@ private:
     (void)other;
   }
   nsimd_scoped_aligned_mem &operator=(const nsimd_scoped_aligned_mem &rhs) {
-    (void)other;
+    (void)rhs;
   }
 };
 
