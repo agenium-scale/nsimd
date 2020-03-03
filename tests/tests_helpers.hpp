@@ -25,7 +25,7 @@
     }                                                                         \
   } while (0)
 
-#define SIZE (4096 / 8)
+#define NSIMD_MAX_REGISTER_SIZE_BYTES (NSIMD_MAX_LEN_BIT / 8)
 
 #define CHECK(a)                                                              \
   {                                                                           \
@@ -37,8 +37,35 @@
     }                                                                         \
   }
 
-/* -------------------------------------------------------------------------
- */
+#define NSIMD_NULL_PTR 0
+
+/* ----------------------------------------------------------------------- */
+
+template <typename T, int MemAlignedSize = NSIMD_MAX_REGISTER_SIZE_BYTES>
+struct nsimd_scoped_aligned_mem {
+  nsimd_scoped_aligned_mem()
+      : expected((T *)nsimd_aligned_alloc(MemAlignedSize)),
+        computed((T *)nsimd_aligned_alloc(MemAlignedSize)) {
+    CHECK(expected);
+    CHECK(computed);
+  }
+
+  ~nsimd_scoped_aligned_mem() {
+    if (NSIMD_NULL_PTR != expected) {
+      nsimd_aligned_free(expected);
+    }
+    if (NSIMD_NULL_PTR != computed) {
+      nsimd_aligned_free(computed);
+    }
+  }
+
+  T *const expected;
+  T *const computed;
+
+private:
+  nsimd_scoped_aligned_mem(const nsimd_scoped_aligned_mem &other) {}
+  nsimd_scoped_aligned_mem &operator=(const nsimd_scoped_aligned_mem &rhs) {}
+};
 
 template <typename T> int comp_function(const T expected, const T computed) {
   return expected != computed;
