@@ -63,8 +63,12 @@ struct nsimd_scoped_aligned_mem {
   T *const computed;
 
 private:
-  nsimd_scoped_aligned_mem(const nsimd_scoped_aligned_mem &other) {}
-  nsimd_scoped_aligned_mem &operator=(const nsimd_scoped_aligned_mem &rhs) {}
+  nsimd_scoped_aligned_mem(const nsimd_scoped_aligned_mem &other) {
+    (void)other;
+  }
+  nsimd_scoped_aligned_mem &operator=(const nsimd_scoped_aligned_mem &rhs) {
+    (void)other;
+  }
 };
 
 template <typename T> int comp_function(const T expected, const T computed) {
