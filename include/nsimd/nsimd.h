@@ -774,21 +774,15 @@ template <typename T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
 
-template <typename T, int MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
-class scoped_aligned_mem {
-public:
-  scoped_aligned_mem() : m_ptr((T *)aligned_alloc(MemAlignedSizeBytes)) {
+template <typename T> class scoped_aligned_mem_helper {
+protected:
+  scoped_aligned_mem_helper(T *const ptr) : m_ptr(ptr) {
     if (NULL == m_ptr) {
       throw std::bad_alloc();
     }
   }
 
-  ~scoped_aligned_mem() {
-    if (NULL != m_ptr) {
-      aligned_free(m_ptr);
-    }
-  }
-
+public:
   T *release() {
     T *ret_ptr = m_ptr;
     m_ptr = NULL;
@@ -803,7 +797,7 @@ public:
     }
   }
 
-  void swap(scoped_aligned_mem<T> *rhs) {
+  void swap(scoped_aligned_mem_helper<T> *rhs) {
     T *temp = m_ptr;
     m_ptr = rhs->m_ptr;
     rhs->m_ptr = temp;
@@ -811,12 +805,43 @@ public:
 
   T *get() const { return m_ptr; }
 
-private:
-  scoped_aligned_mem(const scoped_aligned_mem &other) { (void)other; }
-  scoped_aligned_mem &operator=(const scoped_aligned_mem &rhs) { (void)rhs; }
+protected:
+  T *m_ptr;
 
 private:
-  T *m_ptr;
+  scoped_aligned_mem_helper(const scoped_aligned_mem_helper &other) {
+    (void)other;
+  }
+
+  scoped_aligned_mem_helper &operator=(const scoped_aligned_mem_helper &rhs) {
+    (void)rhs;
+  }
+};
+
+template <typename T, nat MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
+class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
+public:
+  scoped_aligned_mem()
+      : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {}
+
+  ~scoped_aligned_mem() {
+    if (NULL != this->m_ptr) {
+      aligned_free(this->m_ptr);
+    }
+  }
+};
+
+template <typename T, nat NumElems>
+class scoped_aligned_mem_for : public scoped_aligned_mem_helper<T> {
+public:
+  scoped_aligned_mem_for()
+      : scoped_aligned_mem_helper<T>(aligned_alloc_for<T>(NumElems)) {}
+
+  ~scoped_aligned_mem_for() {
+    if (NULL != this->m_ptr) {
+      aligned_free_for<T>(this->m_ptr);
+    }
+  }
 };
 
 } // namespace nsimd
