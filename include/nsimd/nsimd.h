@@ -773,6 +773,51 @@ template <typename T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
 
+template <typename T, int MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
+class scoped_aligned_mem {
+public:
+  scoped_aligned_mem() : m_ptr((T *)aligned_alloc(MemAlignedSizeBytes)) {
+    if (NULL == m_ptr) {
+      throw std::bad_alloc();
+    }
+  }
+
+  ~scoped_aligned_mem() {
+    if (NULL != m_ptr) {
+      aligned_free(m_ptr);
+    }
+  }
+
+  T *release() {
+    T *ret_ptr = m_ptr;
+    m_ptr = NULL;
+    return ret_ptr;
+  }
+
+  void reset(T *new_ptr) {
+    T *old_ptr = m_ptr;
+    m_ptr = new_ptr;
+    if (NULL != old_ptr) {
+      aligned_free(old_ptr);
+    }
+  }
+
+  void swap(scoped_aligned_mem<T> *rhs) {
+    T *temp = m_ptr;
+    m_ptr = rhs->m_ptr;
+    rhs->m_ptr = temp;
+  }
+
+  T *get() const { return m_ptr; }
+
+private:
+  scoped_aligned_mem(const scoped_aligned_mem &other) { (void)other; }
+  scoped_aligned_mem &operator=(const scoped_aligned_mem &rhs) { (void)rhs; }
+
+private:
+  T *m_ptr;
+};
+
 } // namespace nsimd
 #endif
 
