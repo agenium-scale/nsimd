@@ -130,15 +130,15 @@ bool test_member_functions() {
     return TEST_NSIMD_FALSE;
   }
   if (!Tester<T, nsimd::scoped_aligned_mem_for<T, MAX_SIZE_BYTES_X2 /
-                                                      sizeof(T)> >()()) {
+                                                      (nat)sizeof(T)> >()()) {
     return TEST_NSIMD_FALSE;
   }
   if (!Tester<T, nsimd::scoped_aligned_mem_for<T, MAX_SIZE_BYTES_X3 /
-                                                      sizeof(T)> >()()) {
+                                                      (nat)sizeof(T)> >()()) {
     return TEST_NSIMD_FALSE;
   }
   if (!Tester<T, nsimd::scoped_aligned_mem_for<T, MAX_SIZE_BYTES_X4 /
-                                                      sizeof(T)> >()()) {
+                                                      (nat)sizeof(T)> >()()) {
     return TEST_NSIMD_FALSE;
   }
   return TEST_NSIMD_TRUE;
