@@ -4,20 +4,22 @@
 
 template <typename T> bool to_pack_interleave_from_pack_1_N_1() {
 
-  LOG_TEST("to_pack_interleave_from_pack_1_N_1", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_pack_1_N_1", T);
 
   nsimd::pack<T, 1> pack_from(42);
   nsimd::pack<T, 1> pack_to = nsimd::to_pack_interleave(pack_from);
 
-  nsimd_scoped_aligned_mem<T> vout;
+  nsimd::scoped_aligned_mem<T> expected;
+  nsimd::scoped_aligned_mem<T> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::pack<T, 1>",
-                            "nsimd::pack<T, 1>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::pack<T, 1>", "nsimd::pack<T, 1>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_interleave_from_packx2_N_1() {
 
-  LOG_TEST("to_pack_interleave_from_packx2_N_1", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx2_N_1", T);
 
   nsimd::pack<T, 1> v0(42);
   nsimd::pack<T, 1> v1(24);
@@ -26,27 +28,30 @@ template <typename T> bool to_pack_interleave_from_packx2_N_1() {
   pack_from.v0 = v0;
   pack_from.v1 = v1;
 
-  nsimd_scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx2<T, 1>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.car));
-  LOG_PACK(vout.expected, len_, "nsimd::packx2<T, 1>");
+
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx2<T, 1>");
 
   nsimd::pack<T, 2> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 2>");
+  nsimd::storea(computed.get(), pack_to);
 
-  return check_array(vout.expected, vout.computed, len_);
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 2>");
+
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool to_pack_interleave_from_packx2_N_2() {
 
-  LOG_TEST("to_pack_interleave_from_packx2_N_2", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx2_N_2", T);
 
   nsimd::pack<T, 2> v0(42);
   nsimd::pack<T, 2> v1(24);
@@ -55,12 +60,13 @@ template <typename T> bool to_pack_interleave_from_packx2_N_2() {
   pack_from.v0 = v0;
   pack_from.v1 = v1;
 
-  nsimd_scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx2<T, 2>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
   begin += nsimd::len(nsimd::pack<T, 1>());
@@ -72,18 +78,19 @@ template <typename T> bool to_pack_interleave_from_packx2_N_2() {
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v1.cdr.car));
 
-  LOG_PACK(vout.expected, len_, "nsimd::packx2<T, 2>");
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx2<T, 2>");
 
   nsimd::pack<T, 4> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 4>");
+  nsimd::storea(computed.get(), pack_to);
 
-  return check_array(vout.expected, vout.computed, len_);
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 4>");
+
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool to_pack_interleave_from_packx3_N_2() {
 
-  LOG_TEST("to_pack_interleave_from_packx3_N_2", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx3_N_2", T);
 
   nsimd::pack<T, 2> v0(42);
   nsimd::pack<T, 2> v1(24);
@@ -94,12 +101,13 @@ template <typename T> bool to_pack_interleave_from_packx3_N_2() {
   pack_from.v1 = v1;
   pack_from.v2 = v2;
 
-  nsimd_scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx3<T, 2>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
   begin += nsimd::len(nsimd::pack<T, 1>());
@@ -117,18 +125,19 @@ template <typename T> bool to_pack_interleave_from_packx3_N_2() {
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.car));
 
-  LOG_PACK(vout.expected, len_, "nsimd::packx3<T, 2>");
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx3<T, 2>");
 
   nsimd::pack<T, 6> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 6>");
+  nsimd::storea(computed.get(), pack_to);
 
-  return check_array(vout.expected, vout.computed, len_);
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 6>");
+
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool to_pack_interleave_from_packx3_N_3() {
 
-  LOG_TEST("to_pack_interleave_from_packx3_N_3", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx3_N_3", T);
 
   nsimd::pack<T, 3> v0(42);
   nsimd::pack<T, 3> v1(24);
@@ -139,12 +148,13 @@ template <typename T> bool to_pack_interleave_from_packx3_N_3() {
   pack_from.v1 = v1;
   pack_from.v2 = v2;
 
-  nsimd_scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx3<T, 3>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
   begin += nsimd::len(nsimd::pack<T, 1>());
@@ -171,18 +181,19 @@ template <typename T> bool to_pack_interleave_from_packx3_N_3() {
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v2.cdr.cdr.car));
 
-  LOG_PACK(vout.expected, len_, "nsimd::packx3<T, 3>");
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx3<T, 3>");
 
   nsimd::pack<T, 9> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 9>");
+  nsimd::storea(computed.get(), pack_to);
 
-  return check_array(vout.expected, vout.computed, len_);
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 9>");
+
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool to_pack_interleave_from_packx4_N_1() {
 
-  LOG_TEST("to_pack_interleave_from_packx4_N_1", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx4_N_1", T);
 
   nsimd::pack<T, 1> v0(42);
   nsimd::pack<T, 1> v1(24);
@@ -195,12 +206,13 @@ template <typename T> bool to_pack_interleave_from_packx4_N_1() {
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  nsimd_scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx4<T, 1>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
   begin += nsimd::len(nsimd::pack<T, 1>());
@@ -212,19 +224,19 @@ template <typename T> bool to_pack_interleave_from_packx4_N_1() {
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.car));
 
-  LOG_PACK(vout.expected, len_, "nsimd::packx4<T, 1>");
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx4<T, 1>");
 
   nsimd::pack<T, 4> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
+  nsimd::storea(computed.get(), pack_to);
 
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 4>");
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 4>");
 
-  return check_array(vout.expected, vout.computed, len_);
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool to_pack_interleave_from_packx4_N_2() {
 
-  LOG_TEST("to_pack_interleave_from_packx4_N_2", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx4_N_2", T);
 
   nsimd::pack<T, 2> v0(42);
   nsimd::pack<T, 2> v1(24);
@@ -237,12 +249,13 @@ template <typename T> bool to_pack_interleave_from_packx4_N_2() {
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  nsimd_scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx4<T, 2>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
   begin += nsimd::len(nsimd::pack<T, 1>());
@@ -266,19 +279,19 @@ template <typename T> bool to_pack_interleave_from_packx4_N_2() {
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.cdr.car));
 
-  LOG_PACK(vout.expected, len_, "nsimd::packx4<T, 2>");
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx4<T, 2>");
 
   nsimd::pack<T, 8> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
+  nsimd::storea(computed.get(), pack_to);
 
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 8>");
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 8>");
 
-  return check_array(vout.expected, vout.computed, len_);
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool to_pack_interleave_from_packx4_N_3() {
 
-  LOG_TEST("to_pack_interleave_from_packx4_N_3", T);
+  LOG_TEST_DEBUG("to_pack_interleave_from_packx4_N_3", T);
 
   nsimd::pack<T, 3> v0(42);
   nsimd::pack<T, 3> v1(24);
@@ -291,12 +304,13 @@ template <typename T> bool to_pack_interleave_from_packx4_N_3() {
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  nsimd_scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
   const int len_ = nsimd::len(nsimd::packx4<T, 3>());
-  init_array(vout.expected, vout.computed, len_);
+  nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
 
-  T *begin = vout.expected;
+  T *begin = expected.get();
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v0.car));
 
   begin += nsimd::len(nsimd::pack<T, 1>());
@@ -332,14 +346,14 @@ template <typename T> bool to_pack_interleave_from_packx4_N_3() {
   begin += nsimd::len(nsimd::pack<T, 1>());
   nsimd::storea(begin, nsimd::pack<T, 1>(pack_from.v3.cdr.cdr.car));
 
-  LOG_PACK(vout.expected, len_, "nsimd::packx4<T, 3>");
+  LOG_MEMORY_CONTENT_DEBUG(expected.get(), len_, "nsimd::packx4<T, 3>");
 
   nsimd::pack<T, 12> pack_to = nsimd::to_pack_interleave(pack_from);
-  nsimd::storea(vout.computed, pack_to);
+  nsimd::storea(computed.get(), pack_to);
 
-  LOG_PACK(vout.computed, len_, "nsimd::pack<T, 12>");
+  LOG_MEMORY_CONTENT_DEBUG(computed.get(), len_, "nsimd::pack<T, 12>");
 
-  return check_array(vout.expected, vout.computed, len_);
+  return nsimd_tests::check_arrays(expected.get(), computed.get(), len_);
 }
 
 template <typename T> bool test_all() {

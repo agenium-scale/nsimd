@@ -823,12 +823,16 @@ class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
 public:
   scoped_aligned_mem()
       : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {}
-
   ~scoped_aligned_mem() {
     if (NULL != this->m_ptr) {
       aligned_free(this->m_ptr);
     }
   }
+  static void free(T **ptr) {
+    aligned_free(*ptr);
+    *ptr = NULL;
+  }
+  static const nat num_elems = MemAlignedSizeBytes / sizeof(T);
 };
 
 template <typename T, nat NumElems>
@@ -842,6 +846,11 @@ public:
       aligned_free_for<T>(this->m_ptr);
     }
   }
+  static void free(T **ptr) {
+    aligned_free_for<T>(*ptr);
+    *ptr = NULL;
+  }
+  static const nat num_elems = NumElems;
 };
 
 } // namespace nsimd

@@ -4,20 +4,22 @@
 
 template <typename T> bool to_pack_from_pack_1_N_1() {
 
-  LOG_TEST("to_pack_from_pack_1_N_1", T);
+  LOG_TEST_DEBUG("to_pack_from_pack_1_N_1", T);
 
   nsimd::pack<T, 1> pack_from(42);
   nsimd::pack<T, 1> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T> vout;
+  nsimd::scoped_aligned_mem<T> expected;
+  nsimd::scoped_aligned_mem<T> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::pack<T, 1>",
-                            "nsimd::pack<T, 1>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::pack<T, 1>", "nsimd::pack<T, 1>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx2_N_1() {
 
-  LOG_TEST("to_pack_from_packx2_N_1", T);
+  LOG_TEST_DEBUG("to_pack_from_packx2_N_1", T);
 
   nsimd::pack<T, 1> v0(42);
   nsimd::pack<T, 1> v1(24);
@@ -28,15 +30,17 @@ template <typename T> bool to_pack_from_packx2_N_1() {
 
   nsimd::pack<T, 2> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx2<T, 1>",
-                            "nsimd::pack<T, 2>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx2<T, 1>", "nsimd::pack<T, 2>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx3_N_1() {
 
-  LOG_TEST("to_pack_from_packx3_N_1", T);
+  LOG_TEST_DEBUG("to_pack_from_packx3_N_1", T);
 
   nsimd::pack<T, 1> v0(42);
   nsimd::pack<T, 1> v1(24);
@@ -49,15 +53,17 @@ template <typename T> bool to_pack_from_packx3_N_1() {
 
   nsimd::pack<T, 3> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 3 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 3 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 3 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx3<T, 1>",
-                            "nsimd::pack<T, 3>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx3<T, 1>", "nsimd::pack<T, 3>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx2_N_2() {
 
-  LOG_TEST("to_pack_from_packx2_N_2", T);
+  LOG_TEST_DEBUG("to_pack_from_packx2_N_2", T);
 
   nsimd::pack<T, 2> v0(42);
   nsimd::pack<T, 2> v1(24);
@@ -68,15 +74,17 @@ template <typename T> bool to_pack_from_packx2_N_2() {
 
   nsimd::pack<T, 4> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx2<T, 2>",
-                            "nsimd::pack<T, 4>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx2<T, 2>", "nsimd::pack<T, 4>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx2_N_3() {
 
-  LOG_TEST("to_pack_from_packx2_N_3", T);
+  LOG_TEST_DEBUG("to_pack_from_packx2_N_3", T);
 
   nsimd::pack<T, 3> v0(42);
   nsimd::pack<T, 3> v1(24);
@@ -88,15 +96,17 @@ template <typename T> bool to_pack_from_packx2_N_3() {
 
   nsimd::pack<T, 6> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx2<T, 3>",
-                            "nsimd::pack<T, 6>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx2<T, 3>", "nsimd::pack<T, 6>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx3_N_2() {
 
-  LOG_TEST("to_pack_from_packx3_N_2", T);
+  LOG_TEST_DEBUG("to_pack_from_packx3_N_2", T);
 
   nsimd::pack<T, 2> v0(42);
   nsimd::pack<T, 2> v1(24);
@@ -110,15 +120,17 @@ template <typename T> bool to_pack_from_packx3_N_2() {
 
   nsimd::pack<T, 6> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx3<T, 2>",
-                            "nsimd::pack<T, 6>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx3<T, 2>", "nsimd::pack<T, 6>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx3_N_3() {
 
-  LOG_TEST("to_pack_from_packx3_N_3", T);
+  LOG_TEST_DEBUG("to_pack_from_packx3_N_3", T);
 
   nsimd::pack<T, 3> v0(42);
   nsimd::pack<T, 3> v1(24);
@@ -132,15 +144,17 @@ template <typename T> bool to_pack_from_packx3_N_3() {
 
   nsimd::pack<T, 9> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx3<T, 3>",
-                            "nsimd::pack<T, 9>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx3<T, 3>", "nsimd::pack<T, 9>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx4_N_1() {
 
-  LOG_TEST("to_pack_from_packx4_N_1", T);
+  LOG_TEST_DEBUG("to_pack_from_packx4_N_1", T);
 
   nsimd::pack<T, 1> v0(42);
   nsimd::pack<T, 1> v1(24);
@@ -156,15 +170,17 @@ template <typename T> bool to_pack_from_packx4_N_1() {
 
   nsimd::pack<T, 4> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx4<T, 1>",
-                            "nsimd::pack<T, 4>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx4<T, 1>", "nsimd::pack<T, 4>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx4_N_2() {
 
-  LOG_TEST("to_pack_from_packx4_N_2", T);
+  LOG_TEST_DEBUG("to_pack_from_packx4_N_2", T);
 
   nsimd::pack<T, 2> v0(42);
   nsimd::pack<T, 2> v1(24);
@@ -180,15 +196,17 @@ template <typename T> bool to_pack_from_packx4_N_2() {
 
   nsimd::pack<T, 8> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx4<T, 2>",
-                            "nsimd::pack<T, 8>", vout.expected, vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx4<T, 2>", "nsimd::pack<T, 8>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool to_pack_from_packx4_N_3() {
 
-  LOG_TEST("to_pack_from_packx4_N_3", T);
+  LOG_TEST_DEBUG("to_pack_from_packx4_N_3", T);
 
   nsimd::pack<T, 3> v0(42);
   nsimd::pack<T, 3> v1(24);
@@ -204,11 +222,12 @@ template <typename T> bool to_pack_from_packx4_N_3() {
 
   nsimd::pack<T, 12> pack_to = nsimd::to_pack(pack_from);
 
-  nsimd_scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> vout;
+  nsimd::scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
+  nsimd::scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
 
-  return check_pack_content(pack_from, pack_to, "nsimd::packx4<T, 3>",
-                            "nsimd::pack<T, 12>", vout.expected,
-                            vout.computed);
+  return nsimd_tests::check_pack_expected_vs_computed(
+      pack_from, pack_to, "nsimd::packx4<T, 3>", "nsimd::pack<T, 12>",
+      expected.get(), computed.get());
 }
 
 template <typename T> bool test_all() {
