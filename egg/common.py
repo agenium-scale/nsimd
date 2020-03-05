@@ -445,6 +445,16 @@ def get_one_type_generic_adv_cxx(param, T, N):
     else:
         raise ValueError('Unknown param: "{}"'.format(param))
 
+def get_one_type_scalar(param, t):
+    if param == '_':
+        return 'void'
+    elif param in ['p', 'l']:
+        return 'int'
+    elif param in ['s', 'v']:
+        return t
+    else:
+        raise ValueError('Unknown param: "{}"'.format(param))
+
 # -----------------------------------------------------------------------------
 # Formats
 
@@ -910,7 +920,7 @@ class Domain(object):
             for u, union in enumerate(self.intervals):
                 ret += \
                     '''{typ} rand{u}() {{
-                            nat i, r;
+                            nsimd_nat i, r;
                             u8 *alias;
                             {typ} ret;
                             (void)i;
@@ -920,7 +930,7 @@ class Domain(object):
 
                 for i, interval in enumerate(union):
                     if interval.logical_:
-                        ret += 'ret = (u8)(rand())%2;'
+                        ret += 'ret = (u8)(rand()) % 2;'
                     else:
                         if not interval.removed:
                             test='0'
@@ -947,7 +957,7 @@ class Domain(object):
             for u, union in enumerate(self.intervals):
                 ret += \
                     '''{typ} rand{u}() {{
-                            nat i;
+                            nsimd_nat i;
                             u8 *alias;
                             {typ} ret;
                             (void)i;

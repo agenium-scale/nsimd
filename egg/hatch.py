@@ -18,24 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# How nsimd works?
-# ----------------
-#
-# nsimd.h includes the following:
-#   - config.h         compiler detection, inline stuff and more and includes:
-#     - pp.h           preprocessor stuff
-#     - detect_simd.h  detect SIMD based on what is given by the user
-#     - basic_types.h  defines basic arithmetic types
-#
-# Then each function in `include/nsimd` does an NSIMD_AUTO_INCLUDE which,
-# based on what was detected in `detect_simd.h` includes the correct function
-# from `include/nsimd/PLATFORM/SIMD_EXT`. The same holds for the advanced
-# C++ API.
-#
-# In `src` lies all functions that do not need to be in headers for
-# performance such as memory management functions, trigonometric functions,
-# log-exp functions, ...
-#
 # What does this script?
 # ----------------------
 #
@@ -191,7 +173,6 @@ def parse_args(args):
     opts = parser.parse_args(args)
     # We set variables here because all the code depends on them + we do want
     # to keep the possibility to change them in the future
-    print('DEBUG: opts = {}'.format(opts))
     opts.archis = opts.library
     opts.base_apis = opts.library
     opts.cxx_api = opts.library
@@ -204,7 +185,6 @@ def parse_args(args):
     opts.benches_dir = os.path.join(script_dir, '..', 'benches')
     opts.tests_dir = os.path.join(script_dir, '..', 'tests')
     opts.src_dir = os.path.join(script_dir, '..', 'src')
-    print('DEBUG: opts = {}'.format(opts))
     return opts
 
 # -----------------------------------------------------------------------------

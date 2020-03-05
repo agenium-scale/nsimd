@@ -360,7 +360,13 @@ SOFTWARE.
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Shorter typedefs for integers */
+/* Shorter typedefs for integers and their limits */
+
+#if NSIMD_CXX > 0
+  #include <climits>
+#else
+  #include <limits.h>
+#endif
 
 #ifdef NSIMD_IS_MSVC
   typedef unsigned __int8  u8;
@@ -389,6 +395,38 @@ SOFTWARE.
       typedef unsigned long long u64;
       typedef signed long long   i64;
     #endif
+  #endif
+#endif
+
+#define NSIMD_U8_MIN ((u8)0)
+#define NSIMD_U8_MAX UCHAR_MAX
+#define NSIMD_I8_MIN SCHAR_MIN
+#define NSIMD_I8_MAX SCHAR_MAX
+#define NSIMD_U16_MIN ((u16)0)
+#define NSIMD_U16_MAX USHRT_MAX
+#define NSIMD_I16_MIN SHRT_MIN
+#define NSIMD_I16_MAX SHRT_MAX
+#define NSIMD_U32_MIN ((u32)0)
+#define NSIMD_U32_MAX UINT_MAX
+#define NSIMD_I32_MIN INT_MIN
+#define NSIMD_I32_MAX INT_MAX
+
+#ifdef NSIMD_IS_MSVC
+  #define NSIMD_U64_MIN ((u64)0)
+  #define NSIMD_U64_MAX ULLONG_MAX
+  #define NSIMD_I64_MIN LLONG_MIN
+  #define NSIMD_I64_MAX LLONG_MAX
+#else
+  #if NSIMD_WORD_SIZE == 64
+    #define NSIMD_U64_MIN ((u64)0)
+    #define NSIMD_U64_MAX ULONG_MAX
+    #define NSIMD_I64_MIN LONG_MIN
+    #define NSIMD_I64_MAX LONG_MAX
+  #else
+    #define NSIMD_U64_MIN ((u64)0)
+    #define NSIMD_U64_MAX (~((u64)0))
+    #define NSIMD_I64_MIN ((u64)1 << 63)
+    #define NSIMD_I64_MAX (~((u64)1 << 63))
   #endif
 #endif
 
@@ -422,73 +460,6 @@ typedef double f64;
 namespace nsimd {
 typedef nsimd_nat nat;
 } // namespace nsimd
-#endif
-
-/* ------------------------------------------------------------------------- */
-/* Constants for integers limits */
-
-#ifdef NSIMD_IS_MSVC
-
-  #include <limits.h>
-
-  /* 8 bits */
-  #define NSIMD_I8_MAX SCHAR_MAX
-  #define NSIMD_U8_MAX UCHAR_MAX
-
-  #define NSIMD_I8_MIN SCHAR_MIN
-  #define NSIMD_U8_MIN ((u8)0)
-
-  /* 16 bits */
-  #define NSIMD_I16_MAX SHRT_MAX
-  #define NSIMD_U16_MAX USHRT_MAX
-
-  #define NSIMD_I16_MIN SHRT_MIN
-  #define NSIMD_U16_MIN ((u16)0)
-
-  /* 32 bits */
-  #define NSIMD_I32_MAX INT_MAX
-  #define NSIMD_U32_MAX UINT_MAX
-
-  #define NSIMD_I32_MIN INT_MIN
-  #define NSIMD_U32_MIN ((u32)0)
-
-  /* 64 bits */
-  #define NSIMD_I64_MAX LLONG_MAX
-  #define NSIMD_U64_MAX ULLONG_MAX
-
-  #define NSIMD_I64_MIN LLONG_MIN
-  #define NSIMD_U64_MIN ((u64)0)
-
-#else
-
-  /* 8 bits */
-  #define NSIMD_I8_MAX ((i8)0x7f)
-  #define NSIMD_U8_MAX ((u8)((u8)NSIMD_I8_MAX * 2 + 1))
-
-  #define NSIMD_I8_MIN ((i8)(-NSIMD_I8_MAX - 1))
-  #define NSIMD_U8_MIN ((u8)0)
-
-  /* 16 bits */
-  #define NSIMD_I16_MAX ((i16)0x7fff)
-  #define NSIMD_U16_MAX ((u16)((u16)NSIMD_I16_MAX * 2 + 1))
-
-  #define NSIMD_I16_MIN ((i16)(-NSIMD_I16_MAX - 1))
-  #define NSIMD_U16_MIN ((u16)0)
-
-  /* 32 bits */
-  #define NSIMD_I32_MAX ((i32)0x7fffffff)
-  #define NSIMD_U32_MAX (((u32)NSIMD_I32_MAX * 2 + 1))
-
-  #define NSIMD_I32_MIN (-NSIMD_I32_MAX - 1)
-  #define NSIMD_U32_MIN ((u32)0)
-
-  /* 64 bits */
-  #define NSIMD_I64_MAX (~(((i64)1) << 63))
-  #define NSIMD_U64_MAX (((u64)NSIMD_I64_MAX * 2 + 1))
-
-  #define NSIMD_I64_MIN (-NSIMD_I64_MAX - 1)
-  #define NSIMD_U64_MIN ((u64)0)
-
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -852,90 +823,6 @@ public:
 } // namespace nsimd
 #endif
 
-#if NSIMD_CXX > 0 && NSIMD_CXX < 2011 && defined(NSIMD_IS_NVCC)
-#include <iostream>
-#include <stdexcept>
-namespace nsimd {
-
-template <typename T> class cuda_allocator {
-public:
-  typedef T value_type;
-  typedef value_type *pointer;
-  typedef const value_type *const_pointer;
-  typedef value_type &reference;
-  typedef const value_type &const_reference;
-  typedef std::size_t size_type;
-  typedef std::ptrdiff_t difference_type;
-
-public:
-  template <typename U> struct rebind { typedef cuda_allocator<U> other; };
-
-public:
-  cuda_allocator() {}
-  ~cuda_allocator() {}
-  cuda_allocator(cuda_allocator const &) {}
-
-  template <typename U> explicit cuda_allocator(cuda_allocator<U> const &) {}
-
-  pointer address(reference r) { return &r; }
-  const_pointer address(const_reference r) { return &r; }
-
-  pointer allocate(size_type n) {
-    pointer p = NULL;
-    if (cudaMalloc(&p, n * sizeof(T)) != cudaSuccess) {
-      throw std::bad_alloc();
-    }
-    return p;
-  }
-
-  pointer allocate(size_type n, const void *) { return allocate(n); }
-
-  void deallocate(pointer p, size_type) {
-    cudaError_t r = cudaFree(p);
-    if (r != cudaSuccess) {
-      if (r == cudaErrorInvalidDevicePointer) {
-        throw std::domain_error("cudaFree: Invalid device pointer");
-      } else if (r == cudaErrorInitializationError) {
-        throw std::runtime_error("cudaFree: Initialization error");
-      } else {
-        throw std::runtime_error("cudaFree fails");
-      }
-    }
-  }
-
-  size_type max_size() const { return size_type(-1) / sizeof(T); }
-
-  void construct(pointer p, const T &t) {
-    cudaError_t r = cudaMemcpy(p, &t, sizeof(T),
-                               /*cudaMemcpyHostToDevice*/ cudaMemcpyDefault);
-    if (r != cudaSuccess) {
-      if (r == cudaErrorInvalidValue) {
-        throw std::domain_error("cudaMemcpy: Invalid value");
-      } else if (r == cudaErrorInvalidMemcpyDirection) {
-        throw std::runtime_error("cudaMemcpy: Invalid memcpy direction");
-      } else if (r == cudaErrorInitializationError) {
-        throw std::runtime_error("cudaMemcpy: Initialization error");
-      } else if (r == cudaErrorInsufficientDriver) {
-        throw std::runtime_error("cudaMemcpy: Insufficient driver error");
-      } else if (r == cudaErrorNoDevice) {
-        throw std::runtime_error("cudaMemcpy: No device");
-      } else if (r == cudaErrorNotPermitted) {
-        throw std::runtime_error("cudaMemcpy: Not permitted");
-      } else {
-        throw std::runtime_error("cudaMemcpy fails");
-      }
-    }
-    // cudaDeviceSynchronize();
-  }
-  void destroy(pointer /*p*/) {}
-
-  bool operator==(cuda_allocator const &) { return true; }
-  bool operator!=(cuda_allocator const &a) { return !operator==(a); }
-};
-
-} // namespace nsimd
-#endif
-
 /* ------------------------------------------------------------------------- */
 /* C++ >=11 allocator */
 
@@ -972,41 +859,6 @@ template <class T, class S>
 bool operator!=(allocator<T> const &, allocator<S> const &) {
   return false;
 }
-
-} // namespace nsimd
-#endif
-
-#if NSIMD_CXX >= 2011 && defined(NSIMD_IS_NVCC)
-namespace nsimd {
-
-// template <typename T> struct cuda_allocator {
-//   using value_type = T;
-//
-//   cuda_allocator() = default;
-//
-//   template <typename S> cuda_allocator(cuda_allocator<S> const &) {}
-//
-//   T *allocate(std::size_t n) {
-//     T *p = NULL;
-//     if (cudaMalloc(&p, n) != cudaSuccess) {
-//       throw std::bad_alloc();
-//     }
-//     return p;
-//   }
-//
-//   void deallocate(T *p, std::size_t) {
-//     cudaError_t r = cudaFree(p);
-//     if (r != cudaSuccess) {
-//       if (r == cudaErrorInvalidDevicePointer) {
-//         throw std::domain_error("cudaFree: Invalid device pointer");
-//       } else if (r == cudaErrorInitializationError) {
-//         throw std::runtime_error("cudaFree: Initialization error");
-//       } else {
-//         throw std::runtime_error("cudaFree fails");
-//       }
-//     }
-//   }
-// };
 
 } // namespace nsimd
 #endif

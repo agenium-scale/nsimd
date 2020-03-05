@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2020 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -17,6 +17,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+import common
 
 # -----------------------------------------------------------------------------
 # NVIDIA doc on f16 can be found at
@@ -84,7 +86,7 @@ def get_impl(operator, totyp, typ):
     def pun_code(code, arity, typ):
         utyp = common.bitfield_type[typ]
         to_utyp = '\n'.join(
-                  ['''{utyp} buf{i};
+                  ['''{totyp} buf{i};
                       memcpy(&buf{i}, &{{in{i}}}, sizeof({{in{i}}}));'''. \
                       format(i=i, totyp=totyp) for i in range(arity)])
         return '''{to_utyp}
@@ -119,6 +121,6 @@ def get_impl(operator, totyp, typ):
     args = ', '.join(['{{in{}}}'.format(i) \
                       for i in range(len(operator.args))])
     return 'return {name}{f}({args});'. \
-           format(name=cuda_func[operator.name] \
+           format(name=cuda_name[operator.name] \
                   if operator.name in cuda_name else operator.name,
-                  name=cuda_func,f='f' if typ == 'f32' else '', args=args)
+                  f='f' if typ == 'f32' else '', args=args)

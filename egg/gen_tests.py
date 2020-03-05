@@ -279,10 +279,10 @@ def get_content(op, typ, lang):
         code = ['''if ({classify}({f32_conv}(vin{i}[i])) == FP_SUBNORMAL) {{
                      vin{i}[i] = {f16_conv}(0.f);
                 }}'''. \
-                format(i=i,
-                    f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                    f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                    classify='fpclassify' if lang=='c_base' else 'std::fpclassify') for i in nargs]
+                format(i=i, f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                classify='fpclassify' if lang=='c_base' \
+                                      else 'std::fpclassify') for i in nargs]
 
         denormalize_inputs = '\n'.join(code)
     else:
@@ -324,7 +324,8 @@ def get_content(op, typ, lang):
                 vout_ref_set = 'vout_ref[i] = mpfr_get_flt(c, MPFR_RNDN);'
             else:
                 mpfr_set = 'mpfr_set_d(a{i}, vin{i}[i], MPFR_RNDN);'
-                vout_ref_set = 'vout_ref[i] = ({})mpfr_get_d(c, MPFR_RNDN);'.format(typ)
+                vout_ref_set = 'vout_ref[i] = ({})mpfr_get_d(c, MPFR_RNDN);'. \
+                               format(typ)
             mpfr_sets = '\n'.join([mpfr_set.format(i=j) for j in nargs])
             mpfr_clears = '\n'.join(['mpfr_clear(a{});'.format(i)
                                      for i in nargs])
@@ -351,24 +352,25 @@ def get_content(op, typ, lang):
             vout_ref_comp = '\n'.join(code)
 
             if op.name[-2:] == '11' or op.name[-1:] == '8':
-                vout_ref_comp += '''
-                    /* Intel 11 bit precision intrinsics force denormalized output to 0. */
-                    #ifdef NSIMD_X86
-                    #pragma GCC diagnostic push
-                    #pragma GCC diagnostic ignored "-Wconversion"
-                    #pragma GCC diagnostic ignored "-Wdouble-promotion"
-                    for (vi = i; vi < i+nsimd_len_cpu_{typ}(); ++vi) {{
-                        if ({classify}({f32_conv}(vout_ref[vi])) == FP_SUBNORMAL) {{
-                            vout_ref[vi] = {f16_conv}(0.f);
-                        }}
-                    }}
-                    #pragma GCC diagnostic pop
-                    #endif
-                    '''.format(typ=typ,
-                                 f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                                 f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                                 classify='fpclassify' if lang=='c_base' else 'std::fpclassify')
-
+                vout_ref_comp += \
+                '''/* Intel 11 bit precision intrinsics force denormalized output to 0. */
+                   #ifdef NSIMD_X86
+                   #pragma GCC diagnostic push
+                   #pragma GCC diagnostic ignored "-Wconversion"
+                   #pragma GCC diagnostic ignored "-Wdouble-promotion"
+                   for (vi = i; vi < i+nsimd_len_cpu_{typ}(); ++vi) {{
+                       if ({classify}({f32_conv}(vout_ref[vi])) ==
+                           FP_SUBNORMAL) {{
+                           vout_ref[vi] = {f16_conv}(0.f);
+                       }}
+                   }}
+                   #pragma GCC diagnostic pop
+                   #endif
+                   '''.format(
+                   typ=typ, f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                   f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                   classify='fpclassify' \
+                   if lang=='c_base' else 'std::fpclassify')
 
         # Make vout_nsimd_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
@@ -402,7 +404,8 @@ def get_content(op, typ, lang):
                              format(op.cxx_operator[8:])]
             else:
                 code += ['vc = nsimd::{}({});'.format(op.name, args)]
-            code += ['nsimd::store{}u(&vout_nsimd[i], vc);'.format(logical, typ)]
+            code += ['nsimd::store{}u(&vout_nsimd[i], vc);'. \
+                     format(logical, typ)]
             vout_nsimd_comp = '\n'.join(code)
     elif op.params == ['l', 'v', 'v']:
         vin_defi = \

@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <cassert>
 #include <vector>
+#include <cstring>
 
 namespace tet1d {
 
@@ -51,7 +52,7 @@ const nsimd::nat end = nsimd::nat(-1);
 template <typename T, typename Expr>
 __global__ void gpu_kernel_component_wise(T *dst, Expr const &expr,
                                           nsimd::nat n) {
-  int i = threadIdx.x + blockIdx.x *  blockDim.x;
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n) {
     dst[i] = expr.gpu_get(i);
   }
@@ -62,7 +63,7 @@ template <typename T, typename Mask, typename Expr>
 __global__ void gpu_kernel_component_wise_mask(T *dst, Mask const &mask,
                                                Expr const &expr,
                                                nsimd::nat n) {
-  int i = threadIdx.x + blockIdx.x *  blockDim.x;
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n && mask.gpu_get(i)) {
     dst[i] = expr.gpu_get(i);
   }
@@ -94,7 +95,7 @@ gpu_kernel_component_wise_mask(hipLaunchParm lp, T *dst, Mask const &mask,
 #else
 
 // CPU component wise kernel
-template <typename T, typename Expr, typename Pack>
+template <typename Pack, typename T, typename Expr>
 void cpu_kernel_component_wise(T *dst, Expr const &expr, nsimd::nat n) {
   nsimd::nat i;
   int len = nsimd::len(Pack());
@@ -107,7 +108,7 @@ void cpu_kernel_component_wise(T *dst, Expr const &expr, nsimd::nat n) {
 }
 
 // CPU component wise kernel with masked output
-template <typename T, typename Mask, typename Expr, typename Pack>
+template <typename Pack, typename T, typename Mask, typename Expr>
 void cpu_kernel_component_wise_mask(T *dst, Mask const &mask, Expr const &expr,
                                     nsimd::nat n) {
   nsimd::nat i;
@@ -118,13 +119,30 @@ void cpu_kernel_component_wise_mask(T *dst, Mask const &mask, Expr const &expr,
                                           nsimd::loadu<Pack>(&dst[i])));
   }
   for (; i < n; i++) {
-    if (mask.template get(i)) {
+    if (mask.scalar_get(i)) {
       dst[i] = expr.scalar_get(i);
     }
   }
 }
 
 #endif
+
+// ----------------------------------------------------------------------------
+// helper for computing sizes of 1D vectors
+
+nsimd::nat compute_size(nsimd::nat sz1, nsimd::nat sz2) {
+  assert(sz1 >= 0 || sz2 >= 0);
+  assert((sz1 < 0 && sz2 >= 0) || (sz1 >= 0 && sz2 < 0) || (sz1 == sz2));
+  if (sz1 < 0) {
+    return sz2;
+  } else {
+    return sz1;
+  }
+}
+
+nsimd::nat compute_size(nsimd::nat sz1, nsimd::nat sz2, nsimd::nat sz3) {
+  return compute_size(compute_size(sz1, sz2), sz3);
+}
 
 // ----------------------------------------------------------------------------
 // meta for building a pack from another ignoring the base type
@@ -142,12 +160,27 @@ struct to_pack_t<nsimd::pack<T, Unroll, SimdExt>, Pack> {
   typedef nsimd::pack<T, unroll, simd_ext> type;
 };
 
+template <typename T, typename Pack> struct to_packl_t {
+  static const int unroll = Pack::unroll;
+  typedef typename Pack::simd_ext simd_ext;
+  typedef nsimd::packl<T, unroll, simd_ext> type;
+};
+
+template <typename T, int Unroll, typename SimdExt, typename Pack>
+struct to_packl_t<nsimd::pack<T, Unroll, SimdExt>, Pack> {
+  static const int unroll = Pack::unroll;
+  typedef typename Pack::simd_ext simd_ext;
+  typedef nsimd::packl<T, unroll, simd_ext> type;
+};
+
 // ----------------------------------------------------------------------------
-// meta for supporting scalars + scalar node
+// scalar node
 
 struct scalar_t {};
 
 template <typename T> struct node<scalar_t, none_t, none_t, T> {
+  typedef T in_type;
+  typedef T out_type;
   T value;
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
@@ -160,16 +193,46 @@ template <typename T> struct node<scalar_t, none_t, none_t, T> {
     return pack(value);
   }
 #endif
+
+  nsimd::nat size() const { return -1; }
 };
+
+// ----------------------------------------------------------------------------
+// build a node from a scalar and a node
+
+template <typename T> struct to_node_t {
+  typedef node<scalar_t, none_t, none_t, T> type;
+
+  static type impl(T n) {
+    type ret;
+    ret.value = n;
+    return ret;
+  }
+};
+
+template <typename Op, typename Left, typename Right, typename Extra>
+struct to_node_t<node<Op, Left, Right, Extra> > {
+  typedef node<Op, Left, Right, Extra> type;
+
+  static type impl(type node) { return node; }
+};
+
+template <typename T> typename to_node_t<T>::type to_node(T n) {
+  return to_node_t<T>::impl(n);
+}
 
 // ----------------------------------------------------------------------------
 // input node
 
 struct in_t {};
 
+#define TET1D_IN(T) tet1d::node<tet1d::in_t, tet1d::none_t, tet1d::none_t, T>
+
 template <typename T> struct node<in_t, none_t, none_t, T> {
   const T *data;
   nsimd::nat sz;
+  typedef T in_type;
+  typedef T out_type;
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
   __device__ T gpu_get(nsimd::nat i) const { return data[i]; }
@@ -213,16 +276,16 @@ inline node<in_t, none_t, none_t, T> in(const T *data, I sz) {
 struct mask_out_t {};
 
 template <typename Mask, typename Pack>
-struct node<Mask, none_t, none_t, Pack> {
-  typedef typename Pack::base_type T;
+struct node<mask_out_t, Mask, none_t, Pack> {
+  typedef typename Pack::value_type T;
   T *data;
   nsimd::nat threads_per_block;
   void *stream;
   Mask mask;
 
-  template <typename Op, typename Left, typename Right, typename Extra>
-  node<mask_out_t, none_t, none_t, Pack>
-  operator=(node<Op, Left, Right, Extra> const &expr) {
+  template <typename S>
+  node<mask_out_t, Mask, none_t, Pack> operator=(S const &expr_) {
+    typename to_node_t<S>::type expr = to_node(expr_);
 #if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
     nsimd::nat nb = expr.size() + (nt - 1) / nt;
@@ -232,7 +295,7 @@ struct node<Mask, none_t, none_t, Pack> {
     cudaStream_t s = (stream == NULL ? NULL : *(cudaStream_t *)stream);
     // clang-format off
     gpu_kernel_component_wise_mask<<<(unsigned int)(nb), (unsigned int)(nt),
-                                     0, s>>>(data, mask, expr, expr.size());
+                                     0, s> >>(data, mask, expr, expr.size());
     // clang-format on
 #elif defined(NSIMD_HIP)
     hipStream_t stream =
@@ -241,8 +304,8 @@ struct node<Mask, none_t, none_t, Pack> {
                     data, mask, expr, expr.size());
 #endif
 #else
-    cpu_kernel_component_wise_mask<T, Mask, node<Op, Left, Right, Extra>,
-                                   Pack>(data, mask, expr, expr.size());
+    cpu_kernel_component_wise_mask<Pack>(
+        data, mask, expr, compute_size(mask.size(), expr.size()));
 #endif
     return *this;
   }
@@ -252,6 +315,13 @@ struct node<Mask, none_t, none_t, Pack> {
 // output node
 
 struct out_t {};
+
+#define TET1D_OUT(T)                                                          \
+  tet1d::node<tet1d::out_t, tet1d::none_t, tet1d::none_t, nsimd::pack<T> >
+
+#define TET1D_OUT_EX(T, N, SimdExt)                                           \
+  tet1d::node<tet1d::out_t, tet1d::none_t, tet1d::none_t,                     \
+              nsimd::pack<T, N, SimdExt> >
 
 template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
   typedef typename Pack::value_type T;
@@ -281,7 +351,7 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
     cudaStream_t s = stream == NULL ? NULL : *(cudaStream_t *)stream;
     // clang-format off
     gpu_kernel_component_wise<<<(unsigned int)(nb), (unsigned int)(nt),
-                                0, s>>>(data, expr, expr.size());
+                                0, s> >>(data, expr, expr.size());
     // clang-format on
 #elif defined(NSIMD_HIP)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
@@ -289,16 +359,25 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
                     expr, expr.size());
 #endif
 #else
-    cpu_kernel_component_wise<T, Pack>(data, expr, expr.size());
+    cpu_kernel_component_wise<Pack>(data, expr, expr.size());
 #endif
     return *this;
   }
 };
 
 // return an output node from a pointer
-template <typename T, typename Pack = nsimd::pack<T> >
-node<out_t, none_t, none_t, Pack>
-out(T *data, nsimd::nat threads_per_block = -1, void *stream = NULL) {
+template <typename T>
+node<out_t, none_t, none_t, nsimd::pack<T> > out(T *data) {
+  node<out_t, none_t, none_t, nsimd::pack<T> > ret;
+  ret.data = data;
+  ret.threads_per_block = 128;
+  ret.stream = NULL;
+  return ret;
+}
+
+template <typename T, typename Pack>
+node<out_t, none_t, none_t, Pack> out(T *data, int threads_per_block,
+                                      void *stream) {
   node<out_t, none_t, none_t, Pack> ret;
   ret.data = data;
   ret.threads_per_block = threads_per_block;
@@ -307,20 +386,9 @@ out(T *data, nsimd::nat threads_per_block = -1, void *stream = NULL) {
 }
 
 // ----------------------------------------------------------------------------
-// helper for computing sizes
-
-nsimd::nat compute_size(nsimd::nat sz1, nsimd::nat sz2) {
-  assert(sz1 >= 0 || sz2 >= 0);
-  assert((sz1 < 0 && sz2 >= 0) || (sz1 >= 0 && sz2 < 0) || (sz1 == sz2));
-  if (sz1 < 0) {
-    return sz2;
-  } else {
-    return sz1;
-  }
-}
-
-// ----------------------------------------------------------------------------
 
 } // namespace tet1d
+
+#include <nsimd/modules/tet1d/functions.hpp>
 
 #endif

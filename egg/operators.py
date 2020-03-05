@@ -96,6 +96,23 @@ operators = collections.OrderedDict()
 
 class MAddToOperators(type):
     def __new__(cls, name, bases, dct):
+
+        def member_is_defined(member):
+            if member in dct:
+                return True
+            for bc in range(len(bases)):
+                if member in bases[bc].__dict__:
+                    return True
+            return False
+
+        def get_member_value(member):
+            if member in dct:
+                return dct[member]
+            for bc in range(len(bases)):
+                if member in bases[bc].__dict__:
+                    return bases[bc].__dict__[member]
+            raise Exception('Member does not exists in class {}'.format(name))
+
         # We don't care about the parent class
         if name == 'Operator' or name == 'SrcOperator':
             return type.__new__(cls, name, bases, dct)
@@ -167,6 +184,28 @@ class MAddToOperators(type):
                 'Returns the {} of the {}. Defined over {}.'.\
                 format(dct['full_name'], arg, dct['domain'])
 
+        # Fill src, default is operator is in header not in source
+        if not member_is_defined('src'):
+            dct['src'] = False
+
+        # Fill load_store, default is operator is not for loading/storing
+        if 'load_store' not in dct:
+            dct['load_store'] = False
+
+        # Fill has_scalar_impl, default is based on several properties
+        if 'has_scalar_impl' not in dct:
+            if DocShuffle in dct['categories'] or \
+               DocMisc in dct['categories'] or \
+               'vx2' in dct['params'] or \
+               'vx3' in dct['params'] or \
+               'vx4' in dct['params'] or \
+               dct['output_to'] in [common.OUTPUT_TO_UP_TYPES,
+                                    common.OUTPUT_TO_DOWN_TYPES] or \
+               dct['load_store'] or get_member_value('src'):
+                dct['has_scalar_impl'] = False
+            else:
+                dct['has_scalar_impl'] = True
+
         ret = type.__new__(cls, name, bases, dct)
         operators[dct['name']] = ret()
         return ret
@@ -178,8 +217,6 @@ class Operator(object, metaclass=MAddToOperators):
     cxx_operator = None
     autogen_cxx_adv = True
     output_to = common.OUTPUT_TO_SAME_TYPE
-    src = False
-    load_store = False
     types = common.types
     params = []
     signature = ''
@@ -419,6 +456,25 @@ class Operator(object, metaclass=MAddToOperators):
         else:
             raise Exception('Unknown langage {}'.format(lang))
 
+        return sig
+
+    def get_scalar_signature(self, cpu_gpu, t, tt, lang):
+        sig = '__device__ ' if cpu_gpu == 'gpu' else ''
+        sig += common.get_one_type_scalar(self.params[0], tt) + ' '
+        func_name = 'nsimd_' if lang == 'c' else ''
+        func_name += 'gpu_' if cpu_gpu == 'gpu' else 'scalar_'
+        func_name += self.name
+        operator_on_logicals = (self.params == ['l'] * len(self.params))
+        if lang == 'c' and not operator_on_logicals:
+            func_name += '_{}'.format(t) if t == tt else '_{}_{}'.format(tt, t)
+        sig += func_name
+        args_list = common.enum([common.get_one_type_scalar(p, t)
+                                 for p in self.params[1:]])
+        args = ['{} a{}'.format(i[1], i[0]) for i in args_list]
+        if lang == 'cxx' and (not self.closed or \
+           ('v' not in self.params[1:] and not operator_on_logicals)):
+            args = [tt] + args
+        sig += '(' + ', '.join(args) + ')'
         return sig
 
 class SrcOperator(Operator):
@@ -980,6 +1036,7 @@ class Reinterpretl(Operator):
     domain = Domain('B')
     categories = [DocConversion]
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
+    has_scalar_impl = False
     ## Disable bench
     do_bench = False
     desc = 'Reinterpret input vector of logicals into a different vector ' + \

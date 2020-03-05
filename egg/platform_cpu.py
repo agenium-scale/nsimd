@@ -27,7 +27,7 @@
 # with an 'if' before to handle the FP16 special case.
 
 import common
-import gen_scalar_utilities
+import scalar
 
 # -----------------------------------------------------------------------------
 # Emulation parameters
@@ -87,20 +87,12 @@ def has_compatible_SoA_types(simd_ext):
     return False
 
 def get_additional_include(func, platform, simd_ext):
-    if func in ['sqrt', 'ceil', 'floor', 'trunc', 'fma', 'fnma', 'fms',
-                'fnms', 'round_to_even']:
+    if func in ['adds', 'subs', 'orb', 'andb', 'andnotb', 'xorb', 'min', 'max'
+                'notb', 'sqrt', 'shr', 'shl', 'shra', 'abs', 'fma', 'fnma',
+                'fms', 'fnms', 'ceil', 'floor', 'trunc', 'round_to_even',
+                'rec11', 'rec8', 'rsqrt11', 'rsqrt8', 'rec', 'neg']:
         return '''#include <nsimd/scalar_utilities.h>
                   '''
-    elif func == 'adds':
-        return  '''
-                #include <nsimd/cpu/cpu/add.h>
-                '''
-    elif func == 'subs':
-        return'''
-                #include <nsimd/cpu/cpu/sub.h>
-                #include <nsimd/cpu/cpu/adds.h>
-                #include <nsimd/cpu/cpu/neg.h>
-               '''
     elif func == 'zip':
         return '''#include <nsimd/cpu/cpu/ziplo.h>
                   #include <nsimd/cpu/cpu/ziphi.h>
@@ -109,9 +101,6 @@ def get_additional_include(func, platform, simd_ext):
          return '''#include <nsimd/cpu/cpu/unziplo.h>
                    #include <nsimd/cpu/cpu/unziphi.h>
                   '''
-    elif func == 'shra':
-        return '''#include <nsimd/cpu/{simd_ext}/shr.h>
-                  '''.format(simd_ext=simd_ext)
     return ''
 
 # -----------------------------------------------------------------------------
@@ -145,44 +134,6 @@ def lop2(op, typ):
 
 # -----------------------------------------------------------------------------
 
-def bitwise2(op, typ):
-    if typ in common.utypes:
-        return op2(op, typ)
-    utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
-    typ2 = 'f32' if typ == 'f16' else typ
-    return '''nsimd_cpu_v{typ} ret;
-              union {{ {utyp2} u; {typ2} f; }} buf0, buf1;
-              {content}
-              return ret;'''.format(content=repeat_stmt(
-              '''buf0.f = {in0}.v{{i}};
-                 buf1.f = {in1}.v{{i}};
-                 buf0.u = ({utyp2})(buf0.u {op} buf1.u);
-                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, op=op, **fmtspec),
-                 typ), utyp2=utyp2, typ2=typ2, **fmtspec)
-
-# -----------------------------------------------------------------------------
-
-def andnot2(typ):
-    if typ in common.utypes:
-        return '''nsimd_cpu_v{typ} ret;
-                  {content}
-                  return ret;'''.format(content=repeat_stmt(
-                  'ret.v{{i}} = ({typ})({in0}.v{{i}} & (~{in1}.v{{i}}));'. \
-                  format(**fmtspec), typ), **fmtspec)
-    utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
-    typ2 = 'f32' if typ == 'f16' else typ
-    return '''nsimd_cpu_v{typ} ret;
-              union {{ {utyp2} u; {typ2} f; }} buf0, buf1;
-              {content}
-              return ret;'''.format(content=repeat_stmt(
-              '''buf0.f = {in0}.v{{i}};
-                 buf1.f = {in1}.v{{i}};
-                 buf0.u = ({utyp2})(buf0.u & (~buf1.u));
-                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
-                 utyp2=utyp2, typ2=typ2, **fmtspec)
-
-# -----------------------------------------------------------------------------
-
 def landnot2(typ):
     return func_body('ret.v{{i}} = {in0}.v{{i}} & (~{in1}.v{{i}});'.\
                      format(**fmtspec), typ, True)
@@ -195,64 +146,16 @@ def lnot1(typ):
 
 # -----------------------------------------------------------------------------
 
-def not1(typ):
-    if typ in common.utypes:
-        return func_body('ret.v{{i}} = ({typ})(~{in0}.v{{i}});'. \
-                         format(**fmtspec), typ)
-    utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
+def scalar_impl(func, typ, arity):
     typ2 = 'f32' if typ == 'f16' else typ
-    return '''nsimd_cpu_v{typ} ret;
-              union {{ {utyp2} u; {typ2} f; }} buf0;
-              {content}
-              return ret;'''.format(content=repeat_stmt(
-              '''buf0.f = {in0}.v{{i}};
-                 buf0.u = ({utyp2})(~buf0.u);
-                 ret.v{{i}} = buf0.f;'''.format(utyp2=utyp2, **fmtspec), typ),
-                 utyp2=utyp2, typ2=typ2, **fmtspec)
-
-# -----------------------------------------------------------------------------
-
-def minmax2(minmax, typ):
-    op = '<' if minmax == 'min' else '>'
-    typ2 = 'f32' if typ == 'f16' else typ
-    return func_body(
-           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} {op} {in1}.v{{i}} ?
-                                    {in0}.v{{i}} : {in1}.v{{i}});'''. \
-                                    format(typ2=typ2, op=op, **fmtspec), typ)
-
-# -----------------------------------------------------------------------------
-
-def libm_opn(func, typ):
-    if typ in common.iutypes:
-        if func in ['floor', 'ceil', 'trunc', 'round_to_even']:
-            return 'return {in0};'.format(**fmtspec)
-        else:
-            return func_body(
-                   '''ret.v{{i}} = ({typ})({in0}.v{{i}} * {in1}.v{{i}}
-                                   + {in2}.v{{i}});'''. \
-                                   format(**fmtspec), typ)
-    typ2 = 'f32' if typ == 'f16' else typ
-    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) + '.v{i}' \
-                      for i in range(3 if func == 'fma' else 1)])
-    return func_body('ret.v{{i}} = nsimd_{func}_{typ}({args});'. \
-                     format(typ=typ2, func=func, args=args), typ)
-
-# -----------------------------------------------------------------------------
-
-def bitwise1_param(op, typ):
-    if typ in common.utypes:
-        return func_body('ret.v{{i}} = ({typ})({in0}.v{{i}} {op} {in1});'. \
-                         format(op=op, **fmtspec), typ)
+    # special case for shl, shr, shra
+    if func in ['shl', 'shr', 'shra']:
+        args = '{in0}.v{{i}}, {in1}'.format(**fmtspec)
     else:
-        return '''nsimd_cpu_v{typ} ret;
-                  union {{ {typ} i; {utyp} u; }} buf;
-                  {content}
-                  return ret;'''. \
-                  format(content=repeat_stmt(
-                  '''buf.i = {in0}.v{{i}};
-                     buf.u = ({utyp})(buf.u {op} {in1});
-                     ret.v{{i}} = buf.i;'''.format(op=op, **fmtspec), typ),
-                     **fmtspec)
+        args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
+                          + '.v{i}' for i in range(arity)])
+    return func_body('ret.v{{i}} = nsimd_scalar_{func}_{typ2}({args});'. \
+                     format(func=func, typ2=typ2, args=args, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -382,37 +285,6 @@ def if_else1(typ):
 
 # -----------------------------------------------------------------------------
 
-def abs1(typ):
-    if typ in common.utypes:
-        return func_body('ret.v{{i}} = {in0}.v{{i}};'.format(**fmtspec), typ)
-    typ2 = 'f32' if typ == 'f16' else typ
-    return func_body(
-           '''ret.v{{i}} = ({typ2})({in0}.v{{i}} < ({typ2})0
-                                    ? -{in0}.v{{i}} : {in0}.v{{i}});'''. \
-                                    format(typ2=typ2, **fmtspec), typ)
-
-# -----------------------------------------------------------------------------
-
-def fma_fms(func, typ):
-    if typ in common.iutypes:
-        op = '+' if func in ['fma', 'fnma'] else '-'
-        neg = '-' if func in ['fnma', 'fnms'] else ''
-        return func_body(
-               '''ret.v{{i}} = ({typ})({neg}({in0}.v{{i}} * {in1}.v{{i}})
-                               {op} {in2}.v{{i}});'''.format(op=op,
-                               neg=neg, **fmtspec), typ)
-    else:
-        op = '' if func in ['fnma'] else '-'
-        neg = '-' if func in ['fnma', 'fnms'] else ''
-        typ2 = 'f32' if typ == 'f16' else typ
-        return \
-        func_body(
-        '''ret.v{{i}} = nsimd_fma_{typ2}({neg}{in0}.v{{i}}, {in1}.v{{i}},
-                          {op}{in2}.v{{i}});'''.format(
-                          op=op, neg=neg, typ2=typ2, **fmtspec), typ)
-
-# -----------------------------------------------------------------------------
-
 def all_any(typ, func):
     op = '&&' if func == 'all' else '||'
     if get_nb_el(typ) == 1:
@@ -452,31 +324,6 @@ def convert1(from_typ, to_typ):
     typ2 = 'f32' if to_typ == 'f16' else to_typ
     return func_body('ret.v{{i}} = ({typ2}){in0}.v{{i}};'. \
                      format(typ2=typ2, **fmtspec), to_typ)
-
-# -----------------------------------------------------------------------------
-
-def rec_rec11(typ):
-    one = '1.0f' if typ in ['f16', 'f32'] else '1.0'
-    return func_body('ret.v{{i}} = {one} / {in0}.v{{i}};'. \
-                     format(one=one, **fmtspec), typ)
-
-# -----------------------------------------------------------------------------
-
-def rsqrt11(typ):
-    if typ == 'f64':
-        return func_body('ret.v{{i}} = 1.0 / sqrt({in0}.v{{i}});'. \
-                         format(**fmtspec), typ)
-    else:
-        return func_body(
-               'ret.v{{i}} = (f32)(1.0 / sqrt((f64){in0}.v{{i}}));'. \
-               format(**fmtspec), typ)
-
-# -----------------------------------------------------------------------------
-
-def neg1(typ):
-    typ2 = 'f32' if typ == 'f16' else typ
-    return func_body('ret.v{{i}} = ({typ2})(-{in0}.v{{i}});'. \
-                     format(typ2=typ2, **fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -546,93 +393,6 @@ def downcvt2(from_typ, to_typ):
 
 def len1(typ):
     return 'return {};'.format(get_nb_el(typ))
-
-# -----------------------------------------------------------------------------
-
-def adds_itypes(assign_max, assign_add_if_ok):
-    check_overflow = \
-           'if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))'
-    assign_max_if_overflow = check_overflow + '\n' + assign_max
-
-    check_underflow = \
-           'else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))'
-    assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
-    assign_min_if_underflow = check_underflow + '\n' + assign_min
-
-    algo = assign_max_if_overflow + '\n' + \
-           assign_min_if_underflow + '\n' + \
-           assign_add_if_ok
-
-    return algo
-
-
-def adds_utypes(assign_max, assign_add_if_ok):
-    check_overflow = 'if ({in1}.v{{i}} > {max} - {in0}.v{{i}})'
-    assign_max_if_overflow = check_overflow + '\n' + assign_max
-
-    algo = assign_max_if_overflow + '\n' + \
-           assign_add_if_ok
-
-    return algo
-
-
-def adds(from_typ):
-
-    if from_typ in common.ftypes:
-      return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
-
-    if not from_typ in common.limits.keys():
-      raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
-
-    assign_max = '{{{{ ret.v{{i}} = {max}; }}}}'
-    add = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
-    assign_add_if_ok = 'else ' + '\n' + add
-
-    if from_typ in common.itypes:
-        algo = adds_itypes(assign_max, assign_add_if_ok)
-
-    else:
-        algo = adds_utypes(assign_max, assign_add_if_ok)
-
-    type_limits = common.limits[from_typ]
-    content = repeat_stmt(algo.format(**type_limits, **fmtspec), from_typ)
-
-    return '''nsimd_{simd_ext}_v{from_typ} ret;
-
-              {content}
-
-              return ret;'''.format(from_typ = from_typ, content = content, simd_ext=fmtspec['simd_ext'])
-
-# -----------------------------------------------------------------------------
-
-def subs(from_typ):
-
-    if from_typ in common.itypes:
-      return 'return nsimd_adds_{simd_ext}_{from_typ}({in0},nsimd_neg_{simd_ext}_{from_typ}({in1}));'.format(**fmtspec)
-
-    if from_typ in common.ftypes:
-      return 'return nsimd_sub_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
-
-    if from_typ not in common.utypes:
-      raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
-
-    check_underflow = 'if ({in0}.v{{i}} < {in1}.v{{i}})'
-    assign_min = '{{{{ ret.v{{i}} = ({from_typ}){min}; }}}}'
-    assign_min_if_underflow = check_underflow + '\n' + assign_min
-    sub = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
-    assign_sub_if_ok = 'else ' + '\n' + sub
-
-    algo = assign_min_if_underflow + '\n' + \
-           assign_sub_if_ok
-
-    type_limits = common.limits[from_typ]
-    content = repeat_stmt(algo.format(**type_limits, **fmtspec), from_typ)
-
-    return '''nsimd_{simd_ext}_v{from_typ} ret;
-
-               {content}
-
-               return ret;'''.format(from_typ = from_typ, content = content, simd_ext=fmtspec['simd_ext'])
 
 # -----------------------------------------------------------------------------
 
@@ -743,41 +503,6 @@ def unzip(from_typ):
     '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-## shift right
-
-def shra(typ):
-    n = get_nb_el(typ)
-    content = ''
-    # Sign extension for a right shift has implementation-defined behaviour.
-    # To be sure it is performed, we do it manually.
-    content = '\n'.join('''\
-    /* -------------------------------------------- */
-    val.ival = {in0}.v{i};
-    if(val.ival < 0){{
-      sign.ival = -1;
-      sign.uval = (u{typnbits})(sign.uval << shift);
-    }} else {{
-      sign.uval = 0u;
-    }}
-    shifted = (u{typnbits})(val.uval >> {in1});
-    ret.v{i} = (i{typnbits}) (shifted | sign.uval);'''.\
-                    format(**fmtspec, i=i)for i in range(0, n))
-    if typ in common.utypes:
-        return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
-            format(**fmtspec)
-    else:
-        return '''\
-        nsimd_cpu_v{typ} ret;
-        const int shift = {typnbits} - {in1};
-        union {{i{typnbits} ival; u{typnbits} uval;}} val;
-        union {{i{typnbits} ival; u{typnbits} uval;}} sign;
-        u{typnbits} shifted;
-
-        {content}
-
-        return ret;'''.format(content=content, **fmtspec)
-
-# -----------------------------------------------------------------------------
 
 def get_impl(func, simd_ext, from_typ, to_typ=''):
 
@@ -821,25 +546,25 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'mul': lambda: op2('*', from_typ),
         'div': lambda: op2('/', from_typ),
         'sub': lambda: op2('-', from_typ),
-        'adds' : lambda: adds(from_typ),
-        'subs' : lambda: subs(from_typ),
-        'orb': lambda: bitwise2('|', from_typ),
+        'adds' : lambda: scalar_impl('adds', from_typ, 2),
+        'subs' : lambda: scalar_impl('subs', from_typ, 2),
+        'orb': lambda: scalar_impl('orb', from_typ, 2),
         'orl': lambda: lop2('|', from_typ),
-        'andb': lambda: bitwise2('&', from_typ),
-        'andnotb': lambda: andnot2(from_typ),
+        'andb': lambda: scalar_impl('andb', from_typ, 2),
+        'andnotb': lambda: scalar_impl('andnotb', from_typ, 2),
         'andnotl': lambda: landnot2(from_typ),
         'andl': lambda: lop2('&', from_typ),
-        'xorb': lambda: bitwise2('^', from_typ),
+        'xorb': lambda: scalar_impl('xorb', from_typ, 2),
         'xorl': lambda: lop2('^', from_typ),
-        'min': lambda: minmax2('min', from_typ),
-        'max': lambda: minmax2('max', from_typ),
-        'notb': lambda: not1(from_typ),
+        'min': lambda: scalar_impl('min', from_typ, 2),
+        'max': lambda: scalar_impl('max', from_typ, 2),
+        'notb': lambda: scalar_impl('notb', from_typ, 1),
         'notl': lambda: lnot1(from_typ),
-        'sqrt': lambda: libm_opn('sqrt', from_typ),
+        'sqrt': lambda: scalar_impl('sqrt', from_typ, 1),
         'set1': lambda: set1(from_typ),
-        'shr': lambda: bitwise1_param('>>', from_typ),
-        'shl': lambda: bitwise1_param('<<', from_typ),
-        'shra': lambda:shra(from_typ),
+        'shr': lambda: scalar_impl('shr', from_typ, 2),
+        'shl': lambda: scalar_impl('shl', from_typ, 2),
+        'shra': lambda: scalar_impl('shra', from_typ, 2),
         'eq': lambda: cmp2('==', from_typ),
         'ne': lambda: cmp2('!=', from_typ),
         'gt': lambda: cmp2('>', from_typ),
@@ -848,26 +573,26 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'le': lambda: cmp2('<=', from_typ),
         'len': lambda: len1(from_typ),
         'if_else1': lambda: if_else1(from_typ),
-        'abs': lambda: abs1(from_typ),
-        'fma': lambda: libm_opn('fma', from_typ),
-        'fnma': lambda: fma_fms('fnma', from_typ),
-        'fms': lambda: fma_fms('fms', from_typ),
-        'fnms': lambda: fma_fms('fnms', from_typ),
-        'ceil': lambda: libm_opn('ceil', from_typ),
-        'floor': lambda: libm_opn('floor', from_typ),
-        'trunc': lambda: libm_opn('trunc', from_typ),
-        'round_to_even': lambda: libm_opn('round_to_even', from_typ),
+        'abs': lambda: scalar_impl('abs', from_typ, 1),
+        'fma': lambda: scalar_impl('fma', from_typ, 3),
+        'fnma': lambda: scalar_impl('fnma', from_typ, 3),
+        'fms': lambda: scalar_impl('fms', from_typ, 3),
+        'fnms': lambda: scalar_impl('fnms', from_typ, 3),
+        'ceil': lambda: scalar_impl('ceil', from_typ, 1),
+        'floor': lambda: scalar_impl('floor', from_typ, 1),
+        'trunc': lambda: scalar_impl('trunc', from_typ, 1),
+        'round_to_even': lambda: scalar_impl('round_to_even', from_typ, 1),
         'all': lambda: all_any(from_typ, 'all'),
         'any': lambda: all_any(from_typ, 'any'),
         'reinterpret': lambda: reinterpret1(from_typ, to_typ),
         'reinterpretl': lambda: reinterpretl1(from_typ, to_typ),
         'cvt': lambda: convert1(from_typ, to_typ),
-        'rec11': lambda: rec_rec11(from_typ),
-        'rec8': lambda: rec_rec11(from_typ),
-        'rsqrt11': lambda: rsqrt11(from_typ),
-        'rsqrt8': lambda: rsqrt11(from_typ),
-        'rec': lambda: rec_rec11(from_typ),
-        'neg': lambda: neg1(from_typ),
+        'rec11': lambda: scalar_impl('rec11', from_typ, 1),
+        'rec8': lambda: scalar_impl('rec8', from_typ, 1),
+        'rsqrt11': lambda: scalar_impl('rsqrt11', from_typ, 1),
+        'rsqrt8': lambda: scalar_impl('rsqrt8', from_typ, 1),
+        'rec': lambda: scalar_impl('rec', from_typ, 1),
+        'neg': lambda: scalar_impl('neg', from_typ, 1),
         'nbtrue': lambda: nbtrue1(from_typ),
         'reverse': lambda: reverse1(from_typ),
         'addv': lambda: addv1(from_typ),

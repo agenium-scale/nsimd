@@ -21,719 +21,468 @@
 import os
 import operators
 import common
+import cuda
+import gen_scalar_utilities
+#import hip
 
 # -----------------------------------------------------------------------------
 
-def available(op):
-    if operators.DocShuffle in op.categories or \
-       operators.DocMisc in op.categories:
-        return False
-    if 'vx2' in op.params or 'vx3' in op.params or 'vx4' in op.params:
-        return False
-    if op.output_to in [common.OUTPUT_TO_UP_TYPES,
-                        common.OUTPUT_TO_DOWN_TYPES]:
-        return False
-    if op.load_store:
-        return False
-    return True
+def gen_doc(opts):
+    pass
+
+# -----------------------------------------------------------------------------
+
+def gen_tests_for_shifts(opts, t, operator):
+    op_name = operator.name
+    dirname = os.path.join(opts.tests_dir, 'modules', 'tet1d')
+    common.mkdir_p(dirname)
+    filename = os.path.join(dirname, '{}.{}.cpp'.format(op_name, t))
+    if not common.can_create_filename(opts, filename):
+        return
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+        '''#include <nsimd/modules/tet1d.hpp>
+        #include "common.hpp"
+
+        #if defined(NSIMD_CUDA)
+
+        #elif defined(NSIMD_HIP)
+
+        #else
+
+        void compute_result({t} *dst, {t} *tab0, unsigned int n, int s) {{
+          for (unsigned int i = 0; i < n; i++) {{
+            dst[i] = nsimd_scalar_{op_name}_{t}(tab0[i], s);
+          }}
+        }}
+
+        #endif
+
+        int main() {{
+          for (unsigned int n = 10; n < 10000000; n *= 2) {{
+            for (int s = 0; s < {typnbits}; s++) {{
+              int ret = 0;
+              {t} *tab0 = get123<{t}>(n);
+              {t} *ref = get000<{t}>(n);
+              {t} *out = get000<{t}>(n);
+              compute_result(ref, tab0, n, s);
+              tet1d::out(out) = tet1d::{op_name}(tet1d::in(tab0, n), s);
+              if (!cmp(ref, out, n)) {{
+                ret = -1;
+              }}
+              del(ref);
+              del(out);
+              del(tab0);
+              if (ret != 0) {{
+                return ret;
+              }}
+            }}
+          }}
+          return 0;
+        }}
+        '''.format(op_name=op_name, t=t, typnbits=t[1:]))
+
+def gen_tests_for(opts, t, tt, operator):
+    op_name = operator.name
+    dirname = os.path.join(opts.tests_dir, 'modules', 'tet1d')
+    common.mkdir_p(dirname)
+    filename = os.path.join(dirname, '{}.{}.cpp'.format(op_name,
+               t if t == tt else '{}_{}'.format(t, tt)))
+    if not common.can_create_filename(opts, filename):
+        return
+
+    if operator.params == ['l'] * len(operator.params):
+        random = ['get101', 'get110', 'get101']
+    else:
+        random = ['get123', 'get321', 'get123']
+
+    arity = len(operator.params[1:])
+    args_tabs = ', '.join(['{typ} *tab{i}'.format(typ=t, i=i) \
+                           for i in range(arity)])
+    args_tabs_call = ', '.join(['tab{i}'.format(i=i) \
+                                for i in range(arity)])
+    args_tabs_i_call = ', '.join(['tab{i}[i]'.format(i=i) \
+                                  for i in range(arity)])
+    args_in_tabs_call = ', '.join(['tet1d::in(tab{i}, n)'. \
+                                   format(i=i) \
+                                   for i in range(arity)])
+    fill_tabs = '\n'.join(['{typ} *tab{i} = {random}<{typ}>(n);'. \
+                           format(typ=t, i=i, random=random[i]) \
+                           for i in range(arity)])
+    del_tabs = '\n'.join(['del(tab{i});'.format(i=i) \
+                           for i in range(arity)])
+
+    if op_name == 'cvt':
+        tet1d_code = \
+            '''tet1d::out(out) = tet1d::cvt<{t}>(tet1d::cvt<{tt}>(
+                                     tet1d::in(tab0, n)));'''. \
+                                     format(t=t, tt=tt)
+        compute_result_kernel = \
+            '''dst[i] = nsimd_scalar_cvt_{t}_{tt}(nsimd_scalar_cvt_{tt}_{t}(
+                            tab0[i]));'''.format(t=t, tt=tt)
+    elif op_name == 'reinterpret':
+        tet1d_code = \
+            '''tet1d::out(out) = tet1d::reinterpret<{t}>(
+                                     tet1d::reinterpret<{tt}>(tet1d::in(
+                                         tab0, n)));'''.format(t=t, tt=tt)
+        compute_result_kernel = \
+            '''dst[i] = nsimd_scalar_reinterpret_{t}_{tt}(
+                            nsimd_scalar_reinterpret_{tt}_{t}(
+                                tab0[i]));'''.format(t=t, tt=tt)
+    elif op_name in ['to_mask', 'to_logical']:
+        tet1d_code = \
+            '''tet1d::out(out) = tet1d::to_mask(tet1d::to_logical(tet1d::in(
+                                     tab0, n)));'''
+        compute_result_kernel = \
+            '''dst[i] = nsimd_scalar_to_mask_{t}(
+                            nsimd_scalar_to_logical_{t}(tab0[i]));'''. \
+                            format(t=t)
+    elif operator.params == ['v'] * len(operator.params):
+        compute_result_kernel = \
+            'dst[i] = nsimd_scalar_{op_name}_{typ}({args_tabs_i_call});'. \
+            format(op_name=op_name, typ=t, args_tabs_i_call=args_tabs_i_call)
+        if operator.cxx_operator != None:
+            if len(operator.params[1:]) == 1:
+                tet1d_code = 'tet1d::out(out) = {cxx_op}tet1d::in(tab0, n);'. \
+                             format(cxx_op=operator.cxx_operator[8:])
+            else:
+                tet1d_code = 'tet1d::out(out) = tet1d::in(tab0, n) {cxx_op} ' \
+                             'tet1d::in(tab1, n);'. \
+                             format(cxx_op=operator.cxx_operator[8:])
+        else:
+            tet1d_code = \
+                'tet1d::out(out) = tet1d::{op_name}({args_in_tabs_call});'. \
+                format(op_name=op_name, args_in_tabs_call=args_in_tabs_call)
+    elif operator.params == ['l', 'v', 'v']:
+        if operator.cxx_operator != None:
+            cond = 'A {} B'.format(operator.cxx_operator[8:])
+        else:
+            cond = 'tet1d::{}(A, B)'.format(op_name)
+        tet1d_code = \
+            '''TET1D_OUT({typ}) Z = tet1d::out(out);
+               TET1D_IN({typ}) A = tet1d::in(tab0, n);
+               TET1D_IN({typ}) B = tet1d::in(tab1, n);
+               Z({cond}) = {typ}(1);'''.format(cond=cond, typ=t)
+        compute_result_kernel = \
+            '''if (nsimd_scalar_{op_name}_{typ}(tab0[i], tab1[i])) {{
+                 dst[i] = {typ}(1);
+               }} else {{
+                 dst[i] = {typ}(0);
+               }}'''.format(op_name=op_name, typ=t)
+    elif operator.params == ['l'] * len(operator.params):
+        if len(operator.params[1:]) == 1:
+            if operator.cxx_operator != None:
+                cond = '{}(A == 1)'.format(operator.cxx_operator[8:])
+            else:
+                cond = 'tet1d::{}(A)'.format(op_name)
+            tet1d_code = \
+                '''TET1D_OUT({typ}) Z = tet1d::out(out);
+                   TET1D_IN({typ}) A = tet1d::in(tab0, n);
+                   Z({cond}) = {typ}(1);'''.format(cond=cond, typ=t)
+            compute_result_kernel = \
+                '''if (nsimd_scalar_{op_name}(tab0[i] == {typ}(1))) {{
+                     dst[i] = {typ}(1);
+                   }} else {{
+                     dst[i] = {typ}(0);
+                   }}'''.format(op_name=op_name, typ=t)
+        if len(operator.params[1:]) == 2:
+            if operator.cxx_operator != None:
+                cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator[8:])
+            else:
+                cond = 'tet1d::{}(A, B)'.format(op_name)
+            tet1d_code = \
+                '''TET1D_OUT({typ}) Z = tet1d::out(out);
+                   TET1D_IN({typ}) A = tet1d::in(tab0, n);
+                   TET1D_IN({typ}) B = tet1d::in(tab1, n);
+                   Z({cond}) = {typ}(1);'''.format(cond=cond, typ=t)
+            compute_result_kernel = \
+                '''if (nsimd_scalar_{op_name}(tab0[i] == {typ}(1),
+                                              tab1[i] == {typ}(1))) {{
+                     dst[i] = {typ}(1);
+                   }} else {{
+                     dst[i] = {typ}(0);
+                   }}'''.format(op_name=op_name, typ=t)
+    else:
+        tet1d_code = ''
+        compute_result_kernel = ''
+        print('DEBUG: {}'.format(op_name))
+        #raise Exception('Unsupported operator: "{}"'.format(op_name))
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+        '''#include <nsimd/modules/tet1d.hpp>
+        #include "common.hpp"
+
+        #if defined(NSIMD_CUDA)
+
+        #elif defined(NSIMD_HIP)
+
+        #else
+
+        void compute_result({typ} *dst, {args_tabs},
+                            unsigned int n) {{
+          for (unsigned int i = 0; i < n; i++) {{
+            {compute_result_kernel}
+          }}
+        }}
+
+        #endif
+
+        int main() {{
+          for (unsigned int n = 10; n < 10000000; n *= 2) {{
+            int ret = 0;
+            {fill_tabs}
+            {typ} *ref = get000<{typ}>(n);
+            {typ} *out = get000<{typ}>(n);
+            compute_result(ref, {args_tabs_call}, n);
+            {tet1d_code}
+            if (!cmp(ref, out, n)) {{
+              ret = -1;
+            }}
+            del(ref);
+            del(out);
+            {del_tabs}
+            if (ret != 0) {{
+              return ret;
+            }}
+          }}
+          return 0;
+        }}
+        '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
+                   args_tabs_call=args_tabs_call,
+                   del_tabs=del_tabs, tet1d_code=tet1d_code,
+                   compute_result_kernel=compute_result_kernel))
+
+    common.clang_format(opts, filename)
+
+def gen_tests(opts):
+    for _, operator in operators.operators.items():
+        if not operator.has_scalar_impl:
+            continue
+
+        not_closed = (operator.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES \
+                      or ('v' not in operator.params[1:] and 'l' not in
+                      operator.params[1:]))
+
+        for t in operator.types:
+
+            tts = common.get_output_types(t, operator.output_to)
+
+            for tt in tts:
+                if operator.name in ['shl', 'shr', 'shra']:
+                    gen_tests_for_shifts(opts, t, operator)
+                else:
+                    gen_tests_for(opts, tt, t, operator)
+
+# -----------------------------------------------------------------------------
+
+def gen_functions(opts):
+    functions = ''
+
+    for op_name, operator in operators.operators.items():
+        if not operator.has_scalar_impl:
+            continue
+
+        not_closed = (operator.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES \
+                      or ('v' not in operator.params[1:] and 'l' not in
+                      operator.params[1:]))
+        not_closed_tmpl_args = 'typename ToType, ' if not_closed else ''
+        not_closed_tmpl_params = 'ToType' if not_closed else 'none_t'
+
+        if op_name in ['shl', 'shr', 'shra']:
+            tmpl_args = 'typename Left'
+            tmpl_params = 'Left, none_t, none_t'
+            size = 'return left.size();'
+            args = 'Left const &left, int s'
+            members = 'Left left; int s;'
+            members_assignment = 'ret.left = to_node(left); ret.s = s;'
+            to_node_type = 'typename to_node_t<Left>::type, none_t, none_t'
+        elif len(operator.params) == 2:
+            tmpl_args = not_closed_tmpl_args + 'typename Left'
+            tmpl_params = 'Left, none_t, ' + not_closed_tmpl_params
+            size = 'return left.size();'
+            args = 'Left const &left'
+            members = 'Left left;'
+            members_assignment = 'ret.left = to_node(left);'
+            to_node_type = 'typename to_node_t<Left>::type, none_t, none_t'
+        elif len(operator.params) == 3:
+            tmpl_args = 'typename Left, typename Right'
+            tmpl_params = 'Left, Right, none_t'
+            size = 'return compute_size(left.size(), right.size());'
+            args = 'Left const &left, Right const &right'
+            members = 'Left left;\nRight right;'
+            members_assignment = '''ret.left = to_node(left);
+                                    ret.right = to_node(right);'''
+            to_node_type = 'typename to_node_t<Left>::type, ' \
+                           'typename to_node_t<Right>::type, none_t'
+        elif len(operator.params) == 4:
+            tmpl_args = 'typename Left, typename Right, typename Extra'
+            tmpl_params = 'Left, Right, Extra'
+            size = \
+            'return compute_size(left.size(), right.size(), extra.size());'
+            args = 'Left const &left, Right const &right, Extra const &extra'
+            members = 'Left left;\nRight right;\nExtra extra;'
+            members_assignment = '''ret.left = to_node(left);
+                                    ret.right = to_node(right);
+                                    ret.extra = to_node(extra);'''
+            to_node_type = 'typename to_node_t<Left>::type, ' \
+                           'typename to_node_t<Right>::type, ' \
+                           'typename to_node_t<Extra>::type'
+
+        if operator.returns == 'v':
+            to_pack = 'to_pack_t'
+            return_type = 'out_type'
+        else:
+            to_pack = 'to_packl_t'
+            return_type = 'bool'
+
+        if not_closed:
+            to_typ_arg = 'out_type(), '
+            to_typ_tmpl_arg = '<typename {to_pack}<out_type, Pack>::type>'. \
+                              format(to_pack=to_pack)
+            in_out_typedefs = '''typedef typename Left::out_type in_type;
+                                 typedef ToType out_type;'''
+            to_node_type = 'typename to_node_t<Left>::type, none_t, ToType'
+        else:
+            to_typ_arg = '' if op_name != 'to_mask' else 'out_type(), '
+            to_typ_tmpl_arg = ''
+            in_out_typedefs = '''typedef typename Left::out_type in_type;
+                                 typedef typename Left::out_type out_type;'''
+
+        impl_args = 'left.{cpu_gpu}_get{tmpl}(i)'
+        if (len(operator.params[1:]) >= 2):
+            if operator.params[2] == 'p':
+                impl_args += ', s'
+            else:
+                impl_args += ', right.{cpu_gpu}_get{tmpl}(i)'
+        if (len(operator.params[1:]) >= 3):
+            impl_args += ', extra.{cpu_gpu}_get{tmpl}(i)'
+
+        impl_scalar = 'return nsimd::scalar_{}({}{});'. \
+                      format(op_name, to_typ_arg,
+                             impl_args.format(cpu_gpu='scalar', tmpl=''))
+
+        impl_simd = 'return nsimd::{}{}({});'. \
+                      format(op_name, to_typ_tmpl_arg,
+                             impl_args.format(cpu_gpu='template simd',
+                                              tmpl='<Pack>'))
+
+        functions += \
+        '''struct {op_name}_t {{}};
+
+        template <{tmpl_args}>
+        struct node<{op_name}_t, {tmpl_params}> {{
+          {in_out_typedefs}
+
+          {members}
+
+          nsimd::nat size() const {{
+            {size}
+          }}
+
+        #if defined(NSIMD_CUDA)
+          __device__ {return_type} gpu_get(nsimd:: nat i) const {{
+            {impl_cuda}
+          }}
+        #elif defined(NSIMD_HIP)
+          __device__ {return_type} gpu_get(nsimd:: nat i) const {{
+            {impl_hip}
+          }}
+        #else
+          {return_type} scalar_get(nsimd::nat i) const {{
+            {impl_scalar}
+          }}
+          template <typename Pack> typename {to_pack}<out_type, Pack>::type
+          simd_get(nsimd::nat i) const {{
+            {impl_simd}
+          }}
+        #endif
+        }};
+
+        template<{tmpl_args}>
+        node<{op_name}_t, {to_node_type}> {op_name}({args}) {{
+          node<{op_name}_t, {to_node_type}> ret;
+          {members_assignment}
+          return ret;
+        }}'''.format(op_name=op_name, tmpl_args=tmpl_args, size=size,
+                     tmpl_params=tmpl_params, return_type=return_type,
+                     args=args, to_pack=to_pack, to_node_type=to_node_type,
+                     members=members, members_assignment=members_assignment,
+                     in_out_typedefs=in_out_typedefs,
+                     impl_cuda='',
+                     impl_hip='',
+                     impl_scalar=impl_scalar,
+                     impl_simd=impl_simd)
+
+        if operator.cxx_operator != None and len(operator.params) == 2:
+            functions += \
+            '''
+            template <typename Op, typename Left, typename Right,
+                      typename Extra>
+            node<{op_name}_t, node<Op, Left, Right, Extra>, none_t, none_t>
+            {cxx_operator}(node<Op, Left, Right, Extra> const &node) {{
+              return tet1d::{op_name}(node);
+            }}'''.format(op_name=op_name,
+                         cxx_operator=operator.cxx_operator);
+        if operator.cxx_operator != None and len(operator.params) == 3:
+            functions += '''
+
+            template <typename Op, typename Left, typename Right,
+                      typename Extra, typename T>
+            node<{op_name}_t, node<Op, Left, Right, Extra>,
+                 node<scalar_t, none_t, none_t,
+                      typename node<Op, Left, Right, Extra>::in_type>, none_t>
+            {cxx_operator}(node<Op, Left, Right, Extra> const &node, T a) {{
+              typedef typename node<Op, Left, Right, Extra>::in_type S;
+              return tet1d::{op_name}(node, S(a));
+            }}
+
+            template <typename T, typename Op, typename Left, typename Right,
+                      typename Extra>
+            node<{op_name}_t, node<scalar_t, none_t, none_t,
+                              typename node<Op, Left, Right, Extra>::in_type>,
+                 node<Op, Left, Right, Extra>, none_t>
+            {cxx_operator}(T a, node<Op, Left, Right, Extra> const &node) {{
+              typedef typename node<Op, Left, Right, Extra>::in_type S;
+              return tet1d::{op_name}(S(a), node);
+            }}
+
+            template <typename LeftOp, typename LeftLeft, typename LeftRight,
+                      typename LeftExtra, typename RightOp, typename RightLeft,
+                      typename RightRight, typename RightExtra>
+            node<{op_name}_t, node<LeftOp, LeftLeft, LeftRight, LeftExtra>,
+                              node<RightOp, RightLeft, RightRight, RightExtra>,
+                 none_t>
+            {cxx_operator}(node<LeftOp, LeftLeft, LeftRight,
+                                LeftExtra> const &left,
+                           node<RightOp, RightLeft, RightRight,
+                                RightExtra> const &right) {{
+              return tet1d::{op_name}(left, right);
+            }}'''.format(op_name=op_name,
+                         cxx_operator=operator.cxx_operator);
+
+        functions += '\n\n{}\n\n'.format(common.hbar)
+
+    # Write the code to file
+    dirname = os.path.join(opts.include_dir, 'modules', 'tet1d')
+    common.mkdir_p(dirname)
+    filename = os.path.join(dirname, 'functions.hpp')
+    if not common.can_create_filename(opts, filename):
+        return
+    with common.open_utf8(opts, filename) as out:
+        out.write('#ifndef NSIMD_MODULES_TET1D_FUNCTIONS_HPP\n')
+        out.write('#define NSIMD_MODULES_TET1D_FUNCTIONS_HPP\n\n')
+        out.write('namespace tet1d {\n\n')
+        out.write('{}\n\n'.format(common.hbar))
+        out.write(functions)
+        out.write('} // namespace tet1d\n\n')
+        out.write('#endif\n')
+    common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
 
 def doit(opts):
     print('-- Generating module tet1d')
-
-    # Generate code and tests
-    code = ''
-    for op_name, operator in operators.operators.items():
-        if not available(operator):
-            continue
-
-        print('-- ', op_name, operator.signature)
-
-        continue
-        # Generate code
-        if (operator.params == ['v', 'v']):
-            code += \
-            '''// {op_name}
-
-            struct {op_name}_t;
-
-            template <typename A>
-            struct op1_result_type_t<tet1d::{op_name}_t, A>
-            {{
-              typedef A result_type;
-              typedef A simd_pack_type; // TODO: Clean it
-            }};
-
-            struct {op_name}_t
-            {{
-              template <typename A>
-              typename tet1d::op1_result_type_t<tet1d::{op_name}_t, A>::result_type eval_scalar(A const & a) const {{
-                {op_scalar_impl}
-              }}
-
-              template <typename A>
-              typename tet1d::op1_result_type_t<tet1d::{op_name}_t, A>::simd_pack_type eval_simd_i(A const & a) const {{
-                return nsimd::{op_name}(a);
-              }}
-
-              #ifdef NSIMD_IS_NVCC
-              template <typename A>
-              __device__ typename tet1d::op1_result_type_t<tet1d::{op_name}_t, A>::result_type eval_cuda_i(A const & a) const {{
-                {op_cuda_impl}
-              }}
-              #endif
-            }};
-
-            template <typename A>
-            tet1d::op1_t<tet1d::{op_name}_t, A> {op_name}(A const & a)
-            {{
-              return tet1d::op1_t<tet1d::{op_name}_t, A>(tet1d::{op_name}_t(), a);
-            }};
-
-                '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name], op_cuda_impl=cuda_impl[op_name])
-#        if (operator.cxx_operator != None):
-#          code += '''template <typename A>
-#                     tet1d::op1_t<tet1d::{op_name}_t, A> {op_cxx_op}(A const & a)
-#                     {{
-#                       return tet1d::{op_name}(a);
-#                     }};
-#
-#                  '''.format(op_name=op_name, op_cxx_op=operator.cxx_operator)
-#      if (operator.params == ['v', 'v', 'v']):
-#        code += '''// {op_name}
-#
-#                   struct {op_name}_t;
-#
-#                   template <typename A0, typename A1>
-#                   struct op2_result_type_t<tet1d::{op_name}_t, A0, A1>
-#                   {{
-#                     typedef typename tet1d::common_type<A0, A1>::result_type result_type;
-#                     typedef typename tet1d::common_type<A0, A1>::result_type simd_pack_type; // TODO: Clean it
-#                   }};
-#
-#                   struct {op_name}_t
-#                   {{
-#                     template <typename A0, typename A1>
-#                     typename tet1d::op2_result_type_t<tet1d::{op_name}_t, A0, A1>::result_type eval_scalar(A0 const & a0, A1 const & a1) const {{
-#                       {op_scalar_impl}
-#                     }}
-#
-#                     template <typename A0, typename A1>
-#                     typename tet1d::op2_result_type_t<tet1d::{op_name}_t, A0, A1>::simd_pack_type eval_simd_i(A0 const & a0, A1 const & a1) const {{
-#                       return nsimd::{op_name}(a0, a1);
-#                     }}
-#
-#                     #ifdef NSIMD_IS_NVCC
-#                     template <typename A0, typename A1>
-#                     __device__ typename tet1d::op2_result_type_t<tet1d::{op_name}_t, A0, A1>::result_type eval_cuda_i(A0 const & a0, A1 const & a1) const {{
-#                       {op_cuda_impl}
-#                     }}
-#                     #endif
-#                   }};
-#
-#                   template <typename A0, typename A1>
-#                   tet1d::op2_t<tet1d::{op_name}_t, A0, A1> {op_name}(A0 const & a0, A1 const & a1)
-#                   {{
-#                     return tet1d::op2_t<tet1d::{op_name}_t, A0, A1>(tet1d::{op_name}_t(), a0, a1);
-#                   }};
-#
-#                '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name], op_cuda_impl=cuda_impl[op_name])
-#        if (operator.cxx_operator != None):
-#          code += '''template <typename A0, typename A1>
-#                     tet1d::op2_t<tet1d::{op_name}_t, A0, A1> {op_cxx_op}(A0 const & a0, A1 const & a1)
-#                     {{
-#                       return tet1d::{op_name}(a0, a1);
-#                     }};
-#
-#                  '''.format(op_name=op_name, op_cxx_op=operator.cxx_operator)
-#      if (operator.params == ['v', 'v', 'v', 'v']):
-#        code += '''// {op_name}
-#
-#                   struct {op_name}_t;
-#
-#                   template <typename A0, typename A1, typename A2>
-#                   struct op3_result_type_t<tet1d::{op_name}_t, A0, A1, A2>
-#                   {{
-#                     typedef typename tet1d::common_type<typename tet1d::common_type<A0, A1>::result_type, A2>::result_type result_type;
-#                     typedef typename tet1d::common_type<typename tet1d::common_type<A0, A1>::result_type, A2>::result_type simd_pack_type; // TODO: Clean it
-#                   }};
-#
-#                   struct {op_name}_t
-#                   {{
-#                     template <typename A0, typename A1, typename A2>
-#                     typename tet1d::op3_result_type_t<tet1d::{op_name}_t, A0, A1, A2>::result_type eval_scalar(A0 const & a0, A1 const & a1, A2 const & a2) const {{
-#                       {op_scalar_impl}
-#                     }}
-#
-#                     template <typename A0, typename A1, typename A2>
-#                     typename tet1d::op3_result_type_t<tet1d::{op_name}_t, A0, A1, A2>::simd_pack_type eval_simd_i(A0 const & a0, A1 const & a1, A2 const & a2) const {{
-#                       return nsimd::{op_name}(a0, a1, a2);
-#                     }}
-#
-#                     #ifdef NSIMD_IS_NVCC
-#                     template <typename A0, typename A1, typename A2>
-#                     __device__ typename tet1d::op3_result_type_t<tet1d::{op_name}_t, A0, A1, A2>::result_type eval_cuda_i(A0 const & a0, A1 const & a1, A2 const & a2) const {{
-#                       {op_cuda_impl}
-#                     }}
-#                     #endif
-#                   }};
-#
-#                   template <typename A0, typename A1, typename A2>
-#                   tet1d::op3_t<tet1d::{op_name}_t, A0, A1, A2> {op_name}(A0 const & a0, A1 const & a1, A2 const & a2)
-#                   {{
-#                     return tet1d::op3_t<tet1d::{op_name}_t, A0, A1, A2>(tet1d::{op_name}_t(), a0, a1, a2);
-#                   }};
-#
-#                '''.format(op_name=op_name, op_scalar_impl=scalar_impl[op_name], op_cuda_impl=cuda_impl[op_name])
-#
-#      # Generate the test
-#      for element_type in operator.types:
-#        if element_type == 'f16': continue # TODO
-#        test_header = '''#include <nsimd/modules/tet1d.hpp>
-#
-#                         #include <algorithm>
-#                         #include <ctime>
-#                         #include <iostream>
-#                         #include <vector>
-#
-#                         template <typename C>
-#                         void print_container(std::string const & header, C const & c, std::string const & footer) {
-#                           std::cout << header << "{";
-#                           for (size_t i = 0; i < c.size(); ++i) {
-#                             std::cout << " " << c[i];
-#                           }
-#                           std::cout << " }" << footer;
-#                         }
-#
-#                         template <typename T>
-#                         T rand_int(T const a, T const b) {
-#                          // https://stackoverflow.com/questions/5008804/generating-random-integer-from-a-range
-#                          return a + (rand() % (a - b + 1));
-#                         }
-#
-#                         template <typename T>
-#                         T rand_float(T const a, T const b) {
-#                           // https://stackoverflow.com/questions/686353/random-float-number-generation
-#                          return a + T(rand()) / (T(RAND_MAX) / (b - a));
-#                         }
-#
-#                         struct compare_float_t {
-#                           template <typename T>
-#                           bool operator()(T const a, T const b) const {
-#                             return std::abs(a - b) < T(0.0002);
-#                           }
-#                         };
-#
-#                         template <typename V0, typename V1, typename Fct>
-#                         int compare_vector( std::string const & title
-#                                           , std::string const & v0_name, V0 const & v0
-#                                           , std::string const & v1_name, V1 const & v1
-#                                           , Fct const & fct) {
-#                           if (v0.size() != v1.size() ||
-#                               std::equal(v0.begin(), v0.end(), v1.begin(), fct) == false) {
-#                             std::cout << "ERROR: " << title <<  ": vectors are not the same:" << std::endl;
-#                             print_container("- " + v0_name + ":\\n  ", v0, "\\n");
-#                             print_container("- " + v1_name + ":\\n  ", v1, "\\n");
-#                             return 1;
-#                           }
-#                           return 0;
-#                         }
-#
-#                         template <typename V0, typename V1>
-#                         int compare_vector( std::string const & title
-#                                           , std::string const & v0_name, V0 const & v0
-#                                           , std::string const & v1_name, V1 const & v1) {
-#                           return compare_vector(title, v0_name, v0, v1_name, v1, std::equal_to<typename V0::value_type>());
-#                         }
-#
-#                       int main() {
-#                         std::srand(std::time(0));
-#                         int r = 0;
-#                         size_t N = 16;
-#
-#                     '''
-#        test_cpp = ''
-#        test_cu = ''
-#        rand_fct = ''
-#        compare_fct = ''
-#        if element_type == 'f32':
-#          rand_fct = 'rand_float(1.0f, 42.0f)'
-#          compare_fct = ', compare_float_t()'
-#        elif element_type == 'f64':
-#          rand_fct = 'rand_float(1.0, 42.0)'
-#          compare_fct = ', compare_float_t()'
-#        else:
-#          rand_fct = 'rand_int(' + element_type + '(1), ' + element_type + '(42))'
-#        if (operator.params == ['v', 'v']):
-#          test_common = '''std::vector<{T}, nsimd::allocator<{T}> > v(N);
-#
-#                           for (size_t i = 0; i < v.size(); ++i) {{
-#                             v[i] = {rand_fct};
-#                           }}
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop(N);
-#
-#                           for (size_t i = 0; i < r_loop.size(); ++i) {{
-#                             struct scalar_impl_t {{
-#                               {T} operator()({T} const & a) {{
-#                                 {op_scalar_impl}
-#                               }}
-#                             }};
-#                             r_loop[i] = scalar_impl_t()(v[i]);
-#                           }}
-#
-#                           std::vector<{T}> r_scalar(N);
-#
-#                           tet1d::out(r_scalar, tet1d::Scalar) = tet1d::{op_name}(tet1d::in(v));
-#                           r += compare_vector("{T}", "r_scalar", r_scalar, "r_loop", r_loop {compare_fct});
-#
-#                        '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          test_cpp += test_common
-#          test_cpp += '''std::vector<{T}, nsimd::allocator<{T}> > r_simd(N);
-#
-#                         tet1d::out(r_simd, tet1d::Simd) = tet1d::{op_name}(tet1d::in(v));
-#                         r += compare_vector("{T}", "r_simd", r_simd, "r_loop", r_loop {compare_fct});
-#
-#                      '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          test_cu += test_common
-#          test_cu += '''std::vector<{T}, nsimd::cuda_allocator<{T}> > v_cuda(N);
-#                        if (cudaMemcpy(v_cuda.data(), v.data(), N * sizeof({T}), cudaMemcpyHostToDevice) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda(N);
-#
-#                        tet1d::out(r_cuda, tet1d::Cuda) = tet1d::{op_name}(tet1d::in(v_cuda));
-#                        std::vector<{T}> r_cuda_host(N);
-#                        if (cudaMemcpy(r_cuda_host.data(), r_cuda.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host", r_cuda_host, "r_loop", r_loop {compare_fct});
-#
-#                     '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          if (operator.cxx_operator != None):
-#            test_common = '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_op(N);
-#
-#                             tet1d::out(r_scalar_op, tet1d::Simd) = {op_cxx_op}tet1d::in(v);
-#                             r += compare_vector("{T}", "r_scalar_op", r_scalar_op, "r_loop", r_loop {compare_fct});
-#
-#                          '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
-#            test_cpp += test_common
-#            test_cpp += '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_op(N);
-#
-#                           tet1d::out(r_simd_op, tet1d::Simd) = {op_cxx_op}tet1d::in(v);
-#                           r += compare_vector("{T}", "r_simd_op", r_simd_op, "r_loop", r_loop {compare_fct});
-#
-#                        '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
-#            test_cu += test_common
-#            test_cu += '''std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_op(N);
-#
-#                           tet1d::out(r_cuda_op, tet1d::Cuda) = {op_cxx_op}tet1d::in(v_cuda);
-#                           std::vector<{T}> r_cuda_op_host(N);
-#                           if (cudaMemcpy(r_cuda_op_host.data(), r_cuda_op.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                             throw std::runtime_error("cudaMemcpy fails");
-#                           }}
-#                           r += compare_vector("{T}", "r_cuda_op_host", r_cuda_op_host, "r_loop", r_loop {compare_fct});
-#
-#                        '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
-#        elif (operator.params == ['v', 'v', 'v']):
-#          write_test = True
-#          test_common = '''std::vector<{T}/*, nsimd::allocator<{T}> */> v0(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> v1(N);
-#                           {T} s0 = {rand_fct};
-#
-#                           for (size_t i = 0; i < v0.size(); ++i) {{
-#                             v0[i] = {rand_fct};
-#                             v1[i] = {rand_fct};
-#                           }}
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_v0_s0(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_s0_v0(N);
-#
-#                           for (size_t i = 0; i < r_loop.size(); ++i) {{
-#                             struct scalar_impl_t {{
-#                               {T} operator()({T} const & a0, {T} const & a1) {{
-#                                 {op_scalar_impl}
-#                               }}
-#                             }};
-#                             r_loop[i] = scalar_impl_t()(v0[i], v1[i]);
-#                             r_loop_v0_s0[i] = scalar_impl_t()(v0[i], s0);
-#                             r_loop_s0_v0[i] = scalar_impl_t()(s0, v0[i]);
-#                           }}
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar(N);
-#                           tet1d::out(r_scalar, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1));
-#                           r += compare_vector("{T}", "r_scalar", r_scalar, "r_loop", r_loop {compare_fct});
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_v0_s0(N);
-#                           tet1d::out(r_scalar_v0_s0, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(v0), tet1d::in(s0));
-#                           r += compare_vector("{T}", "r_scalar_v0_s0", r_scalar_v0_s0, "r_loop_v0_s0", r_loop_v0_s0 {compare_fct});
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_s0_v0(N);
-#                           tet1d::out(r_scalar_s0_v0, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0));
-#                           r += compare_vector("{T}", "r_scalar_s0_v0", r_scalar_s0_v0, "r_loop_s0_v0", r_loop_s0_v0 {compare_fct});
-#
-#                        '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          test_cpp += test_common
-#          test_cpp += '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_v0_s0(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_s0_v0(N);
-#
-#                         tet1d::out(r_simd, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1));
-#                         r += compare_vector("{T}", "r_simd", r_simd, "r_loop", r_loop {compare_fct});
-#
-#                         tet1d::out(r_simd_v0_s0, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(v0), tet1d::in(s0));
-#                         r += compare_vector("{T}", "r_simd_v0_s0", r_simd_v0_s0, "r_loop_v0_s0", r_loop_v0_s0 {compare_fct});
-#
-#                         tet1d::out(r_simd_s0_v0, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0));
-#                         r += compare_vector("{T}", "r_simd_s0_v0", r_simd_s0_v0, "r_loop_s0_v0", r_loop_s0_v0 {compare_fct});
-#
-#                      '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          test_cu += test_common
-#          test_cu += '''std::vector<{T}, nsimd::cuda_allocator<{T}> > v0_cuda(N);
-#                        if (cudaMemcpy(v0_cuda.data(), v0.data(), N * sizeof({T}), cudaMemcpyHostToDevice) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > v1_cuda(N);
-#                        if (cudaMemcpy(v1_cuda.data(), v1.data(), N * sizeof({T}), cudaMemcpyHostToDevice) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_v0_s0(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_s0_v0(N);
-#
-#                        tet1d::out(r_cuda, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(v0_cuda), tet1d::in(v1_cuda));
-#                        std::vector<{T}> r_cuda_host(N);
-#                        if (cudaMemcpy(r_cuda_host.data(), r_cuda.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host", r_cuda_host, "r_loop", r_loop {compare_fct});
-#
-#                        tet1d::out(r_cuda_v0_s0, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(v0_cuda), tet1d::in(s0));
-#                        std::vector<{T}> r_cuda_host_v0_s0(N);
-#                        if (cudaMemcpy(r_cuda_host_v0_s0.data(), r_cuda_v0_s0.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_v0_s0", r_cuda_host_v0_s0, "r_loop_v0_s0", r_loop_v0_s0 {compare_fct});
-#
-#                        tet1d::out(r_cuda_s0_v0, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0_cuda));
-#                        std::vector<{T}> r_cuda_host_s0_v0(N);
-#                        if (cudaMemcpy(r_cuda_host_s0_v0.data(), r_cuda_s0_v0.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_s0_v0", r_cuda_host_s0_v0, "r_loop_s0_v0", r_loop_s0_v0 {compare_fct});
-#
-#                     '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          if (operator.cxx_operator != None):
-#            test_common = '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_op(N);
-#                             std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_op_v0_s0(N);
-#                             std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_op_s0_v0(N);
-#
-#                             tet1d::out(r_scalar_op, tet1d::Scalar) =
-#                               tet1d::in(v0) {op_cxx_op} tet1d::in(v1);
-#                             r += compare_vector("{T}", "r_scalar_op", r_scalar_op, "r_loop", r_loop {compare_fct});
-#
-#                             tet1d::out(r_scalar_op_v0_s0, tet1d::Scalar) =
-#                               tet1d::in(v0) {op_cxx_op} tet1d::in(s0);
-#                             r += compare_vector("{T}", "r_scalar_op_v0_s0", r_scalar_op_v0_s0, "r_loop_v0_s0", r_loop_v0_s0 {compare_fct});
-#
-#                             tet1d::out(r_scalar_op_s0_v0, tet1d::Scalar) =
-#                               tet1d::in(s0) {op_cxx_op} tet1d::in(v0);
-#                             r += compare_vector("{T}", "r_scalar_op_s0_v0", r_scalar_op_s0_v0, "r_loop_s0_v0", r_loop_s0_v0 {compare_fct});
-#
-#                          '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
-#            test_cpp += test_common
-#            test_cpp += '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_op(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_op_v0_s0(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_op_s0_v0(N);
-#
-#                           tet1d::out(r_simd_op, tet1d::Simd) =
-#                             tet1d::in(v0) {op_cxx_op} tet1d::in(v1);
-#                           r += compare_vector("{T}", "r_simd_op", r_simd_op, "r_loop", r_loop {compare_fct});
-#
-#                           tet1d::out(r_simd_op_v0_s0, tet1d::Simd) =
-#                             tet1d::in(v0) {op_cxx_op} tet1d::in(s0);
-#                           r += compare_vector("{T}", "r_simd_op_v0_s0", r_simd_op_v0_s0, "r_loop_v0_s0", r_loop_v0_s0 {compare_fct});
-#
-#                           tet1d::out(r_simd_op_s0_v0, tet1d::Simd) =
-#                             tet1d::in(s0) {op_cxx_op} tet1d::in(v0);
-#                           r += compare_vector("{T}", "r_simd_op_s0_v0", r_simd_op_s0_v0, "r_loop_s0_v0", r_loop_s0_v0 {compare_fct});
-#
-#                        '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
-#            test_cu += test_common
-#            test_cu += '''std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_op(N);
-#                          std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_op_v0_s0(N);
-#                          std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_op_s0_v0(N);
-#
-#                          tet1d::out(r_cuda_op, tet1d::Cuda) =
-#                            tet1d::in(v0_cuda) {op_cxx_op} tet1d::in(v1_cuda);
-#                          std::vector<{T}> r_cuda_op_host(N);
-#                          if (cudaMemcpy(r_cuda_op_host.data(), r_cuda_op.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                            throw std::runtime_error("cudaMemcpy fails");
-#                          }}
-#                          r += compare_vector("{T}", "r_cuda_op_host", r_cuda_op_host, "r_loop", r_loop {compare_fct});
-#
-#                          tet1d::out(r_cuda_op_v0_s0, tet1d::Cuda) =
-#                            tet1d::in(v0_cuda) {op_cxx_op} tet1d::in(s0);
-#                          std::vector<{T}> r_cuda_op_host_v0_s0(N);
-#                          if (cudaMemcpy(r_cuda_op_host_v0_s0.data(), r_cuda_op_v0_s0.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                            throw std::runtime_error("cudaMemcpy fails");
-#                          }}
-#                          r += compare_vector("{T}", "r_cuda_op_host_v0_s0", r_cuda_op_host_v0_s0, "r_loop_v0_s0", r_loop_v0_s0 {compare_fct});
-#
-#                          tet1d::out(r_cuda_op_s0_v0, tet1d::Cuda) =
-#                            tet1d::in(s0) {op_cxx_op} tet1d::in(v0_cuda);
-#                          std::vector<{T}> r_cuda_op_host_s0_v0(N);
-#                          if (cudaMemcpy(r_cuda_op_host_s0_v0.data(), r_cuda_op_s0_v0.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                            throw std::runtime_error("cudaMemcpy fails");
-#                          }}
-#                          r += compare_vector("{T}", "r_cuda_op_host_s0_v0", r_cuda_op_host_s0_v0, "r_loop_s0_v0", r_loop_s0_v0 {compare_fct});
-#
-#                       '''.format(T=element_type, compare_fct=compare_fct, op_cxx_op=operator.cxx_operator[8:] if operator.cxx_operator.startswith('operator') else operator.cxx_operator[8:])
-#        elif (operator.params == ['v', 'v', 'v', 'v']):
-#          write_test = True
-#          test_common = '''std::vector<{T}/*, nsimd::allocator<{T}> */> v0(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> v1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> v2(N);
-#                           {T} s0 = {rand_fct};
-#                           {T} s1 = {rand_fct};
-#
-#                           for (size_t i = 0; i < v0.size(); ++i) {{
-#                             v0[i] = {rand_fct};
-#                             v1[i] = {rand_fct};
-#                             v2[i] = {rand_fct};
-#                           }}
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_v0_v1_s0(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_v0_s0_v1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_s0_v0_v1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_v0_s0_s1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_s0_v0_s1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_loop_s0_s1_v0(N);
-#
-#                           for (size_t i = 0; i < r_loop.size(); ++i) {{
-#                             struct scalar_impl_t {{
-#                               {T} operator()({T} const & a0, {T} const & a1, {T} const & a2) {{
-#                                 {op_scalar_impl}
-#                               }}
-#                             }};
-#                             r_loop[i] = scalar_impl_t()(v0[i], v1[i], v2[i]);
-#                             r_loop_v0_v1_s0[i] = scalar_impl_t()(v0[i], v1[i], s0);
-#                             r_loop_v0_s0_v1[i] = scalar_impl_t()(v0[i], s0, v1[i]);
-#                             r_loop_s0_v0_v1[i] = scalar_impl_t()(s0, v0[i], v1[i]);
-#                             r_loop_v0_s0_v1[i] = scalar_impl_t()(v0[i], s0, v1[i]);
-#                             r_loop_v0_s0_s1[i] = scalar_impl_t()(v0[i], s0, s1);
-#                             r_loop_s0_v0_s1[i] = scalar_impl_t()(s0, v0[i], s1);
-#                             r_loop_s0_s1_v0[i] = scalar_impl_t()(s0, s1, v0[i]);
-#                           }}
-#
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_v0_v1_s0(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_v0_s0_v1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_s0_v0_v1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_v0_s0_s1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_s0_v0_s1(N);
-#                           std::vector<{T}/*, nsimd::allocator<{T}> */> r_scalar_s0_s1_v0(N);
-#
-#                           tet1d::out(r_scalar, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1), tet1d::in(v2));
-#                           r += compare_vector("{T}", "r_scalar", r_scalar, "r_loop", r_loop {compare_fct});
-#
-#                           tet1d::out(r_scalar_v0_v1_s0, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1), tet1d::in(s0));
-#                           r += compare_vector("{T}", "r_scalar_v0_v1_s0", r_scalar_v0_v1_s0, "r_loop_v0_v1_s0", r_loop_v0_v1_s0 {compare_fct});
-#
-#                           tet1d::out(r_scalar_v0_s0_v1, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(v0), tet1d::in(s0), tet1d::in(v1));
-#                           r += compare_vector("{T}", "r_scalar_v0_s0_v1", r_scalar_v0_s0_v1, "r_loop_v0_s0_v1", r_loop_v0_s0_v1 {compare_fct});
-#
-#                           tet1d::out(r_scalar_s0_v0_v1, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0), tet1d::in(v1));
-#                           r += compare_vector("{T}", "r_scalar_s0_v0_v1", r_scalar_s0_v0_v1, "r_loop_s0_v0_v1", r_loop_s0_v0_v1 {compare_fct});
-#
-#                           tet1d::out(r_scalar_v0_s0_s1, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(v0), tet1d::in(s0), tet1d::in(s1));
-#                           r += compare_vector("{T}", "r_scalar_v0_s0_s1", r_scalar_v0_s0_s1, "r_loop_v0_s0_s1", r_loop_v0_s0_s1 {compare_fct});
-#
-#                           tet1d::out(r_scalar_s0_v0_s1, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0), tet1d::in(s1));
-#                           r += compare_vector("{T}", "r_scalar_s0_v0_s1", r_scalar_s0_v0_s1, "r_loop_s0_v0_s1", r_loop_s0_v0_s1 {compare_fct});
-#
-#                           tet1d::out(r_scalar_s0_s1_v0, tet1d::Scalar) =
-#                             tet1d::{op_name}(tet1d::in(s0), tet1d::in(s1), tet1d::in(v0));
-#                           r += compare_vector("{T}", "r_scalar_s0_s1_v0", r_scalar_s0_s1_v0, "r_loop_s0_s1_v0", r_loop_s0_s1_v0 {compare_fct});
-#
-#                        '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          test_cpp += test_common
-#          test_cpp += '''std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_v0_v1_s0(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_v0_s0_v1(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_s0_v0_v1(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_v0_s0_s1(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_s0_v0_s1(N);
-#                         std::vector<{T}/*, nsimd::allocator<{T}> */> r_simd_s0_s1_v0(N);
-#
-#                         tet1d::out(r_simd, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1), tet1d::in(v2));
-#                         r += compare_vector("{T}", "r_simd", r_simd, "r_loop", r_loop {compare_fct});
-#
-#                         tet1d::out(r_simd_v0_v1_s0, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(v0), tet1d::in(v1), tet1d::in(s0));
-#                         r += compare_vector("{T}", "r_simd_v0_v1_s0", r_simd_v0_v1_s0, "r_loop_v0_v1_s0", r_loop_v0_v1_s0 {compare_fct});
-#
-#                         tet1d::out(r_simd_v0_s0_v1, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(v0), tet1d::in(s0), tet1d::in(v1));
-#                         r += compare_vector("{T}", "r_simd_v0_s0_v1", r_simd_v0_s0_v1, "r_loop_v0_s0_v1", r_loop_v0_s0_v1 {compare_fct});
-#
-#                         tet1d::out(r_simd_s0_v0_v1, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0), tet1d::in(v1));
-#                         r += compare_vector("{T}", "r_simd_s0_v0_v1", r_simd_s0_v0_v1, "r_loop_s0_v0_v1", r_loop_s0_v0_v1 {compare_fct});
-#
-#                         tet1d::out(r_simd_v0_s0_s1, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(v0), tet1d::in(s0), tet1d::in(s1));
-#                         r += compare_vector("{T}", "r_simd_v0_s0_s1", r_simd_v0_s0_s1, "r_loop_v0_s0_s1", r_loop_v0_s0_s1 {compare_fct});
-#
-#                         tet1d::out(r_simd_s0_v0_s1, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0), tet1d::in(s1));
-#                         r += compare_vector("{T}", "r_simd_s0_v0_s1", r_simd_s0_v0_s1, "r_loop_s0_v0_s1", r_loop_s0_v0_s1 {compare_fct});
-#
-#                         tet1d::out(r_simd_s0_s1_v0, tet1d::Simd) =
-#                           tet1d::{op_name}(tet1d::in(s0), tet1d::in(s1), tet1d::in(v0));
-#                         r += compare_vector("{T}", "r_simd_s0_s1_v0", r_simd_s0_s1_v0, "r_loop_s0_s1_v0", r_loop_s0_s1_v0 {compare_fct});
-#
-#                      '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#          test_cu += test_common
-#          test_cu += '''std::vector<{T}, nsimd::cuda_allocator<{T}> > v0_cuda(N);
-#                        if (cudaMemcpy(v0_cuda.data(), v0.data(), N * sizeof({T}), cudaMemcpyHostToDevice) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > v1_cuda(N);
-#                        if (cudaMemcpy(v1_cuda.data(), v1.data(), N * sizeof({T}), cudaMemcpyHostToDevice) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > v2_cuda(N);
-#                        if (cudaMemcpy(v2_cuda.data(), v2.data(), N * sizeof({T}), cudaMemcpyHostToDevice) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_v0_v1_s0(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_v0_s0_v1(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_s0_v0_v1(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_v0_s0_s1(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_s0_v0_s1(N);
-#                        std::vector<{T}, nsimd::cuda_allocator<{T}> > r_cuda_s0_s1_v0(N);
-#
-#                        tet1d::out(r_cuda, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(v0_cuda), tet1d::in(v1_cuda), tet1d::in(v2_cuda));
-#                        std::vector<{T}> r_cuda_host(N);
-#                        if (cudaMemcpy(r_cuda_host.data(), r_cuda.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host", r_cuda_host, "r_loop", r_loop {compare_fct});
-#
-#                        tet1d::out(r_cuda_v0_v1_s0, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(v0_cuda), tet1d::in(v1_cuda), tet1d::in(s0));
-#                        std::vector<{T}> r_cuda_host_v0_v1_s0(N);
-#                        if (cudaMemcpy(r_cuda_host_v0_v1_s0.data(), r_cuda_v0_v1_s0.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_v0_v1_s0", r_cuda_host_v0_v1_s0, "r_loop_v0_v1_s0", r_loop_v0_v1_s0 {compare_fct});
-#
-#                        tet1d::out(r_cuda_v0_s0_v1, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(v0_cuda), tet1d::in(s0), tet1d::in(v1_cuda));
-#                        std::vector<{T}> r_cuda_host_v0_s0_v1(N);
-#                        if (cudaMemcpy(r_cuda_host_v0_s0_v1.data(), r_cuda_v0_s0_v1.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_v0_s0_v1", r_cuda_host_v0_s0_v1, "r_loop_v0_s0_v1", r_loop_v0_s0_v1 {compare_fct});
-#
-#                        tet1d::out(r_cuda_s0_v0_v1, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0_cuda), tet1d::in(v1_cuda));
-#                        std::vector<{T}> r_cuda_host_s0_v0_v1(N);
-#                        if (cudaMemcpy(r_cuda_host_s0_v0_v1.data(), r_cuda_s0_v0_v1.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_s0_v0_v1", r_cuda_host_s0_v0_v1, "r_loop_s0_v0_v1", r_loop_s0_v0_v1 {compare_fct});
-#
-#                        tet1d::out(r_cuda_v0_s0_s1, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(v0_cuda), tet1d::in(s0), tet1d::in(s1));
-#                        std::vector<{T}> r_cuda_host_v0_s0_s1(N);
-#                        if (cudaMemcpy(r_cuda_host_v0_s0_s1.data(), r_cuda_v0_s0_s1.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_v0_s0_s1", r_cuda_host_v0_s0_s1, "r_loop_v0_s0_s1", r_loop_v0_s0_s1 {compare_fct});
-#
-#                        tet1d::out(r_cuda_s0_v0_s1, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(s0), tet1d::in(v0_cuda), tet1d::in(s1));
-#                        std::vector<{T}> r_cuda_host_s0_v0_s1(N);
-#                        if (cudaMemcpy(r_cuda_host_s0_v0_s1.data(), r_cuda_s0_v0_s1.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_s0_v0_s1", r_cuda_host_s0_v0_s1, "r_loop_s0_v0_s1", r_loop_s0_v0_s1 {compare_fct});
-#
-#                        tet1d::out(r_cuda_s0_s1_v0, tet1d::Cuda) =
-#                          tet1d::{op_name}(tet1d::in(s0), tet1d::in(s1), tet1d::in(v0_cuda));
-#                        std::vector<{T}> r_cuda_host_s0_s1_v0(N);
-#                        if (cudaMemcpy(r_cuda_host_s0_s1_v0.data(), r_cuda_s0_s1_v0.data(), N * sizeof({T}), cudaMemcpyDeviceToHost) != cudaSuccess) {{
-#                          throw std::runtime_error("cudaMemcpy fails");
-#                        }}
-#                        r += compare_vector("{T}", "r_cuda_host_s0_s1_v0", r_cuda_host_s0_s1_v0, "r_loop_s0_s1_v0", r_loop_s0_s1_v0 {compare_fct});
-#
-#                     '''.format(T=element_type, rand_fct=rand_fct, compare_fct=compare_fct, op_name=op_name, op_scalar_impl=scalar_impl[op_name])
-#        else:
-#          continue
-#        test_footer = '''  return r;
-#                         }
-#
-#                      '''
-#        test_cpp = '''{test_header}
-#                      // Test of {op_name} for {T}
-#
-#                      {test_cpp}
-#                      {test_footer}
-#                   '''.format(T=element_type, op_name=op_name, test_header=test_header, test_cpp=test_cpp, test_footer=test_footer)
-#        test_cu = '''{test_header}
-#                     // Test of {op_name} for {T}
-#
-#                     {test_cu}
-#                     {test_footer}
-#                  '''.format(T=element_type, op_name=op_name, test_header=test_header, test_cu=test_cu, test_footer=test_footer)
-#        # Write the tests
-#        if write_test:
-#          dirname = os.path.join('tests', 'modules', 'tet1d', 'functions')
-#          os.makedirs(dirname, exist_ok=True)
-#          # C++
-#          filename = os.path.join(dirname, op_name + '.' + element_type + '.cpp')
-#          with common.open_utf8(opts, filename) as out:
-#            out.write(test_cpp)
-#          common.clang_format(opts, filename)
-#          # CUDA
-#          filename = os.path.join(dirname, op_name + '.' + element_type + '.cu')
-#          with common.open_utf8(opts, filename) as out:
-#            out.write(test_cu)
-#          common.clang_format(opts, filename)
-
-    # End of the code
-    code += '}'
-
-    # Write the code
-    dirname = os.path.join('include', 'nsimd', 'modules', 'tet1d')
-    os.makedirs(dirname, exist_ok=True)
-    filename = os.path.join(dirname, 'functions.hpp')
-    with common.open_utf8(opts, filename) as out:
-      out.write(code)
-    common.clang_format(opts, filename)
+    gen_functions(opts)
+    gen_tests(opts)
+    gen_doc(opts)
