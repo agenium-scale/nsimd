@@ -782,6 +782,12 @@ protected:
     }
   }
 
+  static void swap(T **lhs, T **rhs) {
+    T *temp = *lhs;
+    *lhs = *rhs;
+    *rhs = temp;
+  }
+
 public:
   T *release() {
     T *ret_ptr = m_ptr;
@@ -795,12 +801,6 @@ public:
     if (NULL != old_ptr) {
       aligned_free(old_ptr);
     }
-  }
-
-  void swap(scoped_aligned_mem_helper<T> *rhs) {
-    T *temp = m_ptr;
-    m_ptr = rhs->m_ptr;
-    rhs->m_ptr = temp;
   }
 
   T *get() const { return m_ptr; }
@@ -828,6 +828,11 @@ public:
       aligned_free(this->m_ptr);
     }
   }
+
+  void swap(scoped_aligned_mem<T, MemAlignedSizeBytes> *rhs) {
+    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
+  }
+
   static void free(T **ptr) {
     aligned_free(*ptr);
     *ptr = NULL;
@@ -846,6 +851,11 @@ public:
       aligned_free_for<T>(this->m_ptr);
     }
   }
+
+  void swap(scoped_aligned_mem_for<T, NumElems> *rhs) {
+    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
+  }
+
   static void free(T **ptr) {
     aligned_free_for<T>(*ptr);
     *ptr = NULL;
