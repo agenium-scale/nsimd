@@ -37,11 +37,35 @@ namespace fixed_point {
 // ------------------------ Types definitions and len --------------------------
 // -----------------------------------------------------------------------------
 
+template <typename T> NSIMD_STRUCT pack;
+
+template <typename T> int len(const T &) { return fpsimd_n(T()); }
+
+template <typename T> int len(const nsimd::fixed_point::pack<T> &) {
+  return fpsimd_n(fpsimd_t<T::lf, T::rt>());
+}
+
 template <typename T> NSIMD_STRUCT pack {
   static const uint8_t lf = T::lf;
   static const uint8_t rt = T::rt;
   typedef fp_t<lf, rt> value_type;
   fpsimd_t<lf, rt> val;
+
+  friend std::ostream &operator<<(std::ostream &os, pack<T> &a0) {
+    T *buf = new T[nsimd::fixed_point::len(a0)];
+    nsimd::fixed_point::simd_storeu( buf , a0.val );
+    os << "{ ";
+    int n = nsimd::fixed_point::len(a0);
+    for (int i = 0; i < n; i++) {
+      os << buf[i];
+      if (i < n - 1) {
+        os << ", ";
+      }
+    }
+    os << " }";
+    delete[] buf;
+    return os;
+  }
 };
 
 template <typename T> NSIMD_STRUCT packl {
@@ -50,12 +74,6 @@ template <typename T> NSIMD_STRUCT packl {
   typedef typename fp_t<lf, rt>::logical_type value_type;
   fpsimdl_t<lf, rt> val;
 };
-
-template <typename T> int len(const T &) { return fpsimd_n(T()); }
-
-template <typename T> int len(const pack<T> &) {
-  return fpsimd_n(fpsimd_t<T::lf, T::rt>());
-}
 
 // -----------------------------------------------------------------------------
 // ------------------- Basic arithmetic operators ------------------------------
@@ -362,6 +380,7 @@ NSIMD_INLINE void storela(typename T::value_type *p, T v) {
 }
 
 } // namespace fixed_point
+
 } // namespace nsimd
 
 #endif
