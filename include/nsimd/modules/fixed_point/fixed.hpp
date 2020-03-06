@@ -164,4 +164,6 @@ template <uint8_t _lf, uint8_t _rt> uint8_t right(const fp_t<_lf, _rt>) {
 } // namespace fixed_point
 } // namespace nsimd
 
+#include "nsimd/modules/fixed_point/fixed_math.hpp"
+
 #endif
