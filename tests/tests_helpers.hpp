@@ -21,10 +21,10 @@
     }                                                                         \
   } while (0)
 
-#define LOG_MEMORY_CONTENT_DEBUG(vout, len, memory_type)                      \
+#define LOG_MEMORY_CONTENT_DEBUG(vout, len_, memory_type)                     \
   do {                                                                        \
     if (NSIMD_LOG_DEBUG) {                                                    \
-      nsimd_tests::print(vout, len, memory_type);                             \
+      nsimd_tests::print(vout, len_, memory_type);                            \
     }                                                                         \
   } while (0)
 
@@ -83,12 +83,12 @@ const char *get_type_str(f32) { return "f32"; }
 const char *get_type_str(f64) { return "f64"; }
 
 template <typename T>
-void print(T *const arr, const int len, const char *msg) {
+void print(T *const arr, const nat len_, const char *msg) {
   fprintf(stdout, "%-24s: ", msg);
   char formatter[12];
   strcpy(formatter, "%s");
   strcat(formatter, fprintf_helper::specifier(T()));
-  for (int ii = 0; ii < len; ++ii) {
+  for (nat ii = 0; ii < len_; ++ii) {
     fprintf(
         stdout, formatter, 0 == ii ? "{" : ", ",
         (typename fprintf_helper::f64_if_f32_else_T<T>::value_type)arr[ii]);
@@ -99,8 +99,8 @@ void print(T *const arr, const int len, const char *msg) {
 
 template <typename T>
 void init_arrays(T *const vout_expected, T *const vout_computed,
-                 const int len) {
-  for (int ii = 0; ii < len; ++ii) {
+                 const nat len_) {
+  for (nat ii = 0; ii < len_; ++ii) {
     vout_expected[ii] = (T)-1;
     vout_computed[ii] = (T)1;
   }
@@ -159,8 +159,8 @@ void storea__(T *const begin, const nsimd::pack<T, N, SimdExt> &pack_) {
 
 template <typename T>
 bool check_arrays(const T *const vout_expected, const T *const vout_computed,
-                  const int len_) {
-  for (int ii = 0; ii < len_; ++ii) {
+                  const nat len_) {
+  for (nat ii = 0; ii < len_; ++ii) {
     if (expected_not_equal_computed(vout_expected[ii], vout_computed[ii])) {
       fprintf(stdout, STATUS "... FAIL\n");
       fflush(stdout);
@@ -183,7 +183,7 @@ bool check_pack_expected_vs_computed(
   if (nsimd::len(pack_from) != nsimd::len(pack_to)) {
     return 0;
   }
-  const int len_ = nsimd::len(pack_to);
+  const nat len_ = (nat)(nsimd::len(pack_to));
   init_arrays(vout_expected, vout_computed, len_);
 
   storea__(vout_expected, pack_from);
