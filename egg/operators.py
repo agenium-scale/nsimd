@@ -466,7 +466,8 @@ class Operator(object, metaclass=MAddToOperators):
         func_name += self.name
         operator_on_logicals = (self.params == ['l'] * len(self.params))
         if lang == 'c' and not operator_on_logicals:
-            func_name += '_{}'.format(t) if t == tt else '_{}_{}'.format(tt, t)
+            func_name += '_{}_{}'.format(tt, t) if not self.closed \
+                                                else '_{}'.format(t)
         sig += func_name
         args_list = common.enum([common.get_one_type_scalar(p, t)
                                  for p in self.params[1:]])

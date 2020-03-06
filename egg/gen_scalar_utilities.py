@@ -142,7 +142,7 @@ def doit(opts):
                     cxx_sig=operator.get_scalar_signature('cpu', t, tt, 'cxx'),
                     gpu_sig=operator.get_scalar_signature('gpu', t, tt, 'cxx'),
                     op_name=op_name,
-                    suffix=t if t == tt else '{}_{}'.format(tt, t),
+                    suffix=t if operator.closed else '{}_{}'.format(tt, t),
                     c_args=', '.join(['a{}'.format(i - 1) \
                                    for i in range(1, len(operator.params))]),
                     scalar_impl=scalar.get_impl(operator, tt, t),

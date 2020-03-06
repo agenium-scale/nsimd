@@ -174,7 +174,7 @@ def gen_tests_for(opts, t, tt, operator):
             if operator.cxx_operator != None:
                 cond = '{}(A == 1)'.format(operator.cxx_operator[8:])
             else:
-                cond = 'tet1d::{}(A)'.format(op_name)
+                cond = 'tet1d::{}(A == 1)'.format(op_name)
             tet1d_code = \
                 '''TET1D_OUT({typ}) Z = tet1d::out(out);
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
@@ -189,7 +189,7 @@ def gen_tests_for(opts, t, tt, operator):
             if operator.cxx_operator != None:
                 cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator[8:])
             else:
-                cond = 'tet1d::{}(A, B)'.format(op_name)
+                cond = 'tet1d::{}(A == 1, B == 1)'.format(op_name)
             tet1d_code = \
                 '''TET1D_OUT({typ}) Z = tet1d::out(out);
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
@@ -269,6 +269,8 @@ def gen_tests(opts):
             tts = common.get_output_types(t, operator.output_to)
 
             for tt in tts:
+                if t == 'f16' or tt == 'f16':
+                    continue
                 if operator.name in ['shl', 'shr', 'shra']:
                     gen_tests_for_shifts(opts, t, operator)
                 else:
