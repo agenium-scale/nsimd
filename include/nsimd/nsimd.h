@@ -823,6 +823,7 @@ class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
 public:
   scoped_aligned_mem()
       : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {}
+
   ~scoped_aligned_mem() {
     if (NULL != this->m_ptr) {
       aligned_free(this->m_ptr);
