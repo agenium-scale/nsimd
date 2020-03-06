@@ -17,7 +17,7 @@ template <typename T, typename AlignedScopedMem> struct test_release {
       AlignedScopedMem v0;
       T *const iter_v0 = v0.get();
 
-      for (int ii = 0; ii < v0.num_elems; ++ii) {
+      for (nat ii = 0; ii < v0.num_elems; ++ii) {
         iter_v0[ii] = (T)ii;
       }
 
@@ -28,7 +28,7 @@ template <typename T, typename AlignedScopedMem> struct test_release {
       num_elems = v0.num_elems;
     }
 
-    for (int ii = 0; ii < num_elems; ++ii) {
+    for (nat ii = 0; ii < num_elems; ++ii) {
       if (nsimd_tests::expected_not_equal_computed((T)ii, iter[ii])) {
         LOG_MEMORY_CONTENT_DEBUG(iter, num_elems, "aligned memory c array");
         AlignedScopedMem::free(&iter);
@@ -50,7 +50,7 @@ template <typename T, typename AlignedScopedMem> struct test_reset {
     {
       AlignedScopedMem v1;
       T *const iter_v1 = v1.get();
-      for (int ii = 0; ii < v1.num_elems; ++ii) {
+      for (nat ii = 0; ii < v1.num_elems; ++ii) {
         iter_v1[ii] = (T)ii;
       }
       v0.reset(v1.release());
@@ -61,7 +61,7 @@ template <typename T, typename AlignedScopedMem> struct test_reset {
 
     T *const iter_v0 = v0.get();
 
-    for (int ii = 0; ii < v0.num_elems; ++ii) {
+    for (nat ii = 0; ii < v0.num_elems; ++ii) {
       if (nsimd_tests::expected_not_equal_computed((T)ii, iter_v0[ii])) {
         LOG_MEMORY_CONTENT_DEBUG(iter_v0, v0.num_elems,
                                  "aligned memory c array");
@@ -79,21 +79,21 @@ template <typename T, typename AlignedScopedMem> struct test_swap {
 
     AlignedScopedMem v0;
     T *iter_v0 = v0.get();
-    for (int ii = 0; ii < v0.num_elems; ++ii) {
+    for (nat ii = 0; ii < v0.num_elems; ++ii) {
       iter_v0[ii] = (T)ii;
     }
 
     {
       AlignedScopedMem v1;
       T *iter_v1 = v1.get();
-      for (int ii = 0; ii < v1.num_elems; ++ii) {
+      for (nat ii = 0; ii < v1.num_elems; ++ii) {
         iter_v1[ii] = (T)(ii * 2);
       }
 
       v0.swap(&v1);
 
       iter_v1 = v1.get();
-      for (int ii = 0; ii < v1.num_elems; ++ii) {
+      for (nat ii = 0; ii < v1.num_elems; ++ii) {
         if (nsimd_tests::expected_not_equal_computed((T)ii, iter_v1[ii])) {
           LOG_MEMORY_CONTENT_DEBUG(iter_v1, v1.num_elems,
                                    "aligned memory c array");
@@ -103,7 +103,7 @@ template <typename T, typename AlignedScopedMem> struct test_swap {
     }
 
     iter_v0 = v0.get();
-    for (int ii = 0; ii < v0.num_elems; ++ii) {
+    for (nat ii = 0; ii < v0.num_elems; ++ii) {
       if (nsimd_tests::expected_not_equal_computed((T)(ii * 2), iter_v0[ii])) {
         LOG_MEMORY_CONTENT_DEBUG(iter_v0, v0.num_elems,
                                  "aligned memory c array");
