@@ -56,6 +56,7 @@ template <typename T, typename SimdExt> NSIMD_STRUCT pack<T, 1, SimdExt> {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = 1;
+  static const int soa_num_packs = 1;
 
   simd_vector car;
 
@@ -92,6 +93,7 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT pack {
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = N;
+  static const int soa_num_packs = 1;
 
   simd_vector car;
   pack<T, N - 1, SimdExt> cdr;
