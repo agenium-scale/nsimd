@@ -824,10 +824,10 @@ def shl_shr(op, simd_ext, typ):
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}((i{typnbits})({sign}{in1})));'''.\
                 format(**fmtspec, sign=sign)
         else:
-            
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
                                 vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
-                                vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
+                                vdupq_n_s{typnbits}((i{typnbits})({sign}{in1}))));'''.\
+                                    format(**fmtspec, sign=sign)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:

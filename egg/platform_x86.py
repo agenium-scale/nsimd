@@ -1061,8 +1061,13 @@ def shra(simd_ext, typ):
         # For i64 we have to extend the sign manually.
         if simd_ext in ['sse2', 'sse42']:
             return '''\
-            const unsigned int shift = (unsigned int)(64 - {in1});
-            __m128i v_sign = _mm_set1_epi64x((unsigned int)-1 << shift);
+            i{typnbits} sign;
+            if({in1} > 0) {{
+              sign = (i{typnbits})(~(u{typnbits}) 0 << (u{typnbits})(64 - {in1}));
+            }} else {{
+              sign = (i{typnbits}) 0;
+            }}
+            __m128i v_sign = _mm_set1_epi64x(sign);
             __m128i v_tmp0 = _mm_srli_epi64({in0}, {in1});
             __m128i v_test = _mm_castpd_si128(
               _mm_cmplt_pd(_mm_castsi128_pd({in0}), _mm_set1_pd(0)));
@@ -1071,8 +1076,13 @@ def shra(simd_ext, typ):
             '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
         elif simd_ext == 'avx2':
             return '''\
-            const unsigned int shift = (unsigned int)(64 - {in1});
-            __m256i v_sign = _mm256_set1_epi64x((unsigned int)-1 << shift);
+            i{typnbits} sign;
+            if({in1} > 0) {{
+              sign = (i{typnbits})(~(u{typnbits}) 0 << (u{typnbits})(64 - {in1}));
+            }} else {{
+              sign = (i{typnbits}) 0;
+            }}
+            __m256i v_sign = _mm256_set1_epi64x(sign);
             __m256i v_tmp0 = _mm256_srli_epi64({in0}, {in1});
             __m256i v_test = _mm256_cmpgt_epi64(
               _mm256_sub_epi64(_mm256_setzero_si256(), {in0}), _mm256_setzero_si256());
