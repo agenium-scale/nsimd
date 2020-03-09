@@ -22,16 +22,13 @@ _deps
 _install
 doc/html
 
+doc/markdown/overview.md
+doc/markdown/api.md
 doc/markdown/api_*.md
-doc/markdown/module_fixed_point_api_*.md
+doc/markdown/module_fixed_point_api*.md
+doc/markdown/module_fixed_point_overview.md
 doc/md2html
 doc/tmp.html
-
-## Doc
-/doc/**/api*.md
-/doc/**/*.html
-/doc/md2html
-/doc/**/overview.md
 
 ## Ulps
 ulps/
