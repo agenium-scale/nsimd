@@ -693,6 +693,18 @@ pack<T, N, SimdExt> get_pack(const packx<T, N, SimdExt> &packx_) {
 }
 
 // ----------------------------------------------------------------------------
+// to_pack_trait
+
+template <class _packx> struct to_pack_trait {};
+
+template <typename T, int N, typename SimdExt,
+          template <typename, int, typename> class _packx>
+struct to_pack_trait<_packx<T, N, SimdExt> > {
+  typedef pack<T, _packx<T, N, SimdExt>::soa_num_packs * N, SimdExt>
+      value_type;
+};
+
+// ----------------------------------------------------------------------------
 // to_pack
 // to_pack for packx[Y]<T, 1..N, SimdExt> with Y = 1
 
