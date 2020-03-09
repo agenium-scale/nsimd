@@ -111,6 +111,10 @@ SOFTWARE.
 {}
 
 '''.format(begin_comment, end_comment))
+
+        fout.write('{} This file has been auto-generated {}\n\n'.\
+            format(begin_comment, end_comment))
+    
     return io.open(filename, mode='a', encoding='utf-8')
 
 # -----------------------------------------------------------------------------
