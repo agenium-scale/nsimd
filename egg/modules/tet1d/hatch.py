@@ -112,6 +112,13 @@ def gen_tests_for(opts, t, tt, operator):
     del_tabs = '\n'.join(['del(tab{i});'.format(i=i) \
                            for i in range(arity)])
 
+    zero = '{}(0)'.format(t) if t != 'f16' else 'nsimd_f32_to_f16(0.0f)'
+    one = '{}(1)'.format(t) if t != 'f16' else 'nsimd_f32_to_f16(1.0f)'
+    comp_tab0_to_1 = 'tab0[i] == {}(1)'.format(t) if t != 'f16' else \
+                     'nsimd_f16_to_f32(tab0[i]) != 1.0f'
+    comp_tab1_to_1 = 'tab1[i] == {}(1)'.format(t) if t != 'f16' else \
+                     'nsimd_f16_to_f32(tab1[i]) != 1.0f'
+
     if op_name == 'cvt':
         tet1d_code = \
             '''tet1d::out(out) = tet1d::cvt<{t}>(tet1d::cvt<{tt}>(
@@ -162,13 +169,13 @@ def gen_tests_for(opts, t, tt, operator):
             '''TET1D_OUT({typ}) Z = tet1d::out(out);
                TET1D_IN({typ}) A = tet1d::in(tab0, n);
                TET1D_IN({typ}) B = tet1d::in(tab1, n);
-               Z({cond}) = {typ}(1);'''.format(cond=cond, typ=t)
+               Z({cond}) = 1;'''.format(cond=cond, typ=t)
         compute_result_kernel = \
             '''if (nsimd_scalar_{op_name}_{typ}(tab0[i], tab1[i])) {{
-                 dst[i] = {typ}(1);
+                 dst[i] = {one};
                }} else {{
-                 dst[i] = {typ}(0);
-               }}'''.format(op_name=op_name, typ=t)
+                 dst[i] = {zero};
+               }}'''.format(op_name=op_name, typ=t, one=one, zero=zero)
     elif operator.params == ['l'] * len(operator.params):
         if len(operator.params[1:]) == 1:
             if operator.cxx_operator != None:
@@ -178,13 +185,14 @@ def gen_tests_for(opts, t, tt, operator):
             tet1d_code = \
                 '''TET1D_OUT({typ}) Z = tet1d::out(out);
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
-                   Z({cond}) = {typ}(1);'''.format(cond=cond, typ=t)
+                   Z({cond}) = 1;'''.format(cond=cond, typ=t)
             compute_result_kernel = \
-                '''if (nsimd_scalar_{op_name}(tab0[i] == {typ}(1))) {{
-                     dst[i] = {typ}(1);
+                '''if (nsimd_scalar_{op_name}({comp_tab0_to_1})) {{
+                     dst[i] = {one};
                    }} else {{
-                     dst[i] = {typ}(0);
-                   }}'''.format(op_name=op_name, typ=t)
+                     dst[i] = {zero};
+                   }}'''.format(op_name=op_name, typ=t, one=one, zero=zero,
+                                comp_tab0_to_1=comp_tab0_to_1)
         if len(operator.params[1:]) == 2:
             if operator.cxx_operator != None:
                 cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator[8:])
@@ -194,19 +202,18 @@ def gen_tests_for(opts, t, tt, operator):
                 '''TET1D_OUT({typ}) Z = tet1d::out(out);
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
                    TET1D_IN({typ}) B = tet1d::in(tab1, n);
-                   Z({cond}) = {typ}(1);'''.format(cond=cond, typ=t)
+                   Z({cond}) = 1;'''.format(cond=cond, typ=t)
             compute_result_kernel = \
-                '''if (nsimd_scalar_{op_name}(tab0[i] == {typ}(1),
-                                              tab1[i] == {typ}(1))) {{
-                     dst[i] = {typ}(1);
+                '''if (nsimd_scalar_{op_name}({comp_tab0_to_1},
+                                              {comp_tab1_to_1})) {{
+                     dst[i] = {one};
                    }} else {{
-                     dst[i] = {typ}(0);
-                   }}'''.format(op_name=op_name, typ=t)
+                     dst[i] = {zero};
+                   }}'''.format(op_name=op_name, typ=t, one=one, zero=zero,
+                                comp_tab0_to_1=comp_tab0_to_1,
+                                comp_tab1_to_1=comp_tab1_to_1)
     else:
-        tet1d_code = ''
-        compute_result_kernel = ''
-        print('DEBUG: {}'.format(op_name))
-        #raise Exception('Unsupported operator: "{}"'.format(op_name))
+        raise Exception('Unsupported operator: "{}"'.format(op_name))
 
     with common.open_utf8(opts, filename) as out:
         out.write(
@@ -269,8 +276,8 @@ def gen_tests(opts):
             tts = common.get_output_types(t, operator.output_to)
 
             for tt in tts:
-                if t == 'f16' or tt == 'f16':
-                    continue
+                #if t == 'f16' or tt == 'f16':
+                #    continue
                 if operator.name in ['shl', 'shr', 'shra']:
                     gen_tests_for_shifts(opts, t, operator)
                 else:
@@ -436,7 +443,7 @@ def gen_functions(opts):
                       typename node<Op, Left, Right, Extra>::in_type>, none_t>
             {cxx_operator}(node<Op, Left, Right, Extra> const &node, T a) {{
               typedef typename node<Op, Left, Right, Extra>::in_type S;
-              return tet1d::{op_name}(node, S(a));
+              return tet1d::{op_name}(node, literal_to<S>::impl(a));
             }}
 
             template <typename T, typename Op, typename Left, typename Right,
@@ -446,7 +453,7 @@ def gen_functions(opts):
                  node<Op, Left, Right, Extra>, none_t>
             {cxx_operator}(T a, node<Op, Left, Right, Extra> const &node) {{
               typedef typename node<Op, Left, Right, Extra>::in_type S;
-              return tet1d::{op_name}(S(a), node);
+              return tet1d::{op_name}(literal_to<S>::impl(a), node);
             }}
 
             template <typename LeftOp, typename LeftLeft, typename LeftRight,

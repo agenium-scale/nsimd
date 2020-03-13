@@ -25,6 +25,7 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_TET1D_COMMON_HPP
 #define NSIMD_MODULES_TET1D_COMMON_HPP
 
+#include <nsimd/nsimd.h>
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
@@ -156,6 +157,14 @@ template <typename T> T *get000(unsigned int n) {
   return (T *)calloc(n, sizeof(T));
 }
 
+template <typename T> struct helper_cast {
+  static T cast(unsigned int a) { return T(a); }
+};
+
+template <> struct helper_cast<f16> {
+  static f16 cast(unsigned int a) { return nsimd_f32_to_f16(f32(a)); }
+};
+
 template <typename T> T *getXXX(unsigned int n, int variant) {
   T *ret = (T *)malloc(n * sizeof(T));
   if (ret == NULL) {
@@ -166,16 +175,16 @@ template <typename T> T *getXXX(unsigned int n, int variant) {
   for (unsigned int i = 0; i < n; i++) {
     switch(variant) {
       case 123:
-        ret[i] = T(i % 10);
+        ret[i] = helper_cast<T>::cast(i % 10);
         break;
       case 321:
-        ret[i] = T((2147483647 * i) % 10);
+        ret[i] = helper_cast<T>::cast((2147483647 * i) % 10);
         break;
       case 101:
-        ret[i] = T(i % 2);
+        ret[i] = helper_cast<T>::cast(i % 2);
         break;
       case 110:
-        ret[i] = T(((2147483647 * i) % 13) % 2);
+        ret[i] = helper_cast<T>::cast(((2147483647 * i) % 13) % 2);
         break;
     }
   }

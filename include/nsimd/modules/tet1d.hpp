@@ -222,6 +222,19 @@ template <typename T> typename to_node_t<T>::type to_node(T n) {
 }
 
 // ----------------------------------------------------------------------------
+// convert literal to one NSIMD base type
+
+template <typename T> struct literal_to {
+  template <typename S> static T impl(S a) { return T(a); }
+};
+
+template <> struct literal_to<f16> {
+  template <typename S> static f16 impl(S a) {
+    return nsimd_f32_to_f16(f32(a));
+  }
+};
+
+// ----------------------------------------------------------------------------
 // input node
 
 struct in_t {};
@@ -283,9 +296,9 @@ struct node<mask_out_t, Mask, none_t, Pack> {
   void *stream;
   Mask mask;
 
-  template <typename S>
-  node<mask_out_t, Mask, none_t, Pack> operator=(S const &expr_) {
-    typename to_node_t<S>::type expr = to_node(expr_);
+  template <typename Op, typename Left, typename Right, typename Extra>
+  node<mask_out_t, Mask, none_t, Pack>
+  operator=(node<Op, Left, Right, Extra> const &expr) {
 #if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
     nsimd::nat nb = expr.size() + (nt - 1) / nt;
@@ -308,6 +321,10 @@ struct node<mask_out_t, Mask, none_t, Pack> {
         data, mask, expr, compute_size(mask.size(), expr.size()));
 #endif
     return *this;
+  }
+
+  template <typename S> node<mask_out_t, Mask, none_t, Pack> operator=(S a) {
+    return operator=(to_node(literal_to<T>::impl(a)));
   }
 };
 
