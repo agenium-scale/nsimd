@@ -354,6 +354,10 @@ SOFTWARE.
 
 #else
 
+  #ifdef NSIMD_IS_NVCC
+    #include <cuda_fp16.h>
+  #endif
+
   #define NSIMD_SIMD cpu
   #define NSIMD_PLATFORM cpu
 
@@ -440,6 +444,8 @@ SOFTWARE.
 
 #ifdef NSIMD_NATIVE_FP16
   typedef __fp16 f16;
+#elif defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
+  typedef __half f16;
 #else
   typedef struct { u16 u; } f16;
 #endif
@@ -876,6 +882,9 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
+#elif defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
+NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
+NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);

@@ -98,7 +98,7 @@ def doit(opts):
                 c_args=', '.join(['a{}'.format(i - 1) \
                                for i in range(1, len(operator.params))]),
                 scalar_impl=scalar.get_impl(operator, tt, t),
-                cuda_impl='',
+                cuda_impl=cuda.get_impl(operator, tt, t),
                 hip_impl=''
                 ))
                 continue
@@ -119,7 +119,7 @@ def doit(opts):
                       return nsimd_scalar_{op_name}_{suffix}({c_args});
                     }}
 
-                    #ifdef NSIMD_CUDA
+                    #if defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
 
                     inline {gpu_sig} {{
                       {cuda_impl}
@@ -146,7 +146,7 @@ def doit(opts):
                     c_args=', '.join(['a{}'.format(i - 1) \
                                    for i in range(1, len(operator.params))]),
                     scalar_impl=scalar.get_impl(operator, tt, t),
-                    cuda_impl='',
+                    cuda_impl=cuda.get_impl(operator, tt, t),
                     hip_impl=''
                     ))
 

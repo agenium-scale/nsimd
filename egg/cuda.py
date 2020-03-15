@@ -20,75 +20,70 @@
 
 import common
 
+fmtspec = dict()
+
 # -----------------------------------------------------------------------------
 # NVIDIA doc on f16 can be found at
 # https://docs.nvidia.com/cuda/cuda-math-api/group__CUDA__MATH__INTRINSIC__HALF.html
 
 def get_impl_f16(operator, totyp, typ):
     if operator.name == 'round_to_even':
-        return 'return __hrint({in0}, {in1});'
+        return 'return __hrint({in0}, {in1});'.format(**fmtspec)
     elif operator.name in ['rec', 'rec8', 'rec11']:
-        return 'return __hrcp({in0});'
+        return 'return __hrcp({in0});'.format(**fmtspec)
     elif operator.name in ['rsqrt', 'rsqrt8', 'rsqrt11']:
-        return 'return __hrsqrt({in0});'
+        return 'return __hrsqrt({in0});'.format(**fmtspec)
     elif operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        return 'return __hfma({neg}{{in0}}, {{in1}}, {op}{{in2}});'. \
-               format(neg=neg, op=op)
+        return 'return __hfma({neg}{in0}, {in1}, {op}{in2});'. \
+               format(neg=neg, op=op, **fmtspec)
     elif operator.name in ['min', 'max']:
         intr = '__hlt' if operator.name == 'min' else '__hgt'
         return '''if ({intr}) {{
-                    return {{in0}};
+                    return {in0};
                   }} else {{
-                    return {{in1}};
-                  }}'''.format(intr=intr)
+                    return {in1};
+                  }}'''.format(intr=intr, **fmtspec)
     else:
-        return 'return __h{}({{in0}}, {{in1}});'.format(operator.name)
+        return 'return __h{}({in0}, {in1});'. \
+               format(operator.name, **fmtspec)
 
 # -----------------------------------------------------------------------------
 
 def get_impl(operator, totyp, typ):
+
+    global fmtspec
+
+    fmtspec = {
+      'in0': common.in0,
+      'in1': common.in1,
+      'in2': common.in2,
+      'typ': typ,
+      'totyp': totyp,
+      'typnbits': typ[1:]
+    }
+
     # bool first, no special treatment for f16's
     bool_operators = {
-        'andl': '{in0} && {in1}',
-        'orl': '{in0} || {in1}',
-        'xorl': '{in0} ^ {in1}',
-        'andnotl': '{in0} && (!{in1})',
-        'notl': '!{in0}',
+        'andl': 'return {in0} && {in1};',
+        'orl': 'return {in0} || {in1};',
+        'xorl': 'return {in0} ^ {in1};',
+        'andnotl': 'return {in0} && (!{in1});',
+        'notl': 'return !{in0};',
     }
     if operator.name in bool_operators:
-        return bool_operators[operator.name]
-    # for all other operators, f16 has a special treatment
-    if typ == 'f16':
-        return get_impl_f16(operator, totyp, typ)
-    # then deal with f32's operators
-    # first infix operators
-    c_operators = {
-        'add': '{in0} + {in1}',
-        'sub': '{in0} - {in1}',
-        'mul': '{in0} * {in1}',
-        'div': '{in0} / {in1}',
-        'neg': '-{in0}',
-        'rec': '1.0{f} / {{in0}};',
-        'rec8': '1.0{f} / {{in0}};',
-        'rec11': '1.0{f} / {{in0}};',
-        'lt': '{in0} < {in1}',
-        'gt': '{in0} > {in1}',
-        'le': '{in0} <= {in1}',
-        'ge': '{in0} >= {in1}',
-        'ne': '{in0} != {in1}',
-        'eq': '{in0} == {in1}'
-    }
-    if operator.name in c_operators:
-        return c_operators[operator.name]
+        return bool_operators[operator.name].format(**fmtspec)
     # infix operators that needs type punning
     def pun_code(code, arity, typ):
+        if typ in common.utypes:
+            return 'return ' + code.format(**fmtspec) + ';'
         utyp = common.bitfield_type[typ]
         to_utyp = '\n'.join(
-                  ['''{totyp} buf{i};
+                  ['''{utyp} buf{i};
                       memcpy(&buf{i}, &{{in{i}}}, sizeof({{in{i}}}));'''. \
-                      format(i=i, totyp=totyp) for i in range(arity)])
+                      format(i=i, utyp=utyp).format(**fmtspec) \
+                      for i in range(arity)])
         return '''{to_utyp}
                   {utyp} tmp = {code};
                   {typ} ret;
@@ -105,12 +100,36 @@ def get_impl(operator, totyp, typ):
     }
     if operator.name in pun_operators:
         return pun_operators[operator.name]()
+    # for all other operators, f16 has a special treatment
+    if typ == 'f16':
+        return get_impl_f16(operator, totyp, typ)
+    # then deal with f32's operators
+    # first infix operators
+    c_operators = {
+        'add': 'return {in0} + {in1};',
+        'sub': 'return {in0} - {in1};',
+        'mul': 'return {in0} * {in1};',
+        'div': 'return {in0} / {in1};',
+        'neg': 'return -{in0};',
+        'rec': 'return 1.0{f} / {{in0}};',
+        'rec8': 'return 1.0{f} / {{in0}};',
+        'rec11': 'return 1.0{f} / {{in0}};',
+        'lt': 'return {in0} < {in1};',
+        'gt': 'return {in0} > {in1};',
+        'le': 'return {in0} <= {in1};',
+        'ge': 'return {in0} >= {in1};',
+        'ne': 'return {in0} != {in1};',
+        'eq': 'return {in0} == {in1};'
+    }
+    if operator.name in c_operators:
+        return c_operators[operator.name]. \
+               format(f='f' if typ == 'f32' else '', **fmtspec)
     # fma's
     if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        return 'return fma{f}({neg}{{in0}}, {{in1}}, {op}{{in2}});'. \
-               format(f='f' if typ == 'f32' else '', neg=neg, op=op)
+        return 'return fma{f}({neg}{in0}, {in1}, {op}{in2});'. \
+               format(f='f' if typ == 'f32' else '', neg=neg, op=op, **fmtspec)
     # other operators
     cuda_name = {
         'round_to_even': 'rint',
@@ -118,7 +137,7 @@ def get_impl(operator, totyp, typ):
         'max': 'fmax',
         'abs': 'fabs'
     }
-    args = ', '.join(['{{in{}}}'.format(i) \
+    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
                       for i in range(len(operator.args))])
     return 'return {name}{f}({args});'. \
            format(name=cuda_name[operator.name] \
