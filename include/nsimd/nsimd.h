@@ -224,6 +224,26 @@ SOFTWARE.
 #define NSIMD_SVE
 #endif
 
+#if defined(SVE128) && !defined(NSIMD_SVE128)
+  #define NSIMD_SVE128
+#endif
+
+#if defined(SVE256) && !defined(NSIMD_SVE256)
+  #define NSIMD_SVE256
+#endif
+
+#if defined(SVE512) && !defined(NSIMD_SVE512)
+  #define NSIMD_SVE512
+#endif
+
+#if defined(SVE1024) && !defined(NSIMD_SVE1024)
+  #define NSIMD_SVE1024
+#endif
+
+#if defined(SVE2048) && !defined(NSIMD_SVE2048)
+  #define NSIMD_SVE2048
+#endif
+
 /* PPC */
 
 #if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
@@ -343,6 +363,41 @@ SOFTWARE.
     #undef vector
   #endif
 
+#elif defined(NSIMD_SVE128)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve128
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE256)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve256
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE512)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve512
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE1024)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve1024
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE2048)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve2048
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
 #else
 
 #define NSIMD_SIMD cpu
@@ -386,10 +441,11 @@ typedef signed long long i64;
 /* ------------------------------------------------------------------------- */
 /* Sorter typedefs for floatting point types */
 
-#if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                     \
-     defined(NSIMD_FP16)) ||                                                   \
-    defined(NSIMD_SVE)
-#define NSIMD_NATIVE_FP16
+#if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) && \
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) || \
+     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || \
+     defined(NSIMD_SVE1024) || defined(NSIMD_SVE2048)
+  #define NSIMD_NATIVE_FP16
 #endif
 
 #ifdef NSIMD_NATIVE_FP16
@@ -576,61 +632,61 @@ template <typename T, typename SimdExt> struct simd_traits {};
 #define vecx4(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x4)
 
 typedef vec(i8) vi8;
-typedef vec(i8) vu8;
+typedef vec(u8) vu8;
 typedef vec(i16) vi16;
-typedef vec(i16) vu16;
+typedef vec(u16) vu16;
 typedef vec(i32) vi32;
-typedef vec(i32) vu32;
+typedef vec(u32) vu32;
 typedef vec(i64) vi64;
-typedef vec(i64) vu64;
+typedef vec(u64) vu64;
 typedef vec(f16) vf16;
 typedef vec(f32) vf32;
 typedef vec(f64) vf64;
 
 typedef vecx2(i8) vi8x2;
-typedef vecx2(i8) vu8x2;
+typedef vecx2(u8) vu8x2;
 typedef vecx2(i16) vi16x2;
-typedef vecx2(i16) vu16x2;
+typedef vecx2(u16) vu16x2;
 typedef vecx2(i32) vi32x2;
-typedef vecx2(i32) vu32x2;
+typedef vecx2(u32) vu32x2;
 typedef vecx2(i64) vi64x2;
-typedef vecx2(i64) vu64x2;
+typedef vecx2(u64) vu64x2;
 typedef vecx2(f16) vf16x2;
 typedef vecx2(f32) vf32x2;
 typedef vecx2(f64) vf64x2;
 
 typedef vecx3(i8) vi8x3;
-typedef vecx3(i8) vu8x3;
+typedef vecx3(u8) vu8x3;
 typedef vecx3(i16) vi16x3;
-typedef vecx3(i16) vu16x3;
+typedef vecx3(u16) vu16x3;
 typedef vecx3(i32) vi32x3;
-typedef vecx3(i32) vu32x3;
+typedef vecx3(u32) vu32x3;
 typedef vecx3(i64) vi64x3;
-typedef vecx3(i64) vu64x3;
+typedef vecx3(u64) vu64x3;
 typedef vecx3(f16) vf16x3;
 typedef vecx3(f32) vf32x3;
 typedef vecx3(f64) vf64x3;
 
 typedef vecx4(i8) vi8x4;
-typedef vecx4(i8) vu8x4;
+typedef vecx4(u8) vu8x4;
 typedef vecx4(i16) vi16x4;
-typedef vecx4(i16) vu16x4;
+typedef vecx4(u16) vu16x4;
 typedef vecx4(i32) vi32x4;
-typedef vecx4(i32) vu32x4;
+typedef vecx4(u32) vu32x4;
 typedef vecx4(i64) vi64x4;
-typedef vecx4(i64) vu64x4;
+typedef vecx4(u64) vu64x4;
 typedef vecx4(f16) vf16x4;
 typedef vecx4(f32) vf32x4;
 typedef vecx4(f64) vf64x4;
 
 typedef vecl(i8) vli8;
-typedef vecl(i8) vlu8;
+typedef vecl(u8) vlu8;
 typedef vecl(i16) vli16;
-typedef vecl(i16) vlu16;
+typedef vecl(u16) vlu16;
 typedef vecl(i32) vli32;
-typedef vecl(i32) vlu32;
+typedef vecl(u32) vlu32;
 typedef vecl(i64) vli64;
-typedef vecl(i64) vlu64;
+typedef vecl(u64) vlu64;
 typedef vecl(f16) vlf16;
 typedef vecl(f32) vlf32;
 typedef vecl(f64) vlf64;

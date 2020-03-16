@@ -59,12 +59,21 @@ def asm_marker(simd, bench_name):
     r = ''
     r += '#ifdef ASM_MARKER'
     r += '\n'
+
+    for_intel = '__asm__ __volatile__("callq __asm_marker__{bench_name}");'. \
+                format(bench_name=bench_name)
+    for_arm = '__asm__ __volatile__("bl __asm_marker__{bench_name}");'. \
+              format(bench_name=bench_name)
     if simd in common.x86_simds:
-        r += '__asm__ __volatile__("callq __asm_marker__{bench_name}");'. \
-               format(bench_name=bench_name)
+        r += for_intel
     elif simd in common.arm_simds:
-        r += '__asm__ __volatile__("bl __asm_marker__{bench_name}");'. \
-               format(bench_name=bench_name)
+        r += for_arm
+    elif simd == 'cpu':
+        r += '''#if defined(NSIMD_X86)
+                  {}
+                #elif defined(NSIMD_ARM)
+                  {}
+                #endif'''.format(for_intel, for_arm)
     elif simd in common.ppc_simds:
         #TODO
         return ''. format(bench_name=bench_name)
