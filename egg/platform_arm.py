@@ -2049,25 +2049,26 @@ def zip_unzip(func, simd_ext, typ):
 # -----------------------------------------------------------------------------
 
 def clz(simd_ext, from_typ):
-      return '''\
-      nsimd_{simd_ext}_v{typ} ret;
-      ret.v0 = clz_{suf}( {in0}.v0 );
-      return ret;
-      '''.format(**fmtspec)
+      if from_typ in [ 'i8' , 'u8' , 'i16' , 'u16' , 'i32' , 'u32' ]:
+        return '''\
+        return vclzq_{suf}( {in0} );
+        '''.format(**fmtspec)
+      else:
+        return emulate_op1('clz', simd_ext, from_typ)
 
 def shlv(simd_ext, from_typ):
-      return '''\
-      nsimd_{simd_ext}_v{typ} ret;
-      ret.v0 = vshlq_{suf}( {in0}.v0 , {in1}.v0 );
-      return ret;
-      '''.format(**fmtspec)
+      if 'u' in from_typ:
+        suf_i = suf('i'+from_typ[1:])
+        return '''\
+        return vshlq_{suf}( {in0} , vreinterpretq_{suf_i}_{suf}({in1}) );
+        '''.format(**fmtspec, suf_i=suf_i)
+      else:
+        return '''\
+        return vshlq_{suf}( {in0} , {in1} );
+        '''.format(**fmtspec)
 
 def shrv(simd_ext, from_typ):
-      return '''\
-      nsimd_{simd_ext}_v{typ} ret;
-      ret.v0 = vshrq_{suf}( {in0}.v0 , {in1}.v0 );
-      return ret;
-      '''.format(**fmtspec)
+      return emulate_op1('shrv', simd_ext, from_typ)
 
 # -----------------------------------------------------------------------------
 
