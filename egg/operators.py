@@ -1186,7 +1186,7 @@ class Powi(Operator):
     signature = 'v powi v v'
     types = common.iutypes
     domain = Domain('RxN')
-    categories = [DocBitsOperators]
+    categories = [DocExpLog]
     desc = 'Integer power of an integer. Both arguments are vectors'
 
 
