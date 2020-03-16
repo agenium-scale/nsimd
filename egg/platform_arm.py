@@ -314,6 +314,32 @@ def emulate_op2(op, simd_ext, typ):
                   return svld1_{suf}({svtrue}, buf0); '''. \
                   format(op=op, le=le, **fmtspec)
 
+def emulate_arg2(func, simd_ext, typ):
+    le = 0
+    if simd_ext == 'sve':
+        le = 2048 // int(typ[1:])
+    elif simd_ext == 'neon':
+        le = 128 // int(typ[1:])
+    elif simd_ext == 'aarch64':
+        le = 64 // int(typ[1:])
+
+    if typ in common.iutypes:
+        cast = '({}*)'.format(get_type(simd_ext, typ))
+    else:
+        cast = ''
+    return '''int i;
+              {typ} buf0[{le}];
+              {typ} buf1[{le}];
+              nsimd_storeu_{simd_ext}_{typ}(buf0, {in0});
+              nsimd_storeu_{simd_ext}_{typ}(buf1, {in1});
+              for (i = 0; i < {le}; i += nsimd_len_{simd_ext}_{typ}()) {{
+                nsimd_storeu_cpu_{typ}(&buf0[i], nsimd_{func}_cpu_{typ}(
+                  nsimd_loadu_cpu_{typ}(&buf0[i])
+                , nsimd_loadu_cpu_{typ}(&buf1[i])));
+              }}
+              return nsimd_loadu_{simd_ext}_{typ}(buf0);'''. \
+              format(cast=cast, le=le, func=func, **fmtspec)
+
 def emulate_lop2_neon(opts, op, simd_ext, typ):
     le = 128 // int(typ[1:]);
     ltyp = get_logical_type(opts, simd_ext, typ)
@@ -2108,7 +2134,7 @@ def shlv(simd_ext, from_typ):
         '''.format(**fmtspec)
 
 def shrv(simd_ext, from_typ):
-      return emulate_op1('shrv', simd_ext, from_typ)
+      return emulate_arg2('shrv', simd_ext, from_typ)
 
 # -----------------------------------------------------------------------------
 
