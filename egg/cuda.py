@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import common
+import scalar
 
 fmtspec = dict()
 
@@ -28,26 +29,37 @@ fmtspec = dict()
 
 def get_impl_f16(operator, totyp, typ):
     if operator.name == 'round_to_even':
-        return 'return __hrint({in0}, {in1});'.format(**fmtspec)
+        arch53_code = 'return __hrint({in0}, {in1});'.format(**fmtspec)
     elif operator.name in ['rec', 'rec8', 'rec11']:
-        return 'return __hrcp({in0});'.format(**fmtspec)
+        arch53_code = 'return __hrcp({in0});'.format(**fmtspec)
     elif operator.name in ['rsqrt', 'rsqrt8', 'rsqrt11']:
-        return 'return __hrsqrt({in0});'.format(**fmtspec)
+        arch53_code = 'return __hrsqrt({in0});'.format(**fmtspec)
     elif operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        return 'return __hfma({neg}{in0}, {in1}, {op}{in2});'. \
-               format(neg=neg, op=op, **fmtspec)
+        arch53_code = 'return __hfma({neg}{in0}, {in1}, {op}{in2});'. \
+                      format(neg=neg, op=op, **fmtspec)
     elif operator.name in ['min', 'max']:
         intr = '__hlt' if operator.name == 'min' else '__hgt'
-        return '''if ({intr}) {{
-                    return {in0};
-                  }} else {{
-                    return {in1};
-                  }}'''.format(intr=intr, **fmtspec)
+        arch53_code = '''if ({intr}) {{
+                           return {in0};
+                         }} else {{
+                           return {in1};
+                         }}'''.format(intr=intr, **fmtspec)
     else:
-        return 'return __h{}({in0}, {in1});'. \
-               format(operator.name, **fmtspec)
+        arch53_code = 'return __h{}({in0}, {in1});'. \
+                      format(operator.name, **fmtspec)
+    args = ', '.join(['__half2float({{in{}}})'.format(i).format(**fmtspec) \
+                      for i in range(len(operator.params[1:]))])
+    if operator.params[0] == 'l':
+        emul = 'return gpu_{}({});'.format(operator.name, args)
+    else:
+        emul = 'return __float2half(gpu_{}({}));'.format(operator.name, args)
+    return '''#if __CUDA_ARCH__ >= 530
+                {arch53_code}
+              #else
+                {emul}
+              #endif'''.format(arch53_code=arch53_code, emul=emul)
 
 # -----------------------------------------------------------------------------
 
@@ -74,7 +86,7 @@ def get_impl(operator, totyp, typ):
     }
     if operator.name in bool_operators:
         return bool_operators[operator.name].format(**fmtspec)
-    # infix operators that needs type punning
+    # infix operators that needs type punning, no special treatment for f16's
     def pun_code(code, arity, typ):
         if typ in common.utypes:
             return 'return ' + code.format(**fmtspec) + ';'
@@ -119,27 +131,52 @@ def get_impl(operator, totyp, typ):
         'le': 'return {in0} <= {in1};',
         'ge': 'return {in0} >= {in1};',
         'ne': 'return {in0} != {in1};',
-        'eq': 'return {in0} == {in1};'
+        'eq': 'return {in0} == {in1};',
+        'shl': 'return {in0} << {in1};'
     }
     if operator.name in c_operators:
         return c_operators[operator.name]. \
                format(f='f' if typ == 'f32' else '', **fmtspec)
+    # right shifts
+    if operator.name in ['shr', 'shra']:
+        return scalar.get_impl(operator, totyp, typ)
     # fma's
     if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        return 'return fma{f}({neg}{in0}, {in1}, {op}{in2});'. \
-               format(f='f' if typ == 'f32' else '', neg=neg, op=op, **fmtspec)
+        if typ in common.ftypes:
+            return 'return fma{f}({neg}{in0}, {in1}, {op}{in2});'. \
+                   format(f='f' if typ == 'f32' else '', neg=neg, op=op,
+                          **fmtspec)
+        else:
+            return 'return {neg}{in0} * {in1} + ({op}{in2});'. \
+                   format(neg=neg, op=op, **fmtspec)
     # other operators
-    cuda_name = {
-        'round_to_even': 'rint',
-        'min': 'fmin',
-        'max': 'fmax',
-        'abs': 'fabs'
-    }
-    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
-                      for i in range(len(operator.args))])
-    return 'return {name}{f}({args});'. \
-           format(name=cuda_name[operator.name] \
-                  if operator.name in cuda_name else operator.name,
-                  f='f' if typ == 'f32' else '', args=args)
+    if typ in common.iutypes:
+        if operator.name in ['round_to_even', 'ceil', 'floor', 'trunc']:
+            return 'return {in0};'.format(**fmtspec)
+        elif operator.name == 'min':
+            return 'return ({typ})({in0} < {in1} ? {in0} : {in1});'. \
+                   format(**fmtspec)
+        elif operator.name == 'max':
+            return 'return ({typ})({in0} > {in1} ? {in0} : {in1});'. \
+                   format(**fmtspec)
+        elif operator.name == 'abs':
+            return 'return ({typ})({in0} > 0 ? {in0} : -{in0});'. \
+                   format(**fmtspec)
+    else:
+        cuda_name = {
+            'round_to_even': 'rint',
+            'min': 'fmin',
+            'max': 'fmax',
+            'abs': 'fabs',
+            'ceil': 'ceil',
+            'floor': 'floor',
+            'trunc': 'trunc',
+        }
+        args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
+                          for i in range(len(operator.args))])
+        return 'return {name}{f}({args});'. \
+               format(name=cuda_name[operator.name] \
+                      if operator.name in cuda_name else operator.name,
+                      f='f' if typ == 'f32' else '', args=args)
