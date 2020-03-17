@@ -2292,12 +2292,11 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unziplo': lambda: zip_unzip_half("uzp1", simd_ext2, from_typ),
         'unziphi': lambda: zip_unzip_half("uzp2", simd_ext2, from_typ),
         'zip' : lambda: zip_unzip("zip", simd_ext2, from_typ),
-        'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ)
-        'unzip' : lambda: zip_unzip("uzp", simd_ext, from_typ),
-        'clz' : lambda : clz(simd_ext, from_typ),
-        'shlv' : lambda : shlv(simd_ext, from_typ),
-        'shrv' : lambda : shrv(simd_ext, from_typ),
-        'powi' : lambda : powi(simd_ext, from_typ)
+        'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ),
+        'clz' : lambda : clz(simd_ext2, from_typ),
+        'shlv' : lambda : shlv(simd_ext2, from_typ),
+        'shrv' : lambda : shrv(simd_ext2, from_typ),
+        'powi' : lambda : powi(simd_ext2, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
