@@ -950,7 +950,7 @@ def clz(from_typ):
               , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 24;'. \
                                 format(op='__builtin_clz', **fmtspec), from_typ)
               , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 8;'. \
-                                format(op='__builtin_lzcnt16', **fmtspec), from_typ)
+                                format(op='__lzcnt16', **fmtspec), from_typ)
               )
     r += clz_helper( 2 )
     r += '''
@@ -972,7 +972,7 @@ def clz(from_typ):
               , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 16;'. \
                                 format(op='__builtin_clz', **fmtspec), from_typ)
               , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
-                                format(op='__builtin_lzcnt16', **fmtspec), from_typ)
+                                format(op='__lzcnt16', **fmtspec), from_typ)
               )
     r += clz_helper( 3 )
     r += '''
@@ -994,7 +994,7 @@ def clz(from_typ):
               , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
                                 format(op='__builtin_clz', **fmtspec), from_typ)
               , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
-                                format(op='__builtin_lzcnt32', **fmtspec), from_typ)
+                                format(op='__lzcnt32', **fmtspec), from_typ)
               )
     r += clz_helper( 4 )
     r += '''
@@ -1016,7 +1016,7 @@ def clz(from_typ):
               , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
                                 format(op='__builtin_clzl', **fmtspec), from_typ)
               , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
-                                format(op='__builtin_lzcnt64', **fmtspec), from_typ)
+                                format(op='__lzcnt64', **fmtspec), from_typ)
               )
     r += clz_helper( 5 )
     r += '''
