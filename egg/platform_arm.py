@@ -2225,7 +2225,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'unziplo': lambda: zip_unzip_half("uzp1", simd_ext2, from_typ),
         'unziphi': lambda: zip_unzip_half("uzp2", simd_ext2, from_typ),
         'zip' : lambda: zip_unzip("zip", simd_ext2, from_typ),
-        'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ)
+        'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ),
         'clz' : lambda : clz(simd_ext2, from_typ),
         'shlv' : lambda : shlv(simd_ext2, from_typ),
         'shrv' : lambda : shrv(simd_ext2, from_typ),
