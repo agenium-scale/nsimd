@@ -32,7 +32,7 @@ def get_impl_f16(operator, totyp, typ):
         arch53_code = 'return __hrint({in0}, {in1});'.format(**fmtspec)
     elif operator.name in ['rec', 'rec8', 'rec11']:
         arch53_code = 'return __hrcp({in0});'.format(**fmtspec)
-    elif operator.name in ['rsqrt', 'rsqrt8', 'rsqrt11']:
+    elif operator.name in ['rsqrt8', 'rsqrt11']:
         arch53_code = 'return __hrsqrt({in0});'.format(**fmtspec)
     elif operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
@@ -46,6 +46,9 @@ def get_impl_f16(operator, totyp, typ):
                          }} else {{
                            return {in1};
                          }}'''.format(intr=intr, **fmtspec)
+    elif operator.name in ['adds', 'subs']:
+        arch53_code = 'return __h{op}({in0}, {in1});'. \
+                      format(op=operator.name[:-1], **fmtspec)
     else:
         arch53_code = 'return __h{}({in0}, {in1});'. \
                       format(operator.name, **fmtspec)
@@ -112,6 +115,17 @@ def get_impl(operator, totyp, typ):
     }
     if operator.name in pun_operators:
         return pun_operators[operator.name]()
+    # reinterpret
+    if operator.name == 'reinterpret':
+        return '''{totyp} ret;
+                  memcpy((void *)&ret, (void *)&{in0}, sizeof({in0}));
+                  return ret;'''.format(**fmtspec)
+    # cvt
+    if operator.name == 'cvt':
+        return 'return ({totyp}){in0};'.format(**fmtspec)
+    # to_mask and to_logical
+    if operator.name in ['to_mask', 'to_logical']:
+        return scalar.get_impl(operator, totyp, typ)
     # for all other operators, f16 has a special treatment
     if typ == 'f16':
         return get_impl_f16(operator, totyp, typ)
@@ -123,16 +137,16 @@ def get_impl(operator, totyp, typ):
         'mul': 'return {in0} * {in1};',
         'div': 'return {in0} / {in1};',
         'neg': 'return -{in0};',
-        'rec': 'return 1.0{f} / {{in0}};',
-        'rec8': 'return 1.0{f} / {{in0}};',
-        'rec11': 'return 1.0{f} / {{in0}};',
+        'rec': 'return 1.0{f} / {in0};',
+        'rec8': 'return 1.0{f} / {in0};',
+        'rec11': 'return 1.0{f} / {in0};',
         'lt': 'return {in0} < {in1};',
         'gt': 'return {in0} > {in1};',
         'le': 'return {in0} <= {in1};',
         'ge': 'return {in0} >= {in1};',
         'ne': 'return {in0} != {in1};',
         'eq': 'return {in0} == {in1};',
-        'shl': 'return {in0} << {in1};'
+        'shl': 'return {in0} << {in1};',
     }
     if operator.name in c_operators:
         return c_operators[operator.name]. \
@@ -140,6 +154,18 @@ def get_impl(operator, totyp, typ):
     # right shifts
     if operator.name in ['shr', 'shra']:
         return scalar.get_impl(operator, totyp, typ)
+    # adds
+    if operator.name == 'adds':
+        if typ in common.ftypes:
+            return c_operators['add'].format(**fmtspec)
+        else:
+            return scalar.get_impl(operator, totyp, typ)
+    # subs
+    if operator.name == 'subs':
+        if typ in common.ftypes:
+            return c_operators['sub'].format(**fmtspec)
+        else:
+            return scalar.get_impl(operator, totyp, typ)
     # fma's
     if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
@@ -173,6 +199,8 @@ def get_impl(operator, totyp, typ):
             'ceil': 'ceil',
             'floor': 'floor',
             'trunc': 'trunc',
+            'rsqrt8': 'rsqrt',
+            'rsqrt11': 'rsqrt'
         }
         args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
                           for i in range(len(operator.args))])
