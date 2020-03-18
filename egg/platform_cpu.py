@@ -999,7 +999,7 @@ def clz(from_typ):
               , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
                                 format(op='__builtin_clz', **fmtspec), from_typ)
               , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
-                                format(op='__lzcnt32', **fmtspec), from_typ)
+                                format(op='__lzcnt', **fmtspec), from_typ)
               )
     r += clz_helper( 4 )
     r += '''
