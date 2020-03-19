@@ -884,7 +884,8 @@ def shra(simd_ext, typ):
             format(**fmtspec)
     elif simd_ext in sve:
         if typ[0] == 'i':
-            return 'return svasr_n_{suf}_x({svtrue}, {in0}, (u{typnbits}){in1});'.\
+            return '''return svasr_n_{suf}_x({svtrue}, {in0},
+                (u{typnbits}){in1});'''.\
                 format(**fmtspec)
         elif typ[0] == 'u':
             return 'return svlsl_n_{suf}_x({svtrue}, {in0}, (u64){in1});'.\
@@ -1900,23 +1901,15 @@ def to_mask1(opts, simd_ext, typ):
                   # endif'''.format(normal=normal, emulate_f16=emulate_f16)
     elif simd_ext in sve:
         if opts.sve_emulate_bool:
-            if typ[0] == 'i':
-                typarm = 's'+typ[1:]
-            else:
-                typarm = typ
-            return 'return svreinterpret_{typarm}_u{typnbits}({in0});'. \
-                    format(typarm=typarm, **fmtspec)
+            return 'return svreinterpret_{suf}_u{typnbits}({in0});'. \
+                    format(**fmtspec)
         else:
-            if typ in common.iutypes:
-                return '''return svsel_{suf}({in0}, svdup_n_{suf}(
-                                   ({typ})-1), svdup_n_{suf}(({typ})0));'''. \
-                                   format(**fmtspec)
-            else:
-                utyp = 'u{}'.format(fmtspec['typnbits'])
-                return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
-                                   {in0}, svdup_n_{utyp}(({utyp})-1),
-                                   svdup_n_{utyp}(({utyp})0)));'''. \
-                                   format(utyp=utyp, **fmtspec)
+           utyp = 'u{}'.format(fmtspec['typnbits'])
+           return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
+                          {in0}, svdup_n_{utyp}(({utyp})-1),
+                          svdup_n_{utyp}(({utyp})0)));'''. \
+               format(utyp=utyp, **fmtspec)
+
     else:
         return normal
 
