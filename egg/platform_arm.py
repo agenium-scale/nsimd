@@ -74,7 +74,7 @@ fmtspec = {}
 def convert_from_predicate(opts, op):
     if opts.sve_emulate_bool:
         return '''svsel({op},
-                    svdup_n_u{typnbits}_x({svtrue}, ~0),
+                    svdup_n_u{typnbits}_x({svtrue}, (u{typnbits})~0),
                     svdup_n_u{typnbits}_x({svtrue}, 0))'''. \
                             format(op=op, **fmtspec)
     else:
@@ -86,7 +86,7 @@ def convert_to_predicate(opts, op):
         # it needs to be deleted when the bug is corrected
         return '''svcmpeq({svtrue},
                           (svuint{typnbits}_t){op},
-                          svdup_n_u{typnbits}_x({svtrue}, ~0))'''. \
+                          svdup_n_u{typnbits}_x({svtrue}, (u{typnbits})~0))'''. \
                             format(op=op, **fmtspec)
     else:
         return op
@@ -884,7 +884,7 @@ def shra(simd_ext, typ):
             format(**fmtspec)
     elif simd_ext in sve:
         if typ[0] == 'i':
-            return 'return svasr_n_{suf}_x({svtrue}, {in0}, (u64){in1});'.\
+            return 'return svasr_n_{suf}_x({svtrue}, {in0}, (u{typnbits}){in1});'.\
                 format(**fmtspec)
         elif typ[0] == 'u':
             return 'return svlsl_n_{suf}_x({svtrue}, {in0}, (u64){in1});'.\
@@ -1924,14 +1924,6 @@ def to_mask1(opts, simd_ext, typ):
 # to_logical
 
 def to_logical1(opts, simd_ext, typ):
-    if simd_ext in sve and opts.sve_emulate_bool:
-        if typ[0] == 'i':
-            typarm = 's'+typ[1:]
-        else:
-            typarm = typ
-            return 'return svreinterpret_u{typnbits}_{typarm}({in0});'. \
-                    format(typarm=typarm, **fmtspec)
-
     if typ in common.iutypes:
         return '''return nsimd_ne_{simd_ext}_{typ}({in0},
                            nsimd_set1_{simd_ext}_{typ}(({typ})0));'''. \
