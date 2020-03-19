@@ -114,12 +114,16 @@ SOFTWARE.
 # -----------------------------------------------------------------------------
 # clang-format
 
-def clang_format(opts, filename):
+def clang_format(opts, filename, cuda=False):
     if opts.disable_clang_format:
         return
     # TODO: not sure if needed to implement a smarter call to clang-format
-    os.system('clang-format -style="{{ Standard: Cpp03 }}" -i {}'. \
-              format(filename))
+    if cuda:
+        os.system('clang-format -style="{{ Standard: Cpp11 }}" -i {}'. \
+                  format(filename))
+    else:
+        os.system('clang-format -style="{{ Standard: Cpp03 }}" -i {}'. \
+                  format(filename))
     with open(filename, 'a') as fout:
         fout.write('\n')
 
@@ -968,7 +972,8 @@ class Domain(object):
                     if interval.logical_:
                         if typ == 'f16':
                             ret += '''u16 tmp = ((u16)rand()%2);
-                                      memcpy(&ret, &tmp, sizeof(ret));'''
+                                      memcpy((void *)&ret, (void *)&tmp,
+                                             sizeof(ret));'''
                         else:
                             ret += 'ret = ({})(rand()%2);'.format(typ)
                     else:

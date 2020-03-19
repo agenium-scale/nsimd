@@ -25,6 +25,13 @@ import common
 import operators
 from datetime import date
 
+posix_c_source = \
+'''#if !defined(_POSIX_C_SOURCE)
+   #define _POSIX_C_SOURCE 200112L
+   #elif _POSIX_C_SOURCE < 200112L
+   #error "_POSIX_C_SOURCE defined by third-party but must be >= 200112L"
+   #endif'''
+
 # -----------------------------------------------------------------------------
 # Get filename for test
 
@@ -645,17 +652,17 @@ def gen_test(opts, op, typ, lang, ulps):
     includes = get_includes(lang)
     if op.src or op.tests_ulps or op.tests_mpfr:
         if lang == 'c_base':
-            includes = '''#define _POSIX_C_SOURCE 200112L
+            includes = '''{}
 
                           #include <math.h>
                           #include <float.h>
-                          {}'''.format(includes)
+                          {}'''.format(posix_c_source, includes)
         else:
-            includes = '''#define _POSIX_C_SOURCE 200112L
+            includes = '''{}
 
                           #include <cmath>
                           #include <cfloat>
-                          {}'''.format(includes)
+                          {}'''.format(posix_c_source, includes)
         if op.tests_mpfr and sys.platform.startswith('linux'):
             includes = includes + '''
             #pragma GCC diagnostic push
@@ -691,7 +698,7 @@ def gen_addv(opts, op, typ, lang):
         extra_code = relative_distance_cpp
 
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
-    head = '''#define _POSIX_C_SOURCE 200112L
+    head = '''{posix_c_source}
               {includes}
               #include <float.h>
               #include <math.h>
@@ -707,6 +714,7 @@ def gen_addv(opts, op, typ, lang):
               }}
 
               {extra_code}''' .format(year=date.today().year,
+                                      posix_c_source=posix_c_source,
                                       includes=get_includes(lang),
                                       extra_code=extra_code)
 
@@ -2337,7 +2345,7 @@ def gen_unpack_half(opts, op, typ, lang):
             (vout[i + 1] != vin2[j])'''
 
     nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
-    head = '''#define _POSIX_C_SOURCE 200112L
+    head = '''{posix_c_source}
 
               {includes}
               #include <float.h>
@@ -2359,10 +2367,11 @@ def gen_unpack_half(opts, op, typ, lang):
 
               // {simd}
             ''' .format(year=date.today().year, typ=typ,
-                          includes=get_includes(lang),
-                          extra_code=extra_code,
-                          comp_unpack=comp_unpack,
-                          sizeof=common.sizeof(typ), simd= opts.simd)
+                        posix_c_source=posix_c_source,
+                        includes=get_includes(lang),
+                        extra_code=extra_code,
+                        comp_unpack=comp_unpack,
+                        sizeof=common.sizeof(typ), simd= opts.simd)
     if typ == 'f16':
         rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
         (f32)(1 << (rand() % 4)) /
@@ -2487,7 +2496,7 @@ def gen_unpack(opts, op, typ, lang):
         nsimd::storeu(&vout[2 * i + nsimd::len({typ}())], vc.v1);'''. \
             format(typ=typ, op_name=op.name)
 
-    head = '''#define _POSIX_C_SOURCE 200112L
+    head = '''{posix_c_source}
 
     {includes}
     #include <float.h>
@@ -2509,6 +2518,7 @@ def gen_unpack(opts, op, typ, lang):
 
     // {simd}
     ''' .format(year=date.today().year, typ=typ,
+                posix_c_source=posix_c_source,
                 includes=get_includes(lang),
                 extra_code=extra_code,
                 sizeof=common.sizeof(typ), simd= opts.simd)

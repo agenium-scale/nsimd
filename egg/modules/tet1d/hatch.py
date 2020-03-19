@@ -26,6 +26,12 @@ import gen_scalar_utilities
 #import hip
 
 # -----------------------------------------------------------------------------
+# CUDA: default number of threads per block
+
+tpb = 128
+cuda_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
+
+# -----------------------------------------------------------------------------
 
 def gen_doc(opts):
     pass
@@ -45,6 +51,19 @@ def gen_tests_for_shifts(opts, t, operator):
         #include "common.hpp"
 
         #if defined(NSIMD_CUDA)
+
+        __global__ void kernel({t} *dst, {t} *tab0, int n, int s) {{
+          int i = threadIdx.x + blockIdx.x * blockDim.x;
+          if (i < n) {{
+            dst[i] = nsimd::gpu_{op_name}(tab0[i], s);
+          }}
+        }}
+
+        // clang-format off
+        void compute_result({t} *dst, {t} *tab0, unsigned int n, int s) {{
+          kernel<<<{cuda_params}>>>(dst, tab0, int(n), s);
+        }}
+        // clang-format on
 
         #elif defined(NSIMD_HIP)
 
@@ -80,7 +99,8 @@ def gen_tests_for_shifts(opts, t, operator):
           }}
           return 0;
         }}
-        '''.format(op_name=op_name, t=t, typnbits=t[1:]))
+        '''.format(cuda_params=cuda_params, op_name=op_name, t=t,
+                   typnbits=t[1:]))
 
 def gen_tests_for(opts, t, tt, operator):
     op_name = operator.name
@@ -125,29 +145,29 @@ def gen_tests_for(opts, t, tt, operator):
                                      tet1d::in(tab0, n)));'''. \
                                      format(t=t, tt=tt)
         compute_result_kernel = \
-            '''dst[i] = nsimd_scalar_cvt_{t}_{tt}(nsimd_scalar_cvt_{tt}_{t}(
-                            tab0[i]));'''.format(t=t, tt=tt)
+            '''dst[i] = nsimd::{{p}}_cvt({t}(), nsimd::{{p}}_cvt(
+                            {tt}(), tab0[i]));'''.format(t=t, tt=tt)
     elif op_name == 'reinterpret':
         tet1d_code = \
             '''tet1d::out(out) = tet1d::reinterpret<{t}>(
                                      tet1d::reinterpret<{tt}>(tet1d::in(
                                          tab0, n)));'''.format(t=t, tt=tt)
         compute_result_kernel = \
-            '''dst[i] = nsimd_scalar_reinterpret_{t}_{tt}(
-                            nsimd_scalar_reinterpret_{tt}_{t}(
+            '''dst[i] = nsimd::{{p}}_reinterpret({t}(),
+                            nsimd::{{p}}_reinterpret({tt}(),
                                 tab0[i]));'''.format(t=t, tt=tt)
     elif op_name in ['to_mask', 'to_logical']:
         tet1d_code = \
             '''tet1d::out(out) = tet1d::to_mask(tet1d::to_logical(tet1d::in(
                                      tab0, n)));'''
         compute_result_kernel = \
-            '''dst[i] = nsimd_scalar_to_mask_{t}(
-                            nsimd_scalar_to_logical_{t}(tab0[i]));'''. \
+            '''dst[i] = nsimd::{{p}}_to_mask({t}(),
+                            nsimd::{{p}}_to_logical(tab0[i]));'''. \
                             format(t=t)
     elif operator.params == ['v'] * len(operator.params):
         compute_result_kernel = \
-            'dst[i] = nsimd_scalar_{op_name}_{typ}({args_tabs_i_call});'. \
-            format(op_name=op_name, typ=t, args_tabs_i_call=args_tabs_i_call)
+            'dst[i] = nsimd::{{p}}_{op_name}({args_tabs_i_call});'. \
+            format(op_name=op_name, args_tabs_i_call=args_tabs_i_call)
         if operator.cxx_operator != None:
             if len(operator.params[1:]) == 1:
                 tet1d_code = 'tet1d::out(out) = {cxx_op}tet1d::in(tab0, n);'. \
@@ -171,11 +191,11 @@ def gen_tests_for(opts, t, tt, operator):
                TET1D_IN({typ}) B = tet1d::in(tab1, n);
                Z({cond}) = 1;'''.format(cond=cond, typ=t)
         compute_result_kernel = \
-            '''if (nsimd_scalar_{op_name}_{typ}(tab0[i], tab1[i])) {{
+            '''if (nsimd::{{p}}_{op_name}(tab0[i], tab1[i])) {{{{
                  dst[i] = {one};
-               }} else {{
+               }}}} else {{{{
                  dst[i] = {zero};
-               }}'''.format(op_name=op_name, typ=t, one=one, zero=zero)
+               }}}}'''.format(op_name=op_name, typ=t, one=one, zero=zero)
     elif operator.params == ['l'] * len(operator.params):
         if len(operator.params[1:]) == 1:
             if operator.cxx_operator != None:
@@ -187,12 +207,12 @@ def gen_tests_for(opts, t, tt, operator):
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
                    Z({cond}) = 1;'''.format(cond=cond, typ=t)
             compute_result_kernel = \
-                '''if (nsimd_scalar_{op_name}({comp_tab0_to_1})) {{
+                '''if (nsimd::{{p}}_{op_name}({comp_tab0_to_1})) {{{{
                      dst[i] = {one};
-                   }} else {{
+                   }}}} else {{{{
                      dst[i] = {zero};
-                   }}'''.format(op_name=op_name, typ=t, one=one, zero=zero,
-                                comp_tab0_to_1=comp_tab0_to_1)
+                   }}}}'''.format(op_name=op_name, typ=t, one=one, zero=zero,
+                                  comp_tab0_to_1=comp_tab0_to_1)
         if len(operator.params[1:]) == 2:
             if operator.cxx_operator != None:
                 cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator[8:])
@@ -204,16 +224,19 @@ def gen_tests_for(opts, t, tt, operator):
                    TET1D_IN({typ}) B = tet1d::in(tab1, n);
                    Z({cond}) = 1;'''.format(cond=cond, typ=t)
             compute_result_kernel = \
-                '''if (nsimd_scalar_{op_name}({comp_tab0_to_1},
-                                              {comp_tab1_to_1})) {{
+                '''if (nsimd::{{p}}_{op_name}({comp_tab0_to_1},
+                                              {comp_tab1_to_1})) {{{{
                      dst[i] = {one};
-                   }} else {{
+                   }}}} else {{{{
                      dst[i] = {zero};
-                   }}'''.format(op_name=op_name, typ=t, one=one, zero=zero,
-                                comp_tab0_to_1=comp_tab0_to_1,
-                                comp_tab1_to_1=comp_tab1_to_1)
+                   }}}}'''.format(op_name=op_name, typ=t, one=one, zero=zero,
+                                  comp_tab0_to_1=comp_tab0_to_1,
+                                  comp_tab1_to_1=comp_tab1_to_1)
     else:
         raise Exception('Unsupported operator: "{}"'.format(op_name))
+
+    cpu_kernel = compute_result_kernel.format(p='scalar')
+    gpu_kernel = compute_result_kernel.format(p='gpu')
 
     with common.open_utf8(opts, filename) as out:
         out.write(
@@ -222,6 +245,17 @@ def gen_tests_for(opts, t, tt, operator):
 
         #if defined(NSIMD_CUDA)
 
+        __global__ void kernel({typ} *dst, {args_tabs}, int n) {{
+          int i = threadIdx.x + blockIdx.x * blockDim.x;
+          if (i < n) {{
+            {gpu_kernel}
+          }}
+        }}
+
+        void compute_result({typ} *dst, {args_tabs}, unsigned int n) {{
+          kernel<<<{cuda_params}>>>(dst, {args_tabs_call}, int(n));
+        }}
+
         #elif defined(NSIMD_HIP)
 
         #else
@@ -229,7 +263,7 @@ def gen_tests_for(opts, t, tt, operator):
         void compute_result({typ} *dst, {args_tabs},
                             unsigned int n) {{
           for (unsigned int i = 0; i < n; i++) {{
-            {compute_result_kernel}
+            {cpu_kernel}
           }}
         }}
 
@@ -256,11 +290,11 @@ def gen_tests_for(opts, t, tt, operator):
           return 0;
         }}
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
-                   args_tabs_call=args_tabs_call,
+                   args_tabs_call=args_tabs_call, cuda_params=cuda_params,
                    del_tabs=del_tabs, tet1d_code=tet1d_code,
-                   compute_result_kernel=compute_result_kernel))
+                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel))
 
-    common.clang_format(opts, filename)
+    common.clang_format(opts, filename, cuda=True)
 
 def gen_tests(opts):
     for _, operator in operators.operators.items():

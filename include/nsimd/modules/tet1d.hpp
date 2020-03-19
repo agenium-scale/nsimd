@@ -308,7 +308,7 @@ struct node<mask_out_t, Mask, none_t, Pack> {
     cudaStream_t s = (stream == NULL ? NULL : *(cudaStream_t *)stream);
     // clang-format off
     gpu_kernel_component_wise_mask<<<(unsigned int)(nb), (unsigned int)(nt),
-                                     0, s> >>(data, mask, expr, expr.size());
+                                     0, s>>>(data, mask, expr, expr.size());
     // clang-format on
 #elif defined(NSIMD_HIP)
     hipStream_t stream =
@@ -368,7 +368,7 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
     cudaStream_t s = stream == NULL ? NULL : *(cudaStream_t *)stream;
     // clang-format off
     gpu_kernel_component_wise<<<(unsigned int)(nb), (unsigned int)(nt),
-                                0, s> >>(data, expr, expr.size());
+                                0, s>>>(data, expr, expr.size());
     // clang-format on
 #elif defined(NSIMD_HIP)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
