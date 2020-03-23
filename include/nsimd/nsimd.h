@@ -883,8 +883,12 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
 #elif defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
-NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
-NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
+__device__ __host__ inline f16 nsimd_f32_to_f16(f32 a) {
+  return __float2half(a);
+}
+__device__ __host__ inline f32 nsimd_f16_to_f32(f16 a) {
+  return __half2float(a);
+}
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
@@ -1253,6 +1257,11 @@ void storel(A0 a0, A1 a1, T, SimdExt, unaligned) {
 
 } // namespace nsimd
 #endif
+
+/* ------------------------------------------------------------------------- */
+/* Scalar utilisties */
+
+#include <nsimd/scalar_utilities.h>
 
 /* ------------------------------------------------------------------------- */
 

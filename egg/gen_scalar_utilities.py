@@ -33,14 +33,19 @@ def doit(opts):
         return
     with common.open_utf8(opts, filename) as out:
         # we declare reinterprets now as we need them
-        tmp = []
+        scalar_tmp = []
+        gpu_tmp = []
         for t in operators.Reinterpret.types:
             for tt in common.get_output_types(
                           t, operators.Reinterpret.output_to):
-                tmp += [operators.Reinterpret(). \
-                        get_scalar_signature('cpu', t, tt, 'c')]
-        reinterpret_decls = '\n'.join(['NSIMD_INLINE ' + sig + ';' \
-                                       for sig in tmp])
+                scalar_tmp += [operators.Reinterpret(). \
+                               get_scalar_signature('cpu', t, tt, 'c')]
+                gpu_tmp += [operators.Reinterpret(). \
+                            get_scalar_signature('gpu', t, tt, 'cxx')]
+        scalar_reinterpret_decls = '\n'.join(['NSIMD_INLINE ' + sig + ';' \
+                                              for sig in scalar_tmp])
+        gpu_reinterpret_decls = '\n'.join(['inline ' + sig + ';' \
+                                           for sig in gpu_tmp])
         out.write('''#ifndef NSIMD_SCALAR_UTILITIES_H
                      #define NSIMD_SCALAR_UTILITIES_H
 
@@ -52,8 +57,21 @@ def doit(opts):
                      #include <string.h>
                      #endif
 
-                     {reinterpret_decls}'''. \
-                     format(reinterpret_decls=reinterpret_decls))
+                     {scalar_reinterpret_decls}
+
+                     #if NSIMD_CXX > 0 && defined(NSIMD_CUDA) && \
+                         defined(NSIMD_IS_NVCC)
+
+                     namespace nsimd {{
+
+                     {gpu_reinterpret_decls}
+
+                     }} // namespace nsimd
+
+                     #endif
+                     '''. \
+                     format(scalar_reinterpret_decls=scalar_reinterpret_decls,
+                            gpu_reinterpret_decls=gpu_reinterpret_decls))
         for op_name, operator in operators.operators.items():
             if not operator.has_scalar_impl:
                 continue

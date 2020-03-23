@@ -26,6 +26,7 @@ SOFTWARE.
 #define NSIMD_MODULES_TET1D_COMMON_HPP
 
 #include <nsimd/nsimd.h>
+#include <nsimd/scalar_utilities.h>
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
@@ -66,12 +67,12 @@ __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
   int i = tid + blockIdx.x * blockDim.x;
   if (i < n) {
     printf("DEBUG: %d: %f vs. %f\n", i, (double)src1[i], (double)src2[i]);
-    buf[tid] = T(src1[i] == src2[i] ? 1 : 0);
+    buf[tid] = T(nsimd::gpu_eq(src1[i], src2[i]) ? 1 : 0);
   }
   __syncthreads();
   for (int s = blockDim.x / 2; s != 0; s /= 2) {
     if (tid < s && i < n) {
-      buf[tid] *= buf[tid + s];
+      buf[tid] = nsimd::gpu_mul(buf[tid], buf[tid + s]);
       __syncthreads();
     }
   }
@@ -86,7 +87,7 @@ __global__ void device_cmp_array(int *dst, T *src1, int n) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   T buf = T(1);
   for (int i = 0; i < n; i += blockDim.x) {
-    buf *= src1[i];
+    buf = nsimd::gpu_mul(buf, src1[i]);
   }
   if (i == 0) {
     dst[0] = int(buf);

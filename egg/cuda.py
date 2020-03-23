@@ -123,9 +123,19 @@ def get_impl(operator, totyp, typ):
     # cvt
     if operator.name == 'cvt':
         return 'return ({totyp}){in0};'.format(**fmtspec)
-    # to_mask and to_logical
-    if operator.name in ['to_mask', 'to_logical']:
-        return scalar.get_impl(operator, totyp, typ)
+    # to_mask
+    if operator.name == 'to_mask':
+        if typ in common.utypes:
+            return 'return ({typ})({in0} ? -1 : 0);'.format(**fmtspec)
+        return 'return gpu_reinterpret({typ}(), ({utyp})({in0} ? -1 : 0));'. \
+               format(utyp=common.bitfield_type[typ], **fmtspec)
+    # to_logical
+    if operator.name == 'to_logical':
+        if typ in common.iutypes:
+            return 'return {in0} == ({typ})0 ? false : true;'.format(**fmtspec)
+        return '''return gpu_reinterpret({utyp}(), {in0}) == ({utyp})0
+                         ? false : true ;'''. \
+                         format(utyp=common.bitfield_type[typ], **fmtspec)
     # for all other operators, f16 has a special treatment
     if typ == 'f16':
         return get_impl_f16(operator, totyp, typ)
@@ -153,7 +163,26 @@ def get_impl(operator, totyp, typ):
                format(f='f' if typ == 'f32' else '', **fmtspec)
     # right shifts
     if operator.name in ['shr', 'shra']:
-        return scalar.get_impl(operator, totyp, typ)
+        if typ in common.utypes:
+            return 'return ({typ})({in0} >> {in1});'.format(**fmtspec)
+        if operator.name == 'shr':
+            return \
+            '''return gpu_reinterpret({typ}(), ({utyp})(
+                          gpu_reinterpret({utyp}(), {in0}) >> {in1}));'''. \
+                          format(utyp=common.bitfield_type[typ], **fmtspec)
+        # getting here means shra on signed types
+        return \
+        '''if ({in1} == 0) {{
+             return {in0};
+           }}
+           if ({in0} >= 0) {{
+             return gpu_reinterpret({typ}(), ({utyp})(
+                        gpu_reinterpret({utyp}(), {in0}) >> {in1}));
+           }} else {{
+             {utyp} mask = ({utyp})((({utyp})-1) << ({typnbits} - {in1}));
+             return gpu_reinterpret({typ}(), (({utyp})(mask |
+                      ({utyp})(gpu_reinterpret({utyp}(), {in0}) >> {in1}))));
+           }}'''.format(utyp=common.bitfield_type[typ], **fmtspec)
     # adds
     if operator.name == 'adds':
         if typ in common.ftypes:
@@ -164,8 +193,11 @@ def get_impl(operator, totyp, typ):
     if operator.name == 'subs':
         if typ in common.ftypes:
             return c_operators['sub'].format(**fmtspec)
-        else:
+        elif typ in common.utypes:
             return scalar.get_impl(operator, totyp, typ)
+        else:
+            return 'return nsimd::gpu_adds({in0}, ({typ})(-{in0}));'. \
+                   format(**fmtspec)
     # fma's
     if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''

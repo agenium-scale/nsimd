@@ -405,6 +405,10 @@ def gen_functions(opts):
                       format(op_name, to_typ_arg,
                              impl_args.format(cpu_gpu='scalar', tmpl=''))
 
+        impl_cuda = 'return nsimd::gpu_{}({}{});'. \
+                    format(op_name, to_typ_arg,
+                           impl_args.format(cpu_gpu='gpu', tmpl=''))
+
         impl_simd = 'return nsimd::{}{}({});'. \
                       format(op_name, to_typ_tmpl_arg,
                              impl_args.format(cpu_gpu='template simd',
@@ -452,7 +456,7 @@ def gen_functions(opts):
                      args=args, to_pack=to_pack, to_node_type=to_node_type,
                      members=members, members_assignment=members_assignment,
                      in_out_typedefs=in_out_typedefs,
-                     impl_cuda='',
+                     impl_cuda=impl_cuda,
                      impl_hip='',
                      impl_scalar=impl_scalar,
                      impl_simd=impl_simd)
@@ -476,7 +480,7 @@ def gen_functions(opts):
                  node<scalar_t, none_t, none_t,
                       typename node<Op, Left, Right, Extra>::in_type>, none_t>
             {cxx_operator}(node<Op, Left, Right, Extra> const &node, T a) {{
-              typedef typename node<Op, Left, Right, Extra>::in_type S;
+              typedef typename tet1d::node<Op, Left, Right, Extra>::in_type S;
               return tet1d::{op_name}(node, literal_to<S>::impl(a));
             }}
 
@@ -486,7 +490,7 @@ def gen_functions(opts):
                               typename node<Op, Left, Right, Extra>::in_type>,
                  node<Op, Left, Right, Extra>, none_t>
             {cxx_operator}(T a, node<Op, Left, Right, Extra> const &node) {{
-              typedef typename node<Op, Left, Right, Extra>::in_type S;
+              typedef typename tet1d::node<Op, Left, Right, Extra>::in_type S;
               return tet1d::{op_name}(literal_to<S>::impl(a), node);
             }}
 

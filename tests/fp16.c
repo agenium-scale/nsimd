@@ -72,10 +72,10 @@ float mk_fp32_bin(u32 a) {
 /* ------------------------------------------------------------------------- */
 
 int test_f16_to_f32(u16 val, u32 expected) {
-  f32 fexpected = *(f32 *)&expected;
+  f32 fexpected = nsimd_scalar_reinterpret_f32_u32(expected);
 
-  f32 res = nsimd_f16_to_f32(*(f16 *)&val);
-  u32 ures = *(u32 *)&res;
+  f32 res = nsimd_u16_to_f32(val);
+  u32 ures = nsimd_scalar_reinterpret_u32_f32(res);
   if (ures != expected) {
     fprintf(stdout,
             "Error, nsimd_f16_to_f32: expected %e(0x%x) but got %e(0x%x) \n",
@@ -90,7 +90,7 @@ int test_f16_to_f32(u16 val, u32 expected) {
 /* ------------------------------------------------------------------------- */
 
 int test_f32_to_f16(u32 val, u16 expected) {
-  f16 res = nsimd_f32_to_f16(*(f32 *)&val);
+  f16 res = nsimd_f32_to_f16(nsimd_scalar_reinterpret_f32_u32(val));
   if (res.u != expected) {
     fprintf(stdout, "Error, nsimd_f16_to_f32: expected 0x%x but got 0x%x \n",
             expected, res.u);
