@@ -142,11 +142,11 @@ def get_impl(operator, totyp, typ):
     # then deal with f32's operators
     # first infix operators
     c_operators = {
-        'add': 'return {in0} + {in1};',
-        'sub': 'return {in0} - {in1};',
-        'mul': 'return {in0} * {in1};',
-        'div': 'return {in0} / {in1};',
-        'neg': 'return -{in0};',
+        'add': 'return ({typ})({in0} + {in1});',
+        'sub': 'return ({typ})({in0} - {in1});',
+        'mul': 'return ({typ})({in0} * {in1});',
+        'div': 'return ({typ})({in0} / {in1});',
+        'neg': 'return ({typ})(-{in0});',
         'rec': 'return 1.0{f} / {in0};',
         'rec8': 'return 1.0{f} / {in0};',
         'rec11': 'return 1.0{f} / {in0};',
@@ -156,7 +156,7 @@ def get_impl(operator, totyp, typ):
         'ge': 'return {in0} >= {in1};',
         'ne': 'return {in0} != {in1};',
         'eq': 'return {in0} == {in1};',
-        'shl': 'return {in0} << {in1};',
+        'shl': 'return ({typ})({in0} << {in1});',
     }
     if operator.name in c_operators:
         return c_operators[operator.name]. \
@@ -196,7 +196,7 @@ def get_impl(operator, totyp, typ):
         elif typ in common.utypes:
             return scalar.get_impl(operator, totyp, typ)
         else:
-            return 'return nsimd::gpu_adds({in0}, ({typ})(-{in0}));'. \
+            return 'return nsimd::gpu_adds({in0}, ({typ})(-{in1}));'. \
                    format(**fmtspec)
     # fma's
     if operator.name in ['fma', 'fms', 'fnma', 'fnms']:

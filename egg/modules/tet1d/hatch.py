@@ -29,7 +29,7 @@ import gen_scalar_utilities
 # CUDA: default number of threads per block
 
 tpb = 128
-cuda_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
+gpu_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
 
 # -----------------------------------------------------------------------------
 
@@ -59,13 +59,22 @@ def gen_tests_for_shifts(opts, t, operator):
           }}
         }}
 
-        // clang-format off
         void compute_result({t} *dst, {t} *tab0, unsigned int n, int s) {{
-          kernel<<<{cuda_params}>>>(dst, tab0, int(n), s);
+          kernel<<<{gpu_params}>>>(dst, tab0, int(n), s);
         }}
-        // clang-format on
 
-        #elif defined(NSIMD_HIP)
+        #elif defined(NSIMD_ROCM)
+
+        __global__ void kernel({t} *dst, {t} *tab0, unsigned int n, int s) {{
+          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+          if (i < n) {{
+            dst[i] = nsimd::gpu_{op_name}(tab0[i], s);
+          }}
+        }}
+
+        void compute_result({t} *dst, {t} *tab0, unsigned int n, int s) {{
+          hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, tab0, n, s);
+        }}
 
         #else
 
@@ -99,7 +108,7 @@ def gen_tests_for_shifts(opts, t, operator):
           }}
           return 0;
         }}
-        '''.format(cuda_params=cuda_params, op_name=op_name, t=t,
+        '''.format(gpu_params=gpu_params, op_name=op_name, t=t,
                    typnbits=t[1:]))
 
 def gen_tests_for(opts, t, tt, operator):
@@ -253,10 +262,22 @@ def gen_tests_for(opts, t, tt, operator):
         }}
 
         void compute_result({typ} *dst, {args_tabs}, unsigned int n) {{
-          kernel<<<{cuda_params}>>>(dst, {args_tabs_call}, int(n));
+          kernel<<<{gpu_params}>>>(dst, {args_tabs_call}, int(n));
         }}
 
-        #elif defined(NSIMD_HIP)
+        #elif defined(NSIMD_ROCM)
+
+        __global__ void kernel({typ} *dst, {args_tabs}, unsigned int n) {{
+          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+          if (i < n) {{
+            {gpu_kernel}
+          }}
+        }}
+
+        void compute_result({typ} *dst, {args_tabs}, unsigned int n) {{
+          hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, {args_tabs_call},
+                             n);
+        }}
 
         #else
 
@@ -290,7 +311,7 @@ def gen_tests_for(opts, t, tt, operator):
           return 0;
         }}
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
-                   args_tabs_call=args_tabs_call, cuda_params=cuda_params,
+                   args_tabs_call=args_tabs_call, gpu_params=gpu_params,
                    del_tabs=del_tabs, tet1d_code=tet1d_code,
                    cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel))
 
@@ -405,9 +426,9 @@ def gen_functions(opts):
                       format(op_name, to_typ_arg,
                              impl_args.format(cpu_gpu='scalar', tmpl=''))
 
-        impl_cuda = 'return nsimd::gpu_{}({}{});'. \
-                    format(op_name, to_typ_arg,
-                           impl_args.format(cpu_gpu='gpu', tmpl=''))
+        impl_gpu = 'return nsimd::gpu_{}({}{});'. \
+                   format(op_name, to_typ_arg,
+                          impl_args.format(cpu_gpu='gpu', tmpl=''))
 
         impl_simd = 'return nsimd::{}{}({});'. \
                       format(op_name, to_typ_tmpl_arg,
@@ -427,13 +448,9 @@ def gen_functions(opts):
             {size}
           }}
 
-        #if defined(NSIMD_CUDA)
+        #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
           __device__ {return_type} gpu_get(nsimd:: nat i) const {{
-            {impl_cuda}
-          }}
-        #elif defined(NSIMD_HIP)
-          __device__ {return_type} gpu_get(nsimd:: nat i) const {{
-            {impl_hip}
+            {impl_gpu}
           }}
         #else
           {return_type} scalar_get(nsimd::nat i) const {{
@@ -456,8 +473,7 @@ def gen_functions(opts):
                      args=args, to_pack=to_pack, to_node_type=to_node_type,
                      members=members, members_assignment=members_assignment,
                      in_out_typedefs=in_out_typedefs,
-                     impl_cuda=impl_cuda,
-                     impl_hip='',
+                     impl_gpu=impl_gpu,
                      impl_scalar=impl_scalar,
                      impl_simd=impl_simd)
 

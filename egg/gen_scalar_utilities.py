@@ -23,6 +23,7 @@ import common
 import operators
 import scalar
 import cuda
+import rocm
 
 # -----------------------------------------------------------------------------
 
@@ -59,8 +60,8 @@ def doit(opts):
 
                      {scalar_reinterpret_decls}
 
-                     #if NSIMD_CXX > 0 && defined(NSIMD_CUDA) && \
-                         defined(NSIMD_IS_NVCC)
+                     #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+                         defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
                      namespace nsimd {{
 
@@ -98,10 +99,10 @@ def doit(opts):
 
                 #endif
 
-                #ifdef NSIMD_HIP
+                #ifdef NSIMD_ROCM
 
                 inline {gpu_sig} {{
-                  {hip_impl}
+                  {rocm_impl}
                 }}
 
                 #endif
@@ -117,7 +118,7 @@ def doit(opts):
                                for i in range(1, len(operator.params))]),
                 scalar_impl=scalar.get_impl(operator, tt, t),
                 cuda_impl=cuda.get_impl(operator, tt, t),
-                hip_impl=''
+                rocm_impl=rocm.get_impl(operator, tt, t)
                 ))
                 continue
             for t in operator.types:
@@ -145,10 +146,10 @@ def doit(opts):
 
                     #endif
 
-                    #ifdef NSIMD_HIP
+                    #ifdef NSIMD_ROCM
 
                     inline {gpu_sig} {{
-                      {hip_impl}
+                      {rocm_impl}
                     }}
 
                     #endif
@@ -165,7 +166,7 @@ def doit(opts):
                                    for i in range(1, len(operator.params))]),
                     scalar_impl=scalar.get_impl(operator, tt, t),
                     cuda_impl=cuda.get_impl(operator, tt, t),
-                    hip_impl=''
+                    rocm_impl=rocm.get_impl(operator, tt, t)
                     ))
 
         out.write('\n\n' + common.hbar + '\n\n#endif\n')

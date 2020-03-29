@@ -69,24 +69,24 @@ __global__ void gpu_kernel_component_wise_mask(T *dst, Mask const &mask,
   }
 }
 
-#elif defined(NSIMD_HIP)
+#elif defined(NSIMD_ROCM)
 
-// HIP component wise kernel
+// ROCM component wise kernel
 template <typename T, typename Expr>
-__global__ void gpu_kernel_component_wise(hipLaunchParm lp, T *dst,
-                                          Expr const &expr, nsimd::nat n) {
-  int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+__global__ void gpu_kernel_component_wise(T *dst, Expr const expr,
+                                          nsimd::nat n) {
+  int i = int(hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x);
   if (i < n) {
     dst[i] = expr.gpu_get(i);
   }
 }
 
-// HIP component wise kernel with masked output
+// ROCM component wise kernel with masked output
 template <typename T, typename Mask, typename Expr>
-__global__ void
-gpu_kernel_component_wise_mask(hipLaunchParm lp, T *dst, Mask const &mask,
-                               Expr const &expr, nsimd::nat n) {
-  int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+__global__ void gpu_kernel_component_wise_mask(T *dst, Mask const mask,
+                                               Expr const expr,
+                                               nsimd::nat n) {
+  int i = int(hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x);
   if (i < n && mask.gpu_get(i)) {
     dst[i] = expr.gpu_get(i);
   }
@@ -183,7 +183,7 @@ template <typename T> struct node<scalar_t, none_t, none_t, T> {
   typedef T out_type;
   T value;
 
-#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   __device__ T gpu_get(nsimd::nat) const { return value; }
 #else
   T scalar_get(nsimd::nat) const { return value; }
@@ -247,7 +247,7 @@ template <typename T> struct node<in_t, none_t, none_t, T> {
   typedef T in_type;
   typedef T out_type;
 
-#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   __device__ T gpu_get(nsimd::nat i) const { return data[i]; }
 #else
   T scalar_get(nsimd::nat i) const { return data[i]; }
@@ -299,7 +299,7 @@ struct node<mask_out_t, Mask, none_t, Pack> {
   template <typename Op, typename Left, typename Right, typename Extra>
   node<mask_out_t, Mask, none_t, Pack>
   operator=(node<Op, Left, Right, Extra> const &expr) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
     nsimd::nat nb = expr.size() + (nt - 1) / nt;
     assert(nt > 0 && nt <= UINT_MAX);
@@ -310,11 +310,11 @@ struct node<mask_out_t, Mask, none_t, Pack> {
     gpu_kernel_component_wise_mask<<<(unsigned int)(nb), (unsigned int)(nt),
                                      0, s>>>(data, mask, expr, expr.size());
     // clang-format on
-#elif defined(NSIMD_HIP)
-    hipStream_t stream =
-        device_stream == NULL ? NULL : *(hipStream_t *)device_stream;
-    hipLaunchKernel(gpu_kernel_component_wise_mask, dim3(nb), dim3(nt), 0, 0,
-                    data, mask, expr, expr.size());
+#elif defined(NSIMD_ROCM)
+    hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
+    hipLaunchKernelGGL(gpu_kernel_component_wise_mask, (unsigned int)(nb),
+                       (unsigned int)(nt), 0, s, data, mask, expr,
+                       expr.size());
 #endif
 #else
     cpu_kernel_component_wise_mask<Pack>(
@@ -359,7 +359,7 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
   template <typename Op, typename Left, typename Right, typename Extra>
   node<out_t, none_t, none_t, Pack>
   operator=(node<Op, Left, Right, Extra> const &expr) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_HIP)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
     nsimd::nat nb = expr.size() + (nt - 1) / nt;
     assert(nt > 0 && nt <= UINT_MAX);
@@ -370,10 +370,11 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
     gpu_kernel_component_wise<<<(unsigned int)(nb), (unsigned int)(nt),
                                 0, s>>>(data, expr, expr.size());
     // clang-format on
-#elif defined(NSIMD_HIP)
+#elif defined(NSIMD_ROCM)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
-    hipLaunchKernel(gpu_kernel_component_wise, dim3(nb), dim3(nt), 0, 0, data,
-                    expr, expr.size());
+    hipLaunchKernelGGL(
+        gpu_kernel_component_wise<T, node<Op, Left, Right, Extra> >,
+        (unsigned int)(nb), (unsigned int)(nt), 0, s, data, expr, expr.size());
 #endif
 #else
     cpu_kernel_component_wise<Pack>(data, expr, expr.size());

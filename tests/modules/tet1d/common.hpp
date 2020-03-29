@@ -142,12 +142,117 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
 
 template <typename T> void del(T *ptr) { cudaFree(ptr); }
 
-#elif defined(NSIMD_HIP)
+#elif defined(NSIMD_ROCM)
 
 // ----------------------------------------------------------------------------
 // HIP
 
-// TODO
+template <typename T>
+__global__ void device_fill(T *dst, unsigned int n, int variant) {
+  unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+  if (i < n) {
+    switch(variant) {
+      case 123:
+        dst[i] = T(i % 10);
+        break;
+      case 321:
+        dst[i] = T((2147483647 * i) % 10);
+        break;
+      case 101:
+        dst[i] = T(i % 2);
+        break;
+      case 110:
+        dst[i] = T(((2147483647 * i) % 13) % 2);
+        break;
+    }
+  }
+}
+
+// perform reduction on blocks first, note that this could be optimized
+// but to check correctness we don't need it now
+template <typename T>
+__global__ void device_cmp_blocks(T *src1, T *src2, unsigned int n) {
+  extern __shared__ char buf_[]; // size of a block
+  T *buf = (T*)buf_;
+  unsigned int tid = hipThreadIdx_x;
+  unsigned int i = tid + hipBlockIdx_x * hipBlockDim_x;
+  if (i < n) {
+    //printf("DEBUG: %d: %f vs. %f\n", i, (double)src1[i], (double)src2[i]);
+    buf[tid] = T(nsimd::gpu_eq(src1[i], src2[i]) ? 1 : 0);
+  }
+  __syncthreads();
+  for (unsigned int s = hipBlockDim_x / 2; s != 0; s /= 2) {
+    if (tid < s && i < n) {
+      buf[tid] = nsimd::gpu_mul(buf[tid], buf[tid + s]);
+      __syncthreads();
+    }
+  }
+  if (tid == 0) {
+    src1[i] = buf[0];
+  }
+}
+
+template <typename T>
+__global__ void device_cmp_array(int *dst, T *src1, unsigned int n) {
+  // reduction on the whole vector
+  unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+  T buf = T(1);
+  for (unsigned int i = 0; i < n; i += blockDim.x) {
+    buf = nsimd::gpu_mul(buf, src1[i]);
+  }
+  if (i == 0) {
+    dst[0] = int(buf);
+  }
+}
+
+int hip_do(hipError_t code) {
+  if (code != hipSuccess) {
+    std::cerr << "ERROR: " << hipGetErrorString(code) << std::endl;
+    return -1;
+  }
+  return 0;
+}
+
+template <typename T> T *get000(unsigned int n) {
+  T *ret;
+  if (hip_do(hipMalloc((void **)&ret, n * sizeof(T)))) {
+    return NULL;
+  }
+  if (hip_do(hipMemset((void *)ret, 0, n * sizeof(T)))) {
+    hipFree((void *)ret);
+    return NULL;
+  }
+  return ret;
+}
+
+template <typename T> T *getXXX(unsigned int n, int variant) {
+  T *ret;
+  if (hip_do(hipMalloc((void **)&ret, n * sizeof(T)))) {
+    return NULL;
+  }
+  hipLaunchKernelGGL(device_fill, (n + 127) / 128, 128, 0, 0, ret, n, variant);
+  return ret;
+}
+
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
+  int host_ret;
+  int *device_ret;
+  if (hip_do(hipMalloc((void **)&device_ret, sizeof(int)))) {
+    return false;
+  }
+  hipLaunchKernelGGL(device_cmp_blocks, (n + 127) / 128, 128, 128 * sizeof(T),
+                     0, src1, src2, n);
+  hipLaunchKernelGGL(device_cmp_array, (n + 127) / 128, 128, 0, 0, device_ret,
+                     src1, n);
+  if (hip_do(hipMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
+                 hipMemcpyDeviceToHost))) {
+    host_ret = 0;
+  }
+  hipFree((void *)device_ret);
+  return bool(host_ret);
+}
+
+template <typename T> void del(T *ptr) { hipFree(ptr); }
 
 #else
 

@@ -32,7 +32,7 @@ SOFTWARE.
 
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
-#elif defined(__HCC__) || defined(__HIP__)
+#elif defined(__HIPCC__)
   #define NSIMD_IS_HIPCC
 #elif defined(__NVCC__) || defined(__CUDACC__)
   #define NSIMD_IS_NVCC
@@ -242,10 +242,18 @@ SOFTWARE.
   #define NSIMD_CUDA
 #endif
 
-/* HIP */
+#if defined(NSIMD_CUDA) && (defined(NSIMD_IS_NVCC) || defined(NSIMD_IS_HIPCC))
+  #define NSIMD_CUDA_COMPILING_FOR_DEVICE
+#endif
 
-#if defined(HIP) && !defined(NSIMD_HIP)
-  #define NSIMD_HIP
+/* ROCm */
+
+#if defined(ROCM) && !defined(NSIMD_ROCM)
+  #define NSIMD_ROCM
+#endif
+
+#if defined(NSIMD_ROCM) && defined(NSIMD_IS_HIPCC)
+  #define NSIMD_ROCM_COMPILING_FOR_DEVICE
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -354,8 +362,13 @@ SOFTWARE.
 
 #else
 
-  #ifdef NSIMD_IS_NVCC
+  #ifdef NSIMD_CUDA_COMPILING_FOR_DEVICE
     #include <cuda_fp16.h>
+  #endif
+
+  #ifdef NSIMD_ROCM_COMPILING_FOR_DEVICE
+    #include <hip/hip_runtime.h>
+    #include <hip/hip_fp16.h>
   #endif
 
   #define NSIMD_SIMD cpu
@@ -444,7 +457,8 @@ SOFTWARE.
 
 #ifdef NSIMD_NATIVE_FP16
   typedef __fp16 f16;
-#elif defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
+#elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   typedef __half f16;
 #else
   typedef struct { u16 u; } f16;
@@ -882,11 +896,19 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
-#elif defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
-__device__ __host__ inline f16 nsimd_f32_to_f16(f32 a) {
+#elif defined(NSIMD_CUDA) &&                                                  \
+    (defined(NSIMD_IS_NVCC) || defined(NSIMD_IS_HIPCC))
+/*__device__ __host__*/ inline f16 nsimd_f32_to_f16(f32 a) {
   return __float2half(a);
 }
-__device__ __host__ inline f32 nsimd_f16_to_f32(f16 a) {
+/*__device__ __host__*/ inline f32 nsimd_f16_to_f32(f16 a) {
+  return __half2float(a);
+}
+#elif defined(NSIMD_ROCM) && defined(NSIMD_IS_HIPCC)
+/*__device__ __host__*/ f16 nsimd_f32_to_f16(f32 a) {
+  return __float2half(a);
+}
+/*__device__ __host__*/ f32 nsimd_f16_to_f32(f16 a) {
   return __half2float(a);
 }
 #else
