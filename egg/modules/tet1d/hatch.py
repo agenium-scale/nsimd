@@ -141,12 +141,12 @@ def gen_tests_for(opts, t, tt, operator):
     del_tabs = '\n'.join(['del(tab{i});'.format(i=i) \
                            for i in range(arity)])
 
-    zero = '{}(0)'.format(t) if t != 'f16' else 'nsimd_f32_to_f16(0.0f)'
-    one = '{}(1)'.format(t) if t != 'f16' else 'nsimd_f32_to_f16(1.0f)'
+    zero = '{}(0)'.format(t) if t != 'f16' else '{f32_to_f16}(0.0f)'
+    one = '{}(1)'.format(t) if t != 'f16' else '{f32_to_f16}(1.0f)'
     comp_tab0_to_1 = 'tab0[i] == {}(1)'.format(t) if t != 'f16' else \
-                     'nsimd_f16_to_f32(tab0[i]) != 1.0f'
+                     '{f16_to_f32}(tab0[i]) != 1.0f'
     comp_tab1_to_1 = 'tab1[i] == {}(1)'.format(t) if t != 'f16' else \
-                     'nsimd_f16_to_f32(tab1[i]) != 1.0f'
+                     '{f16_to_f32}(tab1[i]) != 1.0f'
 
     if op_name == 'cvt':
         tet1d_code = \
@@ -244,8 +244,12 @@ def gen_tests_for(opts, t, tt, operator):
     else:
         raise Exception('Unsupported operator: "{}"'.format(op_name))
 
-    cpu_kernel = compute_result_kernel.format(p='scalar')
-    gpu_kernel = compute_result_kernel.format(p='gpu')
+    cpu_kernel = compute_result_kernel.format(p='scalar',
+                                              f32_to_f16='nsimd_f32_to_f16',
+                                              f16_to_f32='nsimd_f16_to_f32')
+    gpu_kernel = compute_result_kernel.format(p='gpu',
+                                              f32_to_f16='__float2half',
+                                              f16_to_f32='__half2float')
 
     with common.open_utf8(opts, filename) as out:
         out.write(

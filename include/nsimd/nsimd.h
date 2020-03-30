@@ -896,19 +896,12 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
-#elif defined(NSIMD_CUDA) &&                                                  \
-    (defined(NSIMD_IS_NVCC) || defined(NSIMD_IS_HIPCC))
-/*__device__ __host__*/ inline f16 nsimd_f32_to_f16(f32 a) {
+#elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+inline f16 nsimd_f32_to_f16(f32 a) {
   return __float2half(a);
 }
-/*__device__ __host__*/ inline f32 nsimd_f16_to_f32(f16 a) {
-  return __half2float(a);
-}
-#elif defined(NSIMD_ROCM) && defined(NSIMD_IS_HIPCC)
-/*__device__ __host__*/ f16 nsimd_f32_to_f16(f32 a) {
-  return __float2half(a);
-}
-/*__device__ __host__*/ f32 nsimd_f16_to_f32(f16 a) {
+inline f32 nsimd_f16_to_f32(f16 a) {
   return __half2float(a);
 }
 #else
@@ -927,7 +920,6 @@ NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 namespace nsimd {
 NSIMD_DLLSPEC u16 f32_to_u16(f32);
 NSIMD_DLLSPEC f32 u16_to_f32(u16);
-
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 f16_to_f32(f16 a) { return (f32)a; }
