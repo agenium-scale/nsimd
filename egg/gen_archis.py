@@ -27,7 +27,7 @@ import sys
 # -----------------------------------------------------------------------------
 # Generate code for output
 
-def get_simd_implementation(operator, mod, simd_ext):
+def get_simd_implementation(opts, operator, mod, simd_ext):
     typ_pairs = []
     for t in operator.types:
         return_typs = common.get_output_types(t, operator.output_to)
@@ -95,7 +95,7 @@ def get_simd_implementation(operator, mod, simd_ext):
                }} // namespace nsimd
                #endif
 
-               '''.format(content=mod.get_impl(operator.name,
+               '''.format(content=mod.get_impl(opts, operator.name,
                           simd_ext, from_typ, to_typ), **fmtspec)
     return ret[0:-2]
 
@@ -205,7 +205,8 @@ def gen_archis_write_file(opts, op, platform, simd_ext, simd_dir):
                                 platform=platform,
                                 simd_ext=simd_ext,
                                 func=op.name, hbar=common.hbar,
-                                code=get_simd_implementation(op, mod, simd_ext)))
+                                code=get_simd_implementation(opts, op, mod,
+                                    simd_ext)))
     common.clang_format(opts, filename)
 
 def gen_archis_simd(opts, platform, simd_ext, simd_dir):
@@ -219,10 +220,10 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
         return
     mod = opts.platforms[platform]
     c_code = '\n'.join(['typedef {} nsimd_{}_v{};'.format(mod.get_type(
-                       simd_ext, t), simd_ext, t) for t in common.types])
+                       opts, simd_ext, t), simd_ext, t) for t in common.types])
     c_code += '\n\n'
     c_code += '\n'.join(['typedef {} nsimd_{}_vl{};'.format(
-              mod.get_logical_type(simd_ext, t), simd_ext, t)
+              mod.get_logical_type(opts, simd_ext, t), simd_ext, t)
               for t in common.types])
     if mod.has_compatible_SoA_types(simd_ext):
         for deg in range(2, 5):
