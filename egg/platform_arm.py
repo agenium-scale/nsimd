@@ -233,7 +233,8 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(**fmtspec)
     if func == 'shra':
         ret += '''#include <nsimd/arm/{simd_ext}/shr.h>
-                  '''.format(simd_ext=simd_ext)
+        '''.format(simd_ext=simd_ext)   
+
     if func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/arm/{simd_ext}/eq.h>
                   # include <nsimd/arm/{simd_ext}/set1.h>
@@ -857,7 +858,6 @@ def shl_shr(op, simd_ext, typ):
             return '''return vsh{lr}q_n_{suf}({in0}, {in1});'''.\
                 format(**fmtspec, sign=sign, lr=lr)
         else:
-
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
                                 vsh{lr}q_n_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
                                 {in1}));'''.format(**fmtspec, lr=lr)

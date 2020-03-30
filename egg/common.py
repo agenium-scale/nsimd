@@ -39,6 +39,8 @@ import os
 import sys
 import io
 import collections
+import platform
+import string
 
 # -----------------------------------------------------------------------------
 # check if file exists
@@ -109,6 +111,10 @@ SOFTWARE.
 {}
 
 '''.format(begin_comment, end_comment))
+
+        fout.write('{} This file has been auto-generated {}\n\n'.\
+            format(begin_comment, end_comment))
+    
     return io.open(filename, mode='a', encoding='utf-8')
 
 # -----------------------------------------------------------------------------
@@ -1087,3 +1093,174 @@ def ext_from_lang(lang):
 
 def nsimd_category(category):
     return 'nsimd_' + category
+
+# ------------------------------------------------------------------------------
+# Doc common
+
+doc_header = '''\
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset=\"utf-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+    <title>{}</title>
+    <style type=\"text/css\">
+      body {{
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }}
+      h1,h2,h3 {{
+        line-height:1.2
+      }}
+      table,th, td {{
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }}
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src=\"assets/polyfill.min.js\"></script>
+    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\"></script>
+    <!-- Highlight.js -->
+    <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
+    <script src=\"assets/highlight.min.js\"></script>
+    <script src=\"assets/cpp.min.js\"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<center>
+  <img src=\"img/logo.svg\"><br>
+  <br>
+  <a href=\"index.html\">Index</a> |
+  <a href=\"quick_start.html\">Quick Start</a> |
+  <a href=\"tutorials.html\">Tutorials</a> |
+  <a href=\"faq.html\">FAQ</a> |
+  <a href=\"contribute.html\">Contribute</a> |
+  <a href=\"overview.html\">API overview</a> |
+  <a href=\"api.html\">API reference</a> |
+  <a href=\"modules.html\">Modules</a>
+  <br><hr>
+  {}
+</center>
+'''
+
+doc_footer = '''\
+  </body>
+</html>
+'''
+
+def to_filename(op_name):
+    valid = string.ascii_letters + string.digits
+    ret = ''
+    for c in op_name:
+        ret += '-' if c not in valid else c
+    return ret
+
+def get_html_header(title='', module='', links={}):
+    additional_links=''
+    if(module != ''):
+        additional_links += '<b>{}: </b>\n'.format(title)
+        additional_links += '\n'.join('<a href=\"module_{}_{}.html\">{}</a>'.\
+                                      format(module, name, title) \
+                                      for name, title in links.items())
+    return doc_header.format(title, additional_links)
+
+def get_html_footer():
+    return doc_footer
+
+def get_markdown_dir(opts):
+    return os.path.join(opts.script_dir, '..', 'doc', 'markdown')
+
+def get_markdown_api_file(opts, name, module=''):
+    root = get_markdown_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, 'api_{}.md'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_api_{}.md'.format(module, op_name))
+
+def get_markdown_file(opts, name, module=''):
+    root =  get_markdown_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, '{}.md'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_{}.md'.format(module, op_name))    
+
+def get_html_dir(opts):
+    return os.path.join(opts.script_dir, '..', 'doc', 'html')
+
+def get_html_api_file(opts, name, module=''):
+    root = get_html_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, 'api_{}.html'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_api_{}.html'.format(module, op_name))
+
+def get_html_file(opts, name, module=''):
+    root = get_html_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, '{}.html'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
+
+def gen_doc_html(opts, title, module='', links={}):
+    # check if md2html exists
+    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+    full_path_md2html = os.path.join(doc_dir, md2html)
+    if not os.path.isfile(full_path_md2html):
+        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
+        if platform.system() == 'Windows':
+            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+        else:
+            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
+        print(msg)
+        return
+
+    # get all markdown files
+    md_dir = get_markdown_dir(opts)
+    html_dir = get_html_dir(opts)
+
+    if(not os.path.isdir(html_dir)):
+        mkdir_p(html_dir)
+
+    doc_files = []
+    if module == '':
+        for file in os.listdir(md_dir):
+            name =  os.path.basename(file)
+            if name.endswith('.md') \
+               and not name.startswith('module_'):
+                doc_files.append(os.path.splitext(name)[0])
+    else:
+        for file in os.listdir(md_dir):
+            name =  os.path.basename(file)
+            if name.endswith('.md') \
+               and name.startswith('module_{}'.format(module)):
+                doc_files.append(os.path.splitext(name)[0])
+
+    ## gen html files
+    header = get_html_header(title, module, links)
+    footer = get_html_footer()
+    tmp_file = os.path.join(doc_dir, 'tmp.html')
+    for filename in doc_files:
+        input_name = os.path.join(md_dir, filename + '.md')
+        output_name = os.path.join(html_dir, filename + '.html')
+        os.system('{} "{}" "{}"'.format(full_path_md2html, input_name, tmp_file))
+        with open_utf8(opts, output_name) as fout:
+            fout.write(header)
+            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                fout.write(fin.read())
+            fout.write(footer)
+    
