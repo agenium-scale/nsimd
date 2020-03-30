@@ -48,7 +48,7 @@ def emulate_fp16(simd_ext):
     return True
 
 
-def get_type(simd_ext, typ):
+def get_type(opts, simd_ext, typ):
     # Number of bits
     if simd_ext in sse:
         bits = '128'
@@ -71,11 +71,11 @@ def get_type(simd_ext, typ):
         raise ValueError('Unknown type "{}"'.format(typ))
 
 
-def get_logical_type(simd_ext, typ):
+def get_logical_type(opts, simd_ext, typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     if simd_ext in sse + avx:
-        return get_type(simd_ext, typ)
+        return get_type(opts, simd_ext, typ)
     elif simd_ext in avx512:
         if typ == 'f16':
             return 'struct { __mmask16 v0; __mmask16 v1; }'
@@ -410,7 +410,7 @@ def split_opn(func, simd_ext, typ, n):
 def split_op2(func, simd_ext, typ):
     return split_opn(func, simd_ext, typ, 2)
 
-def emulate_op2(op, simd_ext, typ):
+def emulate_op2(opts, op, simd_ext, typ):
     return '''int i;
               {typ} buf0[{le}], buf1[{le}];
               {pre}storeu{sufsi}(({intrin_typ}*)buf0, {in0});
@@ -419,11 +419,11 @@ def emulate_op2(op, simd_ext, typ):
                 buf0[i] = ({typ})(buf0[i] {op} buf1[i]);
               }}
               return {pre}loadu{sufsi}(({intrin_typ}*)buf0);'''. \
-              format(intrin_typ=get_type(simd_ext, typ), op=op, **fmtspec)
+              format(intrin_typ=get_type(opts, simd_ext, typ), op=op, **fmtspec)
 
-def emulate_op1(func, simd_ext, typ):
+def emulate_op1(opts, func, simd_ext, typ):
     if typ in common.iutypes:
-        cast = '({}*)'.format(get_type(simd_ext, typ))
+        cast = '({}*)'.format(get_type(opts, simd_ext, typ))
     else:
         cast = ''
     return '''int i;
@@ -896,16 +896,16 @@ def len1(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Division
 
-def div2(simd_ext, typ):
+def div2(opts, simd_ext, typ):
     if typ in common.ftypes:
         return how_it_should_be_op2('div', simd_ext, typ)
-    return emulate_op2('/', simd_ext, typ)
+    return emulate_op2(opts, '/', simd_ext, typ)
 
 # -----------------------------------------------------------------------------
 # Multiplication
 
-def mul2(simd_ext, typ):
-    emulate = emulate_op2('*', simd_ext, typ)
+def mul2(opts, simd_ext, typ):
+    emulate = emulate_op2(opts, '*', simd_ext, typ)
     split = split_op2('mul', simd_ext, typ)
     # Floats
     if typ in common.ftypes:
@@ -926,7 +926,7 @@ def mul2(simd_ext, typ):
             return split
     # Integers 64 on SSE on AVX
     if simd_ext in sse + avx and typ in ['i64', 'u64']:
-        return emulate_op2('*', simd_ext, typ)
+        return emulate_op2(opts, '*', simd_ext, typ)
     # Integers 16 on AVX512
     if simd_ext in avx512 and typ in ['i16', 'u16']:
         if simd_ext == 'avx512_skylake':
@@ -1028,7 +1028,7 @@ def shl_shr(func, simd_ext, typ):
         if typ in ['i32', 'u32', 'i64', 'u64']:
             return normal_16_32_64
 
-def shra(simd_ext, typ):
+def shra(opts, simd_ext, typ):
     if typ in common.utypes:
         # For unsigned type, logical shift
         return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
@@ -1055,8 +1055,7 @@ def shra(simd_ext, typ):
         {v_typ} v_tmp1 = {pre}srai_epi16({in0}, 8 + {in1});
         v_tmp1 = {pre}slli_epi16(v_tmp1, 8);
         return {pre}or_si{nbits}(v_tmp0, v_tmp1);
-        '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))       
-
+        '''.format(**fmtspec, v_typ=get_type(opts, simd_ext, typ))
     elif typ  == 'i64':
         # For i64 we have to extend the sign manually.
         if simd_ext in ['sse2', 'sse42']:
@@ -1073,7 +1072,7 @@ def shra(simd_ext, typ):
               _mm_cmplt_pd(_mm_castsi128_pd({in0}), _mm_set1_pd(0)));
             __m128i v_mask = _mm_and_si128(v_sign, v_test);
             return _mm_or_si128(v_tmp0, v_mask);
-            '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
+            '''.format(**fmtspec, v_typ=get_type(opts, simd_ext, typ))
         elif simd_ext == 'avx2':
             return '''\
             i{typnbits} sign;
@@ -1088,7 +1087,7 @@ def shra(simd_ext, typ):
               _mm256_sub_epi64(_mm256_setzero_si256(), {in0}), _mm256_setzero_si256());
             __m256i v_mask = _mm256_and_si256(v_sign, v_test);
             return _mm256_or_si256(v_tmp0, v_mask);
-            '''.format(**fmtspec, v_typ=get_type(simd_ext, typ))
+            '''.format(**fmtspec, v_typ=get_type(opts, simd_ext, typ))
         else:
             return \
             '''#ifdef NSIMD_IS_CLANG
@@ -1616,7 +1615,7 @@ def fma_fms(func, simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Ceil and floor
 
-def round1(func, simd_ext, typ):
+def round1(opts, func, simd_ext, typ):
     if typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
                   ret.v0 = nsimd_{func}_{simd_ext}_f32({in0}.v0);
@@ -1629,13 +1628,13 @@ def round1(func, simd_ext, typ):
         if simd_ext == 'sse42':
             return normal
         else:
-            return emulate_op1(func, simd_ext, typ)
+            return emulate_op1(opts, func, simd_ext, typ)
     return 'return {in0};'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Trunc
 
-def trunc1(simd_ext, typ):
+def trunc1(opts, simd_ext, typ):
     if typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
                   ret.v0 = nsimd_trunc_{simd_ext}_f32({in0}.v0);
@@ -1645,7 +1644,7 @@ def trunc1(simd_ext, typ):
         normal = '''return {pre}round{suf}({in0}, _MM_FROUND_TO_ZERO |
                                _MM_FROUND_NO_EXC);'''.format(**fmtspec)
         if simd_ext == 'sse2':
-            return emulate_op1('trunc', simd_ext, typ)
+            return emulate_op1(opts, 'trunc', simd_ext, typ)
         if simd_ext == 'sse42':
             return normal
         if simd_ext in avx:
@@ -1663,7 +1662,7 @@ def trunc1(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Round to even
 
-def round_to_even1(simd_ext, typ):
+def round_to_even1(opts, simd_ext, typ):
     if typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
                   ret.v0 = nsimd_round_to_even_{simd_ext}_f32({in0}.v0);
@@ -1673,7 +1672,7 @@ def round_to_even1(simd_ext, typ):
         normal = '''return {pre}round{suf}({in0}, _MM_FROUND_TO_NEAREST_INT |
                                _MM_FROUND_NO_EXC);'''.format(**fmtspec)
         if simd_ext == 'sse2':
-            return emulate_op1('round_to_even', simd_ext, typ)
+            return emulate_op1(opts, 'round_to_even', simd_ext, typ)
         if simd_ext == 'sse42':
             return normal
         if simd_ext in avx:
@@ -2523,7 +2522,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
 # -----------------------------------------------------------------------------
 # downconvert
 
-def downcvt1(simd_ext, from_typ, to_typ):
+def downcvt1(opts, simd_ext, from_typ, to_typ):
     # From f16 is easy
     if from_typ == 'f16':
         le_to_typ = int(fmtspec['le']) * 2
@@ -2543,7 +2542,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
            }}
            return {pre}loadu_si{nbits}(({nat_typ}*)dst);'''. \
            format(le_to_typ=le_to_typ, le_1f32=le_1f32, le_2f32=le_2f32,
-                  le_3f32=le_3f32, nat_typ=get_type(simd_ext, to_typ),
+                  le_3f32=le_3f32, nat_typ=get_type(opts, simd_ext, to_typ),
                   **fmtspec)
 
     # To f16 is easy
@@ -2599,9 +2598,9 @@ def downcvt1(simd_ext, from_typ, to_typ):
          dst[i] = ({to_typ})src[i];
        }}
        return {pre}loadu{sufsi_to_typ}({cast_dst}dst);'''. \
-       format(cast_src='({}*)'.format(get_type(simd_ext, from_typ)) \
+       format(cast_src='({}*)'.format(get_type(opts, simd_ext, from_typ)) \
               if from_typ in common.iutypes else '',
-              cast_dst='({}*)'.format(get_type(simd_ext, to_typ)) \
+              cast_dst='({}*)'.format(get_type(opts, simd_ext, to_typ)) \
               if to_typ in common.iutypes else '',
               le_to_typ=le_to_typ, sufsi_to_typ=suf_si(simd_ext, to_typ),
               **fmtspec)
@@ -3020,7 +3019,7 @@ def zip(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # unzip functions
 
-def unzip_half(func, simd_ext, typ):
+def unzip_half(opts, func, simd_ext, typ):
     tab_size = 2 * int(fmtspec['le'])
     vec_size = int(fmtspec['le'])
     loop = '''\
@@ -3034,7 +3033,7 @@ def unzip_half(func, simd_ext, typ):
     }}
     return nsimd_loadu_{simd_ext}_{typ}(res);
     '''.format(tab_size=tab_size, vec_size=vec_size,
-               cast='({}*)'.format(get_type(simd_ext, typ)) \
+               cast='({}*)'.format(get_type(opts, simd_ext, typ)) \
                if typ in common.iutypes else '',
                offset = '0' if func == 'unziplo' else '1', **fmtspec)
     # SSE ------------------------------------------------------------
@@ -3208,13 +3207,13 @@ def unzip(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # get_impl function
 
-def get_impl(func, simd_ext, from_typ, to_typ):
+def get_impl(opts, func, simd_ext, from_typ, to_typ):
     global fmtspec
 
     fmtspec = {
       'simd_ext': simd_ext,
       'typ': from_typ,
-      'styp': get_type(simd_ext, from_typ),
+      'styp': get_type(opts, simd_ext, from_typ),
       'from_typ': from_typ,
       'to_typ': to_typ,
       'pre': pre(simd_ext),
@@ -3262,13 +3261,13 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'sub': lambda: addsub('sub', simd_ext, from_typ),
         'adds': lambda: adds(simd_ext, from_typ),
         'subs': lambda: subs(simd_ext, from_typ),
-        'div': lambda: div2(simd_ext, from_typ),
+        'div': lambda: div2(opts, simd_ext, from_typ),
         'sqrt': lambda: sqrt1(simd_ext, from_typ),
         'len': lambda: len1(simd_ext, from_typ),
-        'mul': lambda: mul2(simd_ext, from_typ),
+        'mul': lambda: mul2(opts, simd_ext, from_typ),
         'shl': lambda: shl_shr('shl', simd_ext, from_typ),
         'shr': lambda: shl_shr('shr', simd_ext, from_typ),
-        'shra': lambda: shra(simd_ext, from_typ),
+        'shra': lambda: shra(opts, simd_ext, from_typ),
         'set1': lambda: set1(simd_ext, from_typ),
         'eq': lambda: eq2(simd_ext, from_typ),
         'ne': lambda: neq2(simd_ext, from_typ),
@@ -3288,10 +3287,10 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'fnma': lambda: fma_fms('fnma', simd_ext, from_typ),
         'fms': lambda: fma_fms('fms', simd_ext, from_typ),
         'fnms': lambda: fma_fms('fnms', simd_ext, from_typ),
-        'ceil': lambda: round1('ceil', simd_ext, from_typ),
-        'floor': lambda: round1('floor', simd_ext, from_typ),
-        'trunc': lambda: trunc1(simd_ext, from_typ),
-        'round_to_even': lambda: round_to_even1(simd_ext, from_typ),
+        'ceil': lambda: round1(opts, 'ceil', simd_ext, from_typ),
+        'floor': lambda: round1(opts, 'floor', simd_ext, from_typ),
+        'trunc': lambda: trunc1(opts, simd_ext, from_typ),
+        'round_to_even': lambda: round_to_even1(opts, simd_ext, from_typ),
         'all': lambda: all_any('all', simd_ext, from_typ),
         'any': lambda: all_any('any', simd_ext, from_typ),
         'reinterpret': lambda: reinterpret1(simd_ext, from_typ, to_typ),
@@ -3307,13 +3306,13 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'reverse': lambda: reverse1(simd_ext, from_typ),
         'addv': lambda: addv(simd_ext, from_typ),
         'upcvt': lambda: upcvt1(simd_ext, from_typ, to_typ),
-        'downcvt': lambda: downcvt1(simd_ext, from_typ, to_typ),
+        'downcvt': lambda: downcvt1(opts, simd_ext, from_typ, to_typ),
         'to_mask': lambda: to_mask1(simd_ext, from_typ),
         'to_logical': lambda: to_logical1(simd_ext, from_typ),
         'ziplo': lambda: zip_half('ziplo', simd_ext, from_typ),
         'ziphi': lambda: zip_half('ziphi', simd_ext, from_typ),
-        'unziplo': lambda: unzip_half('unziplo', simd_ext, from_typ),
-        'unziphi': lambda: unzip_half('unziphi', simd_ext, from_typ),
+        'unziplo': lambda: unzip_half(opts, 'unziplo', simd_ext, from_typ),
+        'unziphi': lambda: unzip_half(opts, 'unziphi', simd_ext, from_typ),
         'zip' : lambda : zip(simd_ext, from_typ),
         'unzip' : lambda : unzip(simd_ext, from_typ)
     }

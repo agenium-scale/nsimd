@@ -71,6 +71,26 @@ fixed_sized_sve = ['sve128', 'sve256', 'sve512', 'sve1024', 'sve2048']
 sve = ['sve'] + fixed_sized_sve
 fmtspec = {}
 
+def convert_from_predicate(opts, op):
+    if opts.sve_emulate_bool:
+        return '''svsel({op},
+                    svdup_n_u{typnbits}_x({svtrue}, (u{typnbits})~0),
+                    svdup_n_u{typnbits}_x({svtrue}, 0))'''. \
+                            format(op=op, **fmtspec)
+    else:
+        return op
+
+def convert_to_predicate(opts, op):
+    if opts.sve_emulate_bool:
+        # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+        # it needs to be deleted when the bug is corrected
+        return '''svcmpeq({svtrue},
+                          (svuint{typnbits}_t){op},
+                          svdup_n_u{typnbits}_x({svtrue}, (u{typnbits})~0))'''. \
+                            format(op=op, **fmtspec)
+    else:
+        return op
+
 # -----------------------------------------------------------------------------
 # Implementation of mandatory functions for this module
 
@@ -89,7 +109,7 @@ def emulate_fp16(simd_ext):
         return True
 
 
-def get_type(simd_ext, typ):
+def get_type(opts, simd_ext, typ):
     if simd_ext in neon:
         if typ == 'f64':
             if simd_ext == 'neon128':
@@ -116,7 +136,7 @@ def get_type(simd_ext, typ):
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
 
-def get_logical_type(simd_ext, typ):
+def get_logical_type(opts, simd_ext, typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     if simd_ext not in get_simd_exts():
@@ -140,16 +160,17 @@ def get_logical_type(simd_ext, typ):
         elif typ == 'f64':
             return 'struct { u64 v0; u64 v1; }'
         else:
-            return get_type(simd_ext, typ2)
+            return get_type(opts, simd_ext, typ2)
     if simd_ext == 'aarch64':
         if typ == 'f16':
-            return get_logical_type('neon128', 'f16')
+            return get_logical_type(opts, 'neon128', 'f16')
         else:
-            return get_type(simd_ext, typ2)
-    elif simd_ext == 'sve':
-        return 'svbool_t'
-    elif simd_ext in fixed_sized_sve:
-        return 'svbool_t'
+            return get_type(opts, simd_ext, typ2)
+    elif simd_ext in sve:
+        if opts.sve_emulate_bool:
+            return get_type(opts, simd_ext, 'u'+typ[1:])
+        else:
+            return 'svbool_t'
 
 
 def get_nb_registers(simd_ext):
@@ -293,9 +314,9 @@ def emulate_op2(op, simd_ext, typ):
                   return svld1_{suf}({svtrue}, buf0); '''. \
                   format(op=op, le=le, **fmtspec)
 
-def emulate_lop2_neon(op, simd_ext, typ):
+def emulate_lop2_neon(opts, op, simd_ext, typ):
     le = 128 // int(typ[1:]);
-    ltyp = get_logical_type(simd_ext, typ)
+    ltyp = get_logical_type(opts, simd_ext, typ)
     lsuf = suf(ltyp)
     return '''int i;
               {ltyp} buf0[{le}], buf1[{le}];
@@ -398,15 +419,15 @@ def f16f64(simd_ext, typ, op, armop, arity, forced_intrinsics = ''):
 # -----------------------------------------------------------------------------
 # Get SoA types
 
-def get_soa_typ(simd_ext, typ, deg):
-    ntyp = get_type(simd_ext, typ) if typ != 'f16' else 'float16x8_t'
+def get_soa_typ(opts, simd_ext, typ, deg):
+    ntyp = get_type(opts, simd_ext, typ) if typ != 'f16' else 'float16x8_t'
     return '{}x{}_t'.format(ntyp[:-2], deg)
 
 # -----------------------------------------------------------------------------
 
 # Loads of degree 1, 2, 3 and 4
 
-def load1234(simd_ext, typ, deg):
+def load1234(opts, simd_ext, typ, deg):
     if simd_ext in neon:
         if deg == 1:
             normal = 'return vld{deg}q_{suf}({in0});'. \
@@ -445,7 +466,7 @@ def load1234(simd_ext, typ, deg):
                {soa_typ} buf = vld{deg}q_{suf}({in0});
                {assignment}
                return ret;'''. \
-               format(deg=deg, soa_typ=get_soa_typ(simd_ext, typ, deg),
+               format(deg=deg, soa_typ=get_soa_typ(opts, simd_ext, typ, deg),
                       assignment='\n'.join(['ret.v{i} = buf.val[{i}];'. \
                       format(i=i) for i in range(0, deg)]), **fmtspec)
             if typ == 'f16':
@@ -461,7 +482,7 @@ def load1234(simd_ext, typ, deg):
                    return ret;'''. \
                    format(deg=deg, assignment='\n'.join([assignment. \
                           format(i=i) for i in range(0, deg)]),
-                          soa_typ=get_soa_typ(simd_ext, 'u16', deg), **fmtspec)
+                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg), **fmtspec)
             elif typ in 'f64' and simd_ext == 'neon128':
                 return \
                 'nsimd_neon128_vf64x{} ret;\n'.format(deg) + \
@@ -500,7 +521,7 @@ def load1234(simd_ext, typ, deg):
 # -----------------------------------------------------------------------------
 # Stores of degree 1, 2, 3 and 4
 
-def store1234(simd_ext, typ, deg):
+def store1234(opts, simd_ext, typ, deg):
     if simd_ext in neon:
         if deg == 1:
             normal = 'vst{deg}q_{suf}({in0}, {in1});'. \
@@ -536,7 +557,7 @@ def store1234(simd_ext, typ, deg):
                format(deg=deg, assignment='\n'.join([
                       'buf.val[{{}}] = {{in{}}};'.format(i). \
                       format(i - 1, **fmtspec) for i in range(1, deg + 1)]),
-                      soa_typ=get_soa_typ(simd_ext, typ, deg), **fmtspec)
+                      soa_typ=get_soa_typ(opts, simd_ext, typ, deg), **fmtspec)
             if typ == 'f16':
                 assignment = \
                 '''nsimd_storeu_{{simd_ext}}_f16((f16 *)buf, {{in{}}});
@@ -553,7 +574,7 @@ def store1234(simd_ext, typ, deg):
                    format(assignment='\n'.join([assignment.format(i). \
                           format(i - 1, **fmtspec) for i in range(1, deg + 1)]),
                           deg=deg, normal=normal,
-                          soa_typ=get_soa_typ(simd_ext, 'u16', deg), **fmtspec)
+                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg), **fmtspec)
             elif typ == 'f64' and simd_ext == 'neon128':
                 return \
                 '\n'.join(['*({{in0}} + {}) = {{in{}}}.v0;'. \
@@ -729,7 +750,7 @@ def not1(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Logical operators: and, or, xor, andnot
 
-def lop2(op, simd_ext, typ):
+def lop2(opts, op, simd_ext, typ):
     armop = {'orl': 'orr', 'xorl': 'eor', 'andl': 'and', 'andnotl': 'bic'}
     if simd_ext in neon:
         if typ == 'f16':
@@ -758,14 +779,22 @@ def lop2(op, simd_ext, typ):
             return 'return v{armop}q_u{typnbits}({in0}, {in1});'. \
                    format(armop=armop[op], **fmtspec)
     else:
-        return \
-        'return sv{armop}_z({svtrue}, {in0}, {in1});'. \
-        format(armop=armop[op], **fmtspec)
+        if opts.sve_emulate_bool:
+            # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            return \
+            '''return sv{armop}_z({svtrue},
+                                  (svuint{typnbits}_t){in0},
+                                  (svuint{typnbits}_t){in1});'''. \
+            format(armop=armop[op], **fmtspec)
+        else:
+            return '''return sv{armop}_z({svtrue}, {in0}, {in1});'''. \
+            format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Logical not
 
-def lnot1(simd_ext, typ):
+def lnot1(opts, simd_ext, typ):
     if simd_ext in neon:
         if typ == 'f16':
             return \
@@ -788,9 +817,13 @@ def lnot1(simd_ext, typ):
                                format(**fmtspec)
         else:
             return 'return vmvnq_u{typnbits}({in0});'.format(**fmtspec)
-    else:
-        return \
-        'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
+    elif simd_ext in sve:
+        if opts.sve_emulate_bool:
+            # TODO: the cast is a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            return 'return svnot_x({svtrue}, (svuint{typnbits}_t){in0});'.format(**fmtspec)
+        else:
+            return 'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Square root
@@ -820,14 +853,14 @@ def sqrt1(simd_ext, typ):
 def shl_shr(op, simd_ext, typ):
     if simd_ext in neon:
         sign = '-' if op == 'shr' else ''
+        lr = 'r' if op == 'shr' else 'l'
         if typ in common.utypes:
-            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}((i{typnbits})({sign}{in1})));'''.\
-                format(**fmtspec, sign=sign)
+            return '''return vsh{lr}q_n_{suf}({in0}, {in1});'''.\
+                format(**fmtspec, sign=sign, lr=lr)
         else:
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
-                                vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
-                                vdupq_n_s{typnbits}((i{typnbits})({sign}{in1}))));'''.\
-                                    format(**fmtspec, sign=sign)
+                                vsh{lr}q_n_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
+                                {in1}));'''.format(**fmtspec, lr=lr)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
@@ -837,7 +870,7 @@ def shl_shr(op, simd_ext, typ):
                svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
                    format(suf2=common.bitfield_type[typ], armop=armop, **fmtspec)
        else:
-           return '''return sv{armop}_{suf}_z({svtrue}, {in0},
+           return '''return sv{armop}_{suf}_x({svtrue}, {in0},
            svdup_n_u{typnbits}((u{typnbits}){in1}));'''. \
                format(armop=armop, **fmtspec)
 
@@ -851,9 +884,13 @@ def shra(simd_ext, typ):
         {in0}, vdupq_n_s{typnbits}((i{typnbits})-{in1}));'''.\
             format(**fmtspec)
     elif simd_ext in sve:
-        return '''return svasr_s{typnbits}_z({svtrue}, {in0},
-        svdup_n_u{typnbits}((u{typnbits}){in1}));'''.\
-            format(**fmtspec)
+        if typ[0] == 'i':
+            return '''return svasr_n_{suf}_x({svtrue}, {in0},
+                (u{typnbits}){in1});'''.\
+                format(**fmtspec)
+        elif typ[0] == 'u':
+            return 'return svlsl_n_{suf}_x({svtrue}, {in0}, (u64){in1});'.\
+                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Set1
@@ -883,7 +920,7 @@ def set1(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # Comparison operators: ==, <, <=, >, >=
 
-def cmp2(op, simd_ext, typ):
+def cmp2(opts, op, simd_ext, typ):
     binop = {'eq': '==', 'lt': '<', 'le': '<=', 'gt': '>', 'ge': '>='}
     armop = {'eq': 'eq', 'lt': 'lt', 'le': 'le', 'gt': 'gt', 'ge': 'ge'}
     if simd_ext in neon:
@@ -919,26 +956,35 @@ def cmp2(op, simd_ext, typ):
                       format(op=binop[op], **fmtspec)
         else:
             return normal
-    else:
-        return 'return svcmp{op}_{suf}({svtrue}, {in0}, {in1});'. \
-               format(op=armop[op], **fmtspec)
+    elif simd_ext in sve:
+        if opts.sve_emulate_bool:
+            # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            comp = 'svcmp{op}_{suf}({svtrue}, ({svetyp}){in0}, ({svetyp}){in1})'. \
+                format(op=armop[op], **fmtspec)
+            return 'return {};'.format(convert_from_predicate(opts, comp))
+        else:
+            return 'return svcmp{op}_{suf}({svtrue}, {in0}, {in1});'. \
+                    format(op=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Not equal
 
-def neq2(simd_ext, typ):
+def neq2(opts, simd_ext, typ):
     if simd_ext in neon:
         return '''return nsimd_notl_{simd_ext}_{typ}(
                       nsimd_eq_{simd_ext}_{typ}({in0}, {in1}));'''. \
                       format(**fmtspec)
-    else:
-        return 'return svcmpne_{suf}({svtrue}, {in0}, {in1});'. \
-               format(**fmtspec)
+    elif simd_ext in sve:
+        comp='svcmpne_{suf}({svtrue}, {in0}, {in1})'. \
+                format(**fmtspec)
+        return 'return {};'.format(convert_from_predicate(opts, comp))
+
 
 # -----------------------------------------------------------------------------
 # If_else
 
-def if_else3(simd_ext, typ):
+def if_else3(opts, simd_ext, typ):
     if simd_ext in neon:
         intrinsic = 'return vbslq_{suf}({in0}, {in1}, {in2});'. \
                     format(**fmtspec)
@@ -961,8 +1007,17 @@ def if_else3(simd_ext, typ):
                       return ret;'''.format(**fmtspec)
         else:
             return intrinsic
-    else:
-        return 'return svsel_{suf}({in0}, {in1}, {in2});'.format(**fmtspec)
+    elif simd_ext in sve:
+        if opts.sve_emulate_bool:
+            # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
+            # it needs to be deleted when the bug is corrected
+            return 'return svsel_{suf}({cond}, ({svetyp}){in1}, ({svetyp}){in2});' \
+                    .format(cond=convert_to_predicate(opts,
+                                '{in0}'.format(**fmtspec)),
+                            **fmtspec)
+        else:
+            return 'return svsel_{suf}({in0}, {in1}, {in2});' \
+                    .format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Minimum and maximum
@@ -1210,7 +1265,7 @@ def storel(aligned, simd_ext, typ):
 # -----------------------------------------------------------------------------
 # All and any
 
-def allany1(op, simd_ext, typ):
+def allany1(opts, op, simd_ext, typ):
     binop = '&&' if  op == 'all' else '||'
     if simd_ext == 'neon128':
         if typ == 'f16':
@@ -1245,17 +1300,23 @@ def allany1(op, simd_ext, typ):
             format(armop=armop[op], **fmtspec)
         else:
             return normal
-    else:
+    elif simd_ext in sve:
         if op == 'any':
-            return 'return svptest_any({svtrue}, {in0});'.format(**fmtspec)
+            operand= convert_to_predicate(opts, '{in0}'.format(**fmtspec))
+            return '''return svptest_any({svtrue}, {operand});'''. \
+                    format(operand=operand, **fmtspec)
         else:
-            return '''return !svptest_any({svtrue}, svnot_z(
-                                 {svtrue}, {in0}));'''.format(**fmtspec)
+            operand='svnot_z({svtrue}, {op})'. \
+            format(op=convert_to_predicate(opts, '{in0}'.format(**fmtspec)),
+                   **fmtspec)
+
+            return '''return !svptest_any({svtrue}, {operand});'''. \
+                    format(operand=operand, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # nbtrue
 
-def nbtrue1(simd_ext, typ):
+def nbtrue1(opts, simd_ext, typ):
     if simd_ext == 'neon128':
         if typ == 'f16':
             return \
@@ -1293,9 +1354,10 @@ def nbtrue1(simd_ext, typ):
                          format(**fmtspec)
         else:
             return normal
-    else:
-        return 'return (int)svcntp_b{typnbits}({svtrue}, {in0});'. \
-               format(**fmtspec)
+    elif simd_ext in sve:
+        return 'return (int)svcntp_b{typnbits}({svtrue}, {op});'. \
+               format(op=convert_to_predicate(opts, '{in0}'.format(**fmtspec)),
+                      **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Reinterpret logical
@@ -1815,7 +1877,7 @@ def subs(simd_ext, from_typ):
 # -----------------------------------------------------------------------------
 # to_mask
 
-def to_mask1(simd_ext, typ):
+def to_mask1(opts, simd_ext, typ):
     if typ in common.itypes + common.ftypes:
         normal = 'return vreinterpretq_{suf}_u{typnbits}({in0});'. \
                  format(**fmtspec)
@@ -1839,23 +1901,23 @@ def to_mask1(simd_ext, typ):
                     {emulate_f16}
                   # endif'''.format(normal=normal, emulate_f16=emulate_f16)
     elif simd_ext in sve:
-        if typ in common.iutypes:
-            return '''return svsel_{suf}({in0}, svdup_n_{suf}(
-                               ({typ})-1), svdup_n_{suf}(({typ})0));'''. \
-                               format(**fmtspec)
+        if opts.sve_emulate_bool:
+            return 'return svreinterpret_{suf}_u{typnbits}({in0});'. \
+                    format(**fmtspec)
         else:
-            utyp = 'u{}'.format(fmtspec['typnbits'])
-            return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
-                               {in0}, svdup_n_{utyp}(({utyp})-1),
-                               svdup_n_{utyp}(({utyp})0)));'''. \
-                               format(utyp=utyp, **fmtspec)
+           utyp = 'u{}'.format(fmtspec['typnbits'])
+           return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
+                          {in0}, svdup_n_{utyp}(({utyp})-1),
+                          svdup_n_{utyp}(({utyp})0)));'''. \
+               format(utyp=utyp, **fmtspec)
+
     else:
         return normal
 
 # -----------------------------------------------------------------------------
 # to_logical
 
-def to_logical1(simd_ext, typ):
+def to_logical1(opts, simd_ext, typ):
     if typ in common.iutypes:
         return '''return nsimd_ne_{simd_ext}_{typ}({in0},
                            nsimd_set1_{simd_ext}_{typ}(({typ})0));'''. \
@@ -2024,7 +2086,7 @@ def zip_unzip(func, simd_ext, typ):
 # -----------------------------------------------------------------------------
 # get_impl function
 
-def get_impl(func, simd_ext, from_typ, to_typ):
+def get_impl(opts, func, simd_ext, from_typ, to_typ):
     global fmtspec
 
     simd_ext2 = simd_ext if not simd_ext in fixed_sized_sve else 'sve'
@@ -2033,7 +2095,7 @@ def get_impl(func, simd_ext, from_typ, to_typ):
       'simd_ext': simd_ext,
       'simd_ext2': simd_ext2,
       'typ': from_typ,
-      'styp': get_type(simd_ext2, from_typ),
+      'styp': get_type(opts, simd_ext2, from_typ),
       'from_typ': from_typ,
       'to_typ': to_typ,
       'suf': suf(from_typ),
@@ -2044,36 +2106,37 @@ def get_impl(func, simd_ext, from_typ, to_typ):
       'in4': common.in4,
       'in5': common.in5,
       'typnbits': from_typ[1:],
-      'svtrue': 'svptrue_b{}()'.format(from_typ[1:])
+      'svtrue': 'svptrue_b{}()'.format(from_typ[1:]),
+      'svetyp': sve_typ(from_typ),
     }
 
     impls = {
-        'loada': lambda: load1234(simd_ext, from_typ, 1),
-        'load2a': lambda: load1234(simd_ext, from_typ, 2),
-        'load3a': lambda: load1234(simd_ext, from_typ, 3),
-        'load4a': lambda: load1234(simd_ext, from_typ, 4),
-        'loadu': lambda: load1234(simd_ext, from_typ, 1),
-        'load2u': lambda: load1234(simd_ext, from_typ, 2),
-        'load3u': lambda: load1234(simd_ext, from_typ, 3),
-        'load4u': lambda: load1234(simd_ext, from_typ, 4),
-        'storea': lambda: store1234(simd_ext, from_typ, 1),
-        'store2a': lambda: store1234(simd_ext, from_typ, 2),
-        'store3a': lambda: store1234(simd_ext, from_typ, 3),
-        'store4a': lambda: store1234(simd_ext, from_typ, 4),
-        'storeu': lambda: store1234(simd_ext, from_typ, 1),
-        'store2u': lambda: store1234(simd_ext, from_typ, 2),
-        'store3u': lambda: store1234(simd_ext, from_typ, 3),
-        'store4u': lambda: store1234(simd_ext, from_typ, 4),
+        'loada': lambda: load1234(opts, simd_ext, from_typ, 1),
+        'load2a': lambda: load1234(opts, simd_ext, from_typ, 2),
+        'load3a': lambda: load1234(opts, simd_ext, from_typ, 3),
+        'load4a': lambda: load1234(opts, simd_ext, from_typ, 4),
+        'loadu': lambda: load1234(opts, simd_ext, from_typ, 1),
+        'load2u': lambda: load1234(opts, simd_ext, from_typ, 2),
+        'load3u': lambda: load1234(opts, simd_ext, from_typ, 3),
+        'load4u': lambda: load1234(opts, simd_ext, from_typ, 4),
+        'storea': lambda: store1234(opts, simd_ext, from_typ, 1),
+        'store2a': lambda: store1234(opts, simd_ext, from_typ, 2),
+        'store3a': lambda: store1234(opts, simd_ext, from_typ, 3),
+        'store4a': lambda: store1234(opts, simd_ext, from_typ, 4),
+        'storeu': lambda: store1234(opts, simd_ext, from_typ, 1),
+        'store2u': lambda: store1234(opts, simd_ext, from_typ, 2),
+        'store3u': lambda: store1234(opts, simd_ext, from_typ, 3),
+        'store4u': lambda: store1234(opts, simd_ext, from_typ, 4),
         'andb': lambda: binop2("andb", simd_ext2, from_typ),
         'xorb': lambda: binop2("xorb", simd_ext2, from_typ),
         'orb': lambda: binop2("orb", simd_ext2, from_typ),
-        'andl': lambda: lop2("andl", simd_ext2, from_typ),
-        'xorl': lambda: lop2("xorl", simd_ext2, from_typ),
-        'orl': lambda: lop2("orl", simd_ext2, from_typ),
+        'andl': lambda: lop2(opts, "andl", simd_ext2, from_typ),
+        'xorl': lambda: lop2(opts, "xorl", simd_ext2, from_typ),
+        'orl': lambda: lop2(opts, "orl", simd_ext2, from_typ),
         'notb': lambda: not1(simd_ext2, from_typ),
-        'notl': lambda: lnot1(simd_ext2, from_typ),
+        'notl': lambda: lnot1(opts, simd_ext2, from_typ),
         'andnotb': lambda: binop2("andnotb", simd_ext2, from_typ),
-        'andnotl': lambda: lop2("andnotl", simd_ext2, from_typ),
+        'andnotl': lambda: lop2(opts, "andnotl", simd_ext2, from_typ),
         'add': lambda: addsub("add", simd_ext2, from_typ),
         'sub': lambda: addsub("sub", simd_ext2, from_typ),
         'adds': lambda: adds(simd_ext2, from_typ),
@@ -2086,13 +2149,13 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'shr': lambda: shl_shr("shr", simd_ext2, from_typ),
         'shra': lambda: shra(simd_ext2, from_typ),
         'set1': lambda: set1(simd_ext2, from_typ),
-        'eq': lambda: cmp2("eq", simd_ext2, from_typ),
-        'lt': lambda: cmp2("lt", simd_ext2, from_typ),
-        'le': lambda: cmp2("le", simd_ext2, from_typ),
-        'gt': lambda: cmp2("gt", simd_ext2, from_typ),
-        'ge': lambda: cmp2("ge", simd_ext2, from_typ),
-        'ne': lambda: neq2(simd_ext2, from_typ),
-        'if_else1': lambda: if_else3(simd_ext2, from_typ),
+        'eq': lambda: cmp2(opts, "eq", simd_ext2, from_typ),
+        'lt': lambda: cmp2(opts, "lt", simd_ext2, from_typ),
+        'le': lambda: cmp2(opts, "le", simd_ext2, from_typ),
+        'gt': lambda: cmp2(opts, "gt", simd_ext2, from_typ),
+        'ge': lambda: cmp2(opts, "ge", simd_ext2, from_typ),
+        'ne': lambda: neq2(opts, simd_ext2, from_typ),
+        'if_else1': lambda: if_else3(opts, simd_ext2, from_typ),
         'min': lambda: minmax2("min", simd_ext2, from_typ),
         'max': lambda: minmax2("max", simd_ext2, from_typ),
         'loadla': lambda: loadl(True, simd_ext2, from_typ),
@@ -2108,8 +2171,8 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'floor': lambda: round1("floor", simd_ext2, from_typ),
         'trunc': lambda: round1("trunc", simd_ext2, from_typ),
         'round_to_even': lambda: round1("round_to_even", simd_ext2, from_typ),
-        'all': lambda: allany1("all", simd_ext2, from_typ),
-        'any': lambda: allany1("any", simd_ext2, from_typ),
+        'all': lambda: allany1(opts, "all", simd_ext2, from_typ),
+        'any': lambda: allany1(opts, "any", simd_ext2, from_typ),
         'reinterpret': lambda: reinterpret1(simd_ext2, from_typ, to_typ),
         'reinterpretl': lambda: reinterpretl1(simd_ext2, from_typ, to_typ),
         'cvt': lambda: convert1(simd_ext2, from_typ, to_typ),
@@ -2119,13 +2182,13 @@ def get_impl(func, simd_ext, from_typ, to_typ):
         'rsqrt8': lambda: recs1("rsqrt8", simd_ext2, from_typ),
         'rec': lambda: recs1("rec", simd_ext2, from_typ),
         'neg': lambda: neg1(simd_ext2, from_typ),
-        'nbtrue': lambda: nbtrue1(simd_ext2, from_typ),
+        'nbtrue': lambda: nbtrue1(opts, simd_ext2, from_typ),
         'reverse': lambda: reverse1(simd_ext2, from_typ),
         'addv': lambda: addv(simd_ext2, from_typ),
         'upcvt': lambda: upcvt1(simd_ext2, from_typ, to_typ),
         'downcvt': lambda: downcvt1(simd_ext2, from_typ, to_typ),
-        'to_logical': lambda: to_logical1(simd_ext2, from_typ),
-        'to_mask': lambda: to_mask1(simd_ext2, from_typ),
+        'to_logical': lambda: to_logical1(opts, simd_ext2, from_typ),
+        'to_mask': lambda: to_mask1(opts, simd_ext2, from_typ),
         'ziplo': lambda: zip_unzip_half("zip1", simd_ext2, from_typ),
         'ziphi': lambda: zip_unzip_half("zip2", simd_ext2, from_typ),
         'unziplo': lambda: zip_unzip_half("uzp1", simd_ext2, from_typ),
