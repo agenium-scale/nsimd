@@ -65,8 +65,8 @@ SOFTWARE.
     defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||              \
     defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
 #define NSIMD_ARM
-#elif defined(__ppc__) || defined(__powerpc__) || defined (__PPC__)
-  #define NSIMD_POWERPC
+#elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
+#define NSIMD_POWERPC
 #else
 #define NSIMD_CPU
 #endif
@@ -247,11 +247,11 @@ SOFTWARE.
 /* PPC */
 
 #if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
-  #define NSIMD_POWER8
+#define NSIMD_POWER8
 #endif
 
 #if defined(POWER7) && !defined(NSIMD_POWER7)
-  #define NSIMD_POWER7
+#define NSIMD_POWER7
 #endif
 
 /* CUDA */
@@ -342,26 +342,27 @@ SOFTWARE.
 
 #elif defined(NSIMD_POWER7)
 
-  #define NSIMD_PLATFORM ppc
-  #define NSIMD_SIMD power7
+#define NSIMD_PLATFORM ppc
+#define NSIMD_SIMD power7
 
-  #ifdef NSIMD_IS_CLANG
-    // New version of clang are spamming useless warning comming from their altivec.h file
-    #pragma clang diagnostic ignored "-Wc11-extensions"
-    #pragma clang diagnostic ignored "-Wc++11-long-long"
-  #endif
-  #include <altivec.h>
-  #ifdef NSIMD_IS_CLANG
-  #endif
-  #ifdef bool
-    #undef bool
-  #endif
-  #ifdef pixel
-    #undef pixel
-  #endif
-  #ifdef vector
-    #undef vector
-  #endif
+#ifdef NSIMD_IS_CLANG
+// New version of clang are spamming useless warning comming from their
+// altivec.h file
+#pragma clang diagnostic ignored "-Wc11-extensions"
+#pragma clang diagnostic ignored "-Wc++11-long-long"
+#endif
+#include <altivec.h>
+#ifdef NSIMD_IS_CLANG
+#endif
+#ifdef bool
+#undef bool
+#endif
+#ifdef pixel
+#undef pixel
+#endif
+#ifdef vector
+#undef vector
+#endif
 
 #elif defined(NSIMD_SVE128)
 
@@ -719,9 +720,9 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 #if defined(NSIMD_X86)
 #define NSIMD_MAX_ALIGNMENT 64
 #elif defined(NSIMD_ARM)
-  #define NSIMD_MAX_ALIGNMENT 256
+#define NSIMD_MAX_ALIGNMENT 256
 #elif defined(NSIMD_POWERPC)
-  #define NSIMD_MAX_ALIGNMENT 64
+#define NSIMD_MAX_ALIGNMENT 64
 #else
 #define NSIMD_MAX_ALIGNMENT 16
 #endif
@@ -828,6 +829,96 @@ template <typename T> T *aligned_alloc_for(nat n) {
 template <typename T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
+
+template <typename T> class scoped_aligned_mem_helper {
+protected:
+  scoped_aligned_mem_helper(T *const ptr) : m_ptr(ptr) {
+    if (NULL == m_ptr) {
+      throw std::bad_alloc();
+    }
+  }
+
+  static void swap(T **lhs, T **rhs) {
+    T *temp = *lhs;
+    *lhs = *rhs;
+    *rhs = temp;
+  }
+
+public:
+  T *release() {
+    T *ret_ptr = m_ptr;
+    m_ptr = NULL;
+    return ret_ptr;
+  }
+
+  void reset(T *new_ptr) {
+    T *old_ptr = m_ptr;
+    m_ptr = new_ptr;
+    if (NULL != old_ptr) {
+      aligned_free(old_ptr);
+    }
+  }
+
+  T *get() const { return m_ptr; }
+
+protected:
+  T *m_ptr;
+
+private:
+  scoped_aligned_mem_helper(const scoped_aligned_mem_helper &other) {
+    (void)other;
+  }
+
+  scoped_aligned_mem_helper &operator=(const scoped_aligned_mem_helper &rhs) {
+    (void)rhs;
+  }
+};
+
+template <typename T, nat MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
+class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
+public:
+  scoped_aligned_mem()
+      : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {}
+
+  ~scoped_aligned_mem() {
+    if (NULL != this->m_ptr) {
+      aligned_free(this->m_ptr);
+    }
+  }
+
+  void swap(scoped_aligned_mem<T, MemAlignedSizeBytes> *rhs) {
+    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
+  }
+
+  static void free(T **ptr) {
+    aligned_free(*ptr);
+    *ptr = NULL;
+  }
+  static const nat num_elems = MemAlignedSizeBytes / sizeof(T);
+};
+
+template <typename T, nat NumElems>
+class scoped_aligned_mem_for : public scoped_aligned_mem_helper<T> {
+public:
+  scoped_aligned_mem_for()
+      : scoped_aligned_mem_helper<T>(aligned_alloc_for<T>(NumElems)) {}
+
+  ~scoped_aligned_mem_for() {
+    if (NULL != this->m_ptr) {
+      aligned_free_for<T>(this->m_ptr);
+    }
+  }
+
+  void swap(scoped_aligned_mem_for<T, NumElems> *rhs) {
+    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
+  }
+
+  static void free(T **ptr) {
+    aligned_free_for<T>(*ptr);
+    *ptr = NULL;
+  }
+  static const nat num_elems = NumElems;
+};
 
 } // namespace nsimd
 #endif
