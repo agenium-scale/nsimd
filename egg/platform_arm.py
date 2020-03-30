@@ -852,14 +852,15 @@ def sqrt1(simd_ext, typ):
 def shl_shr(op, simd_ext, typ):
     if simd_ext in neon:
         sign = '-' if op == 'shr' else ''
+        lr = 'r' if op == 'shr' else 'l'
         if typ in common.utypes:
-            return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}((i{typnbits})({sign}{in1})));'''.\
-                format(**fmtspec, sign=sign)
+            return '''return vsh{lr}q_n_{suf}({in0}, {in1});'''.\
+                format(**fmtspec, sign=sign, lr=lr)
         else:
 
             return '''return vreinterpretq_s{typnbits}_u{typnbits}(
-                                vshlq_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
-                                vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''.format(**fmtspec)
+                                vsh{lr}q_n_u{typnbits}(vreinterpretq_u{typnbits}_s{typnbits}({in0}),
+                                {in1}));'''.format(**fmtspec, lr=lr)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
