@@ -68,13 +68,9 @@ SOFTWARE.
 #elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||           \
     defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
     defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
-<<<<<<< HEAD
   #define NSIMD_ARM
-=======
-#define NSIMD_ARM
 #elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
-#define NSIMD_POWERPC
->>>>>>> master
+  #define NSIMD_POWERPC
 #else
   #define NSIMD_CPU
 #endif
@@ -362,53 +358,6 @@ SOFTWARE.
   #include <arm_neon.h>
   #include <arm_sve.h>
 
-#elif defined(NSIMD_POWER7)
-
-<<<<<<< HEAD
-  #define NSIMD_PLATFORM ppc
-  #define NSIMD_SIMD power7
-
-  #ifdef NSIMD_IS_CLANG
-  // New version of clang are spamming useless warning comming from their
-  // altivec.h file
-    #pragma clang diagnostic ignored "-Wc11-extensions"
-    #pragma clang diagnostic ignored "-Wc++11-long-long"
-  #endif
-
-  #include <altivec.h>
-
-  #ifdef bool
-    #undef bool
-  #endif
-  #ifdef pixel
-    #undef pixel
-  #endif
-  #ifdef vector
-    #undef vector
-  #endif
-=======
-#define NSIMD_PLATFORM ppc
-#define NSIMD_SIMD power7
-
-#ifdef NSIMD_IS_CLANG
-// New version of clang are spamming useless warning comming from their
-// altivec.h file
-#pragma clang diagnostic ignored "-Wc11-extensions"
-#pragma clang diagnostic ignored "-Wc++11-long-long"
-#endif
-#include <altivec.h>
-#ifdef NSIMD_IS_CLANG
-#endif
-#ifdef bool
-#undef bool
-#endif
-#ifdef pixel
-#undef pixel
-#endif
-#ifdef vector
-#undef vector
-#endif
-
 #elif defined(NSIMD_SVE128)
 
   #define NSIMD_PLATFORM arm
@@ -443,7 +392,30 @@ SOFTWARE.
   #define NSIMD_SIMD sve2048
   #include <arm_neon.h>
   #include <arm_sve.h>
->>>>>>> master
+
+#elif defined(NSIMD_POWER7)
+
+  #define NSIMD_PLATFORM ppc
+  #define NSIMD_SIMD power7
+
+  #ifdef NSIMD_IS_CLANG
+  // New version of clang are spamming useless warning comming from their
+  // altivec.h file
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wc++11-long-long"
+  #endif
+
+  #include <altivec.h>
+
+  #ifdef bool
+    #undef bool
+  #endif
+  #ifdef pixel
+    #undef pixel
+  #endif
+  #ifdef vector
+    #undef vector
+  #endif
 
 #else
 
@@ -462,18 +434,7 @@ SOFTWARE.
 #endif
 
 /* ------------------------------------------------------------------------- */
-<<<<<<< HEAD
 /* Shorter typedefs for integers and their limits */
-=======
-/* Sorter typedefs for floatting point types */
-
-#if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) && \
-     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) || \
-     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || \
-     defined(NSIMD_SVE1024) || defined(NSIMD_SVE2048)
-  #define NSIMD_NATIVE_FP16
-#endif
->>>>>>> master
 
 #if NSIMD_CXX > 0
   #include <climits>

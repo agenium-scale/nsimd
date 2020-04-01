@@ -153,7 +153,8 @@ def parse_args(args):
         help='Generate benches in C and C++')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
-    parser.add_argument('--disable-clang-format', '-F', action='store_true',
+    parser.add_argument('--disable-clang-format', '-F', action='store_false',
+        default=True,
         help='Disable Clang Format (mainly for speed on Windows)')
     parser.add_argument('--sve-emulate-bool', action='store_true',
         default=False,
