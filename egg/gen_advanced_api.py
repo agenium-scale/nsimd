@@ -161,7 +161,7 @@ def get_cxx_advanced_generic(operator):
 # Generate advanced C++ API
 
 def doit(opts):
-    print ('-- Generating advanced C++ API')
+    common.myprint(opts, 'Generating advanced C++ API')
     filename = os.path.join(opts.include_dir, 'cxx_adv_api_functions.hpp')
     if not common.can_create_filename(opts, filename):
         return

@@ -138,6 +138,9 @@ def parse_args(args):
                  description='This is NSIMD generation script.')
     parser.add_argument('--force', '-f', action='store_true',
         help='Generate all files even if they already exist')
+    parser.add_argument('--list-files', '-L', action='store_true',
+        default=False,
+        help='List files that will be created by hatch.py')
     parser.add_argument('--all', '-A', action='store_true',
         help='Generate code for the library and its benches')
     parser.add_argument('--library', '-l', action='store_true',
@@ -155,23 +158,23 @@ def parse_args(args):
     parser.add_argument('--sve-emulate-bool', action='store_true',
         default=False,
         help='Use normal SVE vector to emulate predicates.')
-    parser.add_argument('--simd', '-D',
-        type=parse_simd,
-        default='all',
+    parser.add_argument('--simd', '-D', type=parse_simd, default='all',
         help='List of SIMD extensions (separated by a comma)')
-    parser.add_argument('--match', '-m',
-        type=parse_match,
-        default=None,
+    parser.add_argument('--match', '-m', type=parse_match, default=None,
         help='Regex used to filter generation on operator names')
-    parser.add_argument('--verbose', '-v',
-        action = 'store_true',
-        default=None,
+    parser.add_argument('--verbose', '-v', action = 'store_true', default=None,
         help='Enable verbose mode')
-    parser.add_argument('--simple-license', '-L',
-        action='store_true',
-        default=False,
+    parser.add_argument('--simple-license', action='store_true', default=False,
         help='Put a simple copyright statement instead of the whole license')
     opts = parser.parse_args(args)
+    # When -L has been chosen, we want to list all files and so we have to
+    # turn to True other parameters
+    if opts.list_files:
+        opts.library = True
+        opts.tests = True
+        opts.benches = True
+        opts.force = True
+        opts.doc = True
     # We set variables here because all the code depends on them + we do want
     # to keep the possibility to change them in the future
     opts.archis = opts.library
@@ -197,7 +200,7 @@ def main():
 
     ## Gather all SIMD dependencies
     opts.simd = common.get_simds_deps_from_opts(opts)
-    print('-- List of SIMD: {}'.format(', '.join(opts.simd)))
+    common.myprint(opts, 'List of SIMD: {}'.format(', '.join(opts.simd)))
     if opts.archis == True or opts.all == True:
         gen_archis.doit(opts)
     if opts.base_apis == True or opts.all == True:
@@ -213,7 +216,6 @@ def main():
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
     if opts.modules == True or opts.all == True:
-        #pass
         gen_modules.doit(opts)
     if opts.scalar_utilities == True or opts.all == True:
         gen_scalar_utilities.doit(opts)

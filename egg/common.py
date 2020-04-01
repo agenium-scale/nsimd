@@ -43,9 +43,20 @@ import platform
 import string
 
 # -----------------------------------------------------------------------------
+# print
+
+def myprint(opts, obj):
+    if opts.list_files:
+        return
+    print('-- {}'.format(obj))
+
+# -----------------------------------------------------------------------------
 # check if file exists
 
 def can_create_filename(opts, filename):
+    if opts.list_files:
+        print(filename)
+        return False
     if opts.verbose:
         sys.stdout.write('-- {}: '.format(filename))
     if os.path.isfile(filename) and not opts.force:
@@ -490,11 +501,11 @@ def parse_signature(signature):
 def get_platforms(opts):
     ret = dict()
     path = opts.script_dir
-    print ('-- Searching platforms in "{}"'.format(path))
+    myprint(opts, 'Searching platforms in "{}"'.format(path))
     for mod_file in os.listdir(path):
         if mod_file[-3:] == '.py' and mod_file[0:9] == 'platform_':
             mod_name = mod_file[:-3]
-            print ('-- Found new platform: {}'.format(mod_name[9:]))
+            myprint(opts, 'Found new platform: {}'.format(mod_name[9:]))
             ret[mod_name[9:]] = __import__(mod_name)
     return ret
 
@@ -1231,18 +1242,19 @@ def get_html_file(opts, name, module=''):
         return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
 
 def gen_doc_html(opts, title, module='', links={}):
-    # check if md2html exists
-    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
-    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
-    full_path_md2html = os.path.join(doc_dir, md2html)
-    if not os.path.isfile(full_path_md2html):
-        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
-        if platform.system() == 'Windows':
-            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
-        else:
-            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
-        print(msg)
-        return
+    if not opts.list_files:
+        # check if md2html exists
+        md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+        doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+        full_path_md2html = os.path.join(doc_dir, md2html)
+        if not os.path.isfile(full_path_md2html):
+            msg = 'Cannot generate HTML: {} not found. '.format(md2html)
+            if platform.system() == 'Windows':
+                msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+            else:
+                msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
+            myprint(opts, msg)
+            return
 
     # get all markdown files
     md_dir = get_markdown_dir(opts)
@@ -1266,15 +1278,23 @@ def gen_doc_html(opts, title, module='', links={}):
                 doc_files.append(os.path.splitext(name)[0])
 
     ## gen html files
-    header = get_html_header(title, module, links)
-    footer = get_html_footer()
-    tmp_file = os.path.join(doc_dir, 'tmp.html')
-    for filename in doc_files:
-        input_name = os.path.join(md_dir, filename + '.md')
-        output_name = os.path.join(html_dir, filename + '.html')
-        os.system('{} "{}" "{}"'.format(full_path_md2html, input_name, tmp_file))
-        with open_utf8(opts, output_name) as fout:
-            fout.write(header)
-            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
-                fout.write(fin.read())
-            fout.write(footer)
+    if opts.list_files:
+        for filename in doc_files:
+            input_name = os.path.join(md_dir, filename + '.md')
+            output_name = os.path.join(html_dir, filename + '.html')
+            print(input_name)
+            print(output_name)
+    else:
+        ## gen html files
+        header = get_html_header(title, module, links)
+        footer = get_html_footer()
+        tmp_file = os.path.join(doc_dir, 'tmp.html')
+        for filename in doc_files:
+            input_name = os.path.join(md_dir, filename + '.md')
+            output_name = os.path.join(html_dir, filename + '.html')
+            os.system('{} "{}" "{}"'.format(full_path_md2html, input_name, tmp_file))
+            with open_utf8(opts, output_name) as fout:
+                fout.write(header)
+                with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                    fout.write(fin.read())
+                fout.write(footer)

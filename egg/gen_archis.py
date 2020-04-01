@@ -296,17 +296,17 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
 def gen_archis_platform(opts, platform):
     include_dir = os.path.join(opts.include_dir, platform);
     for s in opts.platforms[platform].get_simd_exts():
-        print ('-- Found new SIMD extension: {}'.format(s))
+        common.myprint(opts, 'Found new SIMD extension: {}'.format(s))
         if s in opts.simd:
             simd_dir = os.path.join(include_dir, s)
             common.mkdir_p(simd_dir)
             gen_archis_types(opts, simd_dir, platform, s)
             gen_archis_simd(opts, platform, s, simd_dir)
         else:
-            print ('--   Extension excluded by command line')
+            common.myprint(opts, '  Extension excluded by command line')
 
 def doit(opts):
-    print ('-- Generating SIMD implementations')
+    common.myprint(opts, 'Generating SIMD implementations')
     opts.platforms = common.get_platforms(opts)
     for p in opts.platforms:
         common.mkdir_p(os.path.join(opts.include_dir, p))

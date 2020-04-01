@@ -302,7 +302,7 @@ def write_cpp(opts, simd_ext, emulate_fp16):
 
 def doit(opts):
     common.mkdir_p(opts.src_dir)
-    print ('-- Generating source for binary')
+    common.myprint(opts, 'Generating source for binary')
     opts.platforms = common.get_platforms(opts)
     for platform in opts.platforms:
         mod = opts.platforms[platform]

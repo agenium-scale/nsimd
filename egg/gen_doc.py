@@ -499,9 +499,9 @@ def gen_doc(opts):
 # -----------------------------------------------------------------------------
 
 def gen_html(opts):
-    print('-- Generating HTML documentation')
+    common.myprint(opts, 'Generating HTML documentation')
     common.gen_doc_html(opts, 'NSIMD documentation')
- 
+
 # -----------------------------------------------------------------------------
 
 def doit(opts):

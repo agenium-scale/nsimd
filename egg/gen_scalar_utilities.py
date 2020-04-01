@@ -58,7 +58,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
 # -----------------------------------------------------------------------------
 
 def doit(opts):
-    print ('-- Generating scalar implementation for CPU and GPU')
+    common.myprint(opts, 'Generating scalar implementation for CPU and GPU')
     filename = os.path.join(opts.include_dir, 'scalar_utilities.h')
     if not common.can_create_filename(opts, filename):
         return

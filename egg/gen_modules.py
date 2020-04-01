@@ -19,16 +19,17 @@
 # SOFTWARE.
 
 import os
+import common
 
 def doit(opts):
     # We have one module by directory
     path = os.path.join(opts.script_dir, 'modules')
-    print('-- Searching modules in "{}"'.format(path))
+    common.myprint(opts, 'Searching modules in "{}"'.format(path))
     for module_dir in os.listdir(path):
         if (not os.path.isdir(os.path.join(path, module_dir))) or \
            module_dir == '.' or module_dir == '..' or \
            (not os.path.exists(os.path.join(path, module_dir, 'hatch.py'))):
             continue
-        print ('-- Found new module: {}'.format(module_dir))
+        common.myprint(opts, 'Found new module: {}'.format(module_dir))
         mod = __import__('modules.{}.hatch'.format(module_dir))
         exec('mod.{}.hatch.doit(opts)'.format(module_dir))

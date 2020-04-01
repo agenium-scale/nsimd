@@ -82,7 +82,8 @@ def get_impl(operator):
 # Generate advanced C++ API
 
 def doit(opts):
-    print ('-- Generating friendly but not optimized advanced C++ API')
+    common.myprint(opts, 'Generating friendly but not optimized advanced '
+                         'C++ API')
     filename = os.path.join(opts.include_dir, 'friendly_but_not_optimized.hpp')
     if not common.can_create_filename(opts, filename):
         return

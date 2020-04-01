@@ -2615,7 +2615,7 @@ def gen_unpack(opts, op, typ, lang):
 
 def doit(opts):
     ulps = common.load_ulps_informations(opts)
-    print ('-- Generating tests')
+    common.myprint(opts, 'Generating tests')
     for op_name, operator in operators.operators.items():
         # Skip non-matching tests
         if opts.match and not opts.match.match(op_name):
