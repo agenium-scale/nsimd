@@ -27,6 +27,36 @@ import rocm
 
 # -----------------------------------------------------------------------------
 
+def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
+    if cuda_impl == rocm_impl:
+        return '''#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+                      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+
+                  inline {gpu_sig} {{
+                    {cuda_impl}
+                  }}
+
+                  #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl)
+    else:
+        return '''#ifdef NSIMD_CUDA_COMPILING_FOR_DEVICE
+
+                  inline {gpu_sig} {{
+                    {cuda_impl}
+                  }}
+
+                  #endif
+
+                  #ifdef NSIMD_ROCM_COMPILING_FOR_DEVICE
+
+                  inline {gpu_sig} {{
+                    {rocm_impl}
+                  }}
+
+                  #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl,
+                                   rocm_impl=rocm_impl)
+
+# -----------------------------------------------------------------------------
+
 def doit(opts):
     print ('-- Generating scalar implementation for CPU and GPU')
     filename = os.path.join(opts.include_dir, 'scalar_utilities.h')
@@ -91,35 +121,21 @@ def doit(opts):
                   return nsimd_scalar_{op_name}({c_args});
                 }}
 
-                #ifdef NSIMD_CUDA
-
-                inline {gpu_sig} {{
-                  {cuda_impl}
-                }}
-
-                #endif
-
-                #ifdef NSIMD_ROCM
-
-                inline {gpu_sig} {{
-                  {rocm_impl}
-                }}
-
-                #endif
+                {gpu_impl}
 
                 }} // namespace nsimd
 
                 #endif'''.format(
                 c_sig=operator.get_scalar_signature('cpu', '', '', 'c'),
                 cxx_sig=operator.get_scalar_signature('cpu', '', '', 'cxx'),
-                gpu_sig=operator.get_scalar_signature('gpu', '', '', 'cxx'),
                 op_name=op_name,
                 c_args=', '.join(['a{}'.format(i - 1) \
                                for i in range(1, len(operator.params))]),
                 scalar_impl=scalar.get_impl(operator, tt, t),
-                cuda_impl=cuda.get_impl(operator, tt, t),
-                rocm_impl=rocm.get_impl(operator, tt, t)
-                ))
+                gpu_impl=get_gpu_impl(
+                    operator.get_scalar_signature('gpu', t, tt, 'cxx'),
+                    cuda.get_impl(operator, tt, t),
+                    rocm_impl=rocm.get_impl(operator, tt, t))))
                 continue
             for t in operator.types:
                 tts = common.get_output_types(t, operator.output_to)
@@ -138,36 +154,22 @@ def doit(opts):
                       return nsimd_scalar_{op_name}_{suffix}({c_args});
                     }}
 
-                    #if defined(NSIMD_CUDA) && defined(NSIMD_IS_NVCC)
-
-                    inline {gpu_sig} {{
-                      {cuda_impl}
-                    }}
-
-                    #endif
-
-                    #ifdef NSIMD_ROCM
-
-                    inline {gpu_sig} {{
-                      {rocm_impl}
-                    }}
-
-                    #endif
+                    {gpu_impl}
 
                     }} // namespace nsimd
 
                     #endif'''.format(
                     c_sig=operator.get_scalar_signature('cpu', t, tt, 'c'),
                     cxx_sig=operator.get_scalar_signature('cpu', t, tt, 'cxx'),
-                    gpu_sig=operator.get_scalar_signature('gpu', t, tt, 'cxx'),
                     op_name=op_name,
                     suffix=t if operator.closed else '{}_{}'.format(tt, t),
                     c_args=', '.join(['a{}'.format(i - 1) \
                                    for i in range(1, len(operator.params))]),
                     scalar_impl=scalar.get_impl(operator, tt, t),
-                    cuda_impl=cuda.get_impl(operator, tt, t),
-                    rocm_impl=rocm.get_impl(operator, tt, t)
-                    ))
+                    gpu_impl=get_gpu_impl(
+                        operator.get_scalar_signature('gpu', t, tt, 'cxx'),
+                        cuda.get_impl(operator, tt, t),
+                        rocm_impl=rocm.get_impl(operator, tt, t))))
 
         out.write('\n\n' + common.hbar + '\n\n#endif\n')
     common.clang_format(opts, filename)
