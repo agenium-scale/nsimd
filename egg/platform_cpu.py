@@ -57,7 +57,7 @@ def emulate_fp16(simd_ext):
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     return True
 
-def get_type(simd_ext, typ):
+def get_type(opts, simd_ext, typ):
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     if typ not in common.types:
@@ -67,7 +67,7 @@ def get_type(simd_ext, typ):
                         for i in range(0, get_nb_el(typ)))
     return 'struct {{ {} }}'.format(members)
 
-def get_logical_type(simd_ext, typ):
+def get_logical_type(opts, simd_ext, typ):
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     if typ not in common.types:
@@ -504,7 +504,7 @@ def unzip(from_typ):
 
 # -----------------------------------------------------------------------------
 
-def get_impl(func, simd_ext, from_typ, to_typ=''):
+def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
     fmtspec = {

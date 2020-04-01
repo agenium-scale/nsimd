@@ -146,14 +146,15 @@ def parse_args(args):
         help='Generate code to compute precision on big functions')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--tests-fp', action='store_true',
-        help='Generate tests in C and C++ for the fixed precision module')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
     parser.add_argument('--disable-clang-format', '-F', action='store_true',
         help='Disable Clang Format (mainly for speed on Windows)')
+    parser.add_argument('--sve-emulate-bool', action='store_true',
+        default=False,
+        help='Use normal SVE vector to emulate predicates.')
     parser.add_argument('--simd', '-D',
         type=parse_simd,
         default='all',

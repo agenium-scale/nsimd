@@ -68,7 +68,13 @@ SOFTWARE.
 #elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||           \
     defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
     defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
+<<<<<<< HEAD
   #define NSIMD_ARM
+=======
+#define NSIMD_ARM
+#elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
+#define NSIMD_POWERPC
+>>>>>>> master
 #else
   #define NSIMD_CPU
 #endif
@@ -226,14 +232,34 @@ SOFTWARE.
   #define NSIMD_SVE
 #endif
 
+#if defined(SVE128) && !defined(NSIMD_SVE128)
+  #define NSIMD_SVE128
+#endif
+
+#if defined(SVE256) && !defined(NSIMD_SVE256)
+  #define NSIMD_SVE256
+#endif
+
+#if defined(SVE512) && !defined(NSIMD_SVE512)
+  #define NSIMD_SVE512
+#endif
+
+#if defined(SVE1024) && !defined(NSIMD_SVE1024)
+  #define NSIMD_SVE1024
+#endif
+
+#if defined(SVE2048) && !defined(NSIMD_SVE2048)
+  #define NSIMD_SVE2048
+#endif
+
 /* PPC */
 
 #if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
-  #define NSIMD_POWER8
+#define NSIMD_POWER8
 #endif
 
 #if defined(POWER7) && !defined(NSIMD_POWER7)
-  #define NSIMD_POWER7
+#define NSIMD_POWER7
 #endif
 
 /* CUDA */
@@ -338,6 +364,7 @@ SOFTWARE.
 
 #elif defined(NSIMD_POWER7)
 
+<<<<<<< HEAD
   #define NSIMD_PLATFORM ppc
   #define NSIMD_SIMD power7
 
@@ -359,6 +386,64 @@ SOFTWARE.
   #ifdef vector
     #undef vector
   #endif
+=======
+#define NSIMD_PLATFORM ppc
+#define NSIMD_SIMD power7
+
+#ifdef NSIMD_IS_CLANG
+// New version of clang are spamming useless warning comming from their
+// altivec.h file
+#pragma clang diagnostic ignored "-Wc11-extensions"
+#pragma clang diagnostic ignored "-Wc++11-long-long"
+#endif
+#include <altivec.h>
+#ifdef NSIMD_IS_CLANG
+#endif
+#ifdef bool
+#undef bool
+#endif
+#ifdef pixel
+#undef pixel
+#endif
+#ifdef vector
+#undef vector
+#endif
+
+#elif defined(NSIMD_SVE128)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve128
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE256)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve256
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE512)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve512
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE1024)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve1024
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+
+#elif defined(NSIMD_SVE2048)
+
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve2048
+  #include <arm_neon.h>
+  #include <arm_sve.h>
+>>>>>>> master
 
 #else
 
@@ -377,7 +462,18 @@ SOFTWARE.
 #endif
 
 /* ------------------------------------------------------------------------- */
+<<<<<<< HEAD
 /* Shorter typedefs for integers and their limits */
+=======
+/* Sorter typedefs for floatting point types */
+
+#if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) && \
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) || \
+     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || \
+     defined(NSIMD_SVE1024) || defined(NSIMD_SVE2048)
+  #define NSIMD_NATIVE_FP16
+#endif
+>>>>>>> master
 
 #if NSIMD_CXX > 0
   #include <climits>
@@ -586,61 +682,61 @@ template <typename T, typename SimdExt> struct simd_traits {};
 #define vecx4(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x4)
 
 typedef vec(i8) vi8;
-typedef vec(i8) vu8;
+typedef vec(u8) vu8;
 typedef vec(i16) vi16;
-typedef vec(i16) vu16;
+typedef vec(u16) vu16;
 typedef vec(i32) vi32;
-typedef vec(i32) vu32;
+typedef vec(u32) vu32;
 typedef vec(i64) vi64;
-typedef vec(i64) vu64;
+typedef vec(u64) vu64;
 typedef vec(f16) vf16;
 typedef vec(f32) vf32;
 typedef vec(f64) vf64;
 
 typedef vecx2(i8) vi8x2;
-typedef vecx2(i8) vu8x2;
+typedef vecx2(u8) vu8x2;
 typedef vecx2(i16) vi16x2;
-typedef vecx2(i16) vu16x2;
+typedef vecx2(u16) vu16x2;
 typedef vecx2(i32) vi32x2;
-typedef vecx2(i32) vu32x2;
+typedef vecx2(u32) vu32x2;
 typedef vecx2(i64) vi64x2;
-typedef vecx2(i64) vu64x2;
+typedef vecx2(u64) vu64x2;
 typedef vecx2(f16) vf16x2;
 typedef vecx2(f32) vf32x2;
 typedef vecx2(f64) vf64x2;
 
 typedef vecx3(i8) vi8x3;
-typedef vecx3(i8) vu8x3;
+typedef vecx3(u8) vu8x3;
 typedef vecx3(i16) vi16x3;
-typedef vecx3(i16) vu16x3;
+typedef vecx3(u16) vu16x3;
 typedef vecx3(i32) vi32x3;
-typedef vecx3(i32) vu32x3;
+typedef vecx3(u32) vu32x3;
 typedef vecx3(i64) vi64x3;
-typedef vecx3(i64) vu64x3;
+typedef vecx3(u64) vu64x3;
 typedef vecx3(f16) vf16x3;
 typedef vecx3(f32) vf32x3;
 typedef vecx3(f64) vf64x3;
 
 typedef vecx4(i8) vi8x4;
-typedef vecx4(i8) vu8x4;
+typedef vecx4(u8) vu8x4;
 typedef vecx4(i16) vi16x4;
-typedef vecx4(i16) vu16x4;
+typedef vecx4(u16) vu16x4;
 typedef vecx4(i32) vi32x4;
-typedef vecx4(i32) vu32x4;
+typedef vecx4(u32) vu32x4;
 typedef vecx4(i64) vi64x4;
-typedef vecx4(i64) vu64x4;
+typedef vecx4(u64) vu64x4;
 typedef vecx4(f16) vf16x4;
 typedef vecx4(f32) vf32x4;
 typedef vecx4(f64) vf64x4;
 
 typedef vecl(i8) vli8;
-typedef vecl(i8) vlu8;
+typedef vecl(u8) vlu8;
 typedef vecl(i16) vli16;
-typedef vecl(i16) vlu16;
+typedef vecl(u16) vlu16;
 typedef vecl(i32) vli32;
-typedef vecl(i32) vlu32;
+typedef vecl(u32) vlu32;
 typedef vecl(i64) vli64;
-typedef vecl(i64) vlu64;
+typedef vecl(u64) vlu64;
 typedef vecl(f16) vlf16;
 typedef vecl(f32) vlf32;
 typedef vecl(f64) vlf64;
@@ -675,9 +771,9 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 #if defined(NSIMD_X86)
   #define NSIMD_MAX_ALIGNMENT 64
 #elif defined(NSIMD_ARM)
-  #define NSIMD_MAX_ALIGNMENT 256
+#define NSIMD_MAX_ALIGNMENT 256
 #elif defined(NSIMD_POWERPC)
-  #define NSIMD_MAX_ALIGNMENT 64
+#define NSIMD_MAX_ALIGNMENT 64
 #else
   #define NSIMD_MAX_ALIGNMENT 16
 #endif
@@ -790,6 +886,96 @@ template <typename T> T *aligned_alloc_for(nsimd_nat n) {
 template <typename T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
+
+template <typename T> class scoped_aligned_mem_helper {
+protected:
+  scoped_aligned_mem_helper(T *const ptr) : m_ptr(ptr) {
+    if (NULL == m_ptr) {
+      throw std::bad_alloc();
+    }
+  }
+
+  static void swap(T **lhs, T **rhs) {
+    T *temp = *lhs;
+    *lhs = *rhs;
+    *rhs = temp;
+  }
+
+public:
+  T *release() {
+    T *ret_ptr = m_ptr;
+    m_ptr = NULL;
+    return ret_ptr;
+  }
+
+  void reset(T *new_ptr) {
+    T *old_ptr = m_ptr;
+    m_ptr = new_ptr;
+    if (NULL != old_ptr) {
+      aligned_free(old_ptr);
+    }
+  }
+
+  T *get() const { return m_ptr; }
+
+protected:
+  T *m_ptr;
+
+private:
+  scoped_aligned_mem_helper(const scoped_aligned_mem_helper &other) {
+    (void)other;
+  }
+
+  scoped_aligned_mem_helper &operator=(const scoped_aligned_mem_helper &rhs) {
+    (void)rhs;
+  }
+};
+
+template <typename T, nat MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
+class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
+public:
+  scoped_aligned_mem()
+      : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {}
+
+  ~scoped_aligned_mem() {
+    if (NULL != this->m_ptr) {
+      aligned_free(this->m_ptr);
+    }
+  }
+
+  void swap(scoped_aligned_mem<T, MemAlignedSizeBytes> *rhs) {
+    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
+  }
+
+  static void free(T **ptr) {
+    aligned_free(*ptr);
+    *ptr = NULL;
+  }
+  static const nat num_elems = MemAlignedSizeBytes / sizeof(T);
+};
+
+template <typename T, nat NumElems>
+class scoped_aligned_mem_for : public scoped_aligned_mem_helper<T> {
+public:
+  scoped_aligned_mem_for()
+      : scoped_aligned_mem_helper<T>(aligned_alloc_for<T>(NumElems)) {}
+
+  ~scoped_aligned_mem_for() {
+    if (NULL != this->m_ptr) {
+      aligned_free_for<T>(this->m_ptr);
+    }
+  }
+
+  void swap(scoped_aligned_mem_for<T, NumElems> *rhs) {
+    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
+  }
+
+  static void free(T **ptr) {
+    aligned_free_for<T>(*ptr);
+    *ptr = NULL;
+  }
+  static const nat num_elems = NumElems;
+};
 
 } // namespace nsimd
 #endif

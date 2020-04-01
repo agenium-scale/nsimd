@@ -36,7 +36,7 @@ namespace nsimd {
 namespace fixed_point {
 // For integer exponents, use exponentiation by squaring
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int &b) {
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int64_t &b) {
   if (b == 0)
     return fp_t<_lf, _rt>(1);
 
@@ -72,7 +72,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a,
   const fp_t<_lf, _rt> rem = b - fp_t<_lf, _rt>(integer);
 
   if (0 == rem._raw) {
-    return exp(a, integer);
+    return exp(a, int64_t(integer));
   }
 
   fp_t<_lf, _rt> fact = constants::one<_lf, _rt>();
@@ -90,7 +90,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a,
     log_eval = log_eval * log_init;
     res = res + (fact * log_eval);
   }
-  res = res * exp(a, integer);
+  res = res * exp(a, int64_t(integer));
 
   return res;
 }

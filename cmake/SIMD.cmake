@@ -30,7 +30,7 @@ function(get_simd_infos out simd simd_optional)
         AVX AVX2 AVX512_KNL AVX512_SKYLAKE
         NEON64 NEON128
         AARCH64
-        SVE
+        SVE SVE128 SVE256 SVE512 SVE1024 SVE2048
         POWER7
     )
     set(simd_optionals
@@ -73,6 +73,11 @@ function(get_simd_infos out simd simd_optional)
     set(list_for_neon128        "${list_for_cpu};NEON128")
     set(list_for_aarch64        "${list_for_cpu};AARCH64")
     set(list_for_sve            "${list_for_aarch64};SVE")
+    set(list_for_sve128         "${list_for_aarch64};SVE128")
+    set(list_for_sve256         "${list_for_aarch64};SVE256")
+    set(list_for_sve512         "${list_for_aarch64};SVE512")
+    set(list_for_sve1024        "${list_for_aarch64};SVE1024")
+    set(list_for_sve2048        "${list_for_aarch64};SVE2048")
     set(list_for_power7         "${list_for_cpu};POWER7")
     
     set(${out}_LIST "${list_for_${hatch_flag}}" PARENT_SCOPE)
@@ -82,7 +87,19 @@ function(get_simd_infos out simd simd_optional)
         if ("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
             set(${out}_PLATFORM "armv7" PARENT_SCOPE)
         else()
-            set(${out}_PLATFORM "aarch64" PARENT_SCOPE)
+            if ("${hatch_flag}" STREQUAL "sve128")
+              set(${out}_PLATFORM "aarch64_sve128" PARENT_SCOPE)
+            elseif ("${hatch_flag}" STREQUAL "sve256")
+              set(${out}_PLATFORM "aarch64_sve256" PARENT_SCOPE)
+            elseif ("${hatch_flag}" STREQUAL "sve512")
+              set(${out}_PLATFORM "aarch64_sve512" PARENT_SCOPE)
+            elseif ("${hatch_flag}" STREQUAL "sve1024")
+              set(${out}_PLATFORM "aarch64_sve1024" PARENT_SCOPE)
+            elseif ("${hatch_flag}" STREQUAL "sve2048")
+              set(${out}_PLATFORM "aarch64_sve2048" PARENT_SCOPE)
+            else()
+              set(${out}_PLATFORM "aarch64" PARENT_SCOPE)
+            endif()
         endif()
     elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "AMD64")
         set(${out}_PLATFORM "x86_64" PARENT_SCOPE)

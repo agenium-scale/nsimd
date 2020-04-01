@@ -147,6 +147,14 @@ template <uint8_t _lf, uint8_t _rt> struct fp_t {
   template <typename T> operator T() const {
     return T(int2float<value_type, _rt>(_raw));
   }
+
+  friend std::ostream& operator<<( std::ostream& stream
+                                 , const nsimd::fixed_point::fp_t<_lf,_rt> &in
+                                 ) {
+    stream << float(in);
+    return stream;
+  }
+
 };
 
 //------------------------------------------------------------------------------
@@ -163,5 +171,7 @@ template <uint8_t _lf, uint8_t _rt> uint8_t right(const fp_t<_lf, _rt>) {
 
 } // namespace fixed_point
 } // namespace nsimd
+
+#include "nsimd/modules/fixed_point/fixed_math.hpp"
 
 #endif
