@@ -89,8 +89,9 @@ int test_f16_to_f32(u16 val, u32 expected) {
 /* ------------------------------------------------------------------------- */
 
 int test_f32_to_f16(u32 val, u16 expected) {
-  f16 res = nsimd_f32_to_f16(nsimd_scalar_reinterpret_f32_u32(val));
-  if (res.u != expected) {
+  f16 fres = nsimd_f32_to_f16(nsimd_scalar_reinterpret_f32_u32(val));
+  u16 ures = nsimd_scalar_reinterpret_u16_f16(fres);
+  if (ures != expected) {
     fprintf(stdout, "Error, nsimd_f16_to_f32: expected 0x%x but got 0x%x \n",
             expected, ures);
     fflush(stdout);

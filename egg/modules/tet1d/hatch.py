@@ -34,7 +34,16 @@ gpu_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
 # -----------------------------------------------------------------------------
 
 def gen_doc(opts):
-    pass
+    for op_name, operator in operators.operators.items():
+        if not operator.has_scalar_impl:
+            continue
+        f.write(
+        '''template<{tmpl_args}>
+           node<{op_name}_t, {to_node_type}> {op_name}({args})''')
+        f.write(operator.desc)
+        if opeartor.cxx_operator != None:
+            f.wirte('operator+')
+        pass
 
 # -----------------------------------------------------------------------------
 
