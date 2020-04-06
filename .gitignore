@@ -1,11 +1,17 @@
-## Build system
-build
+# Build system
+build*
 
-## Auto-generated
+# Binaries
 *.o
 *.so
 *.pyc
+
+# Generated files
+## API
 src/api_*.cpp
+src/api_*
+
+## Plateform specific code
 include/nsimd/arm
 include/nsimd/cpu
 include/nsimd/cxx_adv_api_functions.hpp
@@ -13,15 +19,24 @@ include/nsimd/friendly_but_not_optimized.hpp
 include/nsimd/functions.h
 include/nsimd/ppc
 include/nsimd/x86
-src/api_*
+
+## Tests
 tests/c_base
 tests/cxx_base
 tests/cxx_adv
-benches/cxx_adv
-_deps
-_install
-doc/html
+tests/modules/tet1d/
+tests/modules/fixed_point/
 
+## Benches
+benches/cxx_adv
+
+## Modules
+include/nsimd/modules/tet1d/
+include/nsimd/modules/fixed_point/
+include/nsimd/scalar_utilities.h
+
+## Doc
+doc/html
 doc/markdown/overview.md
 doc/markdown/api.md
 doc/markdown/api_*.md
