@@ -34,16 +34,16 @@ gpu_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
 # -----------------------------------------------------------------------------
 
 def gen_doc(opts):
-    for op_name, operator in operators.operators.items():
-        if not operator.has_scalar_impl:
-            continue
-        f.write(
-        '''template<{tmpl_args}>
-           node<{op_name}_t, {to_node_type}> {op_name}({args})''')
-        f.write(operator.desc)
-        if opeartor.cxx_operator != None:
-            f.wirte('operator+')
-        pass
+    #for op_name, operator in operators.operators.items():
+    #    if not operator.has_scalar_impl:
+    #        continue
+    #    f.write(
+    #    '''template<{tmpl_args}>
+    #       node<{op_name}_t, {to_node_type}> {op_name}({args})''')
+    #    f.write(operator.desc)
+    #    if opeartor.cxx_operator != None:
+    #        f.wirte('operator+')
+    pass
 
 # -----------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ def gen_tests_for_shifts(opts, t, operator):
         #endif
 
         int main() {{
-          for (unsigned int n = 10; n < 10000000; n *= 2) {{
+          for (unsigned int n = 64; n < 10000000; n *= 2) {{
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {t} *tab0 = get123<{t}>(n);
@@ -304,7 +304,7 @@ def gen_tests_for(opts, t, tt, operator):
         #endif
 
         int main() {{
-          for (unsigned int n = 10; n < 10000000; n *= 2) {{
+          for (unsigned int n = 64; n < 10000000; n *= 2) {{
             int ret = 0;
             {fill_tabs}
             {typ} *ref = get000<{typ}>(n);
