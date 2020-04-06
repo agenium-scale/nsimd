@@ -294,7 +294,7 @@ template <typename T> T *getXXX(unsigned int n, int variant) {
         break;
     }
   }
-  return NULL; // should never be reached
+  return ret;
 }
 
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
