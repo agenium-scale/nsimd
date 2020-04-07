@@ -29,6 +29,7 @@ SOFTWARE.
 #include <nsimd/scalar_utilities.h>
 #include <iostream>
 #include <cstring>
+#include <cerrno>
 #include <cstdlib>
 
 // ----------------------------------------------------------------------------
@@ -272,8 +273,10 @@ template <> struct helper_cast<f16> {
 };
 
 template <typename T> T *getXXX(unsigned int n, int variant) {
+  errno = 0;
   T *ret = (T *)malloc(n * sizeof(T));
   if (ret == NULL) {
+    std::cerr << "ERROR: " << strerror(errno) << std::endl;
     return NULL;
   }
   // we don't really care about performances here and laziness commands to
