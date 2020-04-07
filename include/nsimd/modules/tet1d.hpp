@@ -99,7 +99,7 @@ template <typename Pack, typename T, typename Expr>
 void cpu_kernel_component_wise(T *dst, Expr const &expr, nsimd::nat n) {
   nsimd::nat i;
   int len = nsimd::len(Pack());
-  for (i = 0; i < n; i += len) {
+  for (i = 0; i + len < n; i += len) {
     nsimd::storeu(&dst[i], expr.template simd_get<Pack>(i));
   }
   for (; i < n; i++) {
@@ -113,7 +113,7 @@ void cpu_kernel_component_wise_mask(T *dst, Mask const &mask, Expr const &expr,
                                     nsimd::nat n) {
   nsimd::nat i;
   int len = nsimd::len(Pack());
-  for (i = 0; i < n; i += len) {
+  for (i = 0; i + len < n; i += len) {
     nsimd::storeu(&dst[i], nsimd::if_else(mask.template simd_get<Pack>(i),
                                           expr.template simd_get<Pack>(i),
                                           nsimd::loadu<Pack>(&dst[i])));
