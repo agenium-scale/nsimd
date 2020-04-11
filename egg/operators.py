@@ -1076,7 +1076,7 @@ class Ziplo(Operator):
     signature = 'v ziplo v v'
     types = common.types
     domain = Domain('R')
-    categories = [DocMisc]
+    categories = [DocShuffle]
     do_bench = False
     desc = 'Construct a vector where elements of the first low half input ' + \
            'are followed by the corresponding element of the second low ' + \
@@ -1087,7 +1087,7 @@ class Ziphi(Operator):
     signature = 'v ziphi v v'
     types = common.types
     domain = Domain('R')
-    categories = [DocMisc]
+    categories = [DocShuffle]
     do_bench = False
     desc = 'Construct a vector where elements of the first high half ' + \
            'input are followed by the corresponding element of the second ' + \
@@ -1098,7 +1098,7 @@ class Unziplo(Operator):
     signature = 'v unziplo v v'
     types = common.types
     domain = Domain('R')
-    categories = [DocMisc]
+    categories = [DocShuffle]
     do_bench = False
 
 class Unziphi(Operator):
@@ -1106,23 +1106,7 @@ class Unziphi(Operator):
     signature = 'v unziphi v v'
     types = common.types
     domain = Domain('R')
-    categories = [DocMisc]
-    do_bench = False
-
-class Ziplo(Operator):
-    full_name = 'ziplo'
-    signature = 'v ziplo v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocMisc]
-    do_bench = False
-
-class Ziphi(Operator):
-    full_name = 'ziphi'
-    signature = 'v ziphi v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocMisc]
+    categories = [DocShuffle]
     do_bench = False
 
 class Zip(Operator):
@@ -1130,23 +1114,7 @@ class Zip(Operator):
     signature = 'vx2 zip v v'
     types = common.types
     domain = Domain('R')
-    categories = [DocMisc]
-    do_bench = False
-
-class Unziplo(Operator):
-    full_name = 'unziplo'
-    signature = 'v unziplo v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocMisc]
-    do_bench = False
-
-class Unziphi(Operator):
-    full_name = 'unziphi'
-    signature = 'v unziphi v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocMisc]
+    categories = [DocShuffle]
     do_bench = False
 
 class Unzip(Operator):
@@ -1154,7 +1122,7 @@ class Unzip(Operator):
     signature = 'vx2 unzip v v'
     types = common.types
     fomain = Domain('R')
-    categories = [DocMisc]
+    categories = [DocShuffle]
     do_bench = False
 
 class ToMask(Operator):
