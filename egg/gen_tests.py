@@ -55,7 +55,6 @@ def get_filename(opts, op, typ, lang, custom_name=''):
 # -----------------------------------------------------------------------------
 # Get standard includes
 
-
 def get_includes(lang):
     ret = '#include <nsimd/nsimd.h>\n'
     if lang == 'cxx_adv':
@@ -75,7 +74,6 @@ def get_includes(lang):
 # -----------------------------------------------------------------------------
 # Function to compute number of common bits between two floatting points
 # numbers
-
 
 get_2th_power = \
     '''
@@ -1795,7 +1793,6 @@ def gen_all_any(opts, op, typ, lang):
 # -----------------------------------------------------------------------------
 # Tests for load/store of degrees 2, 3 and 4
 
-
 def gen_load_store(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
@@ -1890,6 +1887,233 @@ def gen_load_store(opts, op, typ, lang):
                         typ=typ, rand=rand, year=date.today().year, deg=deg,
                         sizeof=common.sizeof(typ), load_store=load_store,
                         comp=comp, unalign=unalign))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
+# Tests for masked loads
+
+def gen_mask_load(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+
+    if typ == 'f16':
+        fill_vin = 'vin[i] = nsimd_f32_to_f16((f32)i);'
+        m1 = 'nsimd_f32_to_f16(-1.0f)'
+        comp1 = 'nsimd_f16_to_f32(vout[j]) != (f32)j'
+    else:
+        fill_vin = 'vin[i] = ({typ})i;'.format(typ=typ)
+        m1 = '({typ})-1'.format(typ=typ)
+        comp1 = 'vout[j] != ({typ})j'.format(typ=typ)
+
+    if op.name in ['masko_loada1', 'masko_loadu1']:
+        if lang == 'c_base':
+            test = \
+            '''vecl({typ}) mask = vmask_for_loop_tail(0, i, {typ});
+               vec({typ}) other = vset1({m1}, {typ});
+               vstoreu(vout, v{op_name}(mask, vin, other, {typ}), {typ});'''. \
+               format(typ=typ, op_name=op.name, m1=m1)
+        elif lang == 'cxx_base':
+            test = \
+            '''vecl({typ}) mask = nsimd::mask_for_loop_tail(0, i, {typ}());
+               vec({typ}) other = nsimd::set1({m1}, {typ}());
+               nsimd::storeu(vout, nsimd::{op_name}(
+                   mask, vin, other, {typ}()), {typ}());'''. \
+                   format(typ=typ, op_name=op.name, m1=m1)
+        elif lang == 'cxx_adv':
+            test = \
+            '''nsimd::packl<{typ}> mask =
+                   nsimd::mask_for_loop_tail<nsimd::packl<{typ}>>(0, i);
+               nsimd::pack<{typ}> other = nsimd::set1<nsimd::pack<{typ}>>(
+                                              {m1});
+               nsimd::storeu(vout, nsimd::{op_name}(mask, vin, other));'''. \
+               format(typ=typ, op_name=op.name, m1=m1)
+        comp2 = 'vout[j] != ({typ})-1'.format(typ=typ) if typ != 'f16' else \
+                'nsimd_f16_to_f32(vout[j]) != -1.0f'
+    else:
+        if lang == 'c_base':
+            test = \
+            '''vecl({typ}) mask = vmask_for_loop_tail(0, i, {typ});
+               vstoreu(vout, v{op_name}(mask, vin, {typ}), {typ});'''. \
+               format(typ=typ, op_name=op.name, m1=m1)
+        elif lang == 'cxx_base':
+            test = \
+            '''vecl({typ}) mask = nsimd::mask_for_loop_tail(0, i, {typ}());
+               nsimd::storeu(vout, nsimd::{op_name}(
+                   mask, vin, {typ}()), {typ}());'''. \
+                   format(typ=typ, op_name=op.name, m1=m1)
+        elif lang == 'cxx_adv':
+            test = \
+            '''nsimd::packl<{typ}> mask =
+                   nsimd::mask_for_loop_tail<nsimd::packl<{typ}>>(0, i);
+               nsimd::storeu(vout, nsimd::{op_name}(mask, vin));'''. \
+               format(typ=typ, op_name=op.name, m1=m1)
+        comp2 = 'vout[j] != ({typ})0'.format(typ=typ) if typ != 'f16' else \
+                'nsimd_f16_to_f32(vout[j]) != -0.0f'
+
+    if op.name in ['masko_loadu1', 'maskz_loadu1']:
+        unalign = '\nvin += 1;'
+    else:
+        unalign = ''
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+           '''{includes}
+
+           #define STATUS "test of {op_name} over {typ}"
+
+           #define CHECK(a) {{ \\
+             errno = 0; \\
+             if (!(a)) {{ \\
+               fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                       __LINE__, strerror(errno)); \\
+               fflush(stderr); \\
+               exit(EXIT_FAILURE); \\
+             }} \\
+           }}
+
+           int main(void) {{
+             int i, j;
+             {typ} *vin;
+             {typ} vout[NSIMD_MAX_LEN({typ})];
+             int len = vlen({typ});
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+             CHECK(vin = ({typ}*)nsimd_aligned_alloc(2 * len));{unalign}
+
+             /* Fill with data */
+             for (i = 0; i < len; i++) {{
+               {fill_vin}
+             }}
+
+             /* Load and put back data into vout */
+             for (i = 0; i < len; i++) {{
+               {test}
+
+               for (j = 0; j < i; j++) {{
+                 if ({comp1}) {{
+                   fprintf(stdout, STATUS "... FAIL\\n");
+                   fflush(stdout);
+                   return -1;
+                 }}
+               }}
+               for (; j < len; j++) {{
+                 if ({comp2}) {{
+                   fprintf(stdout, STATUS "... FAIL\\n");
+                   fflush(stdout);
+                   return -1;
+                 }}
+               }}
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             return EXIT_SUCCESS;
+           }}'''.format(includes=get_includes(lang), op_name=op.name,
+                        typ=typ, year=date.today().year, test=test,
+                        comp1=comp1, comp2=comp2, unalign=unalign,
+                        fill_vin=fill_vin))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
+# Tests for masked stores
+
+def gen_mask_store(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+
+    if typ == 'f16':
+        fill_vout = 'vout[i] = nsimd_f32_to_f16((f32)0);'
+        one = 'nsimd_f32_to_f16(1.0f)'
+        comp1 = 'nsimd_f16_to_f32(vout[j]) != (f32)1'
+        comp2 = 'nsimd_f16_to_f32(vout[j]) != (f32)0'
+    else:
+        fill_vout = 'vout[i] = ({typ})0;'.format(typ=typ)
+        one = '({typ})1'.format(typ=typ)
+        comp1 = 'vout[j] != ({typ})1'.format(typ=typ)
+        comp2 = 'vout[j] != ({typ})0'.format(typ=typ)
+
+    if lang == 'c_base':
+        test = \
+        '''vecl({typ}) mask = vmask_for_loop_tail(0, i, {typ});
+           v{op_name}(mask, vout, vset1({one}, {typ}), {typ});'''. \
+           format(typ=typ, op_name=op.name, one=one)
+    elif lang == 'cxx_base':
+        test = \
+        '''vecl({typ}) mask = nsimd::mask_for_loop_tail(0, i, {typ}());
+           nsimd::{op_name}(mask, vout, nsimd::set1({one}, {typ}()),
+                            {typ}());'''.format(typ=typ, op_name=op.name,
+                                                one=one)
+    elif lang == 'cxx_adv':
+        test = \
+        '''nsimd::packl<{typ}> mask =
+               nsimd::mask_for_loop_tail<nsimd::packl<{typ}>>(0, i);
+           nsimd::{op_name}(mask, vout,
+                            nsimd::set1<nsimd::pack<{typ}>>({one}));'''. \
+                            format(typ=typ, op_name=op.name, one=one)
+
+    if op.name == 'mask_storeu1':
+        unalign = '\nvout += 1;'
+    else:
+        unalign = ''
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+           '''{includes}
+
+           #define STATUS "test of {op_name} over {typ}"
+
+           #define CHECK(a) {{ \\
+             errno = 0; \\
+             if (!(a)) {{ \\
+               fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                       __LINE__, strerror(errno)); \\
+               fflush(stderr); \\
+               exit(EXIT_FAILURE); \\
+             }} \\
+           }}
+
+           int main(void) {{
+             int i, j;
+             {typ} *vout;
+             int len = vlen({typ});
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+             CHECK(vout = ({typ}*)nsimd_aligned_alloc(2 * len));{unalign}
+
+             /* Fill vout with zeors */
+             for (i = 0; i < len; i++) {{
+               {fill_vout}
+             }}
+
+             /* Store data into vout */
+             for (i = 0; i < len; i++) {{
+               {test}
+
+               for (j = 0; j < i; j++) {{
+                 if ({comp1}) {{
+                   fprintf(stdout, STATUS "... FAIL\\n");
+                   fflush(stdout);
+                   return -1;
+                 }}
+               }}
+               for (; j < len; j++) {{
+                 if ({comp2}) {{
+                   fprintf(stdout, STATUS "... FAIL\\n");
+                   fflush(stdout);
+                   return -1;
+                 }}
+               }}
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             return EXIT_SUCCESS;
+           }}'''.format(includes=get_includes(lang), op_name=op.name,
+                        typ=typ, year=date.today().year, test=test,
+                        comp1=comp1, comp2=comp2, unalign=unalign,
+                        fill_vout=fill_vout))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
@@ -2623,7 +2847,8 @@ def doit(opts):
         if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
-                        'store4a', 'store4u', 'downcvt', 'to_logical']:
+                        'store4a', 'store4u', 'downcvt', 'to_logical',
+                        'mask_for_loop_tail']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
@@ -2665,6 +2890,15 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
                 gen_load_store_ravel(opts, operator, typ, 'c_base')
+            elif operator.name in ['masko_loada1', 'masko_loadu1',
+                                   'maskz_loada1', 'maskz_loadu1']:
+                gen_mask_load(opts, operator, typ, 'c_base')
+                gen_mask_load(opts, operator, typ, 'cxx_base')
+                gen_mask_load(opts, operator, typ, 'cxx_adv')
+            elif operator.name in ['mask_storea1', 'mask_storeu1']:
+                gen_mask_store(opts, operator, typ, 'c_base')
+                gen_mask_store(opts, operator, typ, 'cxx_base')
+                gen_mask_store(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'reverse':
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');

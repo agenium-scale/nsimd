@@ -503,6 +503,18 @@ class Loadu(Operator):
     categories = [DocLoadStore]
     desc = 'Load data from unaligned memory.'
 
+class MaskoLoadu1(Operator):
+    signature = 'v masko_loadu1 l c* v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from unaligned memory corresponding to True elements.'
+
+class MaskzLoadu1(Operator):
+    signature = 'v maskz_loadu1 l c*'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from unaligned memory corresponding to True elements.'
+
 class Load2u(Operator):
     full_name = 'load array of structure'
     signature = 'vx2 load2u c*'
@@ -529,6 +541,18 @@ class Loada(Operator):
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from aligned memory.'
+
+class MaskoLoada(Operator):
+    signature = 'v masko_loada1 l c* v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from aligned memory.'
+
+class MaskzLoada(Operator):
+    signature = 'v maskz_loada1 l c*'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from aligned memory corresponding to True elements.'
 
 class Load2a(Operator):
     full_name = 'load array of structure'
@@ -573,6 +597,12 @@ class Storeu(Operator):
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into unaligned memory.'
 
+class MaskStoreu1(Operator):
+    signature = '_ mask_storeu1 l * v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Store active SIMD vector elements into unaligned memory.'
+
 class Store2u(Operator):
     full_name = 'store into array of structures'
     signature = '_ store2u * v v'
@@ -605,6 +635,12 @@ class Storea(Operator):
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into aligned memory.'
+
+class MaskStorea1(Operator):
+    signature = '_ mask_storea1 l * v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Store active SIMD vector elements into aligned memory.'
 
 class Store2a(Operator):
     full_name = 'store into array of structures'
@@ -1231,6 +1267,16 @@ class ToLogical(Operator):
     desc = 'Returns a vector of logicals. Set true when the corresponding ' + \
            'elements are non zero (at least one bit to 1) and false ' + \
            'otherwise.'
+
+class MaskForLoopTail(Operator):
+    full_name = 'build mask for ending loops'
+    signature = 'l mask_for_loop_tail p p'
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Returns a mask for loading/storing data at loop tails by ' \
+           'setting the first elements to True and the last to False. ' \
+           'The first argument is index in a loop whose number of elements ' \
+           'is given by the second argument.'
 
 class Adds(Operator):
     full_name = 'addition using saturation'

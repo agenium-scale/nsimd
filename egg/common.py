@@ -133,6 +133,9 @@ SOFTWARE.
 
 def clang_format(opts, filename, cuda=False):
     if opts.disable_clang_format:
+        # We add a newline at EOF as required by compilers
+        with io.open(filename, mode='a', encoding='utf-8') as fout:
+            fout.write('\n')
         return
     # TODO: not sure if needed to implement a smarter call to clang-format
     if cuda:

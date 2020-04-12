@@ -195,6 +195,26 @@ def load(typ):
 
 # -----------------------------------------------------------------------------
 
+def maskoz_load(oz, typ):
+    if typ == 'f16':
+        else_value = '0.0f' if oz == 'z' else '{in2}.v{{i}}'.format(**fmtspec)
+        content = repeat_stmt(
+                  '''ret.v{{i}} = {in0}.v{{i}}
+                                ? nsimd_u16_to_f32(((u16 *){in1})[{{i}}])
+                                : {else_value};'''. \
+                                format(else_value=else_value, **fmtspec), typ)
+    else:
+        else_value = '({typ})0'.format(**fmtspec) if oz == 'z' else \
+                     '{in2}.v{{i}}'.format(**fmtspec)
+        content = repeat_stmt(
+                  'ret.v{{i}} = {in0}.v{{i}} ? {in1}[{{i}}] : {else_value};'. \
+                  format(else_value=else_value, **fmtspec), typ)
+    return '''nsimd_cpu_v{typ} ret;
+              {content}
+              return ret;'''.format(content=content, **fmtspec)
+
+# -----------------------------------------------------------------------------
+
 def load_deg234(typ, deg):
     if typ == 'f16':
         buf = repeat_stmt(
@@ -250,13 +270,25 @@ def loadl(typ):
 
 def store(typ):
     if typ == 'f16':
-        content = repeat_stmt(
-                  '((u16*){in0})[{{i}}] = nsimd_f32_to_u16({in1}.v{{i}});'. \
-                  format(**fmtspec), typ)
+        return repeat_stmt(
+               '((u16*){in0})[{{i}}] = nsimd_f32_to_u16({in1}.v{{i}});'. \
+               format(**fmtspec), typ)
     else:
-        content = repeat_stmt('{in0}[{{i}}] = {in1}.v{{i}};'. \
-                              format(**fmtspec), typ)
-    return content
+        return repeat_stmt('{in0}[{{i}}] = {in1}.v{{i}};'. \
+                           format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
+def mask_store(typ):
+    if typ == 'f16':
+        return repeat_stmt(
+               '''if ({in0}.v{{i}}) {{{{
+                    ((u16*){in1})[{{i}}] = nsimd_f32_to_u16({in2}.v{{i}});
+                  }}}}'''.format(**fmtspec), typ)
+    else:
+        return repeat_stmt('''if ({in0}.v{{i}}) {{{{
+                                {in1}[{{i}}] = {in2}.v{{i}};
+                              }}}}'''.format(**fmtspec), typ)
 
 # -----------------------------------------------------------------------------
 
@@ -487,20 +519,23 @@ def unzip_half(func, typ):
               return {in0};'''.format(**fmtspec)
 
 def zip(from_typ):
-    return '''\
-    nsimd_{simd_ext}_v{typ}x2 ret;
-    ret.v0 = nsimd_ziplo_cpu_{typ}({in0}, {in1});
-    ret.v1 = nsimd_ziphi_cpu_{typ}({in0}, {in1});
-    return ret;
-    '''.format(**fmtspec)
+    return '''nsimd_{simd_ext}_v{typ}x2 ret;
+              ret.v0 = nsimd_ziplo_cpu_{typ}({in0}, {in1});
+              ret.v1 = nsimd_ziphi_cpu_{typ}({in0}, {in1});
+              return ret;'''.format(**fmtspec)
 
 def unzip(from_typ):
-    return '''\
-    nsimd_{simd_ext}_v{typ}x2 ret;
-    ret.v0 = nsimd_unziplo_cpu_{typ}({in0}, {in1});
-    ret.v1 = nsimd_unziphi_cpu_{typ}({in0}, {in1});
-    return ret;
-    '''.format(**fmtspec)
+    return '''nsimd_{simd_ext}_v{typ}x2 ret;
+              ret.v0 = nsimd_unziplo_cpu_{typ}({in0}, {in1});
+              ret.v1 = nsimd_unziphi_cpu_{typ}({in0}, {in1});
+              return ret;'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+
+def mask_for_loop_tail(typ):
+    return func_body(
+           'ret.v{{i}} = {in0} + {{i}} < {in1} ? (u32)-1 : (u32)0;'. \
+           format(**fmtspec), typ, True)
 
 # -----------------------------------------------------------------------------
 
@@ -523,18 +558,24 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     impls = {
         'loada': lambda: load(from_typ),
+        'maskz_loada1': lambda: maskoz_load('z', from_typ),
+        'masko_loada1': lambda: maskoz_load('o', from_typ),
         'load2a': lambda: load_deg234(from_typ, 2),
         'load3a': lambda: load_deg234(from_typ, 3),
         'load4a': lambda: load_deg234(from_typ, 4),
         'loadu': lambda: load(from_typ),
+        'maskz_loadu1': lambda: maskoz_load('z', from_typ),
+        'masko_loadu1': lambda: maskoz_load('o', from_typ),
         'load2u': lambda: load_deg234(from_typ, 2),
         'load3u': lambda: load_deg234(from_typ, 3),
         'load4u': lambda: load_deg234(from_typ, 4),
         'storea': lambda: store(from_typ),
+        'mask_storea1': lambda: mask_store(from_typ),
         'store2a': lambda: store_deg234(from_typ, 2),
         'store3a': lambda: store_deg234(from_typ, 3),
         'store4a': lambda: store_deg234(from_typ, 4),
         'storeu': lambda: store(from_typ),
+        'mask_storeu1': lambda: mask_store(from_typ),
         'store2u': lambda: store_deg234(from_typ, 2),
         'store3u': lambda: store_deg234(from_typ, 3),
         'store4u': lambda: store_deg234(from_typ, 4),
@@ -605,7 +646,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'unziplo': lambda: unzip_half('unziplo', from_typ),
         'unziphi': lambda: unzip_half('unziphi', from_typ),
         'zip' : lambda : zip(from_typ),
-        'unzip' : lambda : unzip(from_typ)
+        'unzip' : lambda : unzip(from_typ),
+        'mask_for_loop_tail': lambda : mask_for_loop_tail(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

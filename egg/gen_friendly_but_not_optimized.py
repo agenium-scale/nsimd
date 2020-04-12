@@ -98,7 +98,8 @@ def doit(opts):
 
                      '''.format(year=date.today().year))
         for op_name, operator in operators.operators.items():
-            if operator.load_store or op_name == 'set1':
+            if operator.load_store or \
+               op_name in ['set1', 'mask_for_loop_tail']:
                 continue
             out.write('''{hbar}
 
