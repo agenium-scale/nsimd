@@ -117,6 +117,8 @@ import gen_doc
 import gen_friendly_but_not_optimized
 import gen_ulps
 
+import modules.hatch
+
 # Dir of this script
 script_dir = os.path.dirname(__file__)
 if script_dir == '':
@@ -131,6 +133,7 @@ def parse_args(args):
         values = {
             'x86': common.x86_simds,
             'arm': common.arm_simds,
+            'ppc': common.ppc_simds,
             'all': common.simds,
         }.get(value, value.split(','))
         ## Check that all simd are valid
@@ -168,8 +171,8 @@ def parse_args(args):
         help='Generate friendly but not optimized overloads for C++')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--tests-fp', action='store_true',
-        help='Generate tests in C and C++ for the fixed precision module')
+    parser.add_argument('--build-modules', '-M', action='store_true',
+        help='Build modules')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
     parser.add_argument('--include-dir', '-i', type=str,
@@ -206,6 +209,10 @@ def parse_args(args):
         action='store_true',
         default=False,
         help='Put a simple copyright statement instead of the whole license')
+    parser.add_argument('--sve-emulate-bool',
+        action='store_true',
+        default=False,
+        help='Use normal sve vector to emulate predicates.')
     return parser.parse_args(args)
 
 # -----------------------------------------------------------------------------
@@ -236,6 +243,10 @@ def main():
         gen_friendly_but_not_optimized.doit(opts)
     if opts.doc == True or opts.all == True:
         gen_doc.doit(opts)
+
+    ## Gen modules
+    if opts.build_modules == True or opts.all == True:
+        modules.hatch.doit(opts)
 
 if __name__ == '__main__':
     main()

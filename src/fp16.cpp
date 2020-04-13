@@ -82,6 +82,13 @@ implementation below was written so that it can easily be SIMD'ed.
 
 extern "C" {
 
+/* Union used to manipulate bit in float numbers. */
+typedef union {
+  u32 u;
+  f32 f;
+} f32_u32;
+
+
 // ----------------------------------------------------------------------------
 // Convert a FP16 as an u16 to a float
 
@@ -109,23 +116,34 @@ NSIMD_DLLEXPORT float nsimd_u16_to_f32(u16 a) {
   if (exponent == 31) {
     /* We have a NaN of an INF. */
     exponent = 255;
+    /* Force the first bit of the mantissa to 1 to be compatible with the way
+     * Intel convert f16 to f32 */
+    if (mantissa != 0) {
+      //mantissa |= 0x200;
+    }
+  } else if (exponent == 0 && mantissa == 0) {
+    /* Nothing to do */
   } else if (exponent == 0) {
-    /* We have a denormal, treat it as zero. */
-    mantissa = 0;
+    u32 mask = mantissa;
+    /* Find the most significant bit of the mantissa (could use a better
+     * algorithm) */
+    int i = -1;
+    do {
+      ++i;
+      mask <<= 1;
+    } while ((mask & 0x400) == 0);
+
+    /* Update the mantissa and the exponent */
+    mantissa = (mask & 0x3ff);
+    exponent += (u32)(112 - i);
   } else {
-    /* the exponent must be recomputed - 15 + 127 */
+    /* the exponent must be recomputed -15 + 127 */
     exponent += 112;
   }
   /* We then rebuild the float */
-  {
-    union {
-      u32 u;
-      f32 f;
-    } buf;
-
-    buf.u = (sign << 16) | (((u32)exponent) << 23) | (mantissa << 13);
-    return buf.f;
-  }
+  f32_u32 ret;
+  ret.u = (sign << 16) | (((u32)exponent) << 23) | (mantissa << 13);
+  return ret.f;
 #endif
 }
 
@@ -133,9 +151,7 @@ NSIMD_DLLEXPORT float nsimd_u16_to_f32(u16 a) {
 // Convert a FP16 to a float
 
 #ifndef NSIMD_NATIVE_FP16
-NSIMD_DLLEXPORT f32 nsimd_f16_to_f32(f16 a) {
-  return nsimd_u16_to_f32(a.u);
-}
+NSIMD_DLLEXPORT f32 nsimd_f16_to_f32(f16 a) { return nsimd_u16_to_f32(a.u); }
 #endif
 
 // ----------------------------------------------------------------------------
@@ -178,51 +194,57 @@ NSIMD_DLLEXPORT u16 nsimd_f32_to_u16(f32 a) {
     return (u16)((sign << 15) | ((u32)(exponent + 15) << 10) | mantissa);
   }
 #else
-  u32 b, sign, mantissa;
+  u32 sign, mantissa;
   int exponent;
 
-  {
-    union {
-      u32 u;
-      f32 f;
-    } buf;
+  f32_u32 in;
+  in.f = a;
 
-    buf.f = a;
-    b = buf.u;
+  sign = in.u & 0x80000000;
+  exponent = (int)((in.u >> 23) & 0xFF);
+  mantissa = (in.u & 0x7FFFFF);
+
+  if (exponent == 255 && mantissa != 0) {
+    /* Nan */
+    return (u16)(0xffff);
   }
 
-  sign = b & 0x80000000;
-  exponent = (int)((b >> 23) & 0xFF);
-  mantissa = (b & 0x7FFFFF);
+  const f32_u32 biggest_f16{0x477ff000};
+  if (in.f >= biggest_f16.f || in.f <= -biggest_f16.f) {
+    /* Number is too big to be representable in half => return infinity */
+    return (u16)(sign >> 16 | 0x1f << 10);
+  }
 
-  if (exponent < 113 || (exponent > 142 && exponent < 255)) {
-    /* In this case we have to set the mantissa to zero because
-       - exponent is two small or zero and we have either a too small
-         number of a subnormal (or zero) and we treat all theses cases as
-         zero. In this case E < 127 - 14 = (FP32 bias) + (FP16 + emin).
-       - or an exponent encoding a number two large to be represented in a
-         FP16 so we convert it to INF and for INF the mantissa must be zero.
-         In this case E > 127 + 15 = (FP32 bias) + (FP16 + emax).
-     */
-    mantissa = 0;
+  const f32_u32 smallest_f16{0x33000000};
+  if (in.f <= smallest_f16.f && in.f >= -smallest_f16.f) {
+    /* Number is too small to be representable in half => return ±0 */
+    return (u16)(sign >> 16);
   }
 
   /* For FP32 exponent bias is 127, compute the real exponent. */
   exponent -= 127;
 
-  /* Now ensure that exponent is between -15 and +16. The exponent must be
-     between -14 and 15. But when we add the bias we get an exponent between
-     1 and 30. This does take into account zero (exponent is 0) and INF
-     (exponent is 31). Therefore we ensure that exponent lives between
-     -15 and 16. Indeed an exponent of -15 means a too small number for FP16
-     and -15 + 15 = 0 is the good exponent for zero. An exponent of 16 means
-     a too big number, so we produce an INF whose exponent is 31 = 16 + 15. */
-  exponent = std::min(exponent, 16);
-  exponent = std::max(exponent, -15);
+  /* Following algorithm taken from:
+   * https://fgiesen.wordpress.com/2012/03/28/half-to-float-done-quic/ */
+  const f32_u32 denormal_f16{0x38800000};
+  if (in.f < denormal_f16.f && in.f > -denormal_f16.f) {
+    /* Denormalized half */
+    const f32_u32 magic {((127 - 15) + (23 - 10) + 1) << 23};
 
-  /* Finally rebuild the FP16. */
-  return (u16)((sign >> 16) | (((u32)(exponent + 15)) << 10) |
-               (mantissa >> 13));
+    in.u &= ~0x80000000U;
+    in.f += magic.f;
+    in.u -= magic.u;
+
+    return (u16)(sign >> 16 | in.u);
+  }
+
+  /* Normal half */
+  in.u &= ~0x80000000U;
+  u32 mant_odd = (in.u >> 13) & 1;
+  in.u += ((u32)(15 - 127) << 23) + 0xfffU;
+  in.u += mant_odd;
+
+  return (u16)(sign >> 16 | in.u >> 13);
 #endif
 }
 
@@ -249,8 +271,8 @@ namespace nsimd {
 NSIMD_DLLEXPORT u16 f32_to_u16(f32 a) { return nsimd_f32_to_u16(a); }
 NSIMD_DLLEXPORT f32 u16_to_f32(u16 a) { return nsimd_u16_to_f32(a); }
 #ifndef NSIMD_NATIVE_FP16
-  NSIMD_DLLEXPORT f16 f32_to_f16(f32 a) { return nsimd_f32_to_f16(a); }
-  NSIMD_DLLEXPORT f32 f16_to_f32(f16 a) { return nsimd_f16_to_f32(a); }
+NSIMD_DLLEXPORT f16 f32_to_f16(f32 a) { return nsimd_f32_to_f16(a); }
+NSIMD_DLLEXPORT f32 f16_to_f32(f16 a) { return nsimd_f16_to_f32(a); }
 #endif
 
 } // namespace nsimd

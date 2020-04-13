@@ -56,7 +56,7 @@ def emulate_fp16(simd_ext):
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     return True
 
-def get_type(simd_ext, typ):
+def get_type(opts, simd_ext, typ):
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     if typ not in common.types:
@@ -66,7 +66,7 @@ def get_type(simd_ext, typ):
                         for i in range(0, get_nb_el(typ)))
     return 'struct {{ {} }}'.format(members)
 
-def get_logical_type(simd_ext, typ):
+def get_logical_type(opts, simd_ext, typ):
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     if typ not in common.types:
@@ -92,6 +92,16 @@ def get_additional_include(func, platform, simd_ext):
                   #else
                     #include <math.h>
                   #endif'''
+    elif func == 'adds':
+        return  '''
+                #include <nsimd/cpu/cpu/add.h>
+                '''
+    elif func == 'subs':
+        return'''
+                #include <nsimd/cpu/cpu/sub.h>
+                #include <nsimd/cpu/cpu/adds.h>
+                #include <nsimd/cpu/cpu/neg.h>
+               '''
     elif func in ['']:
         return '''#include <nsimd/cpu/cpu/reinterpret.h>
                   '''
@@ -103,6 +113,9 @@ def get_additional_include(func, platform, simd_ext):
          return '''#include <nsimd/cpu/cpu/unziplo.h>
                    #include <nsimd/cpu/cpu/unziphi.h>
                   '''
+    elif func == 'shra':
+        return '''#include <nsimd/cpu/{simd_ext}/shr.h>
+                  '''.format(simd_ext=simd_ext)
     return ''
 
 # -----------------------------------------------------------------------------
@@ -350,9 +363,6 @@ def round_to_even1(typ):
         return 'return {in0};'.format(**fmtspec)
     stmt = '''{{{{
               {typ2} fl_p_half = fl.v{{i}} + 0.5{suffix};
-              if (fl.v{{i}} == {in0}.v{{i}}) {{{{
-                ret.v{{i}} = {in0}.v{{i}};
-              }}}}
               if ({in0}.v{{i}} == fl_p_half) {{{{
                 f64 flo2 = (f64)(fl.v{{i}} * 0.5{suffix});
                 if (floor(flo2) == flo2) {{{{
@@ -702,6 +712,93 @@ def len1(typ):
 
 # -----------------------------------------------------------------------------
 
+def adds_itypes(assign_max, assign_add_if_ok):
+    check_overflow = \
+           'if (({in0}.v{{i}} > 0) && ({in1}.v{{i}} > {max} - {in0}.v{{i}}))'
+    assign_max_if_overflow = check_overflow + '\n' + assign_max
+
+    check_underflow = \
+           'else if (({in0}.v{{i}} < 0) && ({in1}.v{{i}} < {min} - {in0}.v{{i}}))'
+    assign_min = '{{{{ ret.v{{i}} = {min}; }}}}'
+    assign_min_if_underflow = check_underflow + '\n' + assign_min
+
+    algo = assign_max_if_overflow + '\n' + \
+           assign_min_if_underflow + '\n' + \
+           assign_add_if_ok
+
+    return algo
+
+
+def adds_utypes(assign_max, assign_add_if_ok):
+    check_overflow = 'if ({in1}.v{{i}} > {max} - {in0}.v{{i}})'
+    assign_max_if_overflow = check_overflow + '\n' + assign_max
+
+    algo = assign_max_if_overflow + '\n' + \
+           assign_add_if_ok
+
+    return algo
+
+
+def adds(from_typ):
+
+    if from_typ in common.ftypes:
+      return 'return nsimd_add_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+
+    if not from_typ in common.limits.keys():
+      raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
+
+    assign_max = '{{{{ ret.v{{i}} = {max}; }}}}'
+    add = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} + {in1}.v{{i}}); }}}}'
+    assign_add_if_ok = 'else ' + '\n' + add
+
+    if from_typ in common.itypes:
+        algo = adds_itypes(assign_max, assign_add_if_ok)
+
+    else:
+        algo = adds_utypes(assign_max, assign_add_if_ok)
+
+    type_limits = common.limits[from_typ]
+    content = repeat_stmt(algo.format(**type_limits, **fmtspec), from_typ)
+
+    return '''nsimd_{simd_ext}_v{from_typ} ret;
+
+              {content}
+
+              return ret;'''.format(from_typ = from_typ, content = content, simd_ext=fmtspec['simd_ext'])
+
+# -----------------------------------------------------------------------------
+
+def subs(from_typ):
+
+    if from_typ in common.itypes:
+      return 'return nsimd_adds_{simd_ext}_{from_typ}({in0},nsimd_neg_{simd_ext}_{from_typ}({in1}));'.format(**fmtspec)
+
+    if from_typ in common.ftypes:
+      return 'return nsimd_sub_{simd_ext}_{from_typ}({in0}, {in1});'.format(**fmtspec)
+
+    if from_typ not in common.utypes:
+      raise ValueError('Type not implemented in platform_{simd_ext} adds({from_typ})'.format(from_typ))
+
+    check_underflow = 'if ({in0}.v{{i}} < {in1}.v{{i}})'
+    assign_min = '{{{{ ret.v{{i}} = ({from_typ}){min}; }}}}'
+    assign_min_if_underflow = check_underflow + '\n' + assign_min
+    sub = '{{{{ ret.v{{i}} = ({from_typ})({in0}.v{{i}} - {in1}.v{{i}}); }}}}'
+    assign_sub_if_ok = 'else ' + '\n' + sub
+
+    algo = assign_min_if_underflow + '\n' + \
+           assign_sub_if_ok
+
+    type_limits = common.limits[from_typ]
+    content = repeat_stmt(algo.format(**type_limits, **fmtspec), from_typ)
+
+    return '''nsimd_{simd_ext}_v{from_typ} ret;
+
+               {content}
+
+               return ret;'''.format(from_typ = from_typ, content = content, simd_ext=fmtspec['simd_ext'])
+
+# -----------------------------------------------------------------------------
+
 def to_logical1(typ):
     unsigned_to_logical = \
         'ret.v{{i}} = ({in0}.v{{i}} == ({utyp})0 ? (u32)0 : (u32)-1);'. \
@@ -809,8 +906,38 @@ def unzip(from_typ):
     '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+## shift right
 
-def get_impl(func, simd_ext, from_typ, to_typ=''):
+def shra(typ):
+    n = get_nb_el(typ)
+    content = ''
+    # Sign extension for a right shift on signed values is compiler-dependant.
+    # There is no guarantee that the sign extension is performed, therefore,
+    # we do the sign extension manually using a mask.
+    content = '\n'.join('''\
+    /* -------------------------------------------- */
+    if(a1 >= {typnbits}) {{
+      ret.v{i} = ({typ}) 0; 
+    }} else {{
+    val.i = {in0}.v{i};
+    mask = (u{typnbits})((val.u >> ({typnbits} - 1)) * ~(u{typnbits})(0) << shift);
+    ret.v{i} = ({typ})((val.u >> {in1}) | mask);}}'''.\
+                    format(**fmtspec, i=i)for i in range(0, n))
+    if typ in common.utypes:
+        return '''return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});'''. \
+            format(**fmtspec)
+    else:
+        return '''\
+        union {{i{typnbits} i; u{typnbits} u;}} val;
+        nsimd_cpu_v{typ} ret;
+        const int shift = {typnbits} - 1 - {in1};
+        u{typnbits} mask;
+        {content}
+        return ret;'''.format(content=content, **fmtspec)
+
+# -----------------------------------------------------------------------------
+
+def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
     fmtspec = {
@@ -854,6 +981,8 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'mul': lambda: op2('*', from_typ),
         'div': lambda: op2('/', from_typ),
         'sub': lambda: op2('-', from_typ),
+        'adds' : lambda: adds(from_typ),
+        'subs' : lambda: subs(from_typ),
         'orb': lambda: bitwise2('|', from_typ),
         'orl': lambda: lop2('|', from_typ),
         'andb': lambda: bitwise2('&', from_typ),
@@ -875,6 +1004,7 @@ def get_impl(func, simd_ext, from_typ, to_typ=''):
         'iota': lambda: iota0(from_typ),
         'shr': lambda: bitwise1_param('>>', from_typ),
         'shl': lambda: bitwise1_param('<<', from_typ),
+        'shra': lambda:shra(from_typ),
         'eq': lambda: cmp2('==', from_typ),
         'ne': lambda: cmp2('!=', from_typ),
         'gt': lambda: cmp2('>', from_typ),

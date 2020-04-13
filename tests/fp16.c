@@ -24,10 +24,10 @@ SOFTWARE.
 
 #define _POSIX_C_SOURCE 200112L
 
-#include <nsimd/nsimd.h>
 #include <math.h>
-#include <stdlib.h>
+#include <nsimd/nsimd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -46,9 +46,7 @@ int is_nan(float a) {
 
 /* ------------------------------------------------------------------------- */
 
-float via_fp16(float a) {
-  return nsimd_f16_to_f32(nsimd_f32_to_f16(a));
-}
+float via_fp16(float a) { return nsimd_f16_to_f32(nsimd_f32_to_f16(a)); }
 
 /* ------------------------------------------------------------------------- */
 
@@ -73,6 +71,39 @@ float mk_fp32_bin(u32 a) {
 
 /* ------------------------------------------------------------------------- */
 
+int test_f16_to_f32(u16 val, u32 expected) {
+  f32 fexpected = *(f32 *)&expected;
+
+  f32 res = nsimd_f16_to_f32(*(f16 *)&val);
+  u32 ures = *(u32 *)&res;
+  if (ures != expected) {
+    fprintf(stdout,
+            "Error, nsimd_f16_to_f32: expected %e(0x%x) but got %e(0x%x) \n",
+            (f64)fexpected, expected, (f64)res, ures);
+    fflush(stdout);
+    return 1;
+  }
+
+  return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
+int test_f32_to_f16(u32 val, u16 expected) {
+  f16 fres = nsimd_f32_to_f16(*(f32 *)&val);
+  u16 ures = *(u16 *)&fres;
+  if (ures != expected) {
+    fprintf(stdout, "Error, nsimd_f16_to_f32: expected 0x%x but got 0x%x \n",
+            expected, ures);
+    fflush(stdout);
+    return 1;
+  }
+
+  return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
 int main(void) {
 #ifndef NSIMD_NO_IEEE754
   const float infty = mk_fp32_bin(0x7F800000);
@@ -82,23 +113,95 @@ int main(void) {
   int i;
 
   /* Some corner cases first. */
-  if (via_fp16(0.0f) != 0.0f) {
+  if (test_f16_to_f32(0x0000, 0x0)) {
     return EXIT_FAILURE;
   }
-  if (via_fp16(1.0f) != 1.0f) {
+  if (test_f16_to_f32(0x8000, 0x80000000)) {
     return EXIT_FAILURE;
   }
-  if (via_fp16(-1.0f) != -1.0f) {
+  if (test_f16_to_f32(0x3C00, 0x3f800000)) {
     return EXIT_FAILURE;
   }
+  if (test_f16_to_f32(0x13e, 0x379F0000)) { // 1.8954277E-5
+    return EXIT_FAILURE;
+  }
+  if (test_f16_to_f32(0x977e, 0xBAEFC000)) { // -1.8291473E-3
+    return EXIT_FAILURE;
+  }
+
+  if (test_f32_to_f16(0xC7BDC4FC, 0xFC00)) { // -97161.97
+    return EXIT_FAILURE;
+  }
+
+  if (test_f32_to_f16(0x37c3642c, 0x187)) { // 2.329246e-05
+    return EXIT_FAILURE;
+  }
+
+  if (test_f32_to_f16(0xb314e840, 0x8001)) {
+    return EXIT_FAILURE;
+  }
+
+  /* Test rounding when the input f32 is perfectly between 2 f16*/
+  if (test_f32_to_f16(0xC66AD000, 0xf356)) {
+    return EXIT_FAILURE;
+  }
+
+  /* Close to ±Inf */
+  if (test_f32_to_f16(0x477fefff, 0x7bff)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0x477ff000, 0x7c00)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0xC77fefff, 0xfbff)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0xC77ff000, 0xfc00)) {
+    return EXIT_FAILURE;
+  }
+
+  /* Close to ±0 */
+  if (test_f32_to_f16(0x33000001, 0x0001)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0x33000000, 0x0000)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0xB3000001, 0x8001)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0xB3000000, 0x8000)) {
+    return EXIT_FAILURE;
+  }
+
+  /* Close to the denormal limit */
+  if (test_f32_to_f16(0x38800000, 0x0400)) {
+    return EXIT_FAILURE;
+  }
+  if (test_f32_to_f16(0x387fffff, 0x0400)) {
+    return EXIT_FAILURE;
+  }
+
+  /* NaN special value (Copy Intel intrinsics which set the MSB of the mantissa
+   * of NaNs to 1 when converting f16 to f32). */
+  if (test_f16_to_f32(0xfcf8, 0xff9f0000)) {
+    return EXIT_FAILURE;
+  }
+
 #ifndef NSIMD_NO_IEEE754
   if (via_fp16(mk_fp32(1, 20)) != infty) {
+    fprintf(stdout, "... Error, %i \n", __LINE__);
+    fflush(stdout);
     return EXIT_FAILURE;
   }
   if (via_fp16(mk_fp32(-1, 20)) != m_infty) {
+    fprintf(stdout, "... Error, %i \n", __LINE__);
+    fflush(stdout);
     return EXIT_FAILURE;
   }
   if (!is_nan(via_fp16(nan))) {
+    fprintf(stdout, "... Error, %i \n", __LINE__);
+    fflush(stdout);
     return EXIT_FAILURE;
   }
 #endif
@@ -111,5 +214,7 @@ int main(void) {
     }
   }
 
+  fprintf(stdout, "... OK\n");
+  fflush(stdout);
   return EXIT_SUCCESS;
 }

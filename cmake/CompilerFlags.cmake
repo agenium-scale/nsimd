@@ -32,7 +32,8 @@ function(compiler_flags in out)
 
     # Sanity check first
     set(known_flags CPU SSE2 SSE42 AVX AVX2 AVX512_KNL AVX512_SKYLAKE NEON128
-                    AARCH64 SVE FMA FP16 C++14 O3 G)
+        AARCH64 SVE SVE128 SVE256 SVE512 SVE1024 SVE2048 FMA FP16
+        C++14 O3 G)
 
     list(FIND known_flags "${flag}" i)
     if (i EQUAL -1)
@@ -63,7 +64,12 @@ function(compiler_flags in out)
         endif()
         set(flags_for_NEON128        "/DNEON128")
         set(flags_for_AARCH64        "/DAARCH64")
-        set(flags_for_SVE            "/DSVE") # Not supported by MSVC yet
+        set(flags_for_SVE            "/DSVE")     # Not supported by MSVC yet
+        set(flags_for_SVE128         "/DSVE128")  # Not supported by MSVC yet
+        set(flags_for_SVE256         "/DSVE256")  # Not supported by MSVC yet
+        set(flags_for_SVE512         "/DSVE512")  # Not supported by MSVC yet
+        set(flags_for_SVE1024        "/DSVE1024") # Not supported by MSVC yet
+        set(flags_for_SVE2048        "/DSVE2048") # Not supported by MSVC yet
         set(flags_for_FP16           "/DFP16")
         set(flags_for_FMA            "/DFMA")
         set(flags_for_O3             "/Ox")
@@ -82,8 +88,14 @@ function(compiler_flags in out)
         set(flags_for_AVX512_SKYLAKE "-mavx512f -mavx512dq -mavx512cd -mavx512bw -mavx512vl -DAVX512_SKYLAKE")
         set(flags_for_C++14          "-std=c++14")
         set(flags_for_NEON128        "-mfpu=neon -DNEON128")
+        set(flags_for_POWER7         "-maltivec -mcpu=power7 -DPOWER7")
         set(flags_for_AARCH64        "-DAARCH64")
         set(flags_for_SVE            "-march=armv8-a+sve -DSVE")
+        set(flags_for_SVE128         "-march=armv8-a+sve -msve-vector-bits=128 -DSVE128")
+        set(flags_for_SVE256         "-march=armv8-a+sve -msve-vector-bits=256 -DSVE256")
+        set(flags_for_SVE512         "-march=armv8-a+sve -msve-vector-bits=512 -DSVE512")
+        set(flags_for_SVE1024        "-march=armv8-a+sve -msve-vector-bits=1024 -DSVE1024")
+        set(flags_for_SVE2048        "-march=armv8-a+sve -msve-vector-bits=2048 -DSVE2048")
         if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "(arm|ARM)")
             if ("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
                 set(flags_for_FP16   "-DFP16")
@@ -113,6 +125,11 @@ function(compiler_flags in out)
         set(flags_for_NEON128        "")
         set(flags_for_AARCH64        "")
         set(flags_for_SVE            "")
+        set(flags_for_SVE128         "")
+        set(flags_for_SVE256         "")
+        set(flags_for_SVE512         "")
+        set(flags_for_SVE1024        "")
+        set(flags_for_SVE2048        "")
         set(flags_for_FP16           "-mf16c -DFP16")
         set(flags_for_FMA            "-mfma -DFMA")
         set(flags_for_O3             "-O3")
