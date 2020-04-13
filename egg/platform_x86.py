@@ -170,7 +170,7 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(simd_ext=simd_ext)
     if func == 'zip':
         ret += '''#include <nsimd/x86/{simd_ext}/ziplo.h>
-                  # include <nsimd/x86/{simd_ext}/ziphi.h>
+                  #include <nsimd/x86/{simd_ext}/ziphi.h>
                   '''.format(simd_ext=simd_ext)
     if func == 'unzip':
         ret += '''#include <nsimd/x86/{simd_ext}/unziplo.h>
@@ -227,7 +227,7 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(func=func, deg=deg, args=args, simd_ext=simd_ext)
     if func == 'to_logical':
         ret += '''#include <nsimd/x86/{simd_ext}/ne.h>
-                  # include <nsimd/x86/{simd_ext}/reinterpretl.h>
+                  #include <nsimd/x86/{simd_ext}/reinterpretl.h>
                   '''.format(simd_ext=simd_ext)
     if func == 'adds':
         ret += '''
@@ -522,7 +522,7 @@ def load(simd_ext, typ, aligned):
                  v = _mm_shuffle_epi32(v, 14); /* = (3 << 2) | (2 << 0) */
                  ret.v1 = _mm_cvtph_ps(v);
                  return ret;
-               # else
+               #else
                  /* Note that we can do much better but is it useful? */
                  nsimd_{simd_ext}_vf16 ret;
                  f32 buf[4];
@@ -537,7 +537,7 @@ def load(simd_ext, typ, aligned):
                  buf[3] = nsimd_u16_to_f32(*((u16*){in0} + 7));
                  ret.v1 = _mm_loadu_ps(buf);
                  return ret;
-               # endif'''.format(align=align, **fmtspec)
+               #endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx:
             return '''#ifdef NSIMD_FP16
                         nsimd_{simd_ext}_vf16 ret;
@@ -546,7 +546,7 @@ def load(simd_ext, typ, aligned):
                         ret.v1 = _mm256_cvtph_ps(_mm_load{align}_si128(
                                    (__m128i*){in0} + 1));
                         return ret;
-                      # else
+                      #else
                         /* Note that we can do much better but is it useful? */
                         nsimd_{simd_ext}_vf16 ret;
                         f32 buf[8];
@@ -560,7 +560,7 @@ def load(simd_ext, typ, aligned):
                         }}
                         ret.v1 = _mm256_loadu_ps(buf);
                         return ret;
-                      # endif'''.format(align=align, **fmtspec)
+                      #endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx512:
             return '''nsimd_{simd_ext}_vf16 ret;
                       ret.v0 = _mm512_cvtph_ps(
@@ -574,6 +574,75 @@ def load(simd_ext, typ, aligned):
     else:
         return 'return {pre}load{align}{sufsi}({cast}{in0});'. \
                format(align=align, cast=cast, **fmtspec)
+
+# masked loads
+
+def maskoz_load(simd_ext, typ, oz, aligned):
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+
+                  return ret;'''.format(**fmtspec)
+    emulated = \
+    '''int i;
+       {typ} mask[{le}], buf[{le}];
+       {pre}storeu{sufsi}(buf, {oz});
+       {pre}storeu{sufsi}(mask, {in0});
+       for (i = 0; i < {le}; i++) {{
+         if ((({utyp}*)mask)[i] != ({utyp})0) {{
+           buf[i] = {in1}[i];
+         }}
+       }}
+       return {pre}loadu{sufsi}(buf);'''.format(utyp='u' + typ[1:],
+       oz='{in2}'.format(**fmtspec) if oz == 'o' else \
+          '{pre}setzero{sufsi}()'.format(**fmtspec), **fmtspec)
+    if typ in ['i8', 'u8', 'i16', 'u16'] and simd_ext != 'avx512_skylake':
+        return emulated
+    # Here typ is 32 of 64-bits wide except
+    if simd_ext in avx:
+        suf2 = 'ps' if typ[1:] == '32' else 'pd'
+        if typ in common.ftypes:
+            maskload = \
+            '{pre}maskload{suf}({in1}, {pre}cast{suf2}_si256({in0}))'. \
+            format(suf2=suf2, **fmtspec)
+            if oz == 'z':
+                return 'return {};'.format(maskload)
+            else:
+                return \
+                'return {pre}blendv{suf}({in2}, {maskload}, {in0});'. \
+                format(maskload=maskload, **fmtspec)
+        else:
+            if simd_ext == 'avx2':
+                maskload = '{pre}maskload{suf}({in1}, {in0})'.format(**fmtspec)
+                if oz == 'z':
+                    return 'return {};'.format(maskload)
+                else:
+                    return \
+                    'return {pre}blendv_epi8({in2}, {maskload}, {in0});'. \
+                    format(maskload=maskload, **fmtspec)
+            else:
+                maskload = '{pre}maskload{suf2}(({ftyp}*){in1}, {in0}))'. \
+                           format(suf2=suf2, ftyp='f' + typ[1:], **fmtspec)
+                if oz == 'z':
+                    return 'return {pre}cast{suf2}_si256({maskload});'. \
+                           format(maskload=maskload, suf2=suf2, **fmtspec)
+                else:
+                    return \
+                    '''return {pre}cast{suf2}_si256({pre}blendv_{suf2}(
+                                {pre}castsi256_{suf2}({in2}), {maskload},
+                                  {pre}castsi256_{suf2}({in0})));'''. \
+                                  format(suf2=suf2, maskload=maskload,
+                                         **fmtspec)
+    # getting here means avx512 with intrinsics
+    mask = {
+      'o': 'return {pre}maskz_load{{}}{suf}({in0}, (void*){in1});'. \
+           format(**fmtspec),
+      'z': 'return {pre}mask_load{{}}{suf}({in2}, {in0}, (void*){in1});'. \
+           format(**fmtspec)
+    }
+    if typ in ['i32', 'u32', 'f32', 'i64', 'u64', 'f64']:
+        return mask[oz].format('' if aligned else 'u')
+    else:
+        return mask[oz].format('u')
 
 # -----------------------------------------------------------------------------
 # Loads of degree 2, 3 and 4
@@ -722,6 +791,67 @@ def store(simd_ext, typ, aligned):
     else:
         return '{pre}store{align}{sufsi}({cast}{in0}, {in1});'. \
                format(align=align, cast=cast, **fmtspec)
+
+# masked store
+
+def mask_store(simd_ext, typ, aligned):
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+
+                  return ret;'''.format(**fmtspec)
+    suf2 = 'ps' if typ[1:] == '32' else 'pd'
+    if simd_ext in sse:
+        if typ in common.iutypes:
+            return '_mm_maskmoveu_si128({in2}, {in0}, (char *){in1});'. \
+                   format(**fmtspec)
+        else:
+            return '''_mm_maskmoveu_si128(_mm_cast{suf2}_si128({in2}),
+                                          _mm_cast{suf2}_si128({in0}),
+                                          (char *){in1});'''. \
+                                          format(suf2=suf2, **fmtspec)
+    if typ in ['i8', 'u8', 'i16', 'u16']:
+        if simd_ext == 'avx512_knl':
+            return '''int i;
+                      {typ} mask[{le}], buf[{le}];
+                      {pre}storeu{sufsi}(buf, {in2});
+                      {pre}storeu{sufsi}(mask, {in0});
+                      for (i = 0; i < {le}; i++) {{
+                        if ((({utyp}*)mask)[i] != ({utyp})0) {{
+                          {in1}[i] = buf[i];
+                        }}
+                      }}'''.format(utyp='u' + typ[1:], **fmtspec)
+        else:
+            return \
+            '''nsimd_{op_name}_sse42_{typ}({mask_lo}, {in1}, {val_lo});
+               nsimd_{op_name}_sse42_{typ}({mask_hi}, {in1} + {le2},
+                                           {val_hi});
+               '''.format(le2=fmtspec['le'] // 2,
+               op_name='mask_store{}1'.format('a' if  aligned else 'u'),
+               mask_lo=extract(simd_ext, typ, LO, common.in0),
+               mask_hi=extract(simd_ext, typ, HI, common.in0),
+               val_lo=extract(simd_ext, typ, LO, common.in2),
+               val_hi=extract(simd_ext, typ, HI, common.in2), **fmtspec)
+    # Here typ is 32 of 64-bits wide except
+    if simd_ext in avx:
+        if typ in common.ftypes:
+            return '''{pre}maskstore{suf}({in1},
+                          {pre}cast{suf2}_si256({in0}), {in2});'''. \
+                          format(suf2=suf2, **fmtspec)
+        else:
+            if simd_ext == 'avx2':
+                return '{pre}maskstore{suf}({in1}, {in0}, {in2});'. \
+                       format(**fmtspec)
+            else:
+                return '''{pre}maskstore_{suf2}(({ftyp}*){in1}, {in0},
+                            {pre}castsi256_{suf2}({in2}));'''. \
+                            format(suf2=suf2, ftyp='f' + typ[1:], **fmtspec)
+    # getting here means avx512 with intrinsics
+    code = '{pre}mask_store{{}}{suf}((void*){in1}, {in0}, {in2});'. \
+           format(**fmtspec)
+    if typ in ['i32', 'u32', 'f32', 'i64', 'u64', 'f64']:
+        return code.format('' if aligned else 'u')
+    else:
+        return code.format('u')
 
 # -----------------------------------------------------------------------------
 # Code for binary operators: and, or, xor
@@ -1492,11 +1622,11 @@ def storel(simd_ext, typ, aligned):
          nsimd_if_else1_{simd_ext}_{typ}({in1},
            nsimd_set1_{simd_ext}_{typ}({one}),
            nsimd_set1_{simd_ext}_{typ}({zero})));'''. \
-       format(align = 'a' if aligned else 'u',
-              one = 'nsimd_f32_to_f16(1.0f)' if typ == 'f16'
-              else '({})1'.format(typ),
-              zero = 'nsimd_f32_to_f16(0.0f)' if typ == 'f16'
-              else '({})0'.format(typ), **fmtspec)
+           format(align = 'a' if aligned else 'u',
+                  one = 'nsimd_f32_to_f16(1.0f)' if typ == 'f16'
+                  else '({})1'.format(typ),
+                  zero = 'nsimd_f32_to_f16(0.0f)' if typ == 'f16'
+                  else '({})0'.format(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Absolute value
@@ -3205,6 +3335,12 @@ def unzip(simd_ext, typ):
     '''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+# mask_for_loop_tail
+
+def mask_for_loop_tail(simd_ext, typ):
+    pass
+
+# -----------------------------------------------------------------------------
 # get_impl function
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ):
@@ -3232,18 +3368,24 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
 
     impls = {
         'loada': lambda: load(simd_ext, from_typ, True),
+        'masko_loada1': lambda: maskoz_load(simd_ext, from_typ, 'o', True),
+        'maskz_loada1': lambda: maskoz_load(simd_ext, from_typ, 'z', True),
         'load2a': lambda: load_deg234(simd_ext, from_typ, True, 2),
         'load3a': lambda: load_deg234(simd_ext, from_typ, True, 3),
         'load4a': lambda: load_deg234(simd_ext, from_typ, True, 4),
         'loadu': lambda: load(simd_ext, from_typ, False),
+        'masko_loadu1': lambda: maskoz_load(simd_ext, from_typ, 'o', False),
+        'maskz_loadu1': lambda: maskoz_load(simd_ext, from_typ, 'z', False),
         'load2u': lambda: load_deg234(simd_ext, from_typ, False, 2),
         'load3u': lambda: load_deg234(simd_ext, from_typ, False, 3),
         'load4u': lambda: load_deg234(simd_ext, from_typ, False, 4),
         'storea': lambda: store(simd_ext, from_typ, True),
+        'mask_storea1': lambda: mask_store(simd_ext, from_typ, True),
         'store2a': lambda: store_deg234(simd_ext, from_typ, True, 2),
         'store3a': lambda: store_deg234(simd_ext, from_typ, True, 3),
         'store4a': lambda: store_deg234(simd_ext, from_typ, True, 4),
         'storeu': lambda: store(simd_ext, from_typ, False),
+        'mask_storeu1': lambda: mask_store(simd_ext, from_typ, False),
         'store2u': lambda: store_deg234(simd_ext, from_typ, False, 2),
         'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
         'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
@@ -3314,7 +3456,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unziplo': lambda: unzip_half(opts, 'unziplo', simd_ext, from_typ),
         'unziphi': lambda: unzip_half(opts, 'unziphi', simd_ext, from_typ),
         'zip' : lambda : zip(simd_ext, from_typ),
-        'unzip' : lambda : unzip(simd_ext, from_typ)
+        'unzip' : lambda : unzip(simd_ext, from_typ),
+        'mask_for_loop_tail': lambda : mask_for_loop_tail(simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
