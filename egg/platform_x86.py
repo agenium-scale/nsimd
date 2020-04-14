@@ -1048,9 +1048,9 @@ def allones0(simd_ext, typ, logical=False):
         if typ in common.ftypes:
           cast = '_mm512_castsi512_{suf}'.format(**fmtspec)
         return '''return {cast}(_mm512_ternarylogic_epi64(
-                    _mm512_setzero_epi64(),
-                    _mm512_setzero_epi64(),
-                    _mm512_setzero_epi64(),
+                    _mm512_setzero_si512(),
+                    _mm512_setzero_si512(),
+                    _mm512_setzero_si512(),
                     0b11111111));'''.format(cast=cast, **fmtspec)
     return '''return nsimd_eq_{simd_ext}_{typ}(
                 nsimd_allzeros_{simd_ext}_{typ}(),
