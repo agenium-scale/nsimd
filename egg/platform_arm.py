@@ -842,34 +842,40 @@ def lnot1(opts, simd_ext, typ):
             return 'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-# Code for constant false
+# Code for constant binary false
 
-def false0(simd_ext, typ):
+def allzeros0(simd_ext, typ):
     return 'return nsimd_{simd_ext}_set1_{typ}(0);'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-# Code for constant true
+# Code for constant binary true
 
-def true0(simd_ext, typ):
+def allones0(simd_ext, typ):
     return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
               return nsimd_{simd_ext}_notb_{typ}(f);'''.\
            format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-# Code for constant false
+# Code for constant logical false
 
 def lfalse0(simd_ext, typ):
-    return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
-              return nsimd_{simd_ext}_to_logical_{typ}(f);'''.\
-           format(**fmtspec)
+    if simd_ext in neon:
+        return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
+                  return nsimd_{simd_ext}_to_logical_{typ}(f);'''.\
+               format(**fmtspec)
+    elif simd_ext in sve:
+        return '''return svpfalse_b{typnbits}();'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
-# Code for constant true
+# Code for constant logical true
 
 def ltrue0(simd_ext, typ):
-    return '''nsimd_{simd_ext}_lv{typ} f = nsimd_{simd_ext}_falsel_{typ}();
-              return nsimd_{simd_ext}_notl_{typ}(f);'''.\
-           format(**fmtspec)
+    if simd_ext in neon:
+        return '''nsimd_{simd_ext}_lv{typ} f = nsimd_{simd_ext}_falsel_{typ}();
+                  return nsimd_{simd_ext}_notl_{typ}(f);'''.\
+               format(**fmtspec)
+    elif simd_ext in sve:
+        return '''return {svtrue};'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Square root
@@ -970,12 +976,21 @@ def set1(simd_ext, typ):
 # Iota
 
 def iota0(simd_ext, typ):
-    nbits = 128
-    nelts = nbits // int(typ[1:])
-    values = ', '.join([str(i) for i in range(0, nelts)])
-    return '''const {typ} buf[{nelts}] = {{{values}}};
-              return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
-           format(nelts=nelts, values=values, **fmtspec)
+    le = 128 // int(typ[1:])
+    values = ', '.join([str(i) for i in range(0, le)])
+    if simd_ext in neon:
+        return '''const {typ} buf[{le}] = {{{values}}};
+                  return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
+               format(le=le, values=values, **fmtspec)
+    elif simd_ext in sve:
+        le = 2048 // int(typ[1:]);
+        return '''{typ} buf[{le}];
+                  int i;
+                  for (i=0; i<nsimd_len_{simd_ext}_{typ}(); i++) {{
+                    buf[i] = ({typ})i;
+                  }}
+                  return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
+               format(le=le, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Comparison operators: ==, <, <=, >, >=
@@ -2199,6 +2214,10 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'notl': lambda: lnot1(opts, simd_ext2, from_typ),
         'andnotb': lambda: binop2("andnotb", simd_ext2, from_typ),
         'andnotl': lambda: lop2(opts, "andnotl", simd_ext2, from_typ),
+        'allones': lambda: allones0(simd_ext, from_typ),
+        'truel': lambda: ltrue0(simd_ext, from_typ),
+        'allzeros': lambda: allzeros0(simd_ext, from_typ),
+        'falsel': lambda: lfalse0(simd_ext, from_typ),
         'add': lambda: addsub("add", simd_ext2, from_typ),
         'sub': lambda: addsub("sub", simd_ext2, from_typ),
         'adds': lambda: adds(simd_ext2, from_typ),
