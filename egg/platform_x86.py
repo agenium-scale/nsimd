@@ -750,7 +750,7 @@ def mask_store(simd_ext, typ, aligned):
     #
     # First look for masked store instructions:
     # AVX512
-    if simd_ext in avx512 and \
+    if simd_ext in avx512 and typ != 'f16' and \
             (simd_ext == 'avx512_skylake' or typnbits in [32, 64]):
         u = '' if aligned and typnbits in [32, 64] else 'u'
         return '{pre}mask_store{u}{suf}({in0}, {in2}, {in1});'.\
