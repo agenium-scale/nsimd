@@ -511,7 +511,7 @@ def gen_test(opts, op, typ, lang, ulps):
 
     extra_code = op.domain.gen_rand(typ)
 
-    if op.name in ['not', 'and', 'or', 'xor', 'andnot']:
+    if op.name in ['notb', 'andb', 'orb', 'xorb', 'andnotb']:
         comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
                format(uT=common.bitfield_type[typ])
     elif op.name in ['max', 'min'] and typ in common.ftypes:
