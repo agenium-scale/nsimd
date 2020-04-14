@@ -1008,15 +1008,17 @@ def not1(simd_ext, typ, logical=False):
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{logi}f16 ret;
-           nsimd_{simd_ext}_vf32 cte = nsimd_allones_{simd_ext}_f32();
+           nsimd_{simd_ext}_vf32 cte = nsimd_{true}_{simd_ext}_f32();
            ret.v0 = nsimd_andnot{logi2}_{simd_ext}_f32(cte, {in0}.v0);
            ret.v1 = nsimd_andnot{logi2}_{simd_ext}_f32(cte, {in0}.v1);
-           return ret;'''.format(logi='l' if logical else '',
+           return ret;'''.format(true='truel' if logical else 'allones',
+                                 logi='l' if logical else '',
                                  logi2='l' if logical else 'b', **fmtspec)
     else:
         return '''return nsimd_andnot{logi2}_{simd_ext}_{typ}(
-                      nsimd_allones_{simd_ext}_{typ}(), {in0});'''. \
-               format(logi2='l' if logical else 'b', **fmtspec)
+                      nsimd_{true}_{simd_ext}_{typ}(), {in0});'''. \
+               format(true='truel' if logical else 'allones',
+                      logi2='l' if logical else 'b', **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for unary logical lnot
@@ -1039,10 +1041,11 @@ def allones0(simd_ext, typ, logical=False):
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{logi}f16 ret;
-           nsimd_{simd_ext}_vf32 cte = nsimd_allones_{simd_ext}_f32();
+           nsimd_{simd_ext}_vf32 cte = nsimd_{true}_{simd_ext}_f32();
            ret.v0 = cte;
            ret.v1 = cte;
-           return ret;'''.format(logi='l' if logical else '', **fmtspec)
+           return ret;'''.format(true='truel' if logical else 'allones',
+                                 logi='l' if logical else '', **fmtspec)
     if simd_ext in avx512:
         cast = ''
         if typ in common.ftypes:
@@ -1078,10 +1081,11 @@ def allzeros0(simd_ext, typ, logical=False):
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{logi}f16 ret;
-           nsimd_{simd_ext}_vf32 cte = nsimd_allzeros_{simd_ext}_f32();
+           nsimd_{simd_ext}_vf32 cte = nsimd_{false}_{simd_ext}_f32();
            ret.v0 = cte;
            ret.v1 = cte;
-           return ret;'''.format(logi='l' if logical else '', **fmtspec)
+           return ret;'''.format(false='falsel' if logical else 'allzeros',
+                                 logi='l' if logical else '', **fmtspec)
     if typ in ['f32', 'f64']:
         return 'return {pre}setzero{suf}();'.format(**fmtspec)
     else:
