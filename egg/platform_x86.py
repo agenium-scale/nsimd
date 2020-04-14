@@ -233,6 +233,9 @@ def get_additional_include(func, platform, simd_ext):
                   }} // extern "C"
                   # endif
                   '''.format(func=func, deg=deg, args=args, **fmtspec)
+    if func in ['mask_storeu', 'mask_storea']:
+        ret += '''#include <nsimd/x86/{simd_ext}/storeu.h>
+                  '''.format(simd_ext=simd_ext)
     if func == 'to_logical':
         ret += '''#include <nsimd/x86/{simd_ext}/ne.h>
                   # include <nsimd/x86/{simd_ext}/reinterpretl.h>
@@ -737,44 +740,20 @@ def store(simd_ext, typ, aligned):
 def mask_store(simd_ext, typ, aligned):
     le = int(fmtspec['le'])
     typnbits = int(fmtspec['typnbits'])
-    # SSE
-    if simd_ext in sse and typnbits == 64:
-        if typ == 'f64':
-            return '''int mask = _mm_movemask_pd({in2});
-                      if (mask & 0b01) _mm_storel_pd({in0}, {in1});
-                      if (mask & 0b10) _mm_storeh_pd({in0}+1, {in1});'''.\
-                   format(**fmtspec)
-        if typ in ['u64', 'i64']:
-            return '''int mask = _mm_movemask_epi8({in2});
-                      if (mask & 0x01) _mm_storel_epi64((__m128i*){in0}, {in1});
-                      if (mask & 0x10) _mm_storeh_pi((__m64*){in0}+1, (__m128){in1});'''.\
-                   format(**fmtspec)
-    # AVX
-    if simd_ext in avx and typnbits in [32, 64]:
-        if simd_ext == 'avx' and typ not in common.ftypes:
-            # use floating point stores for integer values
-            ptrcast = ''
-            if typ in ['i64', 'u64']: ptrcast = '(double*)'
-            if typ in ['i32', 'u32']: ptrcast = '(float*)'
-            cast = ''
-            if typ in ['i64', 'u64']: cast = '{pre}castsi256_pd'.format(**fmtspec)
-            if typ in ['i32', 'u32']: cast = '{pre}castsi256_ps'.format(**fmtspec)
-            fsuf = ''
-            if typ in ['i64', 'u64']: fsuf = '_pd'
-            if typ in ['i32', 'u32']: fsuf = '_ps'
-            return '{pre}maskstore{fsuf}('\
-                       '{ptrcast}{in0}, {in2}, {cast}({in1}));'.\
-                   format(ptrcast=ptrcast, cast=cast, fsuf=fsuf, **fmtspec)
-        ptrcast = ''
-        if typ in ['i64', 'u64']: ptrcast = '(long long*)'
-        if typ in ['i32', 'u32']: ptrcast = '(int*)'
-        maskcast = ''
-        if typ == 'f64': maskcast = '{pre}castpd_si256'.format(**fmtspec)
-        if typ == 'f32': maskcast = '{pre}castps_si256'.format(**fmtspec)
-        return '{pre}maskstore{suf}('\
-                   '{ptrcast}{in0}, {maskcast}({in2}), {in1});'.\
-               format(ptrcast=ptrcast, maskcast=maskcast, **fmtspec)
+    # This if cascade generates the intrinsics offered by the various
+    # architecture variants. The cascade is ordered by efficiency
+    # (most efficient first), with less efficient fallbacks at the
+    # end. The efficient cases handle mostly only 32-bit and 64-bit
+    # elements; 16-bit and 8-bit elements are handled in the fallback
+    # implementations.
+    #
+    # First look for masked store instructions:
     # AVX512
+    if simd_ext in avx512 and \
+            (simd_ext == 'avx512_skylake' or typnbits in [32, 64]):
+        u = '' if aligned and typnbits in [32, 64] else 'u'
+        return '{pre}mask_store{u}{suf}({in0}, {in2}, {in1});'.\
+               format(u=u,**fmtspec)
     if simd_ext in avx512 and typ == 'f16':
         convert = '''__m256i buf0 = _mm512_cvt_roundps_ph({in1}.v0,
                          _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
@@ -792,65 +771,66 @@ def mask_store(simd_ext, typ, aligned):
                   _mm256_storeu_si256((__m256i*)buf0, val0);
                   _mm256_storeu_si256((__m256i*)buf1, val1);
                   for (i=0; i<16; ++i) {{
-                    if ({in2}.v0 & (1U << i)) {{
+                    if ({in2}.v0 & (1 << i)) {{
                       {in0}[i] = buf0[i];
                     }}
                   }}
                   for (i=0; i<16; ++i) {{
-                    if ({in2}.v1 & (1U << i)) {{
+                    if ({in2}.v1 & (1 << i)) {{
                       {in0}[i+16] = buf1[i];
                     }}
                   }}'''.format(convert=convert, **fmtspec)
-    if simd_ext in avx512 and (simd_ext == 'avx512_skylake' or typnbits >= 32):
-        u = '' if aligned and typnbits >= 32 else 'u'
-        return '{pre}mask_store{u}{suf}({in0}, {in2}, {in1});'.\
-               format(u=u,**fmtspec)
-    # fall back to storing as scalars
-    # SSE and AVX:
-    # first, try with an integer mask
-    if simd_ext in sse + avx and typ == 'f16':
-        le2 = le // 2
-        return '''int mask0 = {pre}movemask_ps({in2}.v0);
-                  int mask1 = {pre}movemask_ps({in2}.v1);
-                  f32 buf0[{le2}], buf1[{le2}];
-                  int i;
-                  {pre}storeu_ps(buf0, {in1}.v0);
-                  {pre}storeu_ps(buf1, {in1}.v1);
-                  for (i=0; i<{le2}; ++i) {{
-                    if (mask0 & (1U << i)) {{
-                      {in0}[i] = nsimd_f32_to_f16(buf0[i]);
-                    }}
-                  }}
-                  for (i=0; i<{le2}; ++i) {{
-                    if (mask1 & (1 << i)) {{
-                      {in0}[i+{le2}] = nsimd_f32_to_f16(buf1[i]);
-                    }}
-                  }}'''.format(le2=le2, **fmtspec)
-    if simd_ext in sse + avx and typ in common.ftypes:
-        r = ['''int mask = {pre}movemask{suf}({in2});
-                {typ} buf[{le}];
-                {pre}storeu{suf}(buf, {in1});'''.format(**fmtspec)]
-        r += ['''if (mask & {mask}) {{
-                   {in0}[{i}] = buf[{i}];
-                 }}'''.format(i=i, mask=1<<i, **fmtspec)
-              for i in range(0, le)]
-        return '\n'.join(r)
-    if simd_ext == 'avx2' and typ not in common.ftypes:
-        bitratio = typnbits // 8
-        return '''int mask = {pre}movemask_epi8({in2});
-                  {typ} buf[{le}];
-                  int i;
-                  {pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
-                  for (i=0; i<{le}; ++i) {{
-                    if (mask & (1U << ({bitratio}*i+{bitratio}-1))) {{
-                      {in0}[i] = buf[i];
-                    }}
-                  }}'''.format(bitratio=bitratio, **fmtspec)
+    # AVX
+    if simd_ext in avx and typnbits in [32, 64]:
+        if simd_ext == 'avx2' or typ in common.ftypes:
+            ptrcast = ''
+            if typ in ['i64', 'u64']: ptrcast = '(long long*)'
+            if typ in ['i32', 'u32']: ptrcast = '(int*)'
+            maskcast = ''
+            if typ == 'f64': maskcast = '{pre}castpd_si256'.format(**fmtspec)
+            if typ == 'f32': maskcast = '{pre}castps_si256'.format(**fmtspec)
+            return '{pre}maskstore{suf}('\
+                       '{ptrcast}{in0}, {maskcast}({in2}), {in1});'.\
+                   format(ptrcast=ptrcast, maskcast=maskcast, **fmtspec)
+        # use floating point stores for integer values
+        ptrcast = ''
+        if typ in ['i64', 'u64']: ptrcast = '(double*)'
+        if typ in ['i32', 'u32']: ptrcast = '(float*)'
+        cast = ''
+        if typ in ['i64', 'u64']: cast = '{pre}castsi256_pd'.format(**fmtspec)
+        if typ in ['i32', 'u32']: cast = '{pre}castsi256_ps'.format(**fmtspec)
+        fsuf = ''
+        if typ in ['i64', 'u64']: fsuf = '_pd'
+        if typ in ['i32', 'u32']: fsuf = '_ps'
+        return '{pre}maskstore{fsuf}('\
+                   '{ptrcast}{in0}, {in2}, {cast}({in1}));'.\
+               format(ptrcast=ptrcast, cast=cast, fsuf=fsuf, **fmtspec)
+    # SSE
+    if simd_ext in sse and typnbits == 64:
+        if typ == 'f64':
+            return '''int mask = _mm_movemask_pd({in2});
+                      if (mask & 0b01) _mm_storel_pd({in0}, {in1});
+                      if (mask & 0b10) _mm_storeh_pd({in0}+1, {in1});'''.\
+                   format(**fmtspec)
+        if typ in ['u64', 'i64']:
+            # Note: The mask assumes 8-bit elements, giving us 8 bits
+            # per element. We need to look at the highest of these 8
+            # bits only.
+            return \
+            '''int mask = _mm_movemask_epi8({in2});
+               if (mask & 0x0080) _mm_storel_epi64((__m128i*){in0}, {in1});
+               if (mask & 0x8000) _mm_storeh_pi((__m64*){in0}+1, (__m128){in1});'''.\
+            format(**fmtspec)
+    # Fallback: Store values in a loop.
+    # First, try with an integer mask:
+    # AVX512
     if simd_ext in avx512:
         if typ in common.ftypes:
             store_buf = '{pre}storeu{suf}(buf, {in1});'.format(**fmtspec)
         else:
             store_buf = '{pre}storeu_si{nbits}(buf, {in1});'.format(**fmtspec)
+        # The mask might have 64 elements. We need to use "unsigned
+        # long long" to access its bits.
         return '''{typ} buf[{le}];
                   {store_buf}
                   int i;
@@ -859,26 +839,58 @@ def mask_store(simd_ext, typ, aligned):
                       {in0}[i] = buf[i];
                     }}
                   }}'''.format(store_buf=store_buf, **fmtspec)
-    # integer mask is not available
-    if simd_ext in sse + avx:
-        if typ in common.ftypes:
-            store_buf = '''{pre}storeu{suf}(buf, {in1});
-                           {pre}storeu{suf}(mask, {in2});'''.\
-                        format(**fmtspec)
-        else:
-            store_buf = \
-                '''{pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
-                   {pre}storeu_si{nbits}((__m{nbits}i*)mask, {in2});'''.\
-                format(**fmtspec)
-        return '''{typ} buf[{le}], mask[{le}];
+    # SSE and AVX:
+    if simd_ext in sse + avx and typ in common.ftypes:
+        if typ == 'f16':
+            leo2 = le // 2
+            return '''int mask0 = {pre}movemask_ps({in2}.v0);
+                      int mask1 = {pre}movemask_ps({in2}.v1);
+                      f32 buf0[{leo2}], buf1[{leo2}];
+                      int i;
+                      {pre}storeu_ps(buf0, {in1}.v0);
+                      {pre}storeu_ps(buf1, {in1}.v1);
+                      for (i=0; i<{leo2}; ++i) {{
+                        if (mask0 & (1 << i)) {{
+                          {in0}[i] = nsimd_f32_to_f16(buf0[i]);
+                        }}
+                      }}
+                      for (i=0; i<{leo2}; ++i) {{
+                        if (mask1 & (1 << i)) {{
+                          {in0}[i+{leo2}] = nsimd_f32_to_f16(buf1[i]);
+                        }}
+                      }}'''.format(leo2=leo2, **fmtspec)
+        return '''int mask = {pre}movemask{suf}({in2});
+                  {typ} buf[{le}];
                   int i;
-                  {store_buf}
+                  {pre}storeu{suf}(buf, {in1});
                   for (i=0; i<{le}; ++i) {{
-                    if (mask[i]) {{
+                    if (mask & (1U << i)) {{
                       {in0}[i] = buf[i];
                     }}
-                  }}'''.format(store_buf=store_buf, **fmtspec)
-    assert False
+                  }}'''.format(**fmtspec)
+    if simd_ext == 'avx2' and typ not in common.ftypes:
+        # We need to use a mask that assumes 8-bit elements. Accessing
+        # the mask bits is slightly more complex.
+        bitratio = typnbits // 8
+        return '''int mask = {pre}movemask_epi8({in2});
+                  {typ} buf[{le}];
+                  int i;
+                  {pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
+                  for (i=0; i<{le}; ++i) {{
+                    if (mask & (1U << ({bitratio}*(i+1)-1))) {{
+                      {in0}[i] = buf[i];
+                    }}
+                  }}'''.format(bitratio=bitratio, **fmtspec)
+    # Generic fallback: There is no integer mask available.
+    return '''{typ} buf[{le}], mask[{le}];
+              int i;
+              nsimd_storeu_{simd_ext}_{typ}(buf, {in1});
+              nsimd_storeu_{simd_ext}_{typ}(mask, {in2});
+              for (i=0; i<{le}; ++i) {{
+                if (mask[i]) {{
+                  {in0}[i] = buf[i];
+                }}
+              }}'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for binary operators: and, or, xor
