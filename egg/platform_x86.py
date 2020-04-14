@@ -137,7 +137,8 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/x86/{simd_ext}/allones.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['notb']:
-        ret += '''#include <nsimd/x86/{simd_ext}/andnotb.h>
+        ret += '''#include <nsimd/x86/{simd_ext}/allones.h>
+                  #include <nsimd/x86/{simd_ext}/andnotb.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['notl']:
         ret += '''#include <nsimd/x86/{simd_ext}/allones.h>
@@ -1042,6 +1043,15 @@ def allones0(simd_ext, typ, logical=False):
            ret.v0 = cte;
            ret.v1 = cte;
            return ret;'''.format(logi='l' if logical else '', **fmtspec)
+    if simd_ext in avx512:
+        cast = ''
+        if typ in common.ftypes:
+          cast = '_mm512_castsi512_{suf}'.format(**fmtspec)
+        return '''return {cast}(_mm512_ternarylogic_epi64(
+                    _mm512_setzero_epi64(),
+                    _mm512_setzero_epi64(),
+                    _mm512_setzero_epi64(),
+                    0b11111111));'''.format(cast=cast, **fmtspec)
     return '''return nsimd_eq_{simd_ext}_{typ}(
                 nsimd_allzeros_{simd_ext}_{typ}(),
                 nsimd_allzeros_{simd_ext}_{typ}());'''. \
@@ -1072,10 +1082,10 @@ def allzeros0(simd_ext, typ, logical=False):
            ret.v0 = cte;
            ret.v1 = cte;
            return ret;'''.format(logi='l' if logical else '', **fmtspec)
-    elif typ in ['f32', 'f64']:
-        return '''return {pre}setzero{suf}();'''.format(**fmtspec)
+    if typ in ['f32', 'f64']:
+        return 'return {pre}setzero{suf}();'.format(**fmtspec)
     else:
-        return '''return {pre}setzero{sufsi}();'''.format(**fmtspec)
+        return 'return {pre}setzero{sufsi}();'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for constant logical false
