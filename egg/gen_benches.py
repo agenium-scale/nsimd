@@ -142,7 +142,7 @@ class TypeScalar(TypeBase):
     def code_store(self, simd, typ, lhs, rhs):
         return '*({}) = {}'.format(lhs, rhs)
 
-    def code_store_masked(self, simd, typ, lhs, rhs, mask):
+    def code_mask_store(self, simd, typ, lhs, rhs, mask):
         return 'if ({}) *({}) = {}'.format(mask, lhs, rhs)
 
 # -----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ class TypeLogicalScalar(TypeBase):
     def code_store(self, simd, typ, lhs, rhs):
         return '*({}) = ({})({})'.format(lhs, typ, rhs)
 
-    def code_store_masked(self, simd, typ, lhs, rhs, mask):
+    def code_mask_store(self, simd, typ, lhs, rhs, mask):
         return 'if ({}) *({}) = ({})({})'.format(mask, lhs, typ, rhs)
 
 # -----------------------------------------------------------------------------

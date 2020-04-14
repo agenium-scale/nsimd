@@ -619,7 +619,7 @@ def store1234(opts, simd_ext, typ, deg):
 # -----------------------------------------------------------------------------
 # Masked store
 
-def store_masked(simd_ext, from_typ):
+def mask_store(simd_ext, from_typ):
     nbits = 128
     nelts = nbits // int(from_typ[1:])
     return '''{typ} buf[{nelts}], mask[{nelts}];
@@ -974,7 +974,7 @@ def iota0(simd_ext, typ):
     nelts = nbits // int(typ[1:])
     values = ', '.join([str(i) for i in range(0, nelts)])
     return '''const {typ} buf[{nelts}] = {{{values}}};
-              return nsimd_{simd_ext}_loada_{typ}(buf);'''.\
+              return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
            format(nelts=nelts, values=values, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -2187,8 +2187,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store2u': lambda: store1234(opts, simd_ext, from_typ, 2),
         'store3u': lambda: store1234(opts, simd_ext, from_typ, 3),
         'store4u': lambda: store1234(opts, simd_ext, from_typ, 4),
-        'storea_masked': lambda: store_masked(simd_ext, from_typ),
-        'storeu_masked': lambda: store_masked(simd_ext, from_typ),
+        'mask_storea': lambda: mask_store(simd_ext, from_typ),
+        'mask_storeu': lambda: mask_store(simd_ext, from_typ),
         'andb': lambda: binop2("andb", simd_ext2, from_typ),
         'xorb': lambda: binop2("xorb", simd_ext2, from_typ),
         'orb': lambda: binop2("orb", simd_ext2, from_typ),

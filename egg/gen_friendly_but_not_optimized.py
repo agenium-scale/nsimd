@@ -100,7 +100,7 @@ def doit(opts):
             # Ignore operators that don't take vector arguments
             if operator.load_store or \
                     op_name in ['set1', 'iota',
-                                'trueb', 'falseb', 'truel', 'falsel']:
+                                'allones', 'allzeros', 'truel', 'falsel']:
                 continue
             out.write('''{hbar}
 

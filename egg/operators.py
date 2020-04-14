@@ -446,7 +446,6 @@ class Iota(Operator):
     categories = [DocMisc]
     desc = 'Set each element to its lane index, ' + \
            'i.e. sequentially increasing starting from zero.'
-    desc = 'Set all elements in the vector to the given value.'
 
 class Loadu(Operator):
     signature = 'v loadu c*'
@@ -602,18 +601,18 @@ class Storela(Operator):
     desc = 'Store SIMD vector of booleans into aligned memory. True is ' + \
            'stored as 1 and False as 0.'
 
-class Storea_masked(Operator):
-    full_name = 'storea_masked'
-    signature = '_ storea_masked * v l'
+class Mask_storea(Operator):
+    full_name = 'mask_storea'
+    signature = '_ mask_storea * v l'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into aligned memory. ' + \
            'Store only those elements where the mask is true, ' + \
            'do not write to the others.'
 
-class Storeu_masked(Operator):
-    full_name = 'storeu_masked'
-    signature = '_ storeu_masked * v l'
+class Mask_storeu(Operator):
+    full_name = 'mask_storeu'
+    signature = '_ mask_storeu * v l'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into unaligned memory. ' + \
@@ -666,16 +665,16 @@ class Notb(Operator):
     #bench_auto_against_std = True ## TODO: Add check to floating-types
     bench_auto_against_mipp = True
 
-class Trueb(Operator):
+class AllOnes(Operator):
     full_name = 'bitwise true'
-    signature = 'v trueb'
+    signature = 'v allones'
     domain = Domain('')
     categories = [DocBitsOperators]
     bench_auto_against_std = True
 
-class Falseb(Operator):
+class AllZeros(Operator):
     full_name = 'bitwise false'
-    signature = 'v falseb'
+    signature = 'v allzeros'
     domain = Domain('')
     categories = [DocBitsOperators]
     bench_auto_against_std = True

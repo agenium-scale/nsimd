@@ -139,11 +139,11 @@ def write_utf8(filename, opts, content):
     with open_utf8(tmp_filename) as fout:
         fout.write(content)
     clang_format(opts, tmp_filename)
-    newfile = open(tmp_filename).read()
-    try:
-        oldfile = open(filename).read()
-    except:
-        oldfile = None
+    oldfile = None
+    with open(filename) as fin:
+        oldfile = fin.read()
+    with open(tmp_filename) as fin:
+        newfile = fin.read()
     if oldfile != newfile:
         os.replace(tmp_filename, filename)
     else:

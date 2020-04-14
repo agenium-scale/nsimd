@@ -129,12 +129,20 @@ def get_additional_include(func, platform, simd_ext):
                   # include <nsimd/x86/{simd_ext}/notl.h>
                   # include <nsimd/x86/{simd_ext}/if_else1.h>
                   '''.format(simd_ext=simd_ext)
+    if func in ['allones']:
+        ret += '''#include <nsimd/x86/{simd_ext}/allzeros.h>
+                  #include <nsimd/x86/{simd_ext}/eq.h>
+                  '''.format(simd_ext=simd_ext)
+    if func in ['truel']:
+        ret += '''#include <nsimd/x86/{simd_ext}/allones.h>
+                  '''.format(simd_ext=simd_ext)
     if func in ['notb']:
         ret += '''#include <nsimd/x86/{simd_ext}/andnotb.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['notl']:
-        ret += '''#include <nsimd/x86/{simd_ext}/andnotb.h>
-                  # include <nsimd/x86/{simd_ext}/andnotl.h>
+        ret += '''#include <nsimd/x86/{simd_ext}/allones.h>
+                  #include <nsimd/x86/{simd_ext}/andnotb.h>
+                  #include <nsimd/x86/{simd_ext}/andnotl.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['min', 'max']:
         ret += '''#include <nsimd/x86/{simd_ext}/gt.h>
@@ -726,19 +734,24 @@ def store(simd_ext, typ, aligned):
 # -----------------------------------------------------------------------------
 # Masked store
 
-def store_masked(simd_ext, typ, aligned):
-    tbits = int(typ[1:])
-    nelts = int(nbits(simd_ext)) // tbits
+def mask_store(simd_ext, typ, aligned):
+    le = int(fmtspec['le'])
+    typnbits = int(fmtspec['typnbits'])
     # SSE
-    if simd_ext in sse and tbits in [32, 64]:
-        if type == 'f64':
+    if simd_ext in sse and typnbits == 64:
+        if typ == 'f64':
             return '''int mask = _mm_movemask_pd({in2});
                       if (mask & 0b01) _mm_storel_pd({in0}, {in1});
                       if (mask & 0b10) _mm_storeh_pd({in0}+1, {in1});'''.\
                    format(**fmtspec)
+        if typ in ['u64', 'i64']:
+            return '''int mask = _mm_movemask_epi8({in2});
+                      if (mask & 0x01) _mm_storel_epi64((__m128i*){in0}, {in1});
+                      if (mask & 0x10) _mm_storeh_pi((__m64*){in0}+1, (__m128){in1});'''.\
+                   format(**fmtspec)
     # AVX
-    if simd_ext in avx and tbits in [32, 64]:
-        if simd_ext == 'avx' and typ[0] != 'f':
+    if simd_ext in avx and typnbits in [32, 64]:
+        if simd_ext == 'avx' and typ not in common.ftypes:
             # use floating point stores for integer values
             ptrcast = ''
             if typ in ['i64', 'u64']: ptrcast = '(double*)'
@@ -762,19 +775,18 @@ def store_masked(simd_ext, typ, aligned):
                    '{ptrcast}{in0}, {maskcast}({in2}), {in1});'.\
                format(ptrcast=ptrcast, maskcast=maskcast, **fmtspec)
     # AVX512
-    if simd_ext == 'avx512_skylake' and typ == 'f16':
-        return '''__m256i buf0 = _mm512_cvt_roundps_ph({in1}.v0,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
-                  __m256i buf1 = _mm512_cvt_roundps_ph({in1}.v1,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
-                  _mm256_mask_storeu_epi16({in0}, {in2}.v0, buf0);
-                  _mm256_mask_storeu_epi16({in0}+16, {in2}.v1, buf1);'''.\
-               format(**fmtspec)
     if simd_ext in avx512 and typ == 'f16':
-        return '''__m256i val0 = _mm512_cvt_roundps_ph({in1}.v0,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
-                  __m256i val1 = _mm512_cvt_roundps_ph({in1}.v1,
-                      _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+        convert = '''__m256i buf0 = _mm512_cvt_roundps_ph({in1}.v0,
+                         _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+                     __m256i buf1 = _mm512_cvt_roundps_ph({in1}.v1,
+                         _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);'''.\
+                  format(**fmtspec)
+        if simd_ext == 'avx512_skylake':
+            return '''{convert}
+                      _mm256_mask_storeu_epi16({in0}, {in2}.v0, buf0);
+                      _mm256_mask_storeu_epi16({in0}+16, {in2}.v1, buf1);'''.\
+                   format(convert=convert, **fmtspec)
+        return '''{convert}
                   f16 buf0[16], buf1[16];
                   int i;
                   _mm256_storeu_si256((__m256i*)buf0, val0);
@@ -788,68 +800,68 @@ def store_masked(simd_ext, typ, aligned):
                     if ({in2}.v1 & (1U << i)) {{
                       {in0}[i+16] = buf1[i];
                     }}
-                  }}'''.format(**fmtspec)
-    if simd_ext in avx512 and (simd_ext == 'avx512_skylake' or tbits >= 32):
-        u = '' if aligned and tbits >= 32 else 'u'
+                  }}'''.format(convert=convert, **fmtspec)
+    if simd_ext in avx512 and (simd_ext == 'avx512_skylake' or typnbits >= 32):
+        u = '' if aligned and typnbits >= 32 else 'u'
         return '{pre}mask_store{u}{suf}({in0}, {in2}, {in1});'.\
                format(u=u,**fmtspec)
     # fall back to storing as scalars
     # SSE and AVX:
     # first, try with an integer mask
     if simd_ext in sse + avx and typ == 'f16':
-        nelts2 = nelts // 2
-        return '''unsigned mask0 = {pre}movemask_ps({in2}.v0);
-                  unsigned mask1 = {pre}movemask_ps({in2}.v1);
-                  f32 buf0[{nelts2}], buf1[{nelts2}];
+        le2 = le // 2
+        return '''int mask0 = {pre}movemask_ps({in2}.v0);
+                  int mask1 = {pre}movemask_ps({in2}.v1);
+                  f32 buf0[{le2}], buf1[{le2}];
                   int i;
                   {pre}storeu_ps(buf0, {in1}.v0);
                   {pre}storeu_ps(buf1, {in1}.v1);
-                  for (i=0; i<{nelts2}; ++i) {{
+                  for (i=0; i<{le2}; ++i) {{
                     if (mask0 & (1U << i)) {{
                       {in0}[i] = nsimd_f32_to_f16(buf0[i]);
                     }}
                   }}
-                  for (i=0; i<{nelts2}; ++i) {{
-                    if (mask1 & (1U << i)) {{
-                      {in0}[i+{nelts2}] = nsimd_f32_to_f16(buf1[i]);
+                  for (i=0; i<{le2}; ++i) {{
+                    if (mask1 & (1 << i)) {{
+                      {in0}[i+{le2}] = nsimd_f32_to_f16(buf1[i]);
                     }}
-                  }}'''.format(nelts2=nelts2, **fmtspec)
-    if simd_ext in sse + avx and typ[0] == 'f':
-        r = ['''unsigned mask = {pre}movemask{suf}({in2});
-                {typ} buf[{nelts}];
-                {pre}storeu{suf}(buf, {in1});'''.format(nelts=nelts, **fmtspec)]
-        r += ['''if (mask & {mask}U) {{
+                  }}'''.format(le2=le2, **fmtspec)
+    if simd_ext in sse + avx and typ in common.ftypes:
+        r = ['''int mask = {pre}movemask{suf}({in2});
+                {typ} buf[{le}];
+                {pre}storeu{suf}(buf, {in1});'''.format(**fmtspec)]
+        r += ['''if (mask & {mask}) {{
                    {in0}[{i}] = buf[{i}];
                  }}'''.format(i=i, mask=1<<i, **fmtspec)
-              for i in range(0, nelts)]
+              for i in range(0, le)]
         return '\n'.join(r)
-    if simd_ext == 'avx2' and typ[0] != 'f':
-        bitratio = tbits // 8
-        return '''unsigned mask = {pre}movemask_epi8({in2});
-                  {typ} buf[{nelts}];
+    if simd_ext == 'avx2' and typ not in common.ftypes:
+        bitratio = typnbits // 8
+        return '''int mask = {pre}movemask_epi8({in2});
+                  {typ} buf[{le}];
                   int i;
                   {pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
-                  for (i=0; i<{nelts}; ++i) {{
+                  for (i=0; i<{le}; ++i) {{
                     if (mask & (1U << ({bitratio}*i+{bitratio}-1))) {{
                       {in0}[i] = buf[i];
                     }}
-                  }}'''.format(nelts=nelts, bitratio=bitratio, **fmtspec)
+                  }}'''.format(bitratio=bitratio, **fmtspec)
     if simd_ext in avx512:
-        if typ[0] == 'f':
+        if typ in common.ftypes:
             store_buf = '{pre}storeu{suf}(buf, {in1});'.format(**fmtspec)
         else:
             store_buf = '{pre}storeu_si{nbits}(buf, {in1});'.format(**fmtspec)
-        return '''{typ} buf[{nelts}];
+        return '''{typ} buf[{le}];
                   {store_buf}
                   int i;
-                  for (i=0; i<{nelts}; ++i) {{
+                  for (i=0; i<{le}; ++i) {{
                     if ({in2} & (1ULL << i)) {{
                       {in0}[i] = buf[i];
                     }}
-                  }}'''.format(store_buf=store_buf, nelts=nelts, **fmtspec)
+                  }}'''.format(store_buf=store_buf, **fmtspec)
     # integer mask is not available
     if simd_ext in sse + avx:
-        if typ[0] == 'f':
+        if typ in common.ftypes:
             store_buf = '''{pre}storeu{suf}(buf, {in1});
                            {pre}storeu{suf}(mask, {in2});'''.\
                         format(**fmtspec)
@@ -858,14 +870,14 @@ def store_masked(simd_ext, typ, aligned):
                 '''{pre}storeu_si{nbits}((__m{nbits}i*)buf, {in1});
                    {pre}storeu_si{nbits}((__m{nbits}i*)mask, {in2});'''.\
                 format(**fmtspec)
-        return '''{typ} buf[{nelts}], mask[{nelts}];
+        return '''{typ} buf[{le}], mask[{le}];
                   int i;
                   {store_buf}
-                  for (i=0; i<{nelts}; ++i) {{
+                  for (i=0; i<{le}; ++i) {{
                     if (mask[i]) {{
                       {in0}[i] = buf[i];
                     }}
-                  }}'''.format(store_buf=store_buf, nelts=nelts, **fmtspec)
+                  }}'''.format(store_buf=store_buf, **fmtspec)
     assert False
 
 # -----------------------------------------------------------------------------
@@ -922,7 +934,8 @@ def binlop2(func, simd_ext, typ):
                       return ret;'''. \
                       format(op=op[func], op_fct=op_fct[func], **fmtspec)
         elif simd_ext == 'avx512_knl' and fmtspec['le'] != 16:
-            # KNL only has the 'mask16' variant
+            # KNL only has the 'mask16' variant, so we need to fall
+            # back on explicit integer operations
             return 'return (__mmask{le})({in0} {op} {in1});'. \
                 format(op=op[func], op_fct=op_fct[func], **fmtspec)
         else:
@@ -982,19 +995,15 @@ def not1(simd_ext, typ, logical=False):
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{logi}f16 ret;
-           nsimd_{simd_ext}_vf32 cte = {pre}castsi{nbits}_ps(
-                                         {pre}set1_epi8(-1));
+           nsimd_{simd_ext}_vf32 cte = nsimd_allones_{simd_ext}_f32();
            ret.v0 = nsimd_andnot{logi2}_{simd_ext}_f32(cte, {in0}.v0);
            ret.v1 = nsimd_andnot{logi2}_{simd_ext}_f32(cte, {in0}.v1);
            return ret;'''.format(logi='l' if logical else '',
                                  logi2='l' if logical else 'b', **fmtspec)
-    elif typ in ['f32', 'f64']:
-        return '''return nsimd_andnotb_{simd_ext}_{typ}(
-                           {pre}castsi{nbits}{suf}(
-                             {pre}set1_epi8(-1)), {in0});'''.format(**fmtspec)
     else:
-        return '''return nsimd_andnotb_{simd_ext}_{typ}(
-                           {pre}set1_epi8(-1), {in0});'''.format(**fmtspec)
+        return '''return nsimd_andnot{logi2}_{simd_ext}_{typ}(
+                      nsimd_allones_{simd_ext}_{typ}(), {in0});'''. \
+               format(logi2='l' if logical else 'b', **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for unary logical lnot
@@ -1011,22 +1020,20 @@ def lnot1(simd_ext, typ):
     return not1(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
-# Code for constant true
+# Code for constant binary true
 
-def true0(simd_ext, typ, logical=False):
+def allones0(simd_ext, typ, logical=False):
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{logi}f16 ret;
-           nsimd_{simd_ext}_vf32 cte =
-             {pre}castsi{nbits}_ps({pre}set1_epi8(-1));
+           nsimd_{simd_ext}_vf32 cte = nsimd_allones_{simd_ext}_f32();
            ret.v0 = cte;
            ret.v1 = cte;
            return ret;'''.format(logi='l' if logical else '', **fmtspec)
-    elif typ in ['f32', 'f64']:
-        return '''return {pre}castsi{nbits}{suf}(
-                           {pre}set1_epi8(-1));'''.format(**fmtspec)
-    else:
-        return '''return {pre}set1_epi8(-1);'''.format(**fmtspec)
+    return '''return nsimd_eq_{simd_ext}_{typ}(
+                nsimd_allzeros_{simd_ext}_{typ}(),
+                nsimd_allzeros_{simd_ext}_{typ}());'''. \
+           format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for constant logical true
@@ -1040,24 +1047,23 @@ def ltrue0(simd_ext, typ):
                       return ret;'''.format(**fmtspec)
         else:
             return 'return (__mmask{le})~0;'.format(**fmtspec)
-    return true0(simd_ext, typ, True)
+    return allones0(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
-# Code for constant false
+# Code for constant binary false
 
-def false0(simd_ext, typ, logical=False):
+def allzeros0(simd_ext, typ, logical=False):
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{logi}f16 ret;
-           nsimd_{simd_ext}_vf32 cte = {pre}castsi{nbits}_ps({pre}set1_epi8(0));
+           nsimd_{simd_ext}_vf32 cte = nsimd_allzeros_{simd_ext}_f32();
            ret.v0 = cte;
            ret.v1 = cte;
            return ret;'''.format(logi='l' if logical else '', **fmtspec)
     elif typ in ['f32', 'f64']:
-        return '''return {pre}castsi{nbits}{suf}(
-                           {pre}set1_epi8(0));'''.format(**fmtspec)
+        return '''return {pre}setzero{suf}();'''.format(**fmtspec)
     else:
-        return '''return {pre}set1_epi8(0);'''.format(**fmtspec)
+        return '''return {pre}setzero{sufsi}();'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for constant logical false
@@ -1071,7 +1077,7 @@ def lfalse0(simd_ext, typ):
                       return ret;'''.format(**fmtspec)
         else:
             return 'return (__mmask{le})0;'.format(**fmtspec)
-    return false0(simd_ext, typ, True)
+    return allzeros0(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
 # Addition and substraction
@@ -1334,10 +1340,10 @@ def set1(simd_ext, typ):
 # iota
 
 def iota0(simd_ext, typ):
-    nelts = int(nbits(simd_ext)) // int(typ[1:])
+    le = int(fmtspec['le'])
     if typ == 'f16':
-        elts0 = ', '.join([str(i) for i in range(nelts//2-1, -1, -1)])
-        elts1 = ', '.join([str(i) for i in range(nelts-1, nelts//2-1, -1)])
+        elts0 = ', '.join([str(i) for i in range(le//2-1, -1, -1)])
+        elts1 = ', '.join([str(i) for i in range(le-1, le//2-1, -1)])
         return '''nsimd_{simd_ext}_vf16 ret;
                   ret.v0 = {pre}set_ps({elts0});
                   ret.v1 = {pre}set_ps({elts1});
@@ -1357,7 +1363,7 @@ def iota0(simd_ext, typ):
     else:
         suf = fmtspec['suf']
         sufx = suf + ('x' if simd_ext in sse + avx and suf == '_epi64' else '')
-        elts = ', '.join([str(i) for i in range(nelts-1, -1, -1)])
+        elts = ', '.join([str(i) for i in range(le-1, -1, -1)])
         return 'return {pre}set{sufx}({elts});'.\
                format(elts=elts, sufx=sufx, **fmtspec)
 
@@ -3553,8 +3559,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store2u': lambda: store_deg234(simd_ext, from_typ, False, 2),
         'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
         'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
-        'storea_masked': lambda: store_masked(simd_ext, from_typ, True),
-        'storeu_masked': lambda: store_masked(simd_ext, from_typ, False),
+        'mask_storea': lambda: mask_store(simd_ext, from_typ, True),
+        'mask_storeu': lambda: mask_store(simd_ext, from_typ, False),
         'andb': lambda: binop2('andb', simd_ext, from_typ),
         'xorb': lambda: binop2('xorb', simd_ext, from_typ),
         'orb': lambda: binop2('orb', simd_ext, from_typ),
@@ -3565,9 +3571,9 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'notl': lambda: lnot1(simd_ext, from_typ),
         'andnotb': lambda: andnot2(simd_ext, from_typ),
         'andnotl': lambda: landnot2(simd_ext, from_typ),
-        'trueb': lambda: true0(simd_ext, from_typ),
+        'allones': lambda: allones0(simd_ext, from_typ),
         'truel': lambda: ltrue0(simd_ext, from_typ),
-        'falseb': lambda: false0(simd_ext, from_typ),
+        'allzeros': lambda: allzeros0(simd_ext, from_typ),
         'falsel': lambda: lfalse0(simd_ext, from_typ),
         'add': lambda: addsub('add', simd_ext, from_typ),
         'sub': lambda: addsub('sub', simd_ext, from_typ),

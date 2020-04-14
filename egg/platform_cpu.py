@@ -216,7 +216,7 @@ def lnot1(typ):
 
 # -----------------------------------------------------------------------------
 
-def true0(typ):
+def allones0(typ):
     if typ in common.utypes:
         return func_body('ret.v{{i}} = ~({typ})(0);'.format(**fmtspec), typ)
     utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
@@ -237,7 +237,7 @@ def ltrue0(typ):
 
 # -----------------------------------------------------------------------------
 
-def false0(typ):
+def allzeros0(typ):
     if typ in common.utypes:
         return func_body('ret.v{{i}} = ({typ})(0);'.format(**fmtspec), typ)
     utyp2 = 'u32' if typ == 'f16' else common.bitfield_type[typ]
@@ -428,7 +428,12 @@ def set1(typ):
 # -----------------------------------------------------------------------------
 
 def iota0(typ):
-    content = repeat_stmt('ret.v{{i}} = {{i}};'.format(**fmtspec), typ)
+    if typ == 'f16':
+        content = repeat_stmt('ret.v{{i}} = (f32){{i}};'. \
+                              format(**fmtspec), typ)
+    else:
+        content = repeat_stmt('ret.v{{i}} = ({typ}){{i}};'. \
+                              format(**fmtspec), typ)
     return '''nsimd_cpu_v{typ} ret;
               {content}
               return ret;'''.format(content=content, **fmtspec)
@@ -530,7 +535,7 @@ def storel(typ):
 
 # -----------------------------------------------------------------------------
 
-def store_masked(typ):
+def mask_store(typ):
     if typ == 'f16':
         content = repeat_stmt(
             '''if ({in2}.v{{i}}) {{{{
@@ -971,8 +976,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'store2u': lambda: store_deg234(from_typ, 2),
         'store3u': lambda: store_deg234(from_typ, 3),
         'store4u': lambda: store_deg234(from_typ, 4),
-        'storea_masked': lambda: store_masked(from_typ),
-        'storeu_masked': lambda: store_masked(from_typ),
+        'mask_storea': lambda: mask_store(from_typ),
+        'mask_storeu': lambda: mask_store(from_typ),
         'loadla': lambda: loadl(from_typ),
         'loadlu': lambda: loadl(from_typ),
         'storela': lambda: storel(from_typ),
@@ -995,9 +1000,9 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'max': lambda: minmax2('max', from_typ),
         'notb': lambda: not1(from_typ),
         'notl': lambda: lnot1(from_typ),
-        'trueb': lambda: true0(from_typ),
+        'allones': lambda: allones0(from_typ),
         'truel': lambda: ltrue0(from_typ),
-        'falseb': lambda: false0(from_typ),
+        'allzeros': lambda: allzeros0(from_typ),
         'falsel': lambda: lfalse0(from_typ),
         'sqrt': lambda: sqrt1(from_typ),
         'set1': lambda: set1(from_typ),

@@ -49,7 +49,7 @@ def get_cxx_advanced_generic(operator):
              else []) + ['SimdExt()']
     varsN = [var(i, 'N') for i in args_list]
     other_varsN = ', '.join(['a{}'.format(i[0]) for i in args_list])
-    other_comma = ', ' if args_list else ''
+    other_comma = ', ' if len(args_list) > 0 else ''
     if not operator.closed:
         varsN = ['typename ToPackType::value_type()'] + varsN
     if need_tmpl_pack != None:

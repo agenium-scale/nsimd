@@ -342,14 +342,13 @@ def get_content(op, typ, lang):
                       mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
         elif op.name == 'iota':
             conv = 'nsimd_f32_to_f16' if typ == 'f16' else ''
-            code = ['{',
-                    '  int j;',
-                    '  for (j = i; j < i + {cpu_step}; ++j) {{'. \
-                    format(cpu_step=cpu_step),
-                    '    vout_ref[j] = {conv}(j % step);'.format(conv=conv),
-                    '  }',
-                    '}']
-            vout_ref_comp = '\n'.join(code)
+            vout_ref_comp = \
+            '''{{
+                 int j;
+                 for (j = i; j < i + {cpu_step}; ++j) {{
+                   vout_ref[j] = {conv}(j % step);
+                 }}
+               }}'''.format(cpu_step=cpu_step, conv=conv)
         else:
             args = ', '.join(['va{}'.format(i) for i in nargs])
             comma = ', ' if nargs else ''
@@ -528,7 +527,7 @@ def gen_test(opts, op, typ, lang, ulps):
 
     extra_code = op.domain.gen_rand(typ)
 
-    if op.name in ['trueb', 'falseb', 'not', 'and', 'or', 'xor', 'andnot']:
+    if op.name in ['allones', 'allzeros', 'not', 'and', 'or', 'xor', 'andnot']:
         comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
                format(uT=common.bitfield_type[typ])
         extra_code = ''
@@ -1983,7 +1982,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
 # -----------------------------------------------------------------------------
 # Tests for masked load/store operations
 
-def gen_load_store_masked(opts, op, typ, lang):
+def gen_load_mask_store(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
         return
@@ -2041,12 +2040,12 @@ def gen_load_store_masked(opts, op, typ, lang):
 
                /* Set up the mask */
                if ((1 << len) <= NMASKS) {{
-                 /* test all masks */
+                 /* test all masks in the limit of 1024 combinations */
                  for (i = 0; i < len; ++i) {{
                    vmask[i] = {convert_to}(imask & (1 << i));
                  }}
                }} else {{
-                 /* test some masks */
+                 /* test some masks; testing all masks would be too expensive */
                  for (i = 0; i < len; ++i) {{
                    vmask[i] = {convert_to}(rand() >= RAND_MAX / 2);
                  }}
@@ -2770,10 +2769,10 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
                 gen_load_store_ravel(opts, operator, typ, 'c_base')
-            elif operator.name in ['storea_masked', 'storeu_masked']:
-                gen_load_store_masked(opts, operator, typ, 'c_base')
-                gen_load_store_masked(opts, operator, typ, 'cxx_base')
-                gen_load_store_masked(opts, operator, typ, 'cxx_adv')
+            elif operator.name in ['mask_storea', 'mask_storeu']:
+                gen_load_mask_store(opts, operator, typ, 'c_base')
+                gen_load_mask_store(opts, operator, typ, 'cxx_base')
+                gen_load_mask_store(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'reverse':
                 gen_reverse(opts, operator, typ, 'c_base');
                 gen_reverse(opts, operator, typ, 'cxx_base');
