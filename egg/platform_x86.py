@@ -144,6 +144,7 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/x86/{simd_ext}/allones.h>
                   #include <nsimd/x86/{simd_ext}/andnotb.h>
                   #include <nsimd/x86/{simd_ext}/andnotl.h>
+                  #include <nsimd/x86/{simd_ext}/truel.h>
                   '''.format(simd_ext=simd_ext)
     if func in ['min', 'max']:
         ret += '''#include <nsimd/x86/{simd_ext}/gt.h>
