@@ -527,10 +527,10 @@ def gen_test(opts, op, typ, lang, ulps):
 
     extra_code = op.domain.gen_rand(typ)
 
-    if op.name in ['allones', 'allzeros', 'not', 'and', 'or', 'xor', 'andnot']:
+    if op.name in ['allones', 'allzeros',
+                   'notb', 'andb', 'orb', 'xorb', 'andnotb']:
         comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
                format(uT=common.bitfield_type[typ])
-        extra_code = ''
     elif op.name in ['max', 'min'] and typ in common.ftypes:
         if typ == 'f16':
             left = 'nsimd_f16_to_f32(mpfr_out)'
@@ -2730,10 +2730,10 @@ def doit(opts):
                         'store4a', 'store4u', 'downcvt', 'to_logical']:
             continue
         for typ in operator.types:
-            if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
-               typ == 'f16':
-                continue
-            elif operator.name == 'nbtrue':
+            # if operator.name in ['notb', 'andb', 'xorb', 'orb', 'andnotb'] and \
+            #    typ == 'f16':
+            #     continue
+            if operator.name == 'nbtrue':
                 gen_nbtrue(opts, operator, typ, 'c_base')
                 gen_nbtrue(opts, operator, typ, 'cxx_base')
                 gen_nbtrue(opts, operator, typ, 'cxx_adv')

@@ -977,7 +977,7 @@ def andnot2(simd_ext, typ, logical=False):
             return '''return _mm256_castpd_si256(_mm256_andnot_pd(
                                _mm256_castsi256_pd({in1}),
                                _mm256_castsi256_pd({in0})));'''. \
-                               format(**fmtspec)
+                   format(**fmtspec)
     if simd_ext in avx512:
         if simd_ext == 'avx512_skylake' or typ in common.iutypes:
             return 'return _mm512_andnot{sufsi}({in1}, {in0});'. \
@@ -986,7 +986,7 @@ def andnot2(simd_ext, typ, logical=False):
             return '''return _mm512_castsi512{suf}(_mm512_andnot_si512(
                                _mm512_cast{suf2}_si512({in1}),
                                _mm512_cast{suf2}_si512({in0})));'''. \
-                               format(suf2=fmtspec['suf'][1:], **fmtspec)
+                   format(suf2=fmtspec['suf'][1:], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # logical andnot
@@ -1068,11 +1068,11 @@ def ltrue0(simd_ext, typ):
     if simd_ext in avx512:
         if typ == 'f16':
             return '''nsimd_{simd_ext}_vlf16 ret;
-                      ret.v0 = (__mmask16)~0;
-                      ret.v1 = (__mmask16)~0;
+                      ret.v0 = ~(__mmask16)0;
+                      ret.v1 = ~(__mmask16)0;
                       return ret;'''.format(**fmtspec)
         else:
-            return 'return (__mmask{le})~0;'.format(**fmtspec)
+            return 'return ~(__mmask{le})0;'.format(**fmtspec)
     return allones0(simd_ext, typ, True)
 
 # -----------------------------------------------------------------------------
