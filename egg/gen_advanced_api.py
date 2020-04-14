@@ -49,6 +49,8 @@ def get_cxx_advanced_generic(operator):
              else []) + ['SimdExt()']
     varsN = [var(i, 'N') for i in args_list]
     other_varsN = ', '.join(['a{}'.format(i[0]) for i in args_list])
+    if other_varsN != '':
+        other_varsN = ', ' + other_varsN
     if not operator.closed:
         varsN = ['typename ToPackType::value_type()'] + varsN
     if need_tmpl_pack != None:
@@ -144,14 +146,14 @@ def get_cxx_advanced_generic(operator):
         return_ins = 'return ' if operator.params[0] != '_' else ''
         ret += '\n\n'
         ret += '''{sig} {{
-                    {return_ins} {cxx_name}(ToPackType(), {other_varsN});
+                    {return_ins}{cxx_name}(ToPackType(){other_varsN});
                   }}'''. \
                   format(cxx_name=operator.name, sig=sig['dispatch'],
                          other_varsN=other_varsN, return_ins=return_ins)
     if need_tmpl_pack != None:
         ret += '\n\n'
         ret += '''{sig} {{
-                    return {cxx_name}(SimdVector(), {other_varsN});
+                    return {cxx_name}(SimdVector(){other_varsN});
                   }}'''. \
                   format(sig=sig['dispatch'], cxx_name=operator.name,
                          other_varsN=other_varsN)

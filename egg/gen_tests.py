@@ -2198,8 +2198,54 @@ def gen_load_store_ravel(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
-# Tests for nbtrue
+# Tests for iota
 
+def gen_iota(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+    if lang == 'c_base':
+        do_iota = 'vstoreu(buf, viota({typ}), {typ});'.format(typ=typ)
+    elif lang == 'cxx_base':
+        do_iota = 'nsimd::storeu(buf, nsimd::iota({typ}()), {typ}());'. \
+                  format(typ=typ)
+    else:
+        do_iota = 'nsimd::storeu(buf, nsimd::iota<nsimd::pack<{typ}>>());'. \
+                  format(typ=typ)
+
+    if typ == 'f16':
+        comp_i = 'nsimd_f16_to_f32(buf[i]) != (f32)i'
+    else:
+        comp_i = 'buf[i] != ({typ})i'.format(typ=typ)
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+            '''{includes}
+
+           int main(void) {{
+             int i;
+             {typ} buf[NSIMD_MAX_LEN({typ})];
+             int len = vlen({typ});
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+             {do_iota}
+
+             for (i = 0; i < len; i++) {{
+               if ({comp_i}) {{
+                 exit(EXIT_FAILURE);
+               }}
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             return EXIT_SUCCESS;
+           }}'''.format(includes=get_includes(lang), op_name=op.name,
+                        typ=typ, do_iota=do_iota, year=date.today().year,
+                        comp_i=comp_i))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
+# Tests for nbtrue
 
 def gen_nbtrue(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
@@ -2848,7 +2894,7 @@ def doit(opts):
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
                         'store4a', 'store4u', 'downcvt', 'to_logical',
-                        'mask_for_loop_tail']:
+                        'mask_for_loop_tail', 'set1l']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
@@ -2875,6 +2921,10 @@ def doit(opts):
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'cxx_base')
                 gen_all_any(opts, operator, typ, 'cxx_adv')
+            elif operator.name == 'iota':
+                gen_iota(opts, operator, typ, 'c_base')
+                gen_iota(opts, operator, typ, 'cxx_base')
+                gen_iota(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['reinterpret', 'reinterpretl', 'cvt',
                                    'upcvt', 'to_mask']:
                 for to_typ in common.get_output_types(typ, operator.output_to):

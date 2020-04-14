@@ -99,7 +99,7 @@ def doit(opts):
                      '''.format(year=date.today().year))
         for op_name, operator in operators.operators.items():
             if operator.load_store or \
-               op_name in ['set1', 'mask_for_loop_tail']:
+               op_name in ['set1', 'set1l', 'mask_for_loop_tail', 'iota']:
                 continue
             out.write('''{hbar}
 

@@ -181,6 +181,12 @@ def set1(typ):
 
 # -----------------------------------------------------------------------------
 
+def set1l(typ):
+    return func_body('ret.v{{i}} = (u32)({in0} ? -1 : 0);'. \
+                     format(**fmtspec), typ, True)
+
+# -----------------------------------------------------------------------------
+
 def load(typ):
     if typ == 'f16':
         content = repeat_stmt(
@@ -539,6 +545,13 @@ def mask_for_loop_tail(typ):
 
 # -----------------------------------------------------------------------------
 
+def iota(typ):
+    typ2 = 'f32' if typ == 'f16' else typ
+    return func_body('ret.v{{i}} = ({typ2}){{i}};'. \
+                     format(typ2=typ2, **fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
 def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -603,6 +616,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'notl': lambda: lnot1(from_typ),
         'sqrt': lambda: scalar_impl('sqrt', from_typ, 1),
         'set1': lambda: set1(from_typ),
+        'set1l': lambda: set1l(from_typ),
         'shr': lambda: scalar_impl('shr', from_typ, 2),
         'shl': lambda: scalar_impl('shl', from_typ, 2),
         'shra': lambda: scalar_impl('shra', from_typ, 2),
@@ -647,7 +661,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'unziphi': lambda: unzip_half('unziphi', from_typ),
         'zip' : lambda : zip(from_typ),
         'unzip' : lambda : unzip(from_typ),
-        'mask_for_loop_tail': lambda : mask_for_loop_tail(from_typ)
+        'mask_for_loop_tail': lambda : mask_for_loop_tail(from_typ),
+        'iota': lambda : iota(from_typ)
     }
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

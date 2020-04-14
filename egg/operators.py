@@ -497,6 +497,13 @@ class Set1(Operator):
     categories = [DocMisc]
     desc = 'Returns a vector whose all elements are set to the given value.'
 
+class Set1l(Operator):
+    full_name = 'logical value broadcast'
+    signature = 'l set1l p'
+    categories = [DocMisc]
+    desc = 'Returns a vector whose all elements are set to the given ' \
+           'boolean value: zero means false and nonzero means true.'
+
 class Loadu(Operator):
     signature = 'v loadu c*'
     load_store = True
@@ -604,7 +611,6 @@ class MaskStoreu1(Operator):
     desc = 'Store active SIMD vector elements into unaligned memory.'
 
 class Store2u(Operator):
-    full_name = 'store into array of structures'
     signature = '_ store2u * v v'
     load_store = True
     domain = Domain('RxR')
@@ -1267,6 +1273,14 @@ class ToLogical(Operator):
     desc = 'Returns a vector of logicals. Set true when the corresponding ' + \
            'elements are non zero (at least one bit to 1) and false ' + \
            'otherwise.'
+
+class Iota(Operator):
+    full_name = 'fill vector with increasing values'
+    signature = 'v iota'
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Returns a vectors whose first element is zero, the second is ' \
+           'one and so on.'
 
 class MaskForLoopTail(Operator):
     full_name = 'build mask for ending loops'
