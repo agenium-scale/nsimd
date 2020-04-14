@@ -1046,7 +1046,7 @@ def allones0(simd_ext, typ, logical=False):
     if simd_ext in avx512:
         cast = ''
         if typ in common.ftypes:
-          cast = '_mm512_castsi512_{suf}'.format(**fmtspec)
+          cast = '_mm512_castsi512{suf}'.format(**fmtspec)
         return '''return {cast}(_mm512_ternarylogic_epi64(
                     _mm512_setzero_si512(),
                     _mm512_setzero_si512(),
