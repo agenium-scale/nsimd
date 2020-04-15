@@ -638,13 +638,17 @@ def store1234(opts, simd_ext, typ, deg):
 def mask_store(simd_ext, from_typ):
     le = 128 // int(from_typ[1:])
     ltyp = 'u{}'.format(from_typ[1:])
-    return '''{typ} buf[{le}];
-              {ltyp} mask[{le}];
+    return '''{typ} buf[{le}], mask[{le}];
               int i;
               nsimd_storeu_{simd_ext}_{typ}(buf, {in1});
               nsimd_storelu_{simd_ext}_{typ}(mask, {in2});
               for (i=0; i<{le}; ++i) {{
-                if (mask[i]) {{
+                union {{
+                  {typ} v;
+                  {ltyp} vl;
+                }} m;
+                m.v = mask[i];
+                if (m.vl) {{
                   {in0}[i] = buf[i];
                 }}
               }}'''.format(le=le, ltyp=ltyp, **fmtspec)
