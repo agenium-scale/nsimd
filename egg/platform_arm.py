@@ -1009,13 +1009,13 @@ def set1(simd_ext, typ):
 # Iota
 
 def iota0(simd_ext, typ):
-    le = 128 // int(typ[1:])
-    values = ', '.join([str(i) for i in range(0, le)])
     if simd_ext in neon:
+        le = 128 // int(typ[1:])
+        values = ', '.join([str(i) for i in range(0, le)])
         return '''const {typ} buf[{le}] = {{{values}}};
                   return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
                format(le=le, values=values, **fmtspec)
-    elif simd_ext in sve:
+    if simd_ext in sve:
         le = 2048 // int(typ[1:]);
         return '''{typ} buf[{le}];
                   int i;
@@ -2263,6 +2263,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'shr': lambda: shl_shr("shr", simd_ext2, from_typ),
         'shra': lambda: shra(simd_ext2, from_typ),
         'set1': lambda: set1(simd_ext2, from_typ),
+        'iota': lambda: iota0(simd_ext2, from_typ),
         'eq': lambda: cmp2(opts, "eq", simd_ext2, from_typ),
         'lt': lambda: cmp2(opts, "lt", simd_ext2, from_typ),
         'le': lambda: cmp2(opts, "le", simd_ext2, from_typ),
