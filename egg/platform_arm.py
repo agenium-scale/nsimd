@@ -248,7 +248,8 @@ def get_additional_include(func, platform, simd_ext):
                   '''.format(store='store' + func[6], **fmtspec)
     if func in ['mask_storea', 'mask_storeu']:
         ret += '''#include <nsimd/arm/{simd_ext}/storeu.h>
-                  '''.format(store='store' + func[6], **fmtspec)
+                  #include <nsimd/arm/{simd_ext}/storelu.h>
+                  '''.format(**fmtspec)
     if func == 'allones':
         ret += '''#include <nsimd/arm/{simd_ext}/allzeros.h>
                   #include <nsimd/arm/{simd_ext}/notb.h>
@@ -640,8 +641,8 @@ def mask_store(simd_ext, from_typ):
     return '''{typ} buf[{le}];
               {ltyp} mask[{le}];
               int i;
-              nsimd_{simd_ext}_storeu_{typ}(buf, {in1});
-              nsimd_{simd_ext}_storeu_{typ}(mask, {in2});
+              nsimd_storeu_{simd_ext}_{typ}(buf, {in1});
+              nsimd_storelu_{simd_ext}_{typ}(mask, {in2});
               for (i=0; i<{le}; ++i) {{
                 if (mask[i]) {{
                   {in0}[i] = buf[i];
