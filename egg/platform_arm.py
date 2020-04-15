@@ -265,6 +265,9 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/falsel.h>
                   #include <nsimd/arm/{simd_ext}/notl.h>
                   ''' .format(**fmtspec)
+    if func == 'iota':
+        ret += '''#include <nsimd/arm/{simd_ext}/loadu.h>
+                  ''' .format(**fmtspec)
     if func == 'to_logical':
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/reinterpretl.h>
