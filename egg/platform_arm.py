@@ -267,6 +267,7 @@ def get_additional_include(func, platform, simd_ext):
                   ''' .format(**fmtspec)
     if func == 'to_logical':
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
+                  #include <nsimd/arm/{simd_ext}/reinterpretl.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
                   ''' .format(**fmtspec)
     if func == 'zip':
