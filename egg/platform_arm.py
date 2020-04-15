@@ -875,7 +875,7 @@ def allzeros0(simd_ext, typ):
                     u16 u;
                   }} z;
                   z.u = 0;
-                  return nsimd_set1_{simd_ext}_{typ}(z);'''.\
+                  return nsimd_set1_{simd_ext}_{typ}(z.f);'''.\
                format(**fmtspec)
     return 'return nsimd_set1_{simd_ext}_{typ}(({typ})0);'.format(**fmtspec)
 
