@@ -246,6 +246,21 @@ def get_additional_include(func, platform, simd_ext):
                   # include <nsimd/arm/{simd_ext}/set1.h>
                   # include <nsimd/arm/{simd_ext}/{store}.h>
                   '''.format(store='store' + func[6], **fmtspec)
+    if func in ['mask_storea', 'mask_storeu']:
+        ret += '''#include <nsimd/arm/{simd_ext}/storeu.h>
+                  '''.format(store='store' + func[6], **fmtspec)
+    if func == 'allones':
+        ret += '''#include <nsimd/arm/{simd_ext}/allzeros.h>
+                  #include <nsimd/arm/{simd_ext}/notb.h>
+                  ''' .format(**fmtspec)
+    if func == 'falsel':
+        ret += '''#include <nsimd/arm/{simd_ext}/allzeros.h>
+                  #include <nsimd/arm/{simd_ext}/to_logical.h>
+                  ''' .format(**fmtspec)
+    if func == 'truel':
+        ret += '''#include <nsimd/arm/{simd_ext}/falsel.h>
+                  #include <nsimd/arm/{simd_ext}/notl.h>
+                  ''' .format(**fmtspec)
     if func == 'to_logical':
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
                   #include <nsimd/arm/{simd_ext}/ne.h>
@@ -620,17 +635,18 @@ def store1234(opts, simd_ext, typ, deg):
 # Masked store
 
 def mask_store(simd_ext, from_typ):
-    nbits = 128
-    nelts = nbits // int(from_typ[1:])
-    return '''{typ} buf[{nelts}], mask[{nelts}];
+    le = 128 // int(from_typ[1:])
+    ltyp = 'u{}'.format(from_typ[1:])
+    return '''{typ} buf[{le}];
+              {ltyp} mask[{le}];
               int i;
               nsimd_{simd_ext}_storeu_{typ}(buf, {in1});
               nsimd_{simd_ext}_storeu_{typ}(mask, {in2});
-              for (i=0; i<nelts; ++i) {{
+              for (i=0; i<{le}; ++i) {{
                 if (mask[i]) {{
                   {in0}[i] = buf[i];
                 }}
-              }}'''.format(nelts=nelts, **fmtspec)
+              }}'''.format(le=le, ltyp=ltyp, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Length
@@ -851,7 +867,7 @@ def allzeros0(simd_ext, typ):
 # Code for constant binary true
 
 def allones0(simd_ext, typ):
-    return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
+    return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_allzeros_{typ}();
               return nsimd_{simd_ext}_notb_{typ}(f);'''.\
            format(**fmtspec)
 
@@ -860,7 +876,7 @@ def allones0(simd_ext, typ):
 
 def lfalse0(simd_ext, typ):
     if simd_ext in neon:
-        return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_falseb_{typ}();
+        return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_allzeros_{typ}();
                   return nsimd_{simd_ext}_to_logical_{typ}(f);'''.\
                format(**fmtspec)
     elif simd_ext in sve:
