@@ -233,10 +233,6 @@ int main(void) {{
   #pragma GCC diagnostic pop
   #endif
 
-  for (i = 0; i < SIZE; i++) {{
-    {replace_nans_fp16}
-  }}
-
   /* Fill output vector 0 with reference values */
   for (i = 0; i < SIZE; i += {cpu_step}) {{
     /* This is a call directly to the cpu API of nsimd
@@ -290,18 +286,6 @@ def get_content(op, typ, lang):
         denormalize_inputs = '\n'.join(code)
     else:
         denormalize_inputs = ''
-
-    if op.name in ['notb', 'andb', 'orb', 'xorb', 'andnotb'] and typ == 'f16':
-        # Replace nans for fp16 since the fp16/fp32 conversion doesn't
-        # always handle them the same way
-        code = ['''if ({classify}(nsimd_f16_to_f32(vin{i}[i])) == FP_NAN) {{
-                     vin{i}[i] = nsimd_f32_to_f16(0.f);
-                }}'''. \
-                format(i=i,
-                    classify='fpclassify' if lang=='c_base' else 'std::fpclassify') for i in nargs]
-        replace_nans_fp16 = '\n'.join(code)
-    else:
-        replace_nans_fp16 = ''
 
     # Depending on function parameters, generate specific input, ...
     if all(e == 'v' for e in op.params) or all(e == 'l' for e in op.params):
@@ -526,8 +510,7 @@ def get_content(op, typ, lang):
                          format(op.name, typ))
     return { 'vin_defi': vin_defi, 'vin_rand': vin_rand, 'cpu_step': cpu_step,
              'vout_ref_comp': vout_ref_comp, 'vout_nsimd_comp': vout_nsimd_comp,
-             'denormalize_inputs': denormalize_inputs,
-             'replace_nans_fp16': replace_nans_fp16 }
+             'denormalize_inputs': denormalize_inputs }
 
 # -----------------------------------------------------------------------------
 # Generate test in C, C++ (base API) and C++ (advanced API) for almost all
@@ -2746,9 +2729,10 @@ def doit(opts):
                         'store4a', 'store4u', 'downcvt', 'to_logical']:
             continue
         for typ in operator.types:
-            # if operator.name in ['notb', 'andb', 'xorb', 'orb', 'andnotb'] and \
-            #    typ == 'f16':
-            #     continue
+            if operator.name in ['allones', 'allzeros',
+                                 'notb', 'andb', 'xorb', 'orb', 'andnotb']:
+                if typ == 'f16':
+                    continue
             if operator.name == 'nbtrue':
                 gen_nbtrue(opts, operator, typ, 'c_base')
                 gen_nbtrue(opts, operator, typ, 'cxx_base')
