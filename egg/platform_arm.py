@@ -250,6 +250,9 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/storeu.h>
                   #include <nsimd/arm/{simd_ext}/storelu.h>
                   '''.format(**fmtspec)
+    if func == 'allzeros':
+        ret += '''#include <nsimd/arm/{simd_ext}/set1.h>
+                  ''' .format(**fmtspec)
     if func == 'allones':
         ret += '''#include <nsimd/arm/{simd_ext}/allzeros.h>
                   #include <nsimd/arm/{simd_ext}/notb.h>
@@ -872,8 +875,8 @@ def allzeros0(simd_ext, typ):
 # Code for constant binary true
 
 def allones0(simd_ext, typ):
-    return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_allzeros_{typ}();
-              return nsimd_{simd_ext}_notb_{typ}(f);'''.\
+    return '''nsimd_{simd_ext}_v{typ} f = nsimd_allzeros_{simd_ext}_{typ}();
+              return nsimd_notb_{simd_ext}_{typ}(f);'''.\
            format(**fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -881,8 +884,8 @@ def allones0(simd_ext, typ):
 
 def lfalse0(simd_ext, typ):
     if simd_ext in neon:
-        return '''nsimd_{simd_ext}_v{typ} f = nsimd_{simd_ext}_allzeros_{typ}();
-                  return nsimd_{simd_ext}_to_logical_{typ}(f);'''.\
+        return '''nsimd_{simd_ext}_v{typ} f = nsimd_allzeros_{simd_ext}_{typ}();
+                  return nsimd_to_logical_{simd_ext}_{typ}(f);'''.\
                format(**fmtspec)
     elif simd_ext in sve:
         return '''return svpfalse_b{typnbits}();'''.format(**fmtspec)
@@ -892,8 +895,8 @@ def lfalse0(simd_ext, typ):
 
 def ltrue0(simd_ext, typ):
     if simd_ext in neon:
-        return '''nsimd_{simd_ext}_vl{typ} f = nsimd_{simd_ext}_falsel_{typ}();
-                  return nsimd_{simd_ext}_notl_{typ}(f);'''.\
+        return '''nsimd_{simd_ext}_vl{typ} f = nsimd_falsel_{simd_ext}_{typ}();
+                  return nsimd_notl_{simd_ext}_{typ}(f);'''.\
                format(**fmtspec)
     elif simd_ext in sve:
         return '''return {svtrue};'''.format(**fmtspec)
