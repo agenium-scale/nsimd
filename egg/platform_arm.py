@@ -869,6 +869,14 @@ def lnot1(opts, simd_ext, typ):
 # Code for constant binary false
 
 def allzeros0(simd_ext, typ):
+    if typ == 'f16':
+        return '''union {{
+                    f16 f;
+                    u16 u;
+                  }} z;
+                  z.u = 0;
+                  return nsimd_set1_{simd_ext}_{typ}(z);'''.\
+               format(**fmtspec)
     return 'return nsimd_set1_{simd_ext}_{typ}(({typ})0);'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
