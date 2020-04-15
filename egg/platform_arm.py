@@ -266,7 +266,8 @@ def get_additional_include(func, platform, simd_ext):
                   #include <nsimd/arm/{simd_ext}/notl.h>
                   ''' .format(**fmtspec)
     if func == 'iota':
-        ret += '''#include <nsimd/arm/{simd_ext}/loadu.h>
+        ret += '''#include <nsimd/arm/{simd_ext}/len.h>
+                  #include <nsimd/arm/{simd_ext}/loadu.h>
                   ''' .format(**fmtspec)
     if func == 'to_logical':
         ret += '''#include <nsimd/arm/{simd_ext}/reinterpret.h>
@@ -1016,7 +1017,7 @@ def iota0(simd_ext, typ):
         le = 128 // int(typ[1:])
         values = ', '.join([str(i) for i in range(0, le)])
         return '''const {typ} buf[{le}] = {{{values}}};
-                  return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
+                  return nsimd_loadu_{simd_ext}_{typ}(buf);'''.\
                format(le=le, values=values, **fmtspec)
     if simd_ext in sve:
         le = 2048 // int(typ[1:]);
@@ -1025,7 +1026,7 @@ def iota0(simd_ext, typ):
                   for (i=0; i<nsimd_len_{simd_ext}_{typ}(); i++) {{
                     buf[i] = ({typ})i;
                   }}
-                  return nsimd_{simd_ext}_loadu_{typ}(buf);'''.\
+                  return nsimd_loadu_{simd_ext}_{typ}(buf);'''.\
                format(le=le, **fmtspec)
 
 # -----------------------------------------------------------------------------
