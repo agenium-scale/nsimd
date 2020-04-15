@@ -1015,6 +1015,14 @@ def set1(simd_ext, typ):
 def iota0(simd_ext, typ):
     if simd_ext in neon:
         le = 128 // int(typ[1:])
+        if typ == 'f16':
+            return '''{typ} buf[{le}];
+                      int i;
+                      for (int i=0; i<{le}; i++) {{
+                        buf[i] = nsimd_f32_to_f16((f32)i);
+                      }}
+                      return nsimd_loadu_{simd_ext}_{typ}(buf);'''.\
+                   format(le=le, **fmtspec)
         values = ', '.join([str(i) for i in range(0, le)])
         return '''const {typ} buf[{le}] = {{{values}}};
                   return nsimd_loadu_{simd_ext}_{typ}(buf);'''.\
