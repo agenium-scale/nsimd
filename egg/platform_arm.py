@@ -869,7 +869,7 @@ def lnot1(opts, simd_ext, typ):
 # Code for constant binary false
 
 def allzeros0(simd_ext, typ):
-    return 'return nsimd_{simd_ext}_set1_{typ}(0);'.format(**fmtspec)
+    return 'return nsimd_set1_{simd_ext}_{typ}(0);'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Code for constant binary true
