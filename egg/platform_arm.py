@@ -253,11 +253,11 @@ def get_additional_include(func, platform, simd_ext):
         ret += '''#include <nsimd/arm/{simd_ext}/allzeros.h>
                   #include <nsimd/arm/{simd_ext}/notb.h>
                   ''' .format(**fmtspec)
-    if func == 'false':
+    if func == 'falsel':
         ret += '''#include <nsimd/arm/{simd_ext}/allzeros.h>
                   #include <nsimd/arm/{simd_ext}/to_logical.h>
                   ''' .format(**fmtspec)
-    if func == 'true':
+    if func == 'truel':
         ret += '''#include <nsimd/arm/{simd_ext}/falsel.h>
                   #include <nsimd/arm/{simd_ext}/notl.h>
                   ''' .format(**fmtspec)
