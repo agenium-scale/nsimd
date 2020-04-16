@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2020 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -46,10 +46,7 @@ def neon_typ(typ):
     prefix = {'i': 'int', 'u': 'uint', 'f': 'float'}
     return '{}{}x{}_t'.format(prefix[typ[0]], typ[1:], 128 // int(typ[1:]))
 
-# Returns the 64 bits vector associated to a data type (eg:float32x2 for float32_t)
-
-
-def half_neon_typ(typ):
+def half_neon64_typ(typ):
     prefix = {'i': 'int', 'u': 'uint', 'f': 'float'}
     return '{}{}x{}_t'.format(prefix[typ[0]], typ[1:], 64 // int(typ[1:]))
 
@@ -58,13 +55,11 @@ def sve_typ(typ):
     prefix = {'i': 'svint', 'u': 'svuint', 'f': 'svfloat'}
     return '{}{}_t'.format(prefix[typ[0]], typ[1:])
 
-
 def suf(typ):
     if typ[0] == 'i':
         return 's{}'.format(typ[1:])
     else:
         return typ
-
 
 neon = ['neon128', 'aarch64']
 fixed_sized_sve = ['sve128', 'sve256', 'sve512', 'sve1024', 'sve2048']
@@ -84,21 +79,18 @@ def convert_to_predicate(opts, op):
     if opts.sve_emulate_bool:
         # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
         # it needs to be deleted when the bug is corrected
-        return '''svcmpeq({svtrue},
-                          (svuint{typnbits}_t){op},
-                          svdup_n_u{typnbits}_x({svtrue}, (u{typnbits})~0))'''. \
-                            format(op=op, **fmtspec)
+        return '''svcmpeq({svtrue}, (svuint{typnbits}_t){op},
+                          svdup_n_u{typnbits}_x({svtrue},
+                          (u{typnbits})~0))'''.format(op=op, **fmtspec)
     else:
         return op
 
 # -----------------------------------------------------------------------------
 # Implementation of mandatory functions for this module
 
-
 def get_simd_exts():
     return ['neon128', 'aarch64', 'sve', 'sve128', 'sve256', 'sve512',
             'sve1024', 'sve2048']
-
 
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
@@ -108,7 +100,6 @@ def emulate_fp16(simd_ext):
     else:
         return True
 
-
 def get_type(opts, simd_ext, typ):
     if simd_ext in neon:
         if typ == 'f64':
@@ -117,14 +108,11 @@ def get_type(opts, simd_ext, typ):
             else:
                 return neon_typ('f64')
         elif typ == 'f16':
-            return \
-            '''
-            # ifdef NSIMD_FP16
-              float16x8_t
-            # else
-              struct { float32x4_t v0; float32x4_t v1; }
-            # endif
-            '''
+            return '''#ifdef NSIMD_FP16
+                        float16x8_t
+                      #else
+                        struct { float32x4_t v0; float32x4_t v1; }
+                      #endif'''
         else:
             return neon_typ(typ)
     elif simd_ext == 'sve':
@@ -134,7 +122,6 @@ def get_type(opts, simd_ext, typ):
                format(typ, int(simd_ext[3:]) // 8)
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
-
 
 def get_logical_type(opts, simd_ext, typ):
     if typ not in common.types:
@@ -171,7 +158,6 @@ def get_logical_type(opts, simd_ext, typ):
             return get_type(opts, simd_ext, 'u'+typ[1:])
         else:
             return 'svbool_t'
-
 
 def get_nb_registers(simd_ext):
     if simd_ext in neon:
@@ -921,6 +907,44 @@ def set1(simd_ext, typ):
         return 'return svdup_n_{suf}({in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+# Set1l
+
+def lset1(simd_ext, typ):
+    if simd_ext in sve:
+        return '''if ({in0}) {{
+                    return svptrue_b{typnbits}();
+                  }} else {{
+                    return svpfalse_b{typnbits}();
+                  }}'''.format(**fmtspec)
+    # getting here means no NEON and AARCH64 only
+    if typ in common.utypes:
+        mask = 'vdupq_n_{suf}(({typ}){{}})'.format(**fmtspec)
+    else:
+        mask = 'vreinterpret_{typ}_u{typnbits}(vdupq_n_u{typnbits}(' \
+               '(u{typnbits}){{}}))'.format(**fmtspec)
+    normal = '''if ({in0}) {{
+                  return {ones};
+                }} else {{
+                  return {zeros};
+                }}'''.format(ones=mask.format('-1'), zeros=mask.format('0'),
+                             **fmtspec)
+    if typ == 'f16':
+        return '''#ifdef NSIMD_FP16
+                    {normal}
+                  #else
+                    nsimd_{simd_ext}_vlf16 ret;
+                    ret.v0 = nsimd_{simd_ext}_set1l_f32({in0};
+                    ret.v1 = ret.v0;
+                    return ret;
+                  #endif'''.format(normal=normal, **fmtspec)
+    if typ == 'f64' and simd_ext == 'neon128':
+        return '''nsimd_neon128_vf64 ret;
+                  ret.v0 = (u64)({in0} ? -1 : 0);
+                  ret.v1 = ret.v0;
+                  return ret;'''.format(**fmtspec)
+    return normal
+
+# -----------------------------------------------------------------------------
 # Comparison operators: ==, <, <=, >, >=
 
 def cmp2(opts, op, simd_ext, typ):
@@ -1635,14 +1659,14 @@ def addv(simd_ext, typ):
                  tmp1 = vadd_f32(tmp1, vext_f32(tmp1, tmp1, 1));
                  return nsimd_f32_to_f16(vget_lane_f32(tmp0, 0) +
                                          vget_lane_f32(tmp1, 0));
-               # endif''' .format(t=half_neon_typ(typ), **fmtspec)
+               # endif''' .format(t=half_neon64_typ(typ), **fmtspec)
         elif typ == 'f32':
             return \
             '''{t} tmp = vadd_{suf}(vget_low_{suf}({in0}),
                                     vget_high_{suf}({in0}));
                tmp = vadd_{suf}(tmp, vext_{suf}(tmp, tmp, 1));
                return vget_lane_{suf}(tmp, 0);'''. \
-               format(t=half_neon_typ(typ), **fmtspec)
+               format(t=half_neon64_typ(typ), **fmtspec)
         elif typ[0] in ['i', 'u']:
             le = 128 // int(typ[1:]);
             return \
@@ -1673,7 +1697,7 @@ def addv(simd_ext, typ):
                  return nsimd_f32_to_f16(vget_lane_f32(tmp0, 0) +
                                          vget_lane_f32(tmp1, 0));
                # endif
-                    ''' .format(t=half_neon_typ(typ), **fmtspec)
+                    ''' .format(t=half_neon64_typ(typ), **fmtspec)
         elif typ in ['f32', 'f64']:
             return 'return vaddvq_{suf}({in0});'.format(**fmtspec)
     elif simd_ext in sve:
@@ -1918,6 +1942,67 @@ def to_mask1(opts, simd_ext, typ):
         return normal
 
 # -----------------------------------------------------------------------------
+# iota
+
+def iota(simd_ext, typ):
+    if simd_ext in sve:
+        if typ in common.iutypes:
+            return 'return svindex_{suf}(0, 1);'.format(**fmtspec)
+        else:
+            return \
+            '''return svcvt_{suf}_s{typnbits}(
+                        svindex_s{typnbits}(0, 1));'''.format(**fmtspec)
+    if typ == 'f64' and simd_ext == 'neon128':
+        return '''nsimd_neon128_vf64 ret;
+                  ret.v0 = 0.0;
+                  ret.v1 = 1.0;
+                  '''.format(**fmtspec)
+    typ2 = 'f32' if typ == 'f16' else typ
+    le = 128 // int(typ[1:])
+    iota = ', '.join(['({typ2}){i}'.format(typ2=typ2, i=i) \
+                      for i in range(le)])
+    normal = '''{typ} buf[{le}] = {{ {iota} }};
+                return vld1q_{suf}(buf);'''. \
+                format(le=le, iota=iota, **fmtspec)
+    if typ == 'f16':
+        return '''#ifdef NSIMD_FP16
+                    {normal}
+                  #else
+                    f32 buf[8] = {{ {iota} }};
+                    nsimd_{simd_ext}_vf16 ret;
+                    ret.v0 = vld1q_f32(buf);
+                    ret.v1 = vld1q_f32(buf + 4);
+                    return ret;
+                  #endif'''.format(iota=iota, normal=normal, **fmtspec)
+    return normal
+
+# -----------------------------------------------------------------------------
+# mask_for_loop_tail
+
+def mask_for_loop_tail(simd_ext, typ):
+    if typ == 'f16':
+        threshold = 'nsimd_f32_to_f16((f32)({in1} - {in0}))'.format(**fmtspec)
+    else:
+        threshold = '({typ})({in1} - {in0})'.format(**fmtspec)
+    if simd_ext == 'sve':
+        le = 'nsimd_len_sve_{typ}()'
+    elif simd_ext in fixed_sized_sve:
+        le = int(simd_ext[3:]) // int(typ[1:])
+    else:
+        le = 128 // int(typ[1:])
+    return '''if ({in0} >= {in1}) {{
+                return nsimd_set1l_{simd_ext}_{typ}(0);
+              }}
+              if ({in1} - {in0} < {le}) {{
+                nsimd_{simd_ext}_v{typ} n =
+                      nsimd_set1_{simd_ext}_{typ}({threshold});
+                return nsimd_lt_{simd_ext}_{typ}(
+                           nsimd_iota_{simd_ext}_{typ}(), n);
+              }} else {{
+                return nsimd_set1l_{simd_ext}_{typ}(1);
+              }}'''.format(le=le, threshold=threshold, **fmtspec)
+
+# -----------------------------------------------------------------------------
 # to_logical
 
 def to_logical1(opts, simd_ext, typ):
@@ -2152,6 +2237,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'shr': lambda: shl_shr("shr", simd_ext2, from_typ),
         'shra': lambda: shra(simd_ext2, from_typ),
         'set1': lambda: set1(simd_ext2, from_typ),
+        'set1l': lambda: lset1(simd_ext2, from_typ),
         'eq': lambda: cmp2(opts, "eq", simd_ext2, from_typ),
         'lt': lambda: cmp2(opts, "lt", simd_ext2, from_typ),
         'le': lambda: cmp2(opts, "le", simd_ext2, from_typ),
@@ -2197,7 +2283,9 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unziplo': lambda: zip_unzip_half("uzp1", simd_ext2, from_typ),
         'unziphi': lambda: zip_unzip_half("uzp2", simd_ext2, from_typ),
         'zip' : lambda: zip_unzip("zip", simd_ext2, from_typ),
-        'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ)
+        'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ),
+        'mask_for_loop_tail': lambda : mask_for_loop_tail(simd_ext2, from_typ),
+        'iota': lambda : iota(simd_ext2, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
