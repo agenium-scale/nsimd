@@ -663,7 +663,7 @@ def maskoz_load(simd_ext, typ, oz, aligned):
         else:
             if simd_ext == 'avx2':
                 maskload = '{pre}maskload{suf}({cast}{in1}, {in0})'. \
-                           format(cast='(long long *)' \
+                           format(cast='(nsimd_longlong *)' \
                                   if typ in ['i64', 'u64'] else '(int *)',
                                   **fmtspec)
                 if oz == 'z':
@@ -913,7 +913,8 @@ def mask_store(simd_ext, typ, aligned):
         else:
             if simd_ext == 'avx2':
                 return '{pre}maskstore{suf}({cast}{in1}, {in0}, {in2});'. \
-                       format(cast='(long long *)' if typ in ['i64', 'u64'] \
+                       format(cast='(nsimd_longlong *)' \
+                              if typ in ['i64', 'u64'] \
                               else '(int *)', **fmtspec)
             else:
                 return '''{pre}maskstore_{suf2}(({ftyp}*){in1}, {in0},

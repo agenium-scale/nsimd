@@ -45,37 +45,6 @@ SOFTWARE.
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Register size detection */
-
-#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||         \
-    defined(__amd64) || defined(_M_AMD64) || defined(__aarch64__) ||          \
-    defined(_M_ARM64) || defined(__PPC64__)
-  #define NSIMD_WORD_SIZE 64
-#else
-  #define NSIMD_WORD_SIZE 32
-#endif
-
-/* ------------------------------------------------------------------------- */
-/* Architecture detection */
-
-#if defined(i386) || defined(__i386__) || defined(__i486__) ||                \
-    defined(__i586__) || defined(__i686__) || defined(__i386) ||              \
-    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||           \
-    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||            \
-    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||          \
-    defined(_M_X64)
-  #define NSIMD_X86
-#elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||           \
-    defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
-    defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
-  #define NSIMD_ARM
-#elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
-  #define NSIMD_POWERPC
-#else
-  #define NSIMD_CPU
-#endif
-
-/* ------------------------------------------------------------------------- */
 /* C standard detection */
 
 #ifdef NSIMD_IS_MSVC
@@ -117,6 +86,63 @@ SOFTWARE.
   #define NSIMD_CXX 2017
 #else
   #define NSIMD_CXX 0
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Use of long long for GCC even in C89 and C++98. Note that for some reason */
+/* the use of the __extension__ keyword does not prevent warning so we deal  */
+/* with them now. We keep the __extension__ keyword in case.                 */
+
+#if defined(NSIMD_IS_GCC) && (NSIMD_CXX < 2011 && NSIMD_C < 1999)
+  #define NSIMD_LONGLONG_IS_EXTENSION
+#endif
+
+#ifdef NSIMD_LONGLONG_IS_EXTENSION
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wlong-long"
+#endif
+
+typedef long long nsimd_longlong;
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+  typedef long long longlong;
+} // namespace nsimd
+#endif
+
+#ifdef NSIMD_LONGLONG_IS_EXTENSION
+  #pragma GCC diagnostic pop
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Register size detection */
+
+#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||         \
+    defined(__amd64) || defined(_M_AMD64) || defined(__aarch64__) ||          \
+    defined(_M_ARM64) || defined(__PPC64__)
+  #define NSIMD_WORD_SIZE 64
+#else
+  #define NSIMD_WORD_SIZE 32
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Architecture detection */
+
+#if defined(i386) || defined(__i386__) || defined(__i486__) ||                \
+    defined(__i586__) || defined(__i686__) || defined(__i386) ||              \
+    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||           \
+    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||            \
+    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||          \
+    defined(_M_X64)
+  #define NSIMD_X86
+#elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||           \
+    defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
+    defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
+  #define NSIMD_ARM
+#elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
+  #define NSIMD_POWERPC
+#else
+  #define NSIMD_CPU
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -463,8 +489,8 @@ SOFTWARE.
     typedef signed long   i64;
   #else
     #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-      __extension__ typedef unsigned long long u64;
-      __extension__ typedef signed long long   i64;
+      __extension__ typedef unsigned nsimd_longlong u64;
+      __extension__ typedef signed nsimd_longlong   i64;
     #else
       typedef unsigned long long u64;
       typedef signed long long   i64;
