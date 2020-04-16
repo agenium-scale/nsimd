@@ -2862,33 +2862,34 @@ def adds_subs_intrinsic_instructions_i8_i16_u8_u16(which_op, simd_ext, typ):
     if 'avx512_knl' == simd_ext:
         return split_opn(which_op, simd_ext, typ, 2)
 
-def get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ, num_bits):
+def get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ):
     if 'avx512' in simd_ext or 'sse2' in simd_ext:
         mask_processing = \
-        '''
-        // For avx512/sse2
-        const nsimd_{simd_ext}_vu{num_bits} mask_strong_bit = nsimd_shr_{simd_ext}_u{num_bits}(mask, sizeof(u{num_bits}) * CHAR_BIT - 1);
-        const nsimd_{simd_ext}_vi{num_bits} imask_strong_bit = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(mask_strong_bit);
-        const nsimd_{simd_ext}_vli{num_bits} limask_strong_bit = nsimd_to_logical_{simd_ext}_i{num_bits}(imask_strong_bit);
-        '''.format(simd_ext=simd_ext, num_bits=num_bits)
+        '''/* For avx512/sse2 */
+           const nsimd_{simd_ext}_vu{typnbits} mask_strong_bit =
+               nsimd_shr_{simd_ext}_u{typnbits}(
+                   mask, sizeof(u{typnbits}) * CHAR_BIT - 1);
+           const nsimd_{simd_ext}_vi{typnbits} imask_strong_bit =
+               nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}(
+                   mask_strong_bit);
+           const nsimd_{simd_ext}_vli{typnbits} limask_strong_bit =
+               nsimd_to_logical_{simd_ext}_i{typnbits}(imask_strong_bit);'''. \
+               format(**fmtspec)
         if_else = \
-        '''
-        // For avx512/sse2
-        return nsimd_if_else1_{simd_ext}_i{num_bits}(limask_strong_bit, ires, i_max_min);
-        '''.format(simd_ext=simd_ext, num_bits=num_bits)
+        '''/* For avx512/sse2 */
+           return nsimd_if_else1_{simd_ext}_i{typnbits}(
+                      limask_strong_bit, ires, i_max_min);'''. \
+                      format(**fmtspec)
     else:
-        mask_processing = \
-        '''
-        // Before avx512: is_same(__m128i, vector<signed>, vector<unsigned>, vector<logical>)
-        '''
+        mask_processing = '/* Before avx512: is_same(__m128i, ' \
+                          'vector<signed>, vector<unsigned>, ' \
+                          'vector<logical>) */'
         suf2 = 'ps' if typ in ['i32', 'u32'] else 'pd'
-        if_else = \
-        '''
-        return {pre}cast{suf2}_si{nbits}({pre}blendv_{suf2}(
-        {pre}castsi{nbits}_{suf2}(i_max_min),
-        {pre}castsi{nbits}_{suf2}(ires),
-        {pre}castsi{nbits}_{suf2}(mask)));
-        '''.format(suf2=suf2, **fmtspec)
+        if_else = '''return {pre}cast{suf2}_si{nbits}({pre}blendv_{suf2}(
+                                {pre}castsi{nbits}_{suf2}(i_max_min),
+                                {pre}castsi{nbits}_{suf2}(ires),
+                                {pre}castsi{nbits}_{suf2}(mask)));
+                                '''.format(suf2=suf2, **fmtspec)
 
     return { 'mask_processing': mask_processing, 'if_else': if_else }
 
@@ -2898,113 +2899,131 @@ def get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ, num_bits):
 def adds(simd_ext, typ):
 
     if typ in common.ftypes:
-            return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+        return 'return nsimd_add_{simd_ext}_{typ}({in0}, {in1});'. \
+               format(**fmtspec)
 
     if typ in ('i8', 'i16', 'u8', 'u16'):
-        return adds_subs_intrinsic_instructions_i8_i16_u8_u16('adds', simd_ext, typ)
+        return adds_subs_intrinsic_instructions_i8_i16_u8_u16(
+                   'adds', simd_ext, typ)
 
     if typ in common.utypes:
-        return'''
-        // Algo pseudo code:
-        // ures = a + b
-        // if overflow then ures < a && ures < b
-        // --> test against a single value: if(ures < a){{ overflow ; }}
-        // return ures < a ? {type_max} : ures
+        return \
+        '''/* Algo pseudo code: */
+           /* ures = a + b */
+           /* if overflow then ures < a && ures < b */
+           /* --> test against a single value: if(ures < a){{ overflow ; }} */
+           /* return ures < a ? {type_max} : ures */
 
-        const nsimd_{simd_ext}_v{typ} ures = nsimd_add_{simd_ext}_{typ}({in0}, {in1});
-        const nsimd_{simd_ext}_v{typ} type_max = nsimd_set1_{simd_ext}_{typ}(({typ}){type_max});
-        return nsimd_if_else1_{simd_ext}_{typ}(nsimd_lt_{simd_ext}_{typ}(ures, {in0}), type_max, ures);
-        '''.format(type_max=common.limits[typ]['max'], **fmtspec)
+           const nsimd_{simd_ext}_v{typ} ures =
+               nsimd_add_{simd_ext}_{typ}({in0}, {in1});
+           const nsimd_{simd_ext}_v{typ} type_max =
+               nsimd_set1_{simd_ext}_{typ}(({typ}){type_max});
+           return nsimd_if_else1_{simd_ext}_{typ}(
+                    nsimd_lt_{simd_ext}_{typ}(ures, {in0}),
+                    type_max, ures);'''. \
+                    format(type_max=common.limits[typ]['max'], **fmtspec)
 
-    if typ not in common.itypes:
-        raise ValueError('Type not implemented in platform_{simd_ext} adds({typ});'.
-            format(**fmtspec))
+    avx512_sse2_i32_i64_dependent_code = \
+        get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ)
 
-    num_bits = typ[1:3]
+    return \
+    '''/* Algo pseudo code: */
 
-    avx512_sse2_i32_i64_dependent_code = get_avx512_sse2_i32_i64_dependent_code(simd_ext, typ, num_bits)
+       /* if ( ( same_sign(ux, uy) && same_sign(uy, res) ) || */
+       /*      ! same_sign(ux, uy) ): */
+       /*     neither overflow nor underflow happened */
+       /* else: */
+       /*     if(ux > 0 && uy > 0): res = MAX // overflow */
+       /*     else: res = MIN // underflow */
 
-    return'''
-            // Algo pseudo code:
+       /* Step 1: reinterpret to unsigned to work with the bits */
 
-            // if ( ( same_sign(ux, uy) && same_sign(uy, res) ) || ! same_sign(ux, uy) ):
-            //     neither overflow nor underflow happened
-            // else:
-            //     if(ux > 0 && uy > 0): res = MAX // overflow
-            //     else: res = MIN // underflow
+       nsimd_{simd_ext}_vu{typnbits} ux =
+           nsimd_reinterpret_{simd_ext}_u{typnbits}_i{typnbits}({in0});
+       const nsimd_{simd_ext}_vu{typnbits} uy =
+           nsimd_reinterpret_{simd_ext}_u{typnbits}_i{typnbits}({in1});
+       const nsimd_{simd_ext}_vu{typnbits} ures =
+           nsimd_add_{simd_ext}_u{typnbits}(ux, uy);
 
-            // -------- Step 1: reinterpret to unsigned to work with the bits ------------
+       /* Step 2: check signs different: ux, uy, res */
 
-            nsimd_{simd_ext}_vu{num_bits} ux = nsimd_reinterpret_{simd_ext}_u{num_bits}_i{num_bits}({in0});
-            const nsimd_{simd_ext}_vu{num_bits} uy = nsimd_reinterpret_{simd_ext}_u{num_bits}_i{num_bits}({in1});
-            const nsimd_{simd_ext}_vu{num_bits} ures = nsimd_add_{simd_ext}_u{num_bits}(ux, uy);
+       /* xor_ux_uy's most significant bit will be zero if both ux and */
+       /* uy have same sign */
 
-            // ------------- Step 2: check signs different: ux, uy, res ------------------
+       const nsimd_{simd_ext}_vu{typnbits} xor_ux_uy =
+           nsimd_xorb_{simd_ext}_u{typnbits}(ux, uy);
 
-            // xor_ux_uy's most significant bit will be zero if both ux and uy have same sign
+       /* xor_uy_res's most significant bit will be zero if both uy and */
+       /* ures have same sign */
 
-            const nsimd_{simd_ext}_vu{num_bits} xor_ux_uy = nsimd_xorb_{simd_ext}_u{num_bits}(ux, uy);
+       const nsimd_{simd_ext}_vu{typnbits} xor_uy_res =
+           nsimd_xorb_{simd_ext}_u{typnbits}(uy, ures);
 
-            // xor_uy_res's most significant bit will be zero if both uy and ures have same sign
+       /* Step 3: Construct the MIN/MAX vector */
 
-            const nsimd_{simd_ext}_vu{num_bits} xor_uy_res = nsimd_xorb_{simd_ext}_u{num_bits}(uy, ures);
+       /* Pseudo code: */
 
-            // ----------------- Step 3: Construct the MIN/MAX vector --------------------
+       /* Both positive --> overflow possible */
+       /* --> get the MAX: */
 
-            // Pseudo code:
+       /* (signed)ux >= 0 && (signed)uy >= 0 */
+       /* <=> ((unsigned)ux | (unsigned)uy) >> 31 == 0 */
+       /* --> MAX + ( (ux | uy) >> 31 ) == MAX + 0 == MAX */
 
-            // Both positive --> overflow possible
-            // --> get the MAX:
+       /* At least one negative */
+       /* --> overflow not possible / underflow possible if both negative */
+       /* --> get the MIN: */
 
-            // (signed)ux >= 0 && (signed)uy >= 0
-            // <=> ((unsigned)ux | (unsigned)uy) >> 31 == 0
-            // --> MAX + ( (ux | uy) >> 31 ) == MAX + 0 == MAX
+       /* unsigned tmp = (unsigned)MAX + */
+       /*                ( ( (ux | uy) >> 31 ) == (unsigned)MAX + 1 ) */
+       /* --> MIN = (reinterpret signed)tmp */
 
-            // At least one negative
-            // --> overflow not possible / underflow possible if both negative
-            // --> get the MIN:
+       /* ux | uy */
+       const nsimd_{simd_ext}_vu{typnbits} ux_uy_orb =
+           nsimd_orb_{simd_ext}_u{typnbits}(ux, uy);
 
-            // unsigned tmp = (unsigned)MAX + ( (ux | uy) >> 31 ) == (unsigned)MAX + 1
-            // --> MIN = (reinterpret signed)tmp
+       /* (ux | uy) >> 31 --> Vector of 0's and 1's */
+       const nsimd_{simd_ext}_vu{typnbits} u_zeros_ones =
+           nsimd_shr_{simd_ext}_u{typnbits}(
+               ux_uy_orb, sizeof(u{typnbits}) * CHAR_BIT - 1);
 
-            // ux | uy
-            const nsimd_{simd_ext}_vu{num_bits} ux_uy_orb = nsimd_orb_{simd_ext}_u{num_bits}(ux, uy);
+       /* MIN/MAX vector */
 
-            // (ux | uy) >> 31 --> Vector of 0's and 1's
-            const nsimd_{simd_ext}_vu{num_bits} u_zeros_ones = nsimd_shr_{simd_ext}_u{num_bits}(ux_uy_orb, sizeof(u{num_bits}) * CHAR_BIT - 1);
+       /* i{typnbits} tmp = sMAX + 1 --> undefined behavior */
+       /* u{typnbits} tmp = (u{typnbits})sMAX + 1 */
+       /* i{typnbits} sMIN = *(i{typnbits}*)(&tmp) */
 
-            // MIN/MAX vector
+       const nsimd_{simd_ext}_vu{typnbits} u_max =
+           nsimd_set1_{simd_ext}_u{typnbits}((u{typnbits}){type_max});
+       const nsimd_{simd_ext}_vu{typnbits} u_max_min =
+           nsimd_add_{simd_ext}_u{typnbits}(u_max, u_zeros_ones);
+       const nsimd_{simd_ext}_vi{typnbits} i_max_min =
+           nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}(u_max_min);
 
-            // i{num_bits} tmp = sMAX + 1 --> undefined behavior
-            // u{num_bits} tmp = (u{num_bits})sMAX + 1
-            // i{num_bits} sMIN = *(i{num_bits}*)(&tmp)
+       /* Step 4: Construct the mask vector */
 
-            const nsimd_{simd_ext}_vu{num_bits} u_max = nsimd_set1_{simd_ext}_u{num_bits}((u{num_bits}){type_max});
-            const nsimd_{simd_ext}_vu{num_bits} u_max_min = nsimd_add_{simd_ext}_u{num_bits}(u_max, u_zeros_ones);
-            const nsimd_{simd_ext}_vi{num_bits} i_max_min = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(u_max_min);
+       /* mask == ( 8ot_same_sign(ux, uy) || same_sign(uy, res) ) */
+       /* mask: True (no underflow/overflow) / False (underflow/overflow) */
+       /* mask = xor_ux_uy | ~ xor_uy_res */
 
-            // ------------------ Step 4: Construct the mask vector ---------------------
+       const nsimd_{simd_ext}_vu{typnbits} not_xor_uy_res =
+           nsimd_notb_{simd_ext}_u{typnbits}(xor_uy_res);
+       const nsimd_{simd_ext}_vu{typnbits} mask =
+           nsimd_orb_{simd_ext}_u{typnbits}(xor_ux_uy, not_xor_uy_res);
 
-            // mask == ( not_same_sign(ux, uy) || same_sign(uy, res) )
-            // mask: True (no underflow/overflow) / False (underflow/overflow)
-            // mask = xor_ux_uy | ~ xor_uy_res
+       {avx512_sse2_dependent_mask_processing}
 
-            const nsimd_{simd_ext}_vu{num_bits} not_xor_uy_res = nsimd_notb_{simd_ext}_u{num_bits}(xor_uy_res);
-            const nsimd_{simd_ext}_vu{num_bits} mask = nsimd_orb_{simd_ext}_u{num_bits}(xor_ux_uy, not_xor_uy_res);
+       /* Step 5: Apply the Mask */
 
-            {avx512_sse2_dependent_mask_processing}
+       const nsimd_{simd_ext}_vi{typnbits} ires =
+           nsimd_reinterpret_{simd_ext}_i{typnbits}_u{typnbits}(ures);
 
-            // ----------------------- Step 5: Apply the Mask ---------------------------
-
-            const nsimd_{simd_ext}_vi{num_bits} ires = nsimd_reinterpret_{simd_ext}_i{num_bits}_u{num_bits}(ures);
-
-            {avx512_sse2_dependent_if_else}
-          '''. \
-            format( num_bits = num_bits,
-                    type_max = common.limits[typ]['max'],
-                    avx512_sse2_dependent_mask_processing = avx512_sse2_i32_i64_dependent_code['mask_processing'],
-                    avx512_sse2_dependent_if_else = avx512_sse2_i32_i64_dependent_code['if_else'],
-                    **fmtspec)
+       {avx512_sse2_dependent_if_else}'''. \
+       format(type_max = common.limits[typ]['max'],
+              avx512_sse2_dependent_mask_processing = \
+                  avx512_sse2_i32_i64_dependent_code['mask_processing'],
+              avx512_sse2_dependent_if_else = \
+                  avx512_sse2_i32_i64_dependent_code['if_else'], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # subs
@@ -3012,34 +3031,34 @@ def adds(simd_ext, typ):
 def subs(simd_ext, typ):
 
     if typ in common.ftypes:
-        return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'.format(**fmtspec)
+        return 'return nsimd_sub_{simd_ext}_{typ}({in0}, {in1});'. \
+               format(**fmtspec)
 
     if typ in ('i8', 'i16', 'u8', 'u16'):
-        return adds_subs_intrinsic_instructions_i8_i16_u8_u16('subs', simd_ext, typ)
+        return adds_subs_intrinsic_instructions_i8_i16_u8_u16(
+                   'subs', simd_ext, typ)
 
     if typ in common.itypes:
-        return \
-            'return nsimd_adds_{simd_ext}_{typ}({in0},nsimd_neg_{simd_ext}_{typ}({in1}));'. \
-            format(**fmtspec)
-
-    if typ not in common.utypes:
-        raise ValueError('Type not implemented in platform_x86 adds({typ});'.
-            format(**fmtspec))
+        return 'return nsimd_adds_{simd_ext}_{typ}({in0}, ' \
+               'nsimd_neg_{simd_ext}_{typ}({in1}));'.format(**fmtspec)
 
     min_ = common.limits[typ]['min']
 
-    return'''
-        // Algo pseudo code:
+    return \
+    '''/* Algo pseudo code: */
 
-        // unsigned only
-        // a > 0; b > 0 ==> a - b --> possibility for underflow only
-        // if b > a --> underflow
+       /* unsigned only */
+       /* a > 0; b > 0 ==> a - b --> possibility for underflow only */
+       /* if b > a --> underflow */
 
-        const nsimd_{simd_ext}_v{typ} ures = nsimd_sub_{simd_ext}_{typ}({in0}, {in1});
-        const nsimd_{simd_ext}_vl{typ} is_underflow = nsimd_gt_{simd_ext}_{typ}({in1}, {in0});
-        const nsimd_{simd_ext}_v{typ} umin = nsimd_set1_{simd_ext}_{typ}(({typ}){min_});
-        return nsimd_if_else1_{simd_ext}_{typ}(is_underflow, umin, ures);
-    '''.format(min_=min_, **fmtspec)
+       const nsimd_{simd_ext}_v{typ} ures =
+           nsimd_sub_{simd_ext}_{typ}({in0}, {in1});
+       const nsimd_{simd_ext}_vl{typ} is_underflow =
+           nsimd_gt_{simd_ext}_{typ}({in1}, {in0});
+       const nsimd_{simd_ext}_v{typ} umin =
+           nsimd_set1_{simd_ext}_{typ}(({typ}){min_});
+       return nsimd_if_else1_{simd_ext}_{typ}(is_underflow, umin, ures);'''. \
+       format(min_=min_, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # to_mask

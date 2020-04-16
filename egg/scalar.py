@@ -411,7 +411,13 @@ def get_impl(operator, totyp, typ):
         if typ in common.iutypes:
             return 'return ({typ})({in0} * {in1} + {in2});'.format(**fmtspec)
         else:
-            return libm_opn(operator.name, 3, typ, False, '')
+            if typ == 'f16':
+                c89_code = 'return nsimd_f32_to_f16(nsimd_f16_to_f32({in0}) ' \
+                           '* nsimd_f16_to_f32({in1}) ' \
+                           '+ nsimd_f16_to_f32({in2}));'.format(**fmtspec)
+            else:
+                c89_code = 'return {in0} * {in1} + {in2};'.format(**fmtspec)
+            return libm_opn(operator.name, 3, typ, False, c89_code)
     if operator.name in ['fnma', 'fms', 'fnms']:
         neg = '-' if operator.name in ['fnms', 'fnma'] else ''
         op = '-' if operator.name in ['fms', 'fnms'] else ''
