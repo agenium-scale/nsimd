@@ -2613,7 +2613,7 @@ def doit(opts):
                         'store4a', 'store4u', 'downcvt', 'to_logical']:
             continue
         for typ in operator.types:
-            if operator.name in ['notb', 'andb', 'xorb', 'orb'] and \
+            if operator.name in ['notb', 'andb', 'xorb', 'orb', 'andnotb'] and \
                typ == 'f16':
                 continue
             elif operator.name == 'nbtrue':
