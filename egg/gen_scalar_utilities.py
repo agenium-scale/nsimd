@@ -77,32 +77,43 @@ def doit(opts):
                                               for sig in scalar_tmp])
         gpu_reinterpret_decls = '\n'.join(['inline ' + sig + ';' \
                                            for sig in gpu_tmp])
-        out.write('''#ifndef NSIMD_SCALAR_UTILITIES_H
-                     #define NSIMD_SCALAR_UTILITIES_H
+        out.write(
+        '''#ifndef NSIMD_SCALAR_UTILITIES_H
+           #define NSIMD_SCALAR_UTILITIES_H
 
-                     #if NSIMD_CXX > 0
-                     #include <cmath>
-                     #include <cstring>
-                     #else
-                     #include <math.h>
-                     #include <string.h>
-                     #endif
+           #if NSIMD_CXX > 0
+           #include <cmath>
+           #include <cstring>
+           #else
+           #include <math.h>
+           #include <string.h>
+           #endif
 
-                     {scalar_reinterpret_decls}
+           #ifdef NSIMD_NATIVE_FP16
+             #if defined(NSIMD_IS_GCC)
+               #pragma GCC diagnostic push
+               #pragma GCC diagnostic ignored "-Wdouble-promotion"
+             #elif defined(NSIMD_IS_CLANG)
+               #pragma clang diagnostic push
+               #pragma clang diagnostic ignored "-Wdouble-promotion"
+             #endif
+           #endif
 
-                     #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-                         defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+           {scalar_reinterpret_decls}
 
-                     namespace nsimd {{
+           #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+               defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
-                     {gpu_reinterpret_decls}
+           namespace nsimd {{
 
-                     }} // namespace nsimd
+           {gpu_reinterpret_decls}
 
-                     #endif
-                     '''. \
-                     format(scalar_reinterpret_decls=scalar_reinterpret_decls,
-                            gpu_reinterpret_decls=gpu_reinterpret_decls))
+           }} // namespace nsimd
+
+           #endif
+           '''. \
+           format(scalar_reinterpret_decls=scalar_reinterpret_decls,
+                  gpu_reinterpret_decls=gpu_reinterpret_decls))
         for op_name, operator in operators.operators.items():
             if not operator.has_scalar_impl:
                 continue
@@ -171,6 +182,18 @@ def doit(opts):
                         cuda.get_impl(operator, tt, t),
                         rocm_impl=rocm.get_impl(operator, tt, t))))
 
-        out.write('\n\n' + common.hbar + '\n\n#endif\n')
+        out.write('''
+
+                  {hbar}
+
+                  #ifdef NSIMD_FP16
+                    #if defined(NSIMD_IS_GCC)
+                      #pragma GCC diagnostic pop
+                    #elif defined(NSIMD_IS_CLANG)
+                      #pragma clang diagnostic pop
+                    #endif
+                  #endif
+
+                  #endif'''.format(hbar=common.hbar))
     common.clang_format(opts, filename)
 
