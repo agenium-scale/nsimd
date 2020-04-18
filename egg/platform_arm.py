@@ -1048,7 +1048,7 @@ def lset1(simd_ext, typ):
         return '''if ({in0}) {{
                     return svptrue_b{typnbits}();
                   }} else {{
-                    return svpfalse_b{typnbits}();
+                    return svpfalse_b();
                   }}'''.format(**fmtspec)
     # getting here means no NEON and AARCH64 only
     if typ in common.utypes:
@@ -2084,7 +2084,7 @@ def iota(simd_ext, typ):
             return 'return svindex_{suf}(0, 1);'.format(**fmtspec)
         else:
             return \
-            '''return svcvt_{suf}_s{typnbits}(
+            '''return svcvt_{suf}_s{typnbits}_z({svtrue},
                         svindex_s{typnbits}(0, 1));'''.format(**fmtspec)
     if typ == 'f64' and simd_ext == 'neon128':
         return '''nsimd_neon128_vf64 ret;
@@ -2119,7 +2119,7 @@ def mask_for_loop_tail(simd_ext, typ):
     else:
         threshold = '({typ})({in1} - {in0})'.format(**fmtspec)
     if simd_ext == 'sve':
-        le = 'nsimd_len_sve_{typ}()'
+        le = 'nsimd_len_sve_{typ}()'.format(**fmtspec)
     elif simd_ext in fixed_sized_sve:
         le = int(simd_ext[3:]) // int(typ[1:])
     else:
