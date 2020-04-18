@@ -93,13 +93,18 @@ SOFTWARE.
 /* the use of the __extension__ keyword does not prevent warning so we deal  */
 /* with them now. We keep the __extension__ keyword in case.                 */
 
-#if defined(NSIMD_IS_GCC) && (NSIMD_CXX < 2011 && NSIMD_C < 1999)
+#if NSIMD_CXX < 2011 && NSIMD_C < 1999
   #define NSIMD_LONGLONG_IS_EXTENSION
 #endif
 
 #ifdef NSIMD_LONGLONG_IS_EXTENSION
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wlong-long"
+  #if defined(NSIMD_IS_GCC)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wlong-long"
+  #elif defined(NSIMD_IS_CLANG)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wlong-long"
+  #endif
 #endif
 
 typedef long long nsimd_longlong;
@@ -111,7 +116,11 @@ namespace nsimd {
 #endif
 
 #ifdef NSIMD_LONGLONG_IS_EXTENSION
-  #pragma GCC diagnostic pop
+  #if defined(NSIMD_IS_GCC)
+    #pragma GCC diagnostic pop
+  #elif defined(NSIMD_IS_CLANG)
+    #pragma clang diagnostic pop
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */

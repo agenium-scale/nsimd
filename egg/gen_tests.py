@@ -691,7 +691,7 @@ def gen_addv(opts, op, typ, lang):
             op.name, typ, typ)
         extra_code = relative_distance_cpp
     else:
-        op_test = 'nsimd::{}(nsimd::loada<nsimd::pack<{}>>(buf))'.format(
+        op_test = 'nsimd::{}(nsimd::loada<nsimd::pack<{}> >(buf))'.format(
             op.name, typ)
         extra_code = relative_distance_cpp
 
@@ -1923,8 +1923,8 @@ def gen_mask_load(opts, op, typ, lang):
         elif lang == 'cxx_adv':
             test = \
             '''nsimd::packl<{typ}> mask =
-                   nsimd::mask_for_loop_tail<nsimd::packl<{typ}>>(0, i);
-               nsimd::pack<{typ}> other = nsimd::set1<nsimd::pack<{typ}>>(
+                   nsimd::mask_for_loop_tail<nsimd::packl<{typ}> >(0, i);
+               nsimd::pack<{typ}> other = nsimd::set1<nsimd::pack<{typ}> >(
                                               {m1});
                nsimd::storeu(vout, nsimd::{op_name}(mask, vin, other));'''. \
                format(typ=typ, op_name=op.name, m1=m1)
@@ -1945,7 +1945,7 @@ def gen_mask_load(opts, op, typ, lang):
         elif lang == 'cxx_adv':
             test = \
             '''nsimd::packl<{typ}> mask =
-                   nsimd::mask_for_loop_tail<nsimd::packl<{typ}>>(0, i);
+                   nsimd::mask_for_loop_tail<nsimd::packl<{typ}> >(0, i);
                nsimd::storeu(vout, nsimd::{op_name}(mask, vin));'''. \
                format(typ=typ, op_name=op.name, m1=m1)
         comp2 = 'vout[j] != ({typ})0'.format(typ=typ) if typ != 'f16' else \
@@ -2048,9 +2048,9 @@ def gen_mask_store(opts, op, typ, lang):
     elif lang == 'cxx_adv':
         test = \
         '''nsimd::packl<{typ}> mask =
-               nsimd::mask_for_loop_tail<nsimd::packl<{typ}>>(0, i);
+               nsimd::mask_for_loop_tail<nsimd::packl<{typ}> >(0, i);
            nsimd::{op_name}(mask, vout,
-                            nsimd::set1<nsimd::pack<{typ}>>({one}));'''. \
+                            nsimd::set1<nsimd::pack<{typ}> >({one}));'''. \
                             format(typ=typ, op_name=op.name, one=one)
 
     if op.name == 'mask_storeu1':
@@ -2210,7 +2210,7 @@ def gen_iota(opts, op, typ, lang):
         do_iota = 'nsimd::storeu(buf, nsimd::iota({typ}()), {typ}());'. \
                   format(typ=typ)
     else:
-        do_iota = 'nsimd::storeu(buf, nsimd::iota<nsimd::pack<{typ}>>());'. \
+        do_iota = 'nsimd::storeu(buf, nsimd::iota<nsimd::pack<{typ}> >());'. \
                   format(typ=typ)
 
     if typ == 'f16':
@@ -2464,18 +2464,21 @@ def gen_reverse(opts, op, typ, lang):
     if filename == None:
         return
     if lang == 'c_base':
-        test_code = 'vstorea( out, vreverse( vloada( in, {typ} ), {typ} ), {typ} );'.format(
-            typ=typ)
+        test_code = \
+        'vstorea(out, vreverse(vloada(in, {typ}), {typ}), {typ});'. \
+        format(typ=typ)
     elif lang == 'cxx_base':
-        test_code = 'nsimd::storea( out, nsimd::reverse( nsimd::loada( in, {typ}() ), {typ}() ), {typ}() );'.format(
-            typ=typ)
+        test_code = \
+        'nsimd::storea(out, nsimd::reverse(nsimd::loada(in, {typ}()), ' \
+        '{typ}()), {typ}());'.format(typ=typ)
     elif lang == 'cxx_adv':
-        test_code = 'nsimd::storea( out, nsimd::reverse( nsimd::loada<nsimd::pack<{typ}>>( in ) ) );'.format(
-            typ=typ)
-
+        test_code = \
+        'nsimd::storea(out, nsimd::reverse(' \
+        'nsimd::loada<nsimd::pack<{typ}> >(in)));'.format(typ=typ)
     if typ == 'f16':
         init = 'in[ i ] = nsimd_f32_to_f16((float)(i + 1));'
-        comp = 'ok &= nsimd_f16_to_f32( out[len - 1 - i] ) == nsimd_f16_to_f32( in[i] );'
+        comp = 'ok &= nsimd_f16_to_f32(out[len - 1 - i]) == ' \
+               'nsimd_f16_to_f32(in[i]);'
     else:
         init = 'in[ i ] = ({typ})(i + 1);'.format(typ=typ)
         comp = 'ok &= out[len - 1 - i] == in[i];'
@@ -2520,8 +2523,6 @@ def gen_reverse(opts, op, typ, lang):
                {comp}
              }}
 
-             /*fprintf( stdout, "%f %f %f %f\\n", in[ 0 ], out[ 0 ], in[ 1 ], out[ 1 ] );*/
-
              if( ok )
              {{
                fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
@@ -2536,10 +2537,9 @@ def gen_reverse(opts, op, typ, lang):
              nsimd_aligned_free( out );
 
              return EXIT_SUCCESS;
-           }}
-        '''.format(includes=get_includes(lang), op_name=op.name,
-                   typ=typ, test_code=test_code, year=date.today().year, sizeof=common.sizeof(typ),
-                   init=init, comp=comp))
+           }}'''.format(includes=get_includes(lang), op_name=op.name,
+                        typ=typ, test_code=test_code, year=date.today().year,
+                        sizeof=common.sizeof(typ), init=init, comp=comp))
 
     common.clang_format(opts, filename)
 

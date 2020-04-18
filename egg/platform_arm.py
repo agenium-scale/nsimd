@@ -217,7 +217,7 @@ def get_additional_include(func, platform, simd_ext):
                   #include <nsimd/arm/{simd_ext}/set1l.h>
                   #include <nsimd/arm/{simd_ext}/iota.h>
                   #include <nsimd/arm/{simd_ext}/lt.h>
-                  '''
+                  '''.format(simd_ext=simd_ext)
     if simd_ext == 'neon128' and func == 'notl':
         ret += '''#include <nsimd/arm/neon128/notb.h>
                   '''
