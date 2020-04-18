@@ -108,11 +108,13 @@ def get_type(opts, simd_ext, typ):
             else:
                 return neon_typ('f64')
         elif typ == 'f16':
-            return '''#ifdef NSIMD_FP16
-                        float16x8_t
-                      #else
-                        struct { float32x4_t v0; float32x4_t v1; }
-                      #endif'''
+            return '''
+                   #ifdef NSIMD_FP16
+                     float16x8_t
+                   #else
+                     struct { float32x4_t v0; float32x4_t v1; }
+                   #endif
+                   ''' # extra \n are necessary
         else:
             return neon_typ(typ)
     elif simd_ext == 'sve':
@@ -138,12 +140,12 @@ def get_logical_type(opts, simd_ext, typ):
         if typ == 'f16':
             return \
             '''
-            # ifdef NSIMD_FP16
+            #ifdef NSIMD_FP16
               uint16x8_t
-            # else
+            #else
               struct { uint32x4_t v0; uint32x4_t v1; }
-            # endif
-            '''
+            #endif
+            ''' # extra \n are necessary
         elif typ == 'f64':
             return 'struct { u64 v0; u64 v1; }'
         else:
@@ -205,6 +207,17 @@ def get_additional_include(func, platform, simd_ext):
                   # endif
 
                   '''.format(func=func, deg=deg, simd_ext=simd_ext)
+    if func in ['mask_storea1', 'mask_storeu1', 'masko_loada1',
+                'masko_loadu1', 'maskz_loada1', 'maskz_loadu1'] and \
+                simd_ext not in sve:
+        ret += '''#include <nsimd/scalar_utilities.h>
+                  '''
+    if func == 'mask_for_loop_tail' and simd_ext not in sve:
+        ret += '''#include <nsimd/arm/{simd_ext}/set1.h>
+                  #include <nsimd/arm/{simd_ext}/set1l.h>
+                  #include <nsimd/arm/{simd_ext}/iota.h>
+                  #include <nsimd/arm/{simd_ext}/lt.h>
+                  '''
     if simd_ext == 'neon128' and func == 'notl':
         ret += '''#include <nsimd/arm/neon128/notb.h>
                   '''
@@ -410,7 +423,6 @@ def get_soa_typ(opts, simd_ext, typ, deg):
     return '{}x{}_t'.format(ntyp[:-2], deg)
 
 # -----------------------------------------------------------------------------
-
 # Loads of degree 1, 2, 3 and 4
 
 def load1234(opts, simd_ext, typ, deg):
@@ -468,7 +480,8 @@ def load1234(opts, simd_ext, typ, deg):
                    return ret;'''. \
                    format(deg=deg, assignment='\n'.join([assignment. \
                           format(i=i) for i in range(0, deg)]),
-                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg), **fmtspec)
+                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg),
+                          **fmtspec)
             elif typ in 'f64' and simd_ext == 'neon128':
                 return \
                 'nsimd_neon128_vf64x{} ret;\n'.format(deg) + \
@@ -505,6 +518,78 @@ def load1234(opts, simd_ext, typ, deg):
                       **fmtspec)
 
 # -----------------------------------------------------------------------------
+# Mask loads
+
+def maskoz_load(oz, simd_ext, typ):
+    if simd_ext in sve:
+        return 'return svsel_{suf}({in0}, svld1_{suf}({in0}, {in1}), {oz});'. \
+               format(oz='{in2}'.format(**fmtspec) if oz == 'o' \
+                      else 'svdup_n_{suf}(({typ})0)'.format(**fmtspec),
+                      **fmtspec)
+    if typ == 'f64' and simd_ext == 'neon128':
+        return '''nsimd_neon128_vf64 ret;
+                  if (nsimd_scalar_reinterpret_u64_f64({in0}.v0)) {{
+                    ret.v0 = {in1}[0];
+                  }} else {{
+                    ret.v0 = {oz0};
+                  }}
+                  if (nsimd_scalar_reinterpret_u64_f64({in0}.v0)) {{
+                    ret.v1 = {in1}[1];
+                  }} else {{
+                    ret.v1 = {oz1};
+                  }}
+                  return ret;'''.format(
+                  oz0 = '0.0f' if oz == 'z' else '{in2}.v0'.format(**fmtspec),
+                  oz1 = '0.0f' if oz == 'z' else '{in2}.v1'.format(**fmtspec),
+                  **fmtspec)
+    if typ in common.ftypes:
+        cond = 'nsimd_scalar_reinterpret_u{typnbits}_{suf}(mask[i])'. \
+               format(**fmtspec)
+    else:
+        cond = 'mask[i]'
+    le = 128 // int(typ[1:])
+    normal = '''int i;
+                {typ} mask[{le}], buf[{le}];
+                vst1q_{suf}(buf, {oz});
+                vst1q_{suf}(mask, {in0});
+                for (i = 0; i < {le}; i++) {{
+                  if ({cond}) {{
+                    buf[i] = {in1}[i];
+                  }}
+                }}
+                return vld1q_{suf}(buf);'''. \
+                format(cond=cond, le=le,
+                       oz='vdupq_n_{suf}(({typ})0)'.format(**fmtspec) \
+                          if oz == 'z' else '{in2}'.format(**fmtspec),
+                          **fmtspec)
+    if typ == 'f16':
+        return '''#ifdef NSIMD_FP16
+                    {normal}
+                  #else
+                    int i;
+                    nsimd_{simd_ext}_vf16 ret;
+                    f32 mask[8], buf[8];
+                    vst1q_f32(buf, {oz0});
+                    vst1q_f32(buf + 4, {oz1});
+                    vst1q_f32(mask, {in0}.v0);
+                    vst1q_f32(mask + 4, {in0}.v1);
+                    for (i = 0; i < 8; i++) {{
+                      if (nsimd_scalar_reinterpret_u32_f32(mask[i])) {{
+                        buf[i] = nsimd_f16_to_f32({in1}[i]);
+                      }}
+                    }}
+                    ret.v0 = vld1q_f32(buf);
+                    ret.v1 = vld1q_f32(buf + 4);
+                    return ret;
+                  #endif'''. \
+                  format(oz0='vdupq_n_f32(0.0f)'.format(**fmtspec) \
+                             if oz == 'z' else '{in2}.v0'.format(**fmtspec),
+                         oz1='vdupq_n_f32(0.0f)'.format(**fmtspec) \
+                             if oz == 'z' else '{in2}.v1'.format(**fmtspec),
+                             normal=normal, **fmtspec)
+    return normal
+
+# -----------------------------------------------------------------------------
 # Stores of degree 1, 2, 3 and 4
 
 def store1234(opts, simd_ext, typ, deg):
@@ -516,7 +601,7 @@ def store1234(opts, simd_ext, typ, deg):
                 return \
                 '''#ifdef NSIMD_FP16
                      {normal}
-                   # else
+                   #else
                      f32 buf[4];
                      vst1q_f32(buf, {in1}.v0);
                      *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
@@ -528,7 +613,7 @@ def store1234(opts, simd_ext, typ, deg):
                      *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
                      *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
                      *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
-                   # endif'''.format(normal=normal, **fmtspec)
+                   #endif'''.format(normal=normal, **fmtspec)
             elif typ == 'f64' and simd_ext == 'neon128':
                 return \
                 '''*{in0} = {in1}.v0;
@@ -558,9 +643,11 @@ def store1234(opts, simd_ext, typ, deg):
                      vst{deg}q_u16((u16 *){in0}, temp);
                    # endif'''. \
                    format(assignment='\n'.join([assignment.format(i). \
-                          format(i - 1, **fmtspec) for i in range(1, deg + 1)]),
+                          format(i - 1, **fmtspec) \
+                          for i in range(1, deg + 1)]),
                           deg=deg, normal=normal,
-                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg), **fmtspec)
+                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg),
+                          **fmtspec)
             elif typ == 'f64' and simd_ext == 'neon128':
                 return \
                 '\n'.join(['*({{in0}} + {}) = {{in{}}}.v0;'. \
@@ -601,6 +688,53 @@ def store1234(opts, simd_ext, typ, deg):
            svst{deg}_{suf}({svtrue}, {in0}, tmp);'''. \
            format(soa_typ=get_SoA_type('sve', typ, deg), deg=deg,
                   fill_soa_typ=fill_soa_typ, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Mask stores
+
+def mask_store(simd_ext, typ):
+    if simd_ext in sve:
+        return 'svst1_{suf}({in0}, {in1}, {in2});'.format(**fmtspec)
+    if typ == 'f64' and simd_ext == 'neon128':
+        return '''if (nsimd_scalar_reinterpret_u64_f64({in0}.v0)) {{
+                    {in1}[0] = {in2}.v0;
+                  }}
+                  if (nsimd_scalar_reinterpret_u64_f64({in0}.v1)) {{
+                    {in1}[1] = {in2}.v1;
+                  }}'''.format(**fmtspec)
+    le = 128 // int(typ[1:])
+    if typ in common.ftypes:
+        cond = 'nsimd_scalar_reinterpret_u{typnbits}_{suf}(mask[i])'. \
+               format(**fmtspec)
+    else:
+        cond = 'mask[i]'
+    normal = '''int i;
+                {typ} mask[{le}], buf[{le}];
+                vst1q_{suf}(buf, {in2});
+                vst1q_{suf}(mask, {in0});
+                for (i = 0; i < {le}; i++) {{
+                  if ({cond}) {{
+                    {in1}[i] = buf[i];
+                  }}
+                }}'''.format(cond=cond, le=le, **fmtspec)
+    if typ == 'f16':
+        return \
+        '''#ifdef NSIMD_FP16
+             {normal}
+           #else
+             f32 mask[8], buf[8];
+             int i;
+             vst1q_f32(mask, {in0}.v0);
+             vst1q_f32(mask + 4, {in0}.v1);
+             vst1q_f32(buf, {in2}.v0);
+             vst1q_f32(buf + 4, {in2}.v1);
+             for (i = 0; i < 8; i++) {{
+               if (nsimd_scalar_reinterpret_u32_f32(mask[i]) != (u32)0) {{
+                 {in1}[i] = nsimd_f32_to_f16(buf[i]);
+               }}
+             }}
+           #endif'''.format(normal=normal, **fmtspec)
+    return normal
 
 # -----------------------------------------------------------------------------
 # Length
@@ -920,7 +1054,7 @@ def lset1(simd_ext, typ):
     if typ in common.utypes:
         mask = 'vdupq_n_{suf}(({typ}){{}})'.format(**fmtspec)
     else:
-        mask = 'vreinterpret_{typ}_u{typnbits}(vdupq_n_u{typnbits}(' \
+        mask = 'vreinterpretq_{suf}_u{typnbits}(vdupq_n_u{typnbits}(' \
                '(u{typnbits}){{}}))'.format(**fmtspec)
     normal = '''if ({in0}) {{
                   return {ones};
@@ -933,7 +1067,7 @@ def lset1(simd_ext, typ):
                     {normal}
                   #else
                     nsimd_{simd_ext}_vlf16 ret;
-                    ret.v0 = nsimd_{simd_ext}_set1l_f32({in0};
+                    ret.v0 = nsimd_set1l_{simd_ext}_f32({in0});
                     ret.v1 = ret.v0;
                     return ret;
                   #endif'''.format(normal=normal, **fmtspec)
@@ -2200,18 +2334,24 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
 
     impls = {
         'loada': lambda: load1234(opts, simd_ext, from_typ, 1),
+        'masko_loada1': lambda: maskoz_load('o', simd_ext, from_typ),
+        'maskz_loada1': lambda: maskoz_load('z', simd_ext, from_typ),
         'load2a': lambda: load1234(opts, simd_ext, from_typ, 2),
         'load3a': lambda: load1234(opts, simd_ext, from_typ, 3),
         'load4a': lambda: load1234(opts, simd_ext, from_typ, 4),
         'loadu': lambda: load1234(opts, simd_ext, from_typ, 1),
+        'masko_loadu1': lambda: maskoz_load('o', simd_ext, from_typ),
+        'maskz_loadu1': lambda: maskoz_load('z', simd_ext, from_typ),
         'load2u': lambda: load1234(opts, simd_ext, from_typ, 2),
         'load3u': lambda: load1234(opts, simd_ext, from_typ, 3),
         'load4u': lambda: load1234(opts, simd_ext, from_typ, 4),
         'storea': lambda: store1234(opts, simd_ext, from_typ, 1),
+        'mask_storea1': lambda: mask_store(simd_ext, from_typ),
         'store2a': lambda: store1234(opts, simd_ext, from_typ, 2),
         'store3a': lambda: store1234(opts, simd_ext, from_typ, 3),
         'store4a': lambda: store1234(opts, simd_ext, from_typ, 4),
         'storeu': lambda: store1234(opts, simd_ext, from_typ, 1),
+        'mask_storeu1': lambda: mask_store(simd_ext, from_typ),
         'store2u': lambda: store1234(opts, simd_ext, from_typ, 2),
         'store3u': lambda: store1234(opts, simd_ext, from_typ, 3),
         'store4u': lambda: store1234(opts, simd_ext, from_typ, 4),
