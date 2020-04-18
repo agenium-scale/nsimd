@@ -1209,41 +1209,9 @@ class Unziphi(Operator):
     categories = [DocShuffle]
     do_bench = False
 
-class Ziplo(Operator):
-    full_name = 'ziplo'
-    signature = 'v ziplo v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocShuffle]
-    do_bench = False
-
-class Ziphi(Operator):
-    full_name = 'ziphi'
-    signature = 'v ziphi v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocShuffle]
-    do_bench = False
-
 class Zip(Operator):
     full_name = 'zip'
     signature = 'vx2 zip v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocShuffle]
-    do_bench = False
-
-class Unziplo(Operator):
-    full_name = 'unziplo'
-    signature = 'v unziplo v v'
-    types = common.types
-    domain = Domain('R')
-    categories = [DocShuffle]
-    do_bench = False
-
-class Unziphi(Operator):
-    full_name = 'unziphi'
-    signature = 'v unziphi v v'
     types = common.types
     domain = Domain('R')
     categories = [DocShuffle]
