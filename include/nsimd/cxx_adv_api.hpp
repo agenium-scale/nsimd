@@ -128,6 +128,11 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
   // Ctor taking a SIMD vector
   packl(simd_vectorl v) { car = v; }
 
+  // Ctor that splats
+  template <typename S> packl(S const &s) {
+    car = set1l(int(s), T(), SimdExt());
+  }
+
   // Underlying native SIMD vector getter
   simd_vectorl native_register() const { return car; }
 
@@ -139,6 +144,11 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
 template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   typename simd_traits<T, SimdExt>::simd_vectorl car;
   packl<T, N - 1, SimdExt> cdr;
+
+  // Ctor that splats
+  template <typename S> packl(S const &s) : cdr(s) {
+    car = set1l(int(s), T(), SimdExt());
+  }
 
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -407,15 +417,69 @@ pack<T, N, SimdExt> if_else(packl<L, N, SimdExt> const &a0,
 }
 
 // ----------------------------------------------------------------------------
+// Mask loads and stores cannot be auto-generated
+
+template <typename L, typename T, int N, typename SimdExt>
+void mask_storea(packl<L, N, SimdExt> const &a0, T *a1,
+                 pack<T, N, SimdExt> const &a2) {
+  mask_storea1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
+}
+
+template <typename L, typename T, int N, typename SimdExt>
+void mask_storeu(packl<L, N, SimdExt> const &a0, T *a1,
+                 pack<T, N, SimdExt> const &a2) {
+  mask_storeu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
+}
+
+template <typename L, typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> maskz_loada(packl<L, N, SimdExt> const &a0, T *a1) {
+  return maskz_loada1(reinterpretl<packl<T, N, SimdExt> >(a0), a1);
+}
+
+template <typename L, typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> maskz_loadu(packl<L, N, SimdExt> const &a0, T *a1) {
+  return maskz_loadu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1);
+}
+
+template <typename L, typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> masko_loada(packl<L, N, SimdExt> const &a0, T *a1,
+                                pack<T, N, SimdExt> const &a2) {
+  return masko_loada1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
+}
+
+template <typename L, typename T, int N, typename SimdExt>
+pack<T, N, SimdExt> masko_loadu(packl<L, N, SimdExt> const &a0, T *a1,
+                                pack<T, N, SimdExt> const &a2) {
+  return masko_loadu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
+}
+
+// ----------------------------------------------------------------------------
 // Loads/Stores templated on the alignment cannot be auto-generated
 
 namespace detail {
+
+template <typename P> struct loadz_return_t {};
+
+template <typename T, int N, typename SimdExt>
+struct loadz_return_t<packl<T, N, SimdExt> > {
+  typedef nsimd::pack<T, N, SimdExt> type;
+};
 
 template <typename SimdVector, typename Alignment> struct load_helper {};
 
 template <typename SimdVector> struct load_helper<SimdVector, aligned> {
   template <typename A0> static SimdVector load(A0 a0) {
     return loada<SimdVector, A0>(a0);
+  }
+
+  template <typename A0, typename A1>
+  static typename loadz_return_t<A0>::type maskz_load(A0 a0, A1 a1) {
+    return maskz_loada(a0, a1);
+  }
+
+  template <typename A0, typename A1, typename A2>
+  static A2 masko_load(A0 a0, A1 a1, A2 a2) {
+    return masko_loada(a0, a1, a2);
   }
 
   template <typename A0> static SimdVector loadl(A0 a0) {
@@ -440,6 +504,16 @@ template <typename SimdVector> struct load_helper<SimdVector, unaligned> {
     return loadu<SimdVector, A0>(a0);
   }
 
+  template <typename A0, typename A1>
+  static typename loadz_return_t<A0>::type maskz_load(A0 a0, A1 a1) {
+    return maskz_loadu(a0, a1);
+  }
+
+  template <typename A0, typename A1, typename A2>
+  static A2 masko_load(A0 a0, A1 a1, A2 a2) {
+    return masko_loadu(a0, a1, a2);
+  }
+
   template <typename A0> static SimdVector loadl(A0 a0) {
     return loadlu<SimdVector, A0>(a0);
   }
@@ -457,55 +531,65 @@ template <typename SimdVector> struct load_helper<SimdVector, unaligned> {
   }
 };
 
-template <typename SimdVector, typename Alignment> struct store_helper {};
+template <typename Alignment> struct store_helper {};
 
-template <typename SimdVector> struct store_helper<SimdVector, aligned> {
-  template <typename A0, typename A1> static SimdVector store(A0 a0, A1 a1) {
-    storea<SimdVector, A0, A1>(a0, a1);
-  }
-
-  template <typename A0, typename A1> static SimdVector storel(A0 a0, A1 a1) {
-    storela<SimdVector, A0, A1>(a0, a1);
+template <> struct store_helper<aligned> {
+  template <typename A0, typename A1> static void store(A0 a0, A1 a1) {
+    storea(a0, a1);
   }
 
   template <typename A0, typename A1, typename A2>
-  static SimdVector store2(A0 a0, A1 a1, A2 a2) {
-    store2a<SimdVector, A0, A1, A2>(a0, a1, a2);
+  static void mask_store(A0 a0, A1 a1, A2 a2) {
+    mask_storea(a0, a1, a2);
+  }
+
+  template <typename A0, typename A1> static void storel(A0 a0, A1 a1) {
+    storela(a0, a1);
+  }
+
+  template <typename A0, typename A1, typename A2>
+  static void store2(A0 a0, A1 a1, A2 a2) {
+    store2a(a0, a1, a2);
   }
 
   template <typename A0, typename A1, typename A2, typename A3>
-  static SimdVector store3(A0 a0, A1 a1, A2 a2, A3 a3) {
-    store3a<SimdVector, A0, A1, A2, A3>(a0, a1, a2, a3);
+  static void store3(A0 a0, A1 a1, A2 a2, A3 a3) {
+    store3a(a0, a1, a2, a3);
   }
 
   template <typename A0, typename A1, typename A2, typename A3, typename A4>
-  static SimdVector store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
-    store4a<SimdVector, A0>(a0, a1, a2, a3, a4);
+  static void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+    store4a(a0, a1, a2, a3, a4);
   }
 };
 
-template <typename SimdVector> struct store_helper<SimdVector, unaligned> {
-  template <typename A0, typename A1> static SimdVector store(A0 a0, A1 a1) {
-    storeu<SimdVector, A0, A1>(a0, a1);
-  }
-
-  template <typename A0, typename A1> static SimdVector storel(A0 a0, A1 a1) {
-    storelu<SimdVector, A0, A1>(a0, a1);
+template <> struct store_helper<unaligned> {
+  template <typename A0, typename A1> static void store(A0 a0, A1 a1) {
+    storeu(a0, a1);
   }
 
   template <typename A0, typename A1, typename A2>
-  static SimdVector store2(A0 a0, A1 a1, A2 a2) {
-    store2u<SimdVector, A0, A1, A2>(a0, a1, a2);
+  static void mask_store(A0 a0, A1 a1, A2 a2) {
+    mask_storeu(a0, a1, a2);
+  }
+
+  template <typename A0, typename A1> static void storel(A0 a0, A1 a1) {
+    storelu(a0, a1);
+  }
+
+  template <typename A0, typename A1, typename A2>
+  static void store2(A0 a0, A1 a1, A2 a2) {
+    store2u(a0, a1, a2);
   }
 
   template <typename A0, typename A1, typename A2, typename A3>
-  static SimdVector store3(A0 a0, A1 a1, A2 a2, A3 a3) {
-    store3u<SimdVector, A0, A1, A2, A3>(a0, a1, a2, a3);
+  static void store3(A0 a0, A1 a1, A2 a2, A3 a3) {
+    store3u(a0, a1, a2, a3);
   }
 
   template <typename A0, typename A1, typename A2, typename A3, typename A4>
-  static SimdVector store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
-    store4u<SimdVector, A0>(a0, a1, a2, a3, a4);
+  static void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+    store4u(a0, a1, a2, a3, a4);
   }
 };
 
@@ -514,6 +598,16 @@ template <typename SimdVector> struct store_helper<SimdVector, unaligned> {
 template <typename SimdVector, typename Alignment, typename A0>
 SimdVector load(A0 a0) {
   return detail::load_helper<SimdVector, Alignment>::load(a0);
+}
+
+template <typename Alignment, typename A0, typename A1>
+typename detail::loadz_return_t<A0>::type maskz_load(A0 a0, A1 a1) {
+  return detail::load_helper<int, Alignment>::maskz_load(a0, a1);
+}
+
+template <typename Alignment, typename A0, typename A1, typename A2>
+A2 masko_load(A0 a0, A1 a1, A2 a2) {
+  return detail::load_helper<int, Alignment>::masko_load(a0, a1, a2);
 }
 
 template <typename SimdVector, typename Alignment, typename A0>
@@ -536,33 +630,36 @@ SimdVector load4(A0 a0) {
   return detail::load_helper<SimdVector, Alignment>::load4(a0);
 }
 
-template <typename SimdVector, typename Alignment, typename A0, typename A1>
-SimdVector store(A0 a0, A1 a1) {
-  detail::store_helper<SimdVector, Alignment>::store(a0, a1);
+template <typename Alignment, typename A0, typename A1>
+void store(A0 a0, A1 a1) {
+  detail::store_helper<Alignment>::store(a0, a1);
 }
 
-template <typename SimdVector, typename Alignment, typename A0, typename A1>
-SimdVector storel(A0 a0, A1 a1) {
-  return detail::store_helper<SimdVector, Alignment>::storel(a0, a1);
+template <typename Alignment, typename A0, typename A1, typename A2>
+void mask_store(A0 a0, A1 a1, A2 a2) {
+  detail::store_helper<Alignment>::mask_store(a0, a1, a2);
 }
 
-template <typename SimdVector, typename Alignment, typename A0, typename A1,
-          typename A2>
-SimdVector store2(A0 a0, A1 a1, A2 a2) {
-  return detail::store_helper<SimdVector, Alignment>::store2(a0, a1, a2);
+template <typename Alignment, typename A0, typename A1>
+void storel(A0 a0, A1 a1) {
+  return detail::store_helper<Alignment>::storel(a0, a1);
 }
 
-template <typename SimdVector, typename Alignment, typename A0, typename A1,
-          typename A2, typename A3>
-SimdVector store3(A0 a0, A1 a1, A2 a2, A3 a3) {
-  return detail::store_helper<SimdVector, Alignment>::store3(a0, a1, a2, a3);
+template <typename Alignment, typename A0, typename A1, typename A2>
+void store2(A0 a0, A1 a1, A2 a2) {
+  return detail::store_helper<Alignment>::store2(a0, a1, a2);
 }
 
-template <typename SimdVector, typename Alignment, typename A0, typename A1,
-          typename A2, typename A3, typename A4>
-SimdVector store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
-  return detail::store_helper<SimdVector, Alignment>::store4(a0, a1, a2, a3,
-                                                             a4);
+template <typename Alignment, typename A0, typename A1, typename A2,
+          typename A3>
+void store3(A0 a0, A1 a1, A2 a2, A3 a3) {
+  return detail::store_helper<Alignment>::store3(a0, a1, a2, a3);
+}
+
+template <typename Alignment, typename A0, typename A1, typename A2,
+          typename A3, typename A4>
+void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+  return detail::store_helper<Alignment>::store4(a0, a1, a2, a3, a4);
 }
 
 // ----------------------------------------------------------------------------
