@@ -1246,6 +1246,14 @@ class Subs(Operator):
     categories = [DocBasicArithmetic]
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
 
+class Is_Nan(Operator):
+    full_name = 'test if argument is a number'
+    signature = 'l is_nan v'
+    types = common.ftypes
+    domain = Domain('R')
+    categories = [DocBasicArithmetic]
+    desc = 'Returns true if the argument is a number, false if the argument is NaN.'
+
 # -----------------------------------------------------------------------------
 # Import other operators if present: this is not very Pythonic but it is
 # simple and it works!

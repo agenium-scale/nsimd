@@ -49,6 +49,9 @@ def get_impl_f16(operator, totyp, typ):
     elif operator.name in ['adds', 'subs']:
         arch53_code = 'return __h{op}({in0}, {in1});'. \
                       format(op=operator.name[:-1], **fmtspec)
+    elif operator.name in ['is_nan']:
+        arch53_code = 'return __hisnan({in0}, {in1});'. \
+                      format(op=operator.name[:-1], **fmtspec)
     else:
         arch53_code = 'return __h{}({in0}, {in1});'. \
                       format(operator.name, **fmtspec)
@@ -209,6 +212,9 @@ def get_impl(operator, totyp, typ):
         else:
             return 'return {neg}{in0} * {in1} + ({op}{in2});'. \
                    format(neg=neg, op=op, **fmtspec)
+    # is_nan
+    if operator.name == 'is_nan':
+        return 'return isnan({in0});'.format(**fmtspec)
     # other operators
     if typ in common.iutypes:
         if operator.name in ['round_to_even', 'ceil', 'floor', 'trunc']:

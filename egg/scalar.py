@@ -60,6 +60,24 @@ def cmp(func, typ):
 
 # -----------------------------------------------------------------------------
 
+def is_nan(func, typ):
+    normal = 'return ({func});'. \
+             format(func=func.format(**fmtspec), **fmtspec)
+    if typ == 'f16':
+        return \
+        '''#ifdef NSIMD_NATIVE_FP16
+             {normal}
+           #else
+             return ({func});
+           #endif'''.format(normal=normal, func=func. \
+           format(in0='nsimd_f16_to_f32({in0})',
+                  in1='nsimd_f16_to_f32({in1})',
+                  in2='{in2}').format(**fmtspec))
+    else:
+        return normal
+
+# -----------------------------------------------------------------------------
+
 def opbit(func, typ):
     in0 = '{in0}'.format(**fmtspec) if typ in common.utypes else \
           'nsimd_scalar_reinterpret_u{typnbits}_{typ}({in0})'.format(**fmtspec)
@@ -465,7 +483,8 @@ def get_impl(operator, totyp, typ):
                   format(f=f, typ2=typ2), typ),
         'rsqrt11': lambda:
                    opnum('1.0{f} / nsimd_scalar_sqrt_{typ2}({{in0}})'. \
-                   format(f=f, typ2=typ2), typ)
+                   format(f=f, typ2=typ2), typ),
+        'is_nan': lambda: is_nan('!({in0}=={in0})', typ)
     }
     return func[operator.name]()
 

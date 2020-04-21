@@ -1949,6 +1949,19 @@ def to_logical1(opts, simd_ext, typ):
         return emulate_fp16
 
 # -----------------------------------------------------------------------------
+# is_nan
+
+def is_nan(opts, simd_ext):
+    if simd_ext in neon:
+        return '''return nsimd_notl_{simd_ext}_{typ}(
+                      nsimd_eq_{simd_ext}_{typ}({in0}, {in0}));'''. \
+                      format(**fmtspec)
+    elif simd_ext in sve:
+        comp='svcmpne_{suf}({svtrue}, {in0}, {in0})'. \
+                format(**fmtspec)
+        return 'return {};'.format(convert_from_predicate(opts, comp))
+
+# -----------------------------------------------------------------------------
 # unpack functions
 
 def zip_unzip_half(func, simd_ext, typ):
@@ -2192,6 +2205,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'downcvt': lambda: downcvt1(simd_ext2, from_typ, to_typ),
         'to_logical': lambda: to_logical1(opts, simd_ext2, from_typ),
         'to_mask': lambda: to_mask1(opts, simd_ext2, from_typ),
+        'is_nan': lambda: is_nan(opts, simd_ext2),
         'ziplo': lambda: zip_unzip_half("zip1", simd_ext2, from_typ),
         'ziphi': lambda: zip_unzip_half("zip2", simd_ext2, from_typ),
         'unziplo': lambda: zip_unzip_half("uzp1", simd_ext2, from_typ),

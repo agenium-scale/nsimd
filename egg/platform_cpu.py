@@ -502,6 +502,12 @@ def unzip(from_typ):
     return ret;
     '''.format(**fmtspec)
 
+def is_nan(from_typ):
+    return func_body('ret.v{{i}} = !({in0}.v{{i}} == {in0}.v{{i}});'. \
+            format(**fmtspec),
+            from_typ,
+            True)
+
 # -----------------------------------------------------------------------------
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
@@ -600,6 +606,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'downcvt': lambda: downcvt2(from_typ, to_typ),
         'to_logical': lambda: to_logical1(from_typ),
         'to_mask': lambda: to_mask1(from_typ),
+        'is_nan' : lambda : is_nan(from_typ),
         'ziplo': lambda: zip_half('ziplo', from_typ),
         'ziphi': lambda: zip_half('ziphi', from_typ),
         'unziplo': lambda: unzip_half('unziplo', from_typ),

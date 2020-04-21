@@ -414,6 +414,49 @@ def get_content(op, typ, lang):
             code += ['nsimd::store{}u(&vout_nsimd[i], vc);'. \
                      format(logical, typ)]
             vout_nsimd_comp = '\n'.join(code)
+    elif op.params == ['l', 'v']:
+        vin_defi = \
+            '''{typ} *vin;
+           CHECK(vin = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
+           format(typ=typ, sizeof=common.sizeof(typ))
+        vin_rand = 'vin[i] = rand1();\n'
+
+        vout_ref_comp = '''nsimd_cpu_v{typ} va;
+                        nsimd_cpu_vl{typ} vc;
+                        va = nsimd_loadu_cpu_{typ}(&vin[i]);
+                        vc = nsimd_{op_name}_cpu_{typ}(va);
+                        nsimd_storelu_cpu_{typ}(&vout_ref[i], vc);'''. \
+                        format(typ=typ, op_name=op.name)
+
+        if lang == 'c_base':
+            vout_nsimd_comp = '''vec({typ}) va;
+                            vecl({typ}) vc;
+                            va = vloadu(&vin[i], {typ});
+                            vc = v{op_name}(va, {typ});
+                            vstorelu(&vout_nsimd[i], vc, {typ});'''. \
+                            format(typ=typ, op_name=op.name)
+        if lang == 'cxx_base':
+            vout_nsimd_comp = '''vec({typ}) va;
+                            vecl({typ}) vc;
+                            va = nsimd::loadu(&vin[i], {typ}());
+                            vc = nsimd::{op_name}(va, {typ}());
+                            nsimd::storelu(&vout_nsimd[i], vc, {typ}());'''. \
+                            format(typ=typ, op_name=op.name)
+        if lang == 'cxx_adv':
+            if op.cxx_operator:
+                do_computation = 'vc = {} va;'. \
+                                 format(op.cxx_operator[8:])
+            else:
+                do_computation = 'vc = nsimd::{}(va {}());'. \
+                                 format(op.name, typ)
+            vout_nsimd_comp = '''nsimd::pack<{typ}> va;
+                            nsimd::packl<{typ}> vc;
+                            va = nsimd::loadu<nsimd::pack<{typ}> >(&vin[i]);
+                            {do_computation}
+                            nsimd::storelu(&vout_nsimd[i], vc);'''. \
+                            format(typ=typ, op_name=op.name,
+                                   do_computation=do_computation)
+
     elif op.params == ['l', 'v', 'v']:
         vin_defi = \
             '''{typ} *vin1, *vin2;

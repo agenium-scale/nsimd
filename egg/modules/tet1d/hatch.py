@@ -96,7 +96,7 @@ def gen_tests_for_shifts(opts, t, operator):
         #endif
 
         int main() {{
-          for (unsigned int n = 64; n < 10000000; n *= 2) {{
+          for (unsigned int n = 10; n < 10000000; n *= 2) {{
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {t} *tab0 = get123<{t}>(n);
@@ -111,10 +111,12 @@ def gen_tests_for_shifts(opts, t, operator):
               del(out);
               del(tab0);
               if (ret != 0) {{
+                printf ("FAILED\\n");
                 return ret;
               }}
             }}
           }}
+          printf ("PASSED\\n");
           return 0;
         }}
         '''.format(gpu_params=gpu_params, op_name=op_name, t=t,
@@ -198,6 +200,21 @@ def gen_tests_for(opts, t, tt, operator):
             tet1d_code = \
                 'tet1d::out(out) = tet1d::{op_name}({args_in_tabs_call});'. \
                 format(op_name=op_name, args_in_tabs_call=args_in_tabs_call)
+    elif operator.params == ['l', 'v']:
+        if operator.cxx_operator != None:
+            cond = '{} A'.format(operator.cxx_operator[8:])
+        else:
+            cond = 'tet1d::{}(A)'.format(op_name)
+        tet1d_code = \
+            '''TET1D_OUT({typ}) Z = tet1d::out(out);
+               TET1D_IN({typ}) A = tet1d::in(tab0, n);
+               Z({cond}) = 1;'''.format(cond=cond, typ=t)
+        compute_result_kernel = \
+            '''if (nsimd::{{p}}_{op_name}(tab0[i])) {{{{
+                 dst[i] = {one};
+               }}}} else {{{{
+                 dst[i] = {zero};
+               }}}}'''.format(op_name=op_name, typ=t, one=one, zero=zero)
     elif operator.params == ['l', 'v', 'v']:
         if operator.cxx_operator != None:
             cond = 'A {} B'.format(operator.cxx_operator[8:])
@@ -304,7 +321,7 @@ def gen_tests_for(opts, t, tt, operator):
         #endif
 
         int main() {{
-          for (unsigned int n = 64; n < 10000000; n *= 2) {{
+          for (unsigned int n = 10; n < 10000000; n *= 2) {{
             int ret = 0;
             {fill_tabs}
             {typ} *ref = get000<{typ}>(n);
@@ -318,9 +335,11 @@ def gen_tests_for(opts, t, tt, operator):
             del(out);
             {del_tabs}
             if (ret != 0) {{
+              printf ("FAILED\\n");
               return ret;
             }}
           }}
+          printf ("PASSED\\n");
           return 0;
         }}
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,

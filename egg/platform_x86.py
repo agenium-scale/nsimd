@@ -2872,6 +2872,14 @@ def to_logical1(simd_ext, typ):
                   return ret;'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+# is_nan
+
+def is_nan():
+    return '''return nsimd_not_{simd_ext}_{typ}(
+                     nsimd_eq_{simd_ext}_{typ}({in0}, {in0}));'''. \
+             format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 # zip functions
 
 def zip_half(func, simd_ext, typ):
@@ -3309,6 +3317,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'downcvt': lambda: downcvt1(opts, simd_ext, from_typ, to_typ),
         'to_mask': lambda: to_mask1(simd_ext, from_typ),
         'to_logical': lambda: to_logical1(simd_ext, from_typ),
+        'is_nan': lambda: is_nan(),
         'ziplo': lambda: zip_half('ziplo', simd_ext, from_typ),
         'ziphi': lambda: zip_half('ziphi', simd_ext, from_typ),
         'unziplo': lambda: unzip_half(opts, 'unziplo', simd_ext, from_typ),

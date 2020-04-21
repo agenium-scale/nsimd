@@ -213,7 +213,8 @@ def main():
     if opts.tests == True or opts.all == True:
         gen_tests.doit(opts)
     if opts.benches == True or opts.all == True:
-        gen_benches.doit(opts)
+        #gen_benches.doit(opts)
+        pass
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
     if opts.modules == True or opts.all == True:

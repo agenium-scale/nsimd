@@ -31,6 +31,8 @@ SOFTWARE.
 #include <cstring>
 #include <cerrno>
 #include <cstdlib>
+#include <cmath>
+#include <cuda_fp16.h>
 
 // ----------------------------------------------------------------------------
 // CUDA
@@ -58,24 +60,63 @@ __global__ void device_fill(T *dst, int n, int variant) {
   }
 }
 
+template <typename T>
+__device__ T device_cmp_numbers(const T &src1, const T &src2) {
+  return T(nsimd::gpu_eq(src1, src2) ? 1 : 0);
+}
+
+template <>
+__device__ f32 device_cmp_numbers(const f32 &src1, const f32 &src2) {
+  if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
+    return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
+  }
+  return f32(nsimd::gpu_eq(src1, src2) ? 1 : 0);
+}
+
+template <>
+__device__ f64 device_cmp_numbers(const f64 &src1, const f64 &src2) {
+  if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
+    return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
+  }
+  return f64(nsimd::gpu_eq(src1, src2) ? 1 : 0);
+}
+
+template <>
+__device__ f16 device_cmp_numbers(const f16 &src1, const f16 &src2) {
+  if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
+    return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
+  }
+  return f16(nsimd::gpu_eq(src1, src2) ? 1 : 0);
+}
+
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
 __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
-  extern __shared__ char buf_[]; // size of a block
+  extern __shared__ char buf_[];
   T *buf = (T*)buf_;
   int tid = threadIdx.x;
   int i = tid + blockIdx.x * blockDim.x;
   if (i < n) {
-    printf("DEBUG: %d: %f vs. %f\n", i, (double)src1[i], (double)src2[i]);
-    buf[tid] = T(nsimd::gpu_eq(src1[i], src2[i]) ? 1 : 0);
+    buf[tid] = device_cmp_numbers(src1[i], src2[i]);
   }
+
+  const int block_start = blockIdx.x * blockDim.x;
+  const int block_end = block_start + blockDim.x;
+
+  int size;
+  if (block_end < n) {
+    size = blockDim.x;
+  } else {
+    size = n - block_start;
+  }
+
   __syncthreads();
-  for (int s = blockDim.x / 2; s != 0; s /= 2) {
+  for (int s = size / 2; s != 0; s /= 2) {
     if (tid < s && i < n) {
       buf[tid] = nsimd::gpu_mul(buf[tid], buf[tid + s]);
-      __syncthreads();
     }
+    __syncthreads();
   }
   if (tid == 0) {
     src1[i] = buf[0];
@@ -83,32 +124,39 @@ __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
 }
 
 template <typename T>
-__global__ void device_cmp_array(int *dst, T *src1, int n) {
+__global__ void device_cmp_array(int *dst, T *src1, int n, int step) {
   // reduction on the whole vector
-  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
   T buf = T(1);
-  for (int i = 0; i < n; i += blockDim.x) {
+  for (int i = 0; i < n; i += step) {
     buf = nsimd::gpu_mul(buf, src1[i]);
   }
-  if (i == 0) {
-    dst[0] = int(buf);
+  if (tid == 0) {
+    *dst = int(buf);
   }
 }
 
-int cuda_do(cudaError_t code) {
+#define cuda_check_error(ans) gpuCheck((ans), __FILE__, __LINE__)
+inline int gpuCheck(cudaError_t code, const char *file, int line) {
   if (code != cudaSuccess) {
-    std::cerr << "ERROR: " << cudaGetErrorString(code) << std::endl;
+    fprintf(stderr, "CUDA Error: %s %s %d\n", cudaGetErrorString(code), file,
+            line);
     return -1;
   }
   return 0;
 }
 
+#define cuda_assert(ans)                                                      \
+  if (gpuCheck((ans), __FILE__, __LINE__)) {                                  \
+    exit((ans));                                                              \
+  }
+
 template <typename T> T *get000(unsigned int n) {
   T *ret;
-  if (cuda_do(cudaMalloc((void **)&ret, n * sizeof(T)))) {
+  if (cuda_check_error(cudaMalloc((void **)&ret, n * sizeof(T)))) {
     return NULL;
   }
-  if (cuda_do(cudaMemset((void *)ret, 0, n * sizeof(T)))) {
+  if (cuda_check_error(cudaMemset((void *)ret, 0, n * sizeof(T)))) {
     cudaFree((void *)ret);
     return NULL;
   }
@@ -117,27 +165,37 @@ template <typename T> T *get000(unsigned int n) {
 
 template <typename T> T *getXXX(unsigned int n, int variant) {
   T *ret;
-  if (cuda_do(cudaMalloc((void **)&ret, n * sizeof(T)))) {
+  if (cuda_check_error(cudaMalloc((void **)&ret, n * sizeof(T)))) {
     return NULL;
   }
+  // clang-format off
   device_fill<<<(n + 127) / 128, 128>>>(ret, int(n), variant);
+  // clang-format on
   return ret;
 }
 
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   int host_ret;
   int *device_ret;
-  if (cuda_do(cudaMalloc((void **)&device_ret, sizeof(int)))) {
-    return false;
-  }
-  device_cmp_blocks<<<(n + 127) / 128, 128, 128 * sizeof(T)>>>(src1, src2,
-                                                               int(n));
-  device_cmp_array<<<(n + 127) / 128, 128>>>(device_ret, src1, int(n));
-  if (cuda_do(cudaMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
-                 cudaMemcpyDeviceToHost))) {
-    host_ret = 0;
-  }
-  cudaFree((void *)device_ret);
+  cuda_assert(cudaMalloc((void **)&device_ret, sizeof(int)));
+
+  // clang-format off
+  const int block_size1 = 512;
+  device_cmp_blocks
+    <<<(n + block_size1 - 1) / block_size1, block_size1, block_size1 * sizeof(T)>>>
+    (src1, src2, int(n));
+  // clang-format on
+  cuda_assert(cudaDeviceSynchronize());
+
+  // clang-format off
+  const int block_size2 = 32;
+  device_cmp_array<<<1, block_size2>>>(device_ret, src1, int(n), block_size1);
+  // clang-format on
+  cuda_assert(cudaDeviceSynchronize());
+
+  cuda_assert(cudaMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
+                         cudaMemcpyDeviceToHost));
+  cuda_assert(cudaFree((void *)device_ret));
   return bool(host_ret);
 }
 
@@ -178,7 +236,6 @@ __global__ void device_cmp_blocks(T *src1, T *src2, unsigned int n) {
   unsigned int tid = hipThreadIdx_x;
   unsigned int i = tid + hipBlockIdx_x * hipBlockDim_x;
   if (i < n) {
-    //printf("DEBUG: %d: %f vs. %f\n", i, (double)src1[i], (double)src2[i]);
     buf[tid] = T(nsimd::gpu_eq(src1[i], src2[i]) ? 1 : 0);
   }
   __syncthreads();
