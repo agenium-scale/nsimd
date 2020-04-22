@@ -108,10 +108,12 @@ SOFTWARE.
 #endif
 
 typedef long long nsimd_longlong;
+typedef unsigned long long nsimd_ulonglong;
 
 #if NSIMD_CXX > 0
 namespace nsimd {
   typedef long long longlong;
+  typedef unsigned long long ulonglong;
 } // namespace nsimd
 #endif
 
@@ -498,8 +500,8 @@ namespace nsimd {
     typedef signed long   i64;
   #else
     #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-      __extension__ typedef unsigned nsimd_longlong u64;
-      __extension__ typedef signed nsimd_longlong   i64;
+      __extension__ typedef nsimd_ulonglong u64;
+      __extension__ typedef nsimd_longlong i64;
     #else
       typedef unsigned long long u64;
       typedef signed long long   i64;
@@ -534,8 +536,8 @@ namespace nsimd {
   #else
     #define NSIMD_U64_MIN ((u64)0)
     #define NSIMD_U64_MAX (~((u64)0))
-    #define NSIMD_I64_MIN ((u64)1 << 63)
-    #define NSIMD_I64_MAX (~((u64)1 << 63))
+    #define NSIMD_I64_MIN ((i64)1 << 63)
+    #define NSIMD_I64_MAX (~((i64)1 << 63))
   #endif
 #endif
 

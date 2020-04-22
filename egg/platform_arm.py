@@ -533,7 +533,7 @@ def maskoz_load(oz, simd_ext, typ):
                   }} else {{
                     ret.v0 = {oz0};
                   }}
-                  if ({in0}.v0) {{
+                  if ({in0}.v1) {{
                     ret.v1 = {in1}[1];
                   }} else {{
                     ret.v1 = {oz1};
@@ -1061,7 +1061,7 @@ def lset1(simd_ext, typ):
                     return ret;
                   #endif'''.format(normal=normal, **fmtspec)
     if typ == 'f64' and simd_ext == 'neon128':
-        return '''nsimd_neon128_vf64 ret;
+        return '''nsimd_neon128_vlf64 ret;
                   ret.v0 = (u64)({in0} ? -1 : 0);
                   ret.v1 = ret.v0;
                   return ret;'''.format(**fmtspec)
@@ -2040,8 +2040,8 @@ def to_mask1(opts, simd_ext, typ):
         return emulate_f16
     elif simd_ext == 'neon128' and typ == 'f64':
         return '''nsimd_neon128_vf64 ret;
-                  ret.v0 = {in0}.v0;
-                  ret.v1 = {in0}.v1;
+                  ret.v0 = nsimd_scalar_reinterpret_f64_u64({in0}.v0);
+                  ret.v1 = nsimd_scalar_reinterpret_f64_u64({in0}.v1);
                   return ret;'''.format(**fmtspec)
     elif simd_ext == 'aarch64' and typ == 'f16':
         return '''#ifdef NSIMD_NATIVE_FP16
@@ -2078,7 +2078,7 @@ def iota(simd_ext, typ):
         return '''nsimd_neon128_vf64 ret;
                   ret.v0 = 0.0;
                   ret.v1 = 1.0;
-                  '''.format(**fmtspec)
+                  return ret;'''.format(**fmtspec)
     typ2 = 'f32' if typ == 'f16' else typ
     le = 128 // int(typ[1:])
     iota = ', '.join(['({typ2}){i}'.format(typ2=typ2, i=i) \
