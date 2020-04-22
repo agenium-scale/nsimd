@@ -472,7 +472,7 @@ template <typename SimdVector, typename Alignment> struct load_helper {};
 
 template <typename SimdVector> struct load_helper<SimdVector, aligned> {
   template <typename A0> static SimdVector load(A0 a0) {
-    return loada<SimdVector, A0>(a0);
+    return loada<SimdVector>(a0);
   }
 
   template <typename A0, typename A1>
@@ -504,7 +504,7 @@ template <typename SimdVector> struct load_helper<SimdVector, aligned> {
 
 template <typename SimdVector> struct load_helper<SimdVector, unaligned> {
   template <typename A0> static SimdVector load(A0 a0) {
-    return loadu<SimdVector, A0>(a0);
+    return loadu<SimdVector>(a0);
   }
 
   template <typename A0, typename A1>

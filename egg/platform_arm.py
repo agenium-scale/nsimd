@@ -528,12 +528,12 @@ def maskoz_load(oz, simd_ext, typ):
                       **fmtspec)
     if typ == 'f64' and simd_ext == 'neon128':
         return '''nsimd_neon128_vf64 ret;
-                  if (nsimd_scalar_reinterpret_u64_f64({in0}.v0)) {{
+                  if ({in0}.v0) {{
                     ret.v0 = {in1}[0];
                   }} else {{
                     ret.v0 = {oz0};
                   }}
-                  if (nsimd_scalar_reinterpret_u64_f64({in0}.v0)) {{
+                  if ({in0}.v0) {{
                     ret.v1 = {in1}[1];
                   }} else {{
                     ret.v1 = {oz1};
@@ -542,39 +542,35 @@ def maskoz_load(oz, simd_ext, typ):
                   oz0 = '0.0f' if oz == 'z' else '{in2}.v0'.format(**fmtspec),
                   oz1 = '0.0f' if oz == 'z' else '{in2}.v1'.format(**fmtspec),
                   **fmtspec)
-    if typ in common.ftypes:
-        cond = 'nsimd_scalar_reinterpret_u{typnbits}_{suf}(mask[i])'. \
-               format(**fmtspec)
-    else:
-        cond = 'mask[i]'
     le = 128 // int(typ[1:])
     normal = '''int i;
-                {typ} mask[{le}], buf[{le}];
+                {typ} buf[{le}];
+                u{typnbits} mask[{le}];
                 vst1q_{suf}(buf, {oz});
-                vst1q_{suf}(mask, {in0});
+                vst1q_u{typnbits}(mask, {in0});
                 for (i = 0; i < {le}; i++) {{
-                  if ({cond}) {{
+                  if (mask[i]) {{
                     buf[i] = {in1}[i];
                   }}
                 }}
                 return vld1q_{suf}(buf);'''. \
-                format(cond=cond, le=le,
-                       oz='vdupq_n_{suf}(({typ})0)'.format(**fmtspec) \
+                format(oz='vdupq_n_{suf}(({typ})0)'.format(**fmtspec) \
                           if oz == 'z' else '{in2}'.format(**fmtspec),
-                          **fmtspec)
+                          le=le, **fmtspec)
     if typ == 'f16':
         return '''#ifdef NSIMD_NATIVE_FP16
                     {normal}
                   #else
                     int i;
                     nsimd_{simd_ext}_vf16 ret;
-                    f32 mask[8], buf[8];
+                    f32 buf[8];
+                    u32 mask[8];
                     vst1q_f32(buf, {oz0});
                     vst1q_f32(buf + 4, {oz1});
-                    vst1q_f32(mask, {in0}.v0);
-                    vst1q_f32(mask + 4, {in0}.v1);
+                    vst1q_u32(mask, {in0}.v0);
+                    vst1q_u32(mask + 4, {in0}.v1);
                     for (i = 0; i < 8; i++) {{
-                      if (nsimd_scalar_reinterpret_u32_f32(mask[i])) {{
+                      if (mask[i]) {{
                         buf[i] = nsimd_f16_to_f32({in1}[i]);
                       }}
                     }}
@@ -696,40 +692,37 @@ def mask_store(simd_ext, typ):
     if simd_ext in sve:
         return 'svst1_{suf}({in0}, {in1}, {in2});'.format(**fmtspec)
     if typ == 'f64' and simd_ext == 'neon128':
-        return '''if (nsimd_scalar_reinterpret_u64_f64({in0}.v0)) {{
+        return '''if ({in0}.v0) {{
                     {in1}[0] = {in2}.v0;
                   }}
-                  if (nsimd_scalar_reinterpret_u64_f64({in0}.v1)) {{
+                  if ({in0}.v1) {{
                     {in1}[1] = {in2}.v1;
                   }}'''.format(**fmtspec)
     le = 128 // int(typ[1:])
-    if typ in common.ftypes:
-        cond = 'nsimd_scalar_reinterpret_u{typnbits}_{suf}(mask[i])'. \
-               format(**fmtspec)
-    else:
-        cond = 'mask[i]'
     normal = '''int i;
-                {typ} mask[{le}], buf[{le}];
+                {typ} buf[{le}];
+                u{typnbits} mask[{le}];
                 vst1q_{suf}(buf, {in2});
-                vst1q_{suf}(mask, {in0});
+                vst1q_u{typnbits}(mask, {in0});
                 for (i = 0; i < {le}; i++) {{
-                  if ({cond}) {{
+                  if (mask[i]) {{
                     {in1}[i] = buf[i];
                   }}
-                }}'''.format(cond=cond, le=le, **fmtspec)
+                }}'''.format(le=le, **fmtspec)
     if typ == 'f16':
         return \
         '''#ifdef NSIMD_NATIVE_FP16
              {normal}
            #else
-             f32 mask[8], buf[8];
+             f32 buf[8];
+             u32 mask[8];
              int i;
-             vst1q_f32(mask, {in0}.v0);
-             vst1q_f32(mask + 4, {in0}.v1);
+             vst1q_u32(mask, {in0}.v0);
+             vst1q_u32(mask + 4, {in0}.v1);
              vst1q_f32(buf, {in2}.v0);
              vst1q_f32(buf + 4, {in2}.v1);
              for (i = 0; i < 8; i++) {{
-               if (nsimd_scalar_reinterpret_u32_f32(mask[i]) != (u32)0) {{
+               if (mask[i]) {{
                  {in1}[i] = nsimd_f32_to_f16(buf[i]);
                }}
              }}
@@ -976,13 +969,13 @@ def shl_shr(op, simd_ext, typ):
         if typ in common.utypes:
             return '''return vshlq_{suf}({in0}, vdupq_n_s{typnbits}(
                                  (i{typnbits})({sign}{in1})));'''. \
-                                 format(**fmtspec, sign=sign)
+                                 format(sign=sign, **fmtspec)
         else:
             return \
             '''return vreinterpretq_s{typnbits}_u{typnbits}(vshlq_u{typnbits}(
                         vreinterpretq_u{typnbits}_s{typnbits}({in0}),
-                          vdupq_n_s{typnbits}((i{typnbits})(-{in1}))));'''. \
-                          format(**fmtspec)
+                          vdupq_n_s{typnbits}((i{typnbits})({sign}{in1}))));'''. \
+                          format(sign=sign, **fmtspec)
     else:
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
@@ -1051,11 +1044,7 @@ def lset1(simd_ext, typ):
                     return svpfalse_b();
                   }}'''.format(**fmtspec)
     # getting here means no NEON and AARCH64 only
-    if typ in common.utypes:
-        mask = 'vdupq_n_{suf}(({typ}){{}})'.format(**fmtspec)
-    else:
-        mask = 'vreinterpretq_{suf}_u{typnbits}(vdupq_n_u{typnbits}(' \
-               '(u{typnbits}){{}}))'.format(**fmtspec)
+    mask = 'vdupq_n_u{typnbits}((u{typnbits}){{}})'.format(**fmtspec)
     normal = '''if ({in0}) {{
                   return {ones};
                 }} else {{
