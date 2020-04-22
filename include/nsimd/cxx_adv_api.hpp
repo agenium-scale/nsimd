@@ -145,6 +145,9 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   typename simd_traits<T, SimdExt>::simd_vectorl car;
   packl<T, N - 1, SimdExt> cdr;
 
+  // Default ctor
+  packl() {}
+
   // Ctor that splats
   template <typename S> packl(S const &s) : cdr(s) {
     car = set1l(int(s), T(), SimdExt());

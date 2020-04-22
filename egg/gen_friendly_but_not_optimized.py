@@ -28,43 +28,10 @@ import sys
 # Generate advanced C++ API
 
 def get_impl(operator):
-    args_list = common.enum(operator.params[1:])
-    tmpl_args = []
-    if not operator.closed:
-        tmpl_args += ['typename ToType']
-    tmpl_args += ['typename T']
-    tmpl_args += ['typename A{}'.format(i[0]) for i in args_list \
-                  if i[1] not in ['v', 'l']]
-    tmpl_args = ', '.join(tmpl_args)
-    def arg_type(arg):
-        if arg[1] in ['v', 'l']:
-            return 'T a{}'.format(arg[0])
-        else:
-            return 'A{i} a{i}'.format(i=arg[0])
-    args = [arg_type(i) for i in args_list]
-    varis = ['a{}'.format(a[0]) for a in args_list]
-    varis += ['ToType()', 'T()'] if not operator.closed else ['T()']
-    varis = ', '.join(varis)
-    returns = '' if operator.params[0] == '_' else 'return '
-    return_typ = 'ToType' if not operator.closed else 'T'
-    template = '''template <{tmpl_args}>
-                  {return_typ} {op_name}({{args}}) {{{{
-                    {returns}{op_name}({varis}, cpu());
-                  }}}}'''. \
-                  format(tmpl_args=tmpl_args, return_typ=return_typ,
-                         op_name=operator.name, args=', '.join(args),
-                         returns=returns, varis=varis)
-    ret = template.format(args=', '.join(args))
-    if not operator.closed:
-        args = ['ToType'] + args
-        ret += '\n\n' + template.format(args=', '.join(args))
-    if operator.cxx_operator != '' and operator.cxx_operator != None and \
-       (operator.params == ['v', 'v', 'v'] or \
-        operator.params == ['l', 'v', 'v']):
-        ret += \
-        '''
-
-        template <typename T, int N, typename SimdExt, typename S>
+    if operator.params == ['v', 'v', 'v'] or \
+       operator.params == ['l', 'v', 'v']:
+        return \
+        '''template <typename T, int N, typename SimdExt, typename S>
         pack{l}<T, N, SimdExt> {cxx_op}(pack<T, N, SimdExt> const &v, S s) {{
           return {op_name}(v, pack<T, N, SimdExt>(T(s)));
         }}
@@ -74,9 +41,23 @@ def get_impl(operator):
           return {op_name}(pack<T, N, SimdExt>(T(s)), v);
         }}'''.format(l='l' if operator.params[0] == 'l' else '',
                      cxx_op=operator.cxx_operator, op_name=operator.name)
+    if operator.params == ['l', 'l', 'l']:
+        return \
+        '''template <typename T, int N, typename SimdExt, typename S>
+        packl<T, N, SimdExt> {cxx_op}(packl<T, N, SimdExt> const &v, S s) {{
+          return {op_name}(v, packl<T, N, SimdExt>(bool(s)));
+        }}
 
-    return ret
+        template <typename S, typename T, int N, typename SimdExt>
+        packl<T, N, SimdExt> {cxx_op}(S s, packl<T, N, SimdExt> const &v) {{
+          return {op_name}(pack<T, N, SimdExt>(bool(s)), v);
+        }}
 
+        template <typename T, typename S, int N, typename SimdExt>
+        packl<T, N, SimdExt> {cxx_op}(packl<T, N, SimdExt> const &v,
+                                      packl<S, N, SimdExt> const &w) {{
+          return {op_name}(v, reinterpretl<packl<T, N, SimdExt> >(w));
+        }}'''.format(cxx_op=operator.cxx_operator, op_name=operator.name)
 
 # -----------------------------------------------------------------------------
 # Generate advanced C++ API
@@ -98,8 +79,8 @@ def doit(opts):
 
                      '''.format(year=date.today().year))
         for op_name, operator in operators.operators.items():
-            if operator.load_store or \
-               op_name in ['set1', 'set1l', 'mask_for_loop_tail', 'iota']:
+            if operator.cxx_operator == None or len(operator.params) != 3 or \
+               operator.name in ['shl', 'shr']:
                 continue
             out.write('''{hbar}
 
