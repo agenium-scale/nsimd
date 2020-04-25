@@ -186,7 +186,7 @@ def doit(opts):
 
                   {hbar}
 
-                  #ifdef NSIMD_FP16
+                  #ifdef NSIMD_NATIVE_FP16
                     #if defined(NSIMD_IS_GCC)
                       #pragma GCC diagnostic pop
                     #elif defined(NSIMD_IS_CLANG)
