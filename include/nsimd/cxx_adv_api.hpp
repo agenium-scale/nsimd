@@ -136,6 +136,21 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
   // Underlying native SIMD vector getter
   simd_vectorl native_register() const { return car; }
 
+  friend std::ostream &operator<<(std::ostream &os, packl const &a0) {
+    T buf[max_len_t<T>::value];
+    storelu(buf, a0.car, T(), SimdExt());
+    os << "{ ";
+    int n = len(a0);
+    for (int i = 0; i < n; i++) {
+      os << buf[i];
+      if (i < n - 1) {
+        os << ", ";
+      }
+    }
+    os << " }";
+    return os;
+  }
+
   typedef T value_type;
   typedef SimdExt simd_ext;
   static const int unroll = 1;
@@ -151,6 +166,11 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   // Ctor that splats
   template <typename S> packl(S const &s) : cdr(s) {
     car = set1l(int(s), T(), SimdExt());
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, packl const &a0) {
+    os << packl<T, 1, SimdExt>(a0.car) << ", " << a0.cdr;
+    return os;
   }
 
   typedef T value_type;

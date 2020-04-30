@@ -89,12 +89,22 @@ struct KernelSIMD {};
 //   ScalarBits   width in bits of types used in kernels (8, 16, 32 or 64)
 //   N            unroll factor (number of threads per block for GPUs)
 //   Other template parameters are deduced automatically from arguments
-#define nsimd_kernel(name, ...)                                               \
-  template <typename KernelType, int ScalarBits, int N, typename MaskType>    \
-  inline void name(nsimd_nat spmd_i_, MaskType spmd_mask_, __VA_ARGS__)
+#define spmd_kernel(name, ...)                                                \
+  template <typename spmd_KernelType_, int spmd_ScalarBits_, int spmd_N_,     \
+            typename spmd_MaskType_>                                          \
+  inline void name(nsimd_nat spmd_i_, spmd_MaskType_ spmd_mask_,              \
+                   __VA_ARGS__) {                                             \
+    k_bool spmd_off_lanes_return_(false);                                     \
+    (void)spmd_off_lanes_return_;                                             \
+    k_bool spmd_off_lanes_break_(false);                                      \
+    (void)spmd_off_lanes_break_;                                              \
+    k_bool spmd_off_lanes_continue_(false);                                   \
+    (void)spmd_off_lanes_continue_;
 
-#define nsimd_launch_kernel_1d(name, spmd_scalar_bits_, spmd_unroll_,         \
-                               spmd_n_, ...)                                  \
+#define spmd_kernel_end }
+
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits_, spmd_unroll_, spmd_n_, \
+                              ...)                                            \
   {                                                                           \
     typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_,                \
                           spmd_unroll_>::btype spmd_mask_(true);              \
@@ -172,18 +182,23 @@ template <int N> struct type_t<KernelSIMD, 64, N> {
 };
 
 // supported types (generic)
-#define k_int typename type_t<KernelType, ScalarBits>::itype
-#define k_uint typename type_t<KernelType, ScalarBits>::utype
-#define k_float typename type_t<KernelType, ScalarBits>::ftype
-#define k_bool typename type_t<KernelType, ScalarBits>::btype
+#define k_int                                                                 \
+  typename spmd::type_t<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>::itype
+#define k_uint                                                                \
+  typename spmd::type_t<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>::utype
+#define k_float                                                               \
+  typename spmd::type_t<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>::ftype
+#define k_bool                                                                \
+  typename spmd::type_t<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>::btype
 
 // loads and stores (generic)
 template <typename KernelType> struct store_helper {};
 template <typename KernelType> struct load_helper {};
 #define k_store(base_addr, value)                                             \
-  spmd::store_helper<KernelType>::impl(spmd_mask_, &base_addr[spmd_i_], value)
+  spmd::store_helper<spmd_KernelType_>::impl(spmd_mask_, &base_addr[spmd_i_], \
+                                             value)
 #define k_load(base_addr)                                                     \
-  spmd::load_helper<KernelType>::impl(spmd_mask_, &base_addr[spmd_i_])
+  spmd::load_helper<spmd_KernelType_>::impl(spmd_mask_, &base_addr[spmd_i_])
 
 // loads and stores (scalar)
 template <> struct store_helper<KernelScalar> {
@@ -207,72 +222,141 @@ template <> struct load_helper<KernelScalar> {
 };
 
 template <> struct store_helper<KernelSIMD> {
-  template <typename T, typename S>
-  static void impl(nsimd::packl<T> const &mask, S *addr,
-                   nsimd::pack<S> const &value) {
-    return nsimd::mask_storeu(mask, addr, value);
+  template <typename T, typename S, int N, typename SimdExt>
+  static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr,
+                   nsimd::pack<S, N, SimdExt> const &value) {
+    nsimd::mask_storeu(mask, addr, value);
+  }
+
+  template <typename T, typename S, int N, typename SimdExt>
+  static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr,
+                   S const &value) {
+    nsimd::mask_storeu(mask, addr, nsimd::pack<S, N, SimdExt>(value));
   }
 };
 
 template <> struct load_helper<KernelSIMD> {
-  template <typename T, typename S>
-  static nsimd::pack<S> impl(nsimd::packl<T> const &mask, S *addr) {
+  template <typename T, typename S, int N, typename SimdExt>
+  static nsimd::pack<S, N, SimdExt>
+  impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr) {
     return nsimd::maskz_loadu(mask, addr);
   }
 };
 
+// Clear lanes
+template <typename T, typename S, int N, typename SimdExt>
+nsimd::packl<T, N, SimdExt>
+clear_lanes(nsimd::packl<T, N, SimdExt> const &mask,
+            nsimd::packl<S, N, SimdExt> const &lanes) {
+  return nsimd::andnotl(mask, lanes);
+}
+
+inline bool clear_lanes(bool mask, bool lanes) { return lanes ? false : mask; }
+
 // assignment statement
-#define k_set(var, value) var = nsimd::if_else(spmd_mask_, value, var)
+template <typename T, typename S> void k_set_(bool mask, T &var, S value) {
+  if (mask) {
+    var = T(value);
+  }
+}
+
+template <typename T, typename S, int N, typename SimdExt, typename U>
+void k_set_(nsimd::packl<T, N, SimdExt> const &mask,
+            nsimd::pack<S, N, SimdExt> &var, U value) {
+  var = nsimd::if_else(mask, nsimd::pack<S, N, SimdExt>(S(value)), var);
+}
+
+template <typename T, typename S, int N, typename SimdExt>
+void k_set_(nsimd::packl<T, N, SimdExt> const &mask,
+            nsimd::pack<S, N, SimdExt> &var,
+            nsimd::pack<S, N, SimdExt> const &value) {
+  var = nsimd::if_else(mask, value, var);
+}
+
+template <typename T, typename S, int N, typename SimdExt, typename U>
+void k_set_(nsimd::packl<T, N, SimdExt> const &mask,
+            nsimd::packl<S, N, SimdExt> &var, U value) {
+  var = nsimd::reinterpretl<nsimd::packl<S, N, SimdExt> >(
+      mask && nsimd::pack<S, N, SimdExt>(int(value)));
+}
+
+template <typename T, typename S, int N, typename SimdExt, typename U>
+void k_set_(nsimd::packl<T, N, SimdExt> const &mask,
+            nsimd::packl<S, N, SimdExt> &var,
+            nsimd::packl<U, N, SimdExt> const &value) {
+  var = nsimd::reinterpretl<nsimd::packl<S, N, SimdExt> >(mask && value);
+}
+
+#define k_set(var, value) spmd::k_set_(spmd_mask_, var, value)
+
+template <typename T, int N, typename SimdExt>
+nsimd::packl<int, N, SimdExt> to_k_bool(nsimd::packl<T, N, SimdExt> const &a) {
+  return nsimd::reinterpretl<nsimd::packl<int, N, SimdExt> >(a);
+}
+
+inline bool to_k_bool(bool a) { return a; }
+
+template <typename T, int N, typename SimdExt>
+bool any(nsimd::packl<T, N, SimdExt> const a) {
+  return nsimd::any(a);
+}
+
+inline bool any(bool a) { return a; }
 
 // while statement (k_while)
 #define k_while(cond)                                                         \
   {                                                                           \
     k_bool spmd_middle_mask_ = spmd_mask_;                                    \
+    k_bool spmd_off_lanes_break_(false);                                      \
+    (void)spmd_off_lanes_break_;                                              \
+    k_bool spmd_off_lanes_continue_(false);                                   \
+    (void)spmd_off_lanes_continue_;                                           \
     {                                                                         \
-      while (nsimd::any(cond)) {                                              \
-        k_bool spmd_mask_ = spmd_middle_mask_ && (cond);
-
-// continue statement
-#define k_continue spmd_mask_ = false
-
-// endwhile statement (k_endwhile)
-#define k_endwhile                                                            \
-  spmd_middle_mask_ =                                                         \
-      nsimd::andnotl(spmd_middle_mask_, spmd_lanes_go_off_break_);            \
-  }                                                                           \
-  spmd_middle_mask_ =                                                         \
-      nsimd::andnotl(spmd_middle_mask_, spmd_lanes_go_off_return_);           \
-  }
-
-// return statement (k_return)
-#define k_return                                                              \
-  spmd_lanes_go_off_return_ = spmd_mask_;                                     \
-  spmd_mask_ = false;
+      while (spmd::any(cond)) {                                              \
+        k_bool spmd_cond_ = spmd::to_k_bool(cond);                            \
+        {                                                                     \
+          k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;                \
+          spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_break_);  \
+          spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_return_);
 
 // break statement (k_break)
 #define k_break                                                               \
-  spmd_lanes_go_off_break_ = spmd_mask_;                                      \
+  spmd_off_lanes_break_ = spmd_off_lanes_break_ || spmd_mask_;                \
+  spmd_mask_ = false;
+
+// continue statement (k_continue)
+#define k_continue                                                            \
+  spmd_off_lanes_continue_ = spmd_off_lanes_continue_ || spmd_mask_;          \
+  spmd_mask_ = false;
+
+// endwhile statement (k_endwhile)
+#define k_endwhile                                                            \
+  }                                                                           \
+  }                                                                           \
+  }                                                                           \
+  }                                                                           \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_return_);
+
+// return statement (k_return)
+#define k_return                                                              \
+  spmd_off_lanes_return_ = spmd_off_lanes_return_ || spmd_mask_;              \
   spmd_mask_ = false;
 
 // if statement (k_if)
 #define k_if(cond)                                                            \
   {                                                                           \
-    k_bool spmd_middle_mask_ = (cond) && spmd_mask_;                          \
-    k_bool spmd_lanes_go_off_return_(false);                                  \
-    k_bool spmd_lanes_go_off_break_(false);                                   \
+    k_bool spmd_cond_ = spmd::to_k_bool(cond);                                \
+    k_bool spmd_middle_mask_ = spmd_mask_;                                    \
     {                                                                         \
-      k_bool spmd_mask_ = spmd_middle_mask_;
-
+      k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;
 
 // endif statement (k_endif)
 #define k_endif                                                               \
-  spmd_middle_mask_ =                                                         \
-      nsimd::andnotl(spmd_middle_mask_, spmd_lanes_go_off_return_);           \
-  spmd_middle_mask_ =                                                         \
-      nsimd::andnotl(spmd_middle_mask_, spmd_lanes_go_off_break_);            \
   }                                                                           \
-  spmd_mask_ = spmd_middle_mask_;                                             \
-  }
+  }                                                                           \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_return_);         \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_break_);          \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_continue_);
 
 // ----------------------------------------------------------------------------
 
