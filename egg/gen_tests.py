@@ -447,7 +447,7 @@ def get_content(op, typ, lang):
                 do_computation = 'vc = {} va;'. \
                                  format(op.cxx_operator[8:])
             else:
-                do_computation = 'vc = nsimd::{}(va {}());'. \
+                do_computation = 'vc = nsimd::{}(va);'. \
                                  format(op.name, typ)
             vout_nsimd_comp = '''nsimd::pack<{typ}> va;
                             nsimd::packl<{typ}> vc;
