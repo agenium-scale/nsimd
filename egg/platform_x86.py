@@ -1937,7 +1937,7 @@ def all_any(func, simd_ext, typ):
                           **fmtspec)
     if simd_ext in avx:
         if typ in common.iutypes:
-            if simd_ext == 'sse42':
+            if simd_ext == 'avx2':
                 return 'return _mm256_movemask_epi8({in0}) {test};'. \
                        format(test='== -1' if func == 'all' else '!= 0',
                               **fmtspec)

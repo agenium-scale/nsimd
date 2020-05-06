@@ -39,70 +39,101 @@ namespace spmd {
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
-// kernel definition
-#define nsimd_kernel(name, ...)                                               \
-  __device__ void name(int nsimd_current_thread_id, __VA_ARGS__)
-
-// supported types
-#define k_char i8
-#define k_uchar u8
-
-#define k_short i16
-#define k_ushort u16
-#define k_half f16
-
-#define k_int i32
-#define k_uint u32
-#define k_float f32
-
-#define k_long i64
-#define k_ulong u64
-#define k_double f64
-
-// supported language tokens
-#define k_if(cond) if (cond)
-#define k_else else
-#define k_endif
-#define k_while(cond) while (cond)
-#define k_break break
-#define k_endwhile
-#define k_return return
-
-// loads and stores
-#define k_store(addr, value)                                                  \
-  do {                                                                        \
-    *(addr + nsimd_current_thread_id) = value;                                \
-  } while (0)
-#define k_load(addr) (*(addr + nsimd_current_thread_id))
 
 // ----------------------------------------------------------------------------
 // SIMD and SCALAR: dispatch between the two is done on a type
 
 #else
 
+// helpers
+struct to_pack<T, N> {
+  nsimd::pack<T, N> impl(T a) { return nsimd::pack<T, N>(a); }
+
+  template <typename T, int N>
+  nsimd::pack<T, N> impl(nsimd::pack<T, N> const &a) {
+    return a;
+  }
+};
+
+struct to_packl<T, N> {
+  nsimd::packl<T, N> impl(bool a) { return nsimd::packl<T, N>(int(a)); }
+
+  template <typename T, typename S, int N>
+  nsimd::packl<T, N> impl(nsimd::packl<S, N> const &a) {
+    return nsimd::reinterpretl<nsimd::packl<T, N> >(a);
+  }
+};
+
+template <typename T> struct base_type { typedef T type; };
+
+template <typename T, int N, typename SimdExt>
+struct base_type<nsimd::pack<T, N, SimdExt> > {
+  typedef T type;
+};
+
+template <typename T, int N, typename SimdExt>
+struct base_type<nsimd::packl<T, N, SimdExt> > {
+  typedef T type;
+};
+
 // type indicating SIMD or scalar kernel
 struct KernelScalar {};
 struct KernelSIMD {};
 
-// kernel definition (generic)
-//   KernelType   SIMD or scalar (for loop tails)
-//   ScalarBits   width in bits of types used in kernels (8, 16, 32 or 64)
-//   N            unroll factor (number of threads per block for GPUs)
-//   Other template parameters are deduced automatically from arguments
-#define spmd_kernel(name, ...)                                                \
+// common to all function: mainly to avoid warnings
+#define spmd_func_begin_                                                      \
+  (void)spmd_i_;                                                              \
+  (void)spmd_mask_;                                                           \
+  k_bool spmd_off_lanes_return_(false);                                       \
+  (void)spmd_off_lanes_return_;                                               \
+  k_bool spmd_off_lanes_break_(false);                                        \
+  (void)spmd_off_lanes_break_;                                                \
+  k_bool spmd_off_lanes_continue_(false);                                     \
+  (void)spmd_off_lanes_continue_;
+
+// 1d kernel definition
+#define spmd_kernel_1d(name, ...)                                             \
   template <typename spmd_KernelType_, int spmd_ScalarBits_, int spmd_N_,     \
             typename spmd_MaskType_>                                          \
-  inline void name(nsimd_nat spmd_i_, spmd_MaskType_ spmd_mask_,              \
-                   __VA_ARGS__) {                                             \
-    k_bool spmd_off_lanes_return_(false);                                     \
-    (void)spmd_off_lanes_return_;                                             \
-    k_bool spmd_off_lanes_break_(false);                                      \
-    (void)spmd_off_lanes_break_;                                              \
-    k_bool spmd_off_lanes_continue_(false);                                   \
-    (void)spmd_off_lanes_continue_;
+  void name(nsimd_nat spmd_i_, spmd_MaskType_ spmd_mask_, __VA_ARGS__) {      \
+    spmd_func_begin_
+
+// templated kernel definition
+#define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
+  template <typename template_argument, typename spmd_KernelType_,            \
+            int spmd_ScalarBits_, int spmd_N_, typename spmd_MaskType_>       \
+  void name(nsimd_nat spmd_i_, spmd_MaskType_ spmd_mask_, __VA_ARGS__) {      \
+    spmd_func_begin_
 
 #define spmd_kernel_end }
 
+// device function
+#define spmd_dev_func(type_name, ...)                                         \
+  template <typename spmd_KernelType_, int spmd_ScalarBits_, int spmd_N_,     \
+            typename spmd_MaskType_>                                          \
+  type_name(nsimd_nat spmd_i_, spmd_MaskType_ spmd_mask_, __VA_ARGS__) {      \
+    spmd_func_begin_
+
+// templated device function
+#define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
+  template <typename template_argument, typename spmd_KernelType_,            \
+            int spmd_ScalarBits_, int spmd_N_, typename spmd_MaskType_>       \
+  type_name(nsimd_nat spmd_i_, spmd_MaskType_ spmd_mask_, __VA_ARGS__) {      \
+    spmd_func_begin_
+
+#define spmd_dev_func_end }
+
+// call spmd_dev_function
+#define spmd_call_dev_func(name, ...)                                         \
+  name<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>(spmd_i_, spmd_mask_,      \
+                                                    __VA_ARGS__)
+
+// call templated spmd_dev_function
+#define spmd_call_tmpl_dev_func(name, template_argument, ...)                 \
+  name<template_argument, spmd_KernelType_, spmd_ScalarBits_, spmd_N_>(       \
+      spmd_i_, spmd_mask_, __VA_ARGS__)
+
+// launch 1d kernel
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, spmd_unroll_, spmd_n_, \
                               ...)                                            \
   {                                                                           \
@@ -112,13 +143,33 @@ struct KernelSIMD {};
     nsimd_nat len =                                                           \
         nsimd::len(typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_, \
                                          spmd_unroll_>::itype());             \
-    for (spmd_i_ = 0; spmd_i_ + len < spmd_n_; spmd_i_ += len) {              \
+    for (spmd_i_ = 0; spmd_i_ + len <= spmd_n_; spmd_i_ += len) {             \
       name<spmd::KernelSIMD, spmd_scalar_bits_, spmd_unroll_>(                \
           spmd_i_, spmd_mask_, __VA_ARGS__);                                  \
     }                                                                         \
     for (; spmd_i_ < spmd_n_; spmd_i_++) {                                    \
       name<spmd::KernelScalar, spmd_scalar_bits_, spmd_unroll_>(              \
           spmd_i_, true, __VA_ARGS__);                                        \
+    }                                                                         \
+  }
+
+// launch 1d templated kernel
+#define spmd_launch_tmpl_kernel_1d(                                      \
+    name, template_argument, spmd_scalar_bits_, spmd_unroll_, spmd_n_, ...)   \
+  {                                                                           \
+    typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_,                \
+                          spmd_unroll_>::btype spmd_mask_(true);              \
+    nsimd_nat spmd_i_;                                                        \
+    nsimd_nat len =                                                           \
+        nsimd::len(typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_, \
+                                         spmd_unroll_>::itype());             \
+    for (spmd_i_ = 0; spmd_i_ + len <= spmd_n_; spmd_i_ += len) {             \
+      name<template_argument, spmd::KernelSIMD, spmd_scalar_bits_,            \
+           spmd_unroll_>(spmd_i_, spmd_mask_, __VA_ARGS__);                   \
+    }                                                                         \
+    for (; spmd_i_ < spmd_n_; spmd_i_++) {                                    \
+      name<template_argument, spmd::KernelScalar, spmd_scalar_bits_,          \
+           spmd_unroll_>(spmd_i_, true, __VA_ARGS__);                         \
     }                                                                         \
   }
 
@@ -197,8 +248,15 @@ template <typename KernelType> struct load_helper {};
 #define k_store(base_addr, value)                                             \
   spmd::store_helper<spmd_KernelType_>::impl(spmd_mask_, &base_addr[spmd_i_], \
                                              value)
+#define k_unmasked_store(base_addr, value)                                    \
+  spmd::store_helper<spmd_KernelType_>::unmasked_impl(&base_addr[spmd_i_],    \
+                                                      value)
+
 #define k_load(base_addr)                                                     \
   spmd::load_helper<spmd_KernelType_>::impl(spmd_mask_, &base_addr[spmd_i_])
+#define k_unmasked_load(base_addr)                                            \
+  spmd::load_helper<spmd_KernelType_>::template unmasked_impl<spmd_N_>(       \
+      &base_addr[spmd_i_])
 
 // loads and stores (scalar)
 template <> struct store_helper<KernelScalar> {
@@ -208,16 +266,24 @@ template <> struct store_helper<KernelScalar> {
       *addr = (T)value;
     }
   }
+
+  template <typename T, typename S>
+  static void unmasked_impl(T *addr, S value) {
+    *addr = (T)value;
+  }
 };
 
 template <> struct load_helper<KernelScalar> {
-  template <typename T>
-  static T impl(bool mask, T *addr) {
+  template <typename T> static T impl(bool mask, T *addr) {
     if (mask) {
       return *addr;
     } else {
       return T(0);
     }
+  }
+
+  template <int N, typename T> static T unmasked_impl(T *addr) {
+    return *addr;
   }
 };
 
@@ -233,6 +299,16 @@ template <> struct store_helper<KernelSIMD> {
                    S const &value) {
     nsimd::mask_storeu(mask, addr, nsimd::pack<S, N, SimdExt>(value));
   }
+
+  template <typename T, int N, typename SimdExt>
+  static void unmasked_impl(T *addr, nsimd::pack<T, N, SimdExt> const &value) {
+    nsimd::storeu(addr, value);
+  }
+
+  template <typename T, int N, typename SimdExt>
+  static void unmasked_impl(T *addr, T const &value) {
+    nsimd::storeu(addr, nsimd::pack<T, N, SimdExt>(value));
+  }
 };
 
 template <> struct load_helper<KernelSIMD> {
@@ -240,6 +316,11 @@ template <> struct load_helper<KernelSIMD> {
   static nsimd::pack<S, N, SimdExt>
   impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr) {
     return nsimd::maskz_loadu(mask, addr);
+  }
+
+  template <int N, typename T>
+  static nsimd::pack<T, N> unmasked_impl(T *addr) {
+    return nsimd::loadu<nsimd::pack<T, N> >(addr);
   }
 };
 
@@ -288,6 +369,10 @@ void k_set_(nsimd::packl<T, N, SimdExt> const &mask,
 }
 
 #define k_set(var, value) spmd::k_set_(spmd_mask_, var, value)
+#define k_unmasked_set(var, value)                                            \
+  do {                                                                        \
+    var = value;                                                              \
+  } while (0)
 
 template <typename T, int N, typename SimdExt>
 nsimd::packl<int, N, SimdExt> to_k_bool(nsimd::packl<T, N, SimdExt> const &a) {
@@ -350,6 +435,27 @@ inline bool any(bool a) { return a; }
     {                                                                         \
       k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;
 
+// elseif statement (k_elseif)
+#define k_elseif(cond)                                                        \
+  }                                                                           \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_return_);         \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_break_);          \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_continue_);       \
+  spmd_middle_mask_ = spmd::clear_lanes(spmd_middle_mask_, spmd_cond_);       \
+  spmd_cond_ = spmd::to_k_bool(cond);                                         \
+  {                                                                           \
+    k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;
+
+// else statement (k_else)
+#define k_else                                                                \
+  }                                                                           \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_return_);         \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_break_);          \
+  spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_continue_);       \
+  spmd_middle_mask_ = spmd::clear_lanes(spmd_middle_mask_, spmd_cond_);       \
+  {                                                                           \
+    k_bool spmd_mask_ = spmd_middle_mask_;
+
 // endif statement (k_endif)
 #define k_endif                                                               \
   }                                                                           \
@@ -364,6 +470,6 @@ inline bool any(bool a) { return a; }
 
 } // namespace spmd
 
-//#include <nsimd/modules/tet1d/functions.hpp>
+//#include <nsimd/modules/spmd/functions.hpp>
 
 #endif
