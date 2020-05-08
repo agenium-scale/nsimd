@@ -1115,6 +1115,35 @@ NSIMD_DLLSPEC f32 f16_to_f32(f16);
 #endif
 
 /* ------------------------------------------------------------------------- */
+/* General conversion for C++ */
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+
+template <typename T, typename S> struct to_helper {
+  static T to(T, S value) { return (T)value; }
+};
+
+template <> struct to_helper<f16, f16> {
+  static f16 to(f16, f16 value) { return value; }
+};
+
+template <typename S> struct to_helper<f16, S>{
+  static f16 to(f16, S value) { return nsimd_f32_to_f16((f32)value); }
+};
+
+template <typename T> struct to_helper<T, f16> {
+  static T to(T, f16 value) { return (T)nsimd_f16_to_f32(value); }
+};
+
+template <typename T, typename S> T to(S value) {
+  return to_helper<T, S>::to(T(), value);
+}
+
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
 /* SIMD-related functions */
 
 #ifdef NSIMD_IS_MSVC

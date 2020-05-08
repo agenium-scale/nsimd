@@ -33,6 +33,20 @@ SOFTWARE.
 
 namespace spmd {
 
+#if NSIMD_CXX < 2011 && NSIMD_C < 1999
+  #define NSIMD_VARIADIC_MACROS_IS_EXTENSION
+#endif
+
+#ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
+  #if defined(NSIMD_IS_GCC)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wvariadic-macros"
+  #elif defined(NSIMD_IS_CLANG)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wvariadic-macros"
+  #endif
+#endif
+
 // ----------------------------------------------------------------------------
 // CUDA and ROCm
 
@@ -46,23 +60,23 @@ namespace spmd {
 #else
 
 // helpers
-struct to_pack<T, N> {
-  nsimd::pack<T, N> impl(T a) { return nsimd::pack<T, N>(a); }
+template <typename T, int N> nsimd::pack<T, N> to_pack(T a) {
+  return nsimd::pack<T, N>(a);
+}
 
-  template <typename T, int N>
-  nsimd::pack<T, N> impl(nsimd::pack<T, N> const &a) {
-    return a;
-  }
-};
+template <typename T, int N>
+nsimd::pack<T, N> to_pack(nsimd::pack<T, N> const &a) {
+  return a;
+}
 
-struct to_packl<T, N> {
-  nsimd::packl<T, N> impl(bool a) { return nsimd::packl<T, N>(int(a)); }
+template <typename T, int N> nsimd::packl<T, N> to_packl(bool a) {
+  return nsimd::packl<T, N>(int(a));
+}
 
-  template <typename T, typename S, int N>
-  nsimd::packl<T, N> impl(nsimd::packl<S, N> const &a) {
-    return nsimd::reinterpretl<nsimd::packl<T, N> >(a);
-  }
-};
+template <typename T, typename S, int N>
+nsimd::packl<T, N> to_packl(nsimd::packl<S, N> const &a) {
+  return nsimd::reinterpretl<nsimd::packl<T, N> >(a);
+}
 
 template <typename T> struct base_type { typedef T type; };
 
@@ -263,13 +277,13 @@ template <> struct store_helper<KernelScalar> {
   template <typename T, typename S>
   static void impl(bool mask, T *addr, S value) {
     if (mask) {
-      *addr = (T)value;
+      *addr = nsimd::to<T>(value);
     }
   }
 
   template <typename T, typename S>
   static void unmasked_impl(T *addr, S value) {
-    *addr = (T)value;
+    *addr = nsimd::to<T>(value);
   }
 };
 
@@ -278,7 +292,7 @@ template <> struct load_helper<KernelScalar> {
     if (mask) {
       return *addr;
     } else {
-      return T(0);
+      return nsimd::to<T>(0);
     }
   }
 
@@ -337,7 +351,7 @@ inline bool clear_lanes(bool mask, bool lanes) { return lanes ? false : mask; }
 // assignment statement
 template <typename T, typename S> void k_set_(bool mask, T &var, S value) {
   if (mask) {
-    var = T(value);
+    var = nsimd::to<T>(value);
   }
 }
 
@@ -397,7 +411,7 @@ inline bool any(bool a) { return a; }
     k_bool spmd_off_lanes_continue_(false);                                   \
     (void)spmd_off_lanes_continue_;                                           \
     {                                                                         \
-      while (spmd::any(cond)) {                                              \
+      while (spmd::any(cond)) {                                               \
         k_bool spmd_cond_ = spmd::to_k_bool(cond);                            \
         {                                                                     \
           k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;                \
@@ -468,8 +482,16 @@ inline bool any(bool a) { return a; }
 
 #endif
 
+#ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
+  #if defined(NSIMD_IS_GCC)
+    #pragma GCC diagnostic pop
+  #elif defined(NSIMD_IS_CLANG)
+    #pragma clang diagnostic pop
+  #endif
+#endif
+
 } // namespace spmd
 
-//#include <nsimd/modules/spmd/functions.hpp>
+#include <nsimd/modules/spmd/functions.hpp>
 
 #endif
