@@ -64,8 +64,8 @@ template <typename T, int N> nsimd::pack<T, N> to_pack(T a) {
   return nsimd::pack<T, N>(a);
 }
 
-template <typename T, int N>
-nsimd::pack<T, N> to_pack(nsimd::pack<T, N> const &a) {
+template <typename T, int N, typename SimdExt>
+nsimd::pack<T, N, SimdExt> to_pack(nsimd::pack<T, N, SimdExt> const &a) {
   return a;
 }
 
@@ -73,8 +73,8 @@ template <typename T, int N> nsimd::packl<T, N> to_packl(bool a) {
   return nsimd::packl<T, N>(int(a));
 }
 
-template <typename T, typename S, int N>
-nsimd::packl<T, N> to_packl(nsimd::packl<S, N> const &a) {
+template <typename T, int N, typename Pack>
+nsimd::packl<T, N> to_packl(Pack const &a) {
   return nsimd::reinterpretl<nsimd::packl<T, N> >(a);
 }
 
@@ -308,10 +308,11 @@ template <> struct store_helper<KernelSIMD> {
     nsimd::mask_storeu(mask, addr, value);
   }
 
-  template <typename T, typename S, int N, typename SimdExt>
+  template <typename T, typename S, typename U, int N, typename SimdExt>
   static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr,
-                   S const &value) {
-    nsimd::mask_storeu(mask, addr, nsimd::pack<S, N, SimdExt>(value));
+                   U value) {
+    nsimd::mask_storeu(mask, addr,
+                       nsimd::pack<S, N, SimdExt>(nsimd::to<S>(value)));
   }
 
   template <typename T, int N, typename SimdExt>
@@ -319,9 +320,9 @@ template <> struct store_helper<KernelSIMD> {
     nsimd::storeu(addr, value);
   }
 
-  template <typename T, int N, typename SimdExt>
-  static void unmasked_impl(T *addr, T const &value) {
-    nsimd::storeu(addr, nsimd::pack<T, N, SimdExt>(value));
+  template <typename T, typename S, int N, typename SimdExt>
+  static void unmasked_impl(T *addr, S value) {
+    nsimd::storeu(addr, nsimd::pack<T, N, SimdExt>(nsimd::to<T>(value)));
   }
 };
 
@@ -389,16 +390,23 @@ void k_set_(nsimd::packl<T, N, SimdExt> const &mask,
   } while (0)
 
 template <typename T, int N, typename SimdExt>
-nsimd::packl<int, N, SimdExt> to_k_bool(nsimd::packl<T, N, SimdExt> const &a) {
-  return nsimd::reinterpretl<nsimd::packl<int, N, SimdExt> >(a);
-}
-
-inline bool to_k_bool(bool a) { return a; }
-
-template <typename T, int N, typename SimdExt>
 bool any(nsimd::packl<T, N, SimdExt> const a) {
   return nsimd::any(a);
 }
+
+template <typename KernelType, int ScalarBits, int N, typename Packl>
+typename type_t<KernelType, ScalarBits, N>::btype to_k_bool_(Packl const &a) {
+  return nsimd::reinterpretl<
+      typename type_t<KernelType, ScalarBits, N>::btype>(a);
+}
+
+template <typename KernelType, int ScalarBits, int N>
+inline bool to_k_bool_(bool a) {
+  return a;
+}
+
+#define k_to_bool(a)                                                          \
+  spmd::to_k_bool_<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>(a)
 
 inline bool any(bool a) { return a; }
 
@@ -412,7 +420,9 @@ inline bool any(bool a) { return a; }
     (void)spmd_off_lanes_continue_;                                           \
     {                                                                         \
       while (spmd::any(cond)) {                                               \
-        k_bool spmd_cond_ = spmd::to_k_bool(cond);                            \
+        k_bool spmd_cond_ =                                                   \
+            spmd::to_k_bool_<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>(    \
+                cond);                                                        \
         {                                                                     \
           k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;                \
           spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_break_);  \
@@ -444,7 +454,8 @@ inline bool any(bool a) { return a; }
 // if statement (k_if)
 #define k_if(cond)                                                            \
   {                                                                           \
-    k_bool spmd_cond_ = spmd::to_k_bool(cond);                                \
+    k_bool spmd_cond_ =                                                       \
+        spmd::to_k_bool_<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>(cond);  \
     k_bool spmd_middle_mask_ = spmd_mask_;                                    \
     {                                                                         \
       k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;
@@ -456,7 +467,8 @@ inline bool any(bool a) { return a; }
   spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_break_);          \
   spmd_mask_ = spmd::clear_lanes(spmd_mask_, spmd_off_lanes_continue_);       \
   spmd_middle_mask_ = spmd::clear_lanes(spmd_middle_mask_, spmd_cond_);       \
-  spmd_cond_ = spmd::to_k_bool(cond);                                         \
+  spmd_cond_ =                                                                \
+      spmd::to_k_bool_<spmd_KernelType_, spmd_ScalarBits_, spmd_N_>(cond);    \
   {                                                                           \
     k_bool spmd_mask_ = spmd_cond_ && spmd_middle_mask_;
 
@@ -482,6 +494,7 @@ inline bool any(bool a) { return a; }
 
 #endif
 
+/*
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
   #if defined(NSIMD_IS_GCC)
     #pragma GCC diagnostic pop
@@ -489,6 +502,7 @@ inline bool any(bool a) { return a; }
     #pragma clang diagnostic pop
   #endif
 #endif
+*/
 
 } // namespace spmd
 
