@@ -557,8 +557,26 @@ def gen_functions(opts):
 
 # -----------------------------------------------------------------------------
 
+def name():
+    return 'Tiny expression templates 1D'
+
+def desc():
+    return '''This module provide a thin layer of expression templates above
+NSIMD core. It also allows the programmer to target NVIDIA and AMD GPUs.
+Expression template are a C++ technique that allows the programmer to write
+code "à la MATLAB" where variables usually represents vectors and operators
+are itemwise.'''
+
+def doc_menu():
+    return {'Overview': 'overview', 'API reference': 'api'}
+
+# -----------------------------------------------------------------------------
+
 def doit(opts):
     print('-- Generating module tet1d')
-    gen_functions(opts)
-    gen_tests(opts)
-    gen_doc(opts)
+    if opts.library:
+        gen_functions(opts)
+    if opts.tests:
+        gen_tests(opts)
+    if opts.doc:
+        gen_doc(opts)

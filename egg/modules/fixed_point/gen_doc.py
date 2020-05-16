@@ -55,23 +55,23 @@ def gen_overview(opts):
 ## Description
 
 This module implements a fixed-point numbers support for the `nsimd` library.
-Fixed-point numbers are integer types used to represent decimal numbers. A number `lf` 
-of bits are used to encode its integer part, and `rt` bits are used to encode its 
+Fixed-point numbers are integer types used to represent decimal numbers. A number `lf`
+of bits are used to encode its integer part, and `rt` bits are used to encode its
 fractional part.
 
-The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf, rt>` to 
-represent a fixed_point number. All the basic floating-point arithmetic operaors have 
+The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf, rt>` to
+represent a fixed_point number. All the basic floating-point arithmetic operaors have
 been defined, therefore fp_t elements can be manipulated as normal numbers.
-The fixed_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type for 
-storage, depending on the value of `lf + 2 * rt`. 
+The fixed_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type for
+storage, depending on the value of `lf + 2 * rt`.
 
-All the functions of the module are under the namespace `nsimd::fixed_point`, 
+All the functions of the module are under the namespace `nsimd::fixed_point`,
 and match the same interface than `nsimd` C++ .
 
-The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd `fpsimd_t` 
+The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd `fpsimd_t`
 struct type are defined in `simd.hpp`.
 
-The modules redefines the `nsimd` pack type for fixed-point numbers, templated with `lf` 
+The modules redefines the `nsimd` pack type for fixed-point numbers, templated with `lf`
 and `rt` :
 
 ```C++
@@ -83,12 +83,12 @@ struct pack;
 } // namespace nsimd
 ```
 
-Then, the pack can be manipulated as an `nsimd` pack like other scalar types. 
+Then, the pack can be manipulated as an `nsimd` pack like other scalar types.
 
 ## Compatibility
 
 The fixed point module is a C++ only API, compatible with the C++98 standard.
-It has the same compilers and hardware support than the main `nsimd` API 
+It has the same compilers and hardware support than the main `nsimd` API
 (see the [API index](index.md)).
 
 ## Example
@@ -96,16 +96,16 @@ It has the same compilers and hardware support than the main `nsimd` API
 Here is a minimal example([main.cpp](../src/module_fixed_point_example.cpp)) :
 @[INCLUDE_CODE:L21:L61](../src/module_fixed_point_example.cpp)
 
-To test with avx2 run : 
+To test with avx2 run :
 ```bash
 export NSIMD_ROOT=<path/to/nsimd>
 g++ -o main -I$NSIMD_ROOT/include -mavx2 -DNSIMD_AVX2 main.cpp
 ./main
 ```
 
-The console output will look like this : 
+The console output will look like this :
 ```console
-$>./main 
+$>./main
 1.35938 | -0.421875 | 0.9375
 1.13281 | 1.19531 | 2.32812
 1.64844 | -1.21094 | 0.4375
@@ -122,7 +122,7 @@ api_template = '''\
 
 {desc}
 
-## Template parameter type for T: 
+## Template parameter type for T:
 
 When using the following typedef :
 ```c++
@@ -131,16 +131,16 @@ typedef nsimd::fixed_point::fp_t<lf, rt> fp_t
 
 The T template parameter is one of the following types depending on the operator:
 
-- `set1`, `loadu` and `loada`: 
+- `set1`, `loadu` and `loada`:
 ```c++
 nsimd::fixed_point::pack<fp_t>
 ```
-- `loadlu`, `loadla`: 
+- `loadlu`, `loadla`:
 ```c++
 nsimd::fixed_point::packl<fp_t>
 ```
-- Other operators: 
-```c++ 
+- Other operators:
+```c++
 nsimd::fixed_point::fp_t<lf, rt>
 ```
 
@@ -152,8 +152,10 @@ nsimd::fixed_point::fp_t<lf, rt>
 '''
 
 decl_template = '''\
-template <typename T> 
+template <typename T>
 {ret}{op}({args});\n\n'''
+
+# -----------------------------------------------------------------------------
 
 def get_type(param):
     if param == 'V':
@@ -190,7 +192,9 @@ def get_type(param):
         return 'int '
     else:
         return '<unknown>'
- 
+
+# -----------------------------------------------------------------------------
+
 def gen_decl(op):
     ret = ''
     op_sign = op.cxx_operator
@@ -204,15 +208,18 @@ def gen_decl(op):
         decl_op = ''
         if op_sign != '':
             decl_op = decl_template.format(ret=get_type(signature[0]),
-                                                  op='operator{}'.format(op_sign), args=args)
+                                           op='operator{}'.format(op_sign),
+                                           args=args)
         ret += decl_base + decl_op
-        
+
     ret = 'namespace nsimd {\n' \
         +'namespace fixed_point {\n' \
         + ret \
         + '} // namespace fixed_point\n' \
         + '} // namespace nsimd'
     return ret
+
+# -----------------------------------------------------------------------------
 
 def gen_api(opts):
     filename = common.get_markdown_file(opts, 'api', 'fixed_point')
@@ -222,7 +229,7 @@ def gen_api(opts):
             ops = [op for op in fp_operators if cat in op.categories]
             if(len(ops) == 0):
                 continue
-            
+
             fout.write('\n## {}\n\n'.format(cat))
 
             for op in ops:
@@ -230,7 +237,9 @@ def gen_api(opts):
                     '- [{} ({})](module_fixed_point_api_{}.md)\n'\
                            .format(op.full_name, op.name,
                                    common.to_filename(op.name)))
-    
+
+# -----------------------------------------------------------------------------
+
 def gen_doc(opts):
     for op in operators:
         filename = common.get_markdown_api_file(opts, op.name, 'fixed_point')
@@ -238,16 +247,11 @@ def gen_doc(opts):
             fout.write(api_template.format(full_name=op.full_name,
                                            desc=op.desc, decl=gen_decl(op)))
 
-def gen_html(opts):
-    links = {
-        'overview': 'Overview',
-        'api': 'Reference'}
-    common.gen_doc_html(opts, 'Fixed point support', 'fixed_point', links)
- 
+# -----------------------------------------------------------------------------
+
 def doit(opts):
     print('-- Generating doc for module fixed_point')
     gen_overview(opts)
     gen_api(opts)
     gen_doc(opts)
-    gen_html(opts)
-    
+

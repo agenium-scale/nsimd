@@ -494,7 +494,6 @@ inline bool any(bool a) { return a; }
 
 #endif
 
-/*
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
   #if defined(NSIMD_IS_GCC)
     #pragma GCC diagnostic pop
@@ -502,7 +501,6 @@ inline bool any(bool a) { return a; }
     #pragma clang diagnostic pop
   #endif
 #endif
-*/
 
 } // namespace spmd
 

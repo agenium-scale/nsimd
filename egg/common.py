@@ -513,6 +513,27 @@ def get_platforms(opts):
     return ret
 
 # -----------------------------------------------------------------------------
+# Find modules
+
+def get_modules(opts):
+    if opts.modules_list != None:
+        return opts.modules_list
+    ret = dict()
+    # We have one module by directory
+    path = os.path.join(opts.script_dir, 'modules')
+    myprint(opts, 'Searching modules in "{}"'.format(path))
+    for module_dir in os.listdir(path):
+        if (not os.path.isdir(os.path.join(path, module_dir))) or \
+           module_dir == '.' or module_dir == '..' or \
+           (not os.path.exists(os.path.join(path, module_dir, 'hatch.py'))):
+            continue
+        myprint(opts, 'Found new module: {}'.format(module_dir))
+        mod = __import__('modules.{}.hatch'.format(module_dir))
+        ret[module_dir] = mod
+    opts.modules_list = ret
+    return ret
+
+# -----------------------------------------------------------------------------
 # Ulps
 
 import json
@@ -1166,9 +1187,14 @@ doc_header = '''\
   </head>
 <body>
 
-<center>
-  <img src=\"img/logo.svg\"><br>
-  <br>
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src=\"img/logo.svg\">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
   <a href=\"index.html\">Index</a> |
   <a href=\"quick_start.html\">Quick Start</a> |
   <a href=\"tutorials.html\">Tutorials</a> |
@@ -1177,9 +1203,9 @@ doc_header = '''\
   <a href=\"overview.html\">API overview</a> |
   <a href=\"api.html\">API reference</a> |
   <a href=\"modules.html\">Modules</a>
-  <br><hr>
-  {}
-</center>
+  <hr>
+</div>
+{}
 '''
 
 doc_footer = '''\
@@ -1194,14 +1220,25 @@ def to_filename(op_name):
         ret += '-' if c not in valid else c
     return ret
 
-def get_html_header(title='', module='', links={}):
-    additional_links=''
-    if(module != ''):
-        additional_links += '<b>{}: </b>\n'.format(title)
-        additional_links += '\n'.join('<a href=\"module_{}_{}.html\">{}</a>'.\
-                                      format(module, name, title) \
-                                      for name, title in links.items())
-    return doc_header.format(title, additional_links)
+def get_html_header(opts, title, filename):
+    # check if filename is part of a module doc
+    for mod in opts.modules_list:
+        if filename.startswith('module_{}_'.format(mod)):
+            links = eval('opts.modules_list[mod].{}.hatch.doc_menu()'. \
+                         format(mod))
+            name = eval('opts.modules_list[mod].{}.hatch.name()'.format(mod))
+            html = '<div style="text-align: center; margin-bottom: 1em;">\n'
+            html += '<b>{} module documentation</b>\n'.format(name)
+            if len(links) > 0:
+                html += '</div>\n'
+                html += \
+                '<div style="text-align: center; margin-bottom: 1em;">\n'
+                html += ' | '.join(['<a href=\"module_{}_{}.html\">{}</a>'. \
+                                    format(mod, href, label) \
+                                    for label, href in links.items()])
+            html += '\n<hr>\n</div>\n'
+            return doc_header.format(title, html)
+    return doc_header.format(title, '')
 
 def get_html_footer():
     return doc_footer
@@ -1244,10 +1281,11 @@ def get_html_file(opts, name, module=''):
     else:
         return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
 
-def gen_doc_html(opts, title, module='', links={}):
+def gen_doc_html(opts, title):
     if not opts.list_files:
         # check if md2html exists
-        md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
+        md2html = 'md2html.exe' if platform.system() == 'Windows' \
+                                else 'md2html'
         doc_dir = os.path.join(opts.script_dir, '..', 'doc')
         full_path_md2html = os.path.join(doc_dir, md2html)
         if not os.path.isfile(full_path_md2html):
@@ -1263,39 +1301,31 @@ def gen_doc_html(opts, title, module='', links={}):
     md_dir = get_markdown_dir(opts)
     html_dir = get_html_dir(opts)
 
-    if(not os.path.isdir(html_dir)):
+    if not os.path.isdir(html_dir):
         mkdir_p(html_dir)
 
     doc_files = []
-    if module == '':
-        for file in os.listdir(md_dir):
-            name =  os.path.basename(file)
-            if name.endswith('.md') \
-               and not name.startswith('module_'):
-                doc_files.append(os.path.splitext(name)[0])
-    else:
-        for file in os.listdir(md_dir):
-            name =  os.path.basename(file)
-            if name.endswith('.md') \
-               and name.startswith('module_{}'.format(module)):
-                doc_files.append(os.path.splitext(name)[0])
+    for filename in os.listdir(md_dir):
+        name =  os.path.basename(filename)
+        if name.endswith('.md'):
+            doc_files.append(os.path.splitext(name)[0])
 
-    ## gen html files
     if opts.list_files:
+        ## list gen files
         for filename in doc_files:
             input_name = os.path.join(md_dir, filename + '.md')
             output_name = os.path.join(html_dir, filename + '.html')
-            print(input_name)
             print(output_name)
     else:
         ## gen html files
-        header = get_html_header(title, module, links)
         footer = get_html_footer()
         tmp_file = os.path.join(doc_dir, 'tmp.html')
         for filename in doc_files:
+            header = get_html_header(opts, title, filename)
             input_name = os.path.join(md_dir, filename + '.md')
             output_name = os.path.join(html_dir, filename + '.html')
-            os.system('{} "{}" "{}"'.format(full_path_md2html, input_name, tmp_file))
+            os.system('{} "{}" "{}"'.format(full_path_md2html, input_name,
+                                            tmp_file))
             with open_utf8(opts, output_name) as fout:
                 fout.write(header)
                 with io.open(tmp_file, mode='r', encoding='utf-8') as fin:

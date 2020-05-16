@@ -183,7 +183,6 @@ def parse_args(args):
     opts.cxx_api = opts.library
     opts.friendly_but_not_optimized = opts.library
     opts.src = opts.library
-    opts.modules = opts.library
     opts.scalar_utilities = opts.library
     opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
@@ -198,6 +197,7 @@ def parse_args(args):
 def main():
     opts = parse_args(sys.argv[1:])
     opts.script_dir = script_dir
+    opts.modules_list = None
 
     ## Gather all SIMD dependencies
     opts.simd = common.get_simds_deps_from_opts(opts)
@@ -216,12 +216,11 @@ def main():
         gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
-    if opts.modules == True or opts.all == True:
-        gen_modules.doit(opts)
     if opts.scalar_utilities == True or opts.all == True:
         gen_scalar_utilities.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
         gen_friendly_but_not_optimized.doit(opts)
+    gen_modules.doit(opts) # this must be here after all NSIMD
     if opts.doc == True or opts.all == True:
         gen_doc.doit(opts)
 

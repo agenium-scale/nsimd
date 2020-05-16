@@ -46,8 +46,6 @@ def get_command_output(args):
 # -----------------------------------------------------------------------------
 
 def gen_overview(opts):
-    # filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-    #                         'overview.md')
     filename = common.get_markdown_file(opts, 'overview')
     if not common.can_create_filename(opts, filename):
         return
@@ -275,137 +273,8 @@ Here is the list of functions that act on packs.
 
 # -----------------------------------------------------------------------------
 
-#def gen_doc_json(opts):
-#    sys.stdout.write('-- Generating doc for each functions\n')
-#    dirname = os.path.join(opts.script_dir, '..','doc')
-#    common.mkdir_p(dirname)
-#
-#    # Root node first
-#    obj = collections.OrderedDict()
-#    obj['title'] = 'Root node'
-#    obj['sig'] = []
-#    obj['lang'] = ''
-#    obj['categories'] = []
-#    obj['desc'] = []
-#    obj['parent'] = ''
-#    obj['id'] = '/'
-#    obj['type'] = 'root'
-#    obj['title'] = 'Root node'
-#    filename = os.path.join(dirname, 'root.json')
-#    if common.can_create_filename(opts, filename):
-#        with io.open(filename, mode='w', encoding='utf-8') as fout:
-#            fout.write(json.dumps(obj, ensure_ascii=False))
-#
-#    # Categories first
-#    for name, cat in categories.items():
-#        filename = os.path.join(dirname, '{}.json'.format(name))
-#        ## Check if we need to create the file
-#        if not common.can_create_filename(opts, filename):
-#            continue
-#
-#        obj = collections.OrderedDict()
-#        obj['title'] = cat.name
-#        obj['sig'] = []
-#        obj['lang'] = ''
-#        obj['categories'] = []
-#        obj['desc'] = []
-#        obj['parent'] = '/'
-#        obj['id'] = '/{}'.format(name)
-#        obj['type'] = 'category'
-#        obj['title'] = cat.title
-#        with io.open(filename, mode='w', encoding='utf-8') as fout:
-#            fout.write(json.dumps(obj, ensure_ascii=False))
-#
-#    # APIs
-#    for api in ['c_base', 'cxx_base', 'cxx_adv']:
-#        filename = os.path.join(dirname, '{}.json'.format(api))
-#        if common.can_create_filename(opts, filename):
-#            l = collections.OrderedDict()
-#            l['title'] = {'c_base': 'C API', 'cxx_base': 'C++ base API',
-#                          'cxx_adv': 'C++ advanced API'}[api]
-#            l['id'] = '/{}'.format(api)
-#            l['parent'] = '/'
-#            l['sig'] = []
-#            l['type'] = ''
-#            l['desc'] = []
-#            l['categories'] = []
-#            l['lang'] = 'C' if api == 'c' else 'C++'
-#            with io.open(filename, mode='w', encoding='utf-8') as fout:
-#                fout.write(json.dumps(l, ensure_ascii=False))
-#
-#    # Operators (one file per operator otherwise too much files)
-#    for op_name, operator in operators.items():
-#        ## Skip non-matching doc
-#        if opts.match and not opts.match.match(op_name):
-#            continue
-#
-#        filename = os.path.join(dirname, '{}.json'.format(op_name))
-#        cats = ['/{}'.format(c.name) for c in operator.categories]
-#        withdoc_id = '/{}'.format(op_name)
-#        doc_blocks = []
-#        obj = collections.OrderedDict()
-#
-#        # All is withdoc'ed with this docblock which has no desc, no sig...
-#        obj = collections.OrderedDict()
-#        obj['id'] = withdoc_id
-#        obj['desc'] = [operator.desc]
-#        obj['sig'] = []
-#        obj['parent'] = '/'
-#        obj['categories'] = cats
-#        obj['type'] = 'function'
-#        obj['title'] = operator.full_name
-#        obj['lang'] = ''
-#        doc_blocks.append(obj)
-#
-#        def to_list(var):
-#            ret = [var] if type(var) == str or not hasattr(var, '__iter__') \
-#                        else list(var)
-#            for i in range(0, len(ret)):
-#                ret[i] = re.sub('[ \n\t\r]+', ' ', ret[i])
-#            return ret
-#
-#        # All base C/C++ functions (for each architecture and type)
-#        for api in ['c_base', 'cxx_base']:
-#            for simd_ext in common.simds:
-#                for typ in operator.types:
-#                    obj = collections.OrderedDict()
-#                    obj['id'] = '/{}-{}-{}-{}'.format(op_name, api, simd_ext,
-#                                                      typ)
-#                    obj['desc'] = []
-#                    obj['parent'] = '/{}'.format(api)
-#                    obj['categories'] = cats
-#                    obj['type'] = 'function'
-#                    obj['withdoc'] = withdoc_id
-#                    obj['sig'] = to_list(operator.get_signature(typ, api,
-#                                                                simd_ext))
-#                    obj['title'] = ''
-#                    obj['lang'] = common.ext_from_lang(api)
-#                    doc_blocks.append(obj)
-#
-#        # C/C++ base/advanced generic functions
-#        for api in ['c_base', 'cxx_base', 'cxx_adv']:
-#            obj = collections.OrderedDict()
-#            obj['id'] = '/{}-{}'.format(op_name, api)
-#            obj['desc'] = []
-#            obj['parent'] = '/{}'.format(api)
-#            obj['categories'] = cats
-#            obj['type'] = 'function'
-#            obj['withdoc'] = withdoc_id
-#            obj['sig'] = to_list(operator.get_generic_signature(api) \
-#                                 if api != 'cxx_adv' else \
-#                                 operator.get_generic_signature(api).values())
-#            obj['title'] = ''
-#            obj['lang'] = common.ext_from_lang(api)
-#            doc_blocks.append(obj)
-#
-#        # Finally dump JSON
-#        with io.open(filename, mode='w', encoding='utf-8') as fout:
-#            fout.write(json.dumps(doc_blocks, ensure_ascii=False))
-
-# -----------------------------------------------------------------------------
-
 def gen_doc(opts):
-    sys.stdout.write('-- Generating doc for each function\n')
+    common.myprint(opts, 'Generating doc for each function')
 
     # Build tree for api.md
     api = dict()
@@ -415,14 +284,6 @@ def gen_doc(opts):
                 api[c] = [operator]
             else:
                 api[c].append(operator)
-
-    # helper to construct filename for operator
-    # def to_filename(op_name):
-    #     valid = string.ascii_letters + string.digits
-    #     ret = ''
-    #     for c in op_name:
-    #         ret += '-' if c not in valid else c
-    #     return ret
 
     # api.md
     # filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
@@ -498,6 +359,35 @@ def gen_doc(opts):
 
 # -----------------------------------------------------------------------------
 
+def gen_modules_md(opts):
+    common.myprint(opts, 'Generating modules.md')
+    mods = common.get_modules(opts)
+    ndms = []
+    for mod in mods:
+        name = eval('mods[mod].{}.hatch.name()'.format(mod))
+        desc = eval('mods[mod].{}.hatch.desc()'.format(mod))
+        ndms.append([name, desc, mod])
+    filename = common.get_markdown_file(opts, 'modules')
+    if not common.can_create_filename(opts, filename):
+        return
+    with common.open_utf8(opts, filename) as fout:
+        fout.write('''# Modules
+NSIMD comes with several additional modules. A module provides a set of
+functionnalities that are usually not at the same level as SIMD intrinsics
+and/or that do not provide all C and C++ APIs. These functionnalities are
+given with the library because they make heavy use of NSIMD core which
+abstract SIMD intrinsics. Below is the exhaustive list of modules.
+
+''')
+        for ndm in ndms:
+            fout.write('- [{}](module_{}_overview.md)  \n'.format(ndm[0],
+                                                                  ndm[2]))
+            fout.write('\n'.join(['  {}'.format(line.strip()) \
+                                  for line in ndm[1].split('\n')]))
+            fout.write('\n\n')
+
+# -----------------------------------------------------------------------------
+
 def gen_html(opts):
     common.myprint(opts, 'Generating HTML documentation')
     common.gen_doc_html(opts, 'NSIMD documentation')
@@ -507,4 +397,5 @@ def gen_html(opts):
 def doit(opts):
     gen_overview(opts)
     gen_doc(opts)
-    gen_html(opts)
+    gen_modules_md(opts)
+    gen_html(opts) # This must be last

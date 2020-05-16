@@ -38,7 +38,6 @@ maintainer will then merge or comment the pull request.
 - Good knowledge of C++.
 - Good knowledge of SIMD programming.
 
-
 ## How Do I Add Support for a New Intrinsic?
 
 ### Introduction
@@ -54,11 +53,21 @@ maintainer will then merge or comment the pull request.
   + `AVX` called `AVX` in source code.
   + `AVX2` called `AVX2` in source code.
   + `AVX-512` as found on KNLs called `AVX512_KNL` in source code.
-  + `AVX-512` as found on Xeon Skylake CPUs called `AVX512_SKYLAKE` in source code.
+  + `AVX-512` as found on Xeon Skylake CPUs called `AVX512_SKYLAKE` in source
+    code.
 - Arm
   + `NEON` 128 bits as found on ARMv7 CPUs called `NEON128` in source code.
   + `NEON` 128 bits as found on Aarch64 CPUs called `AARCH64` in source code.
   + `SVE` called `SVE` in source code.
+  + `SVE` 128 bits known at compiled time called `SVE128` in source code.
+  + `SVE` 256 bits known at compiled time called `SVE256` in source code.
+  + `SVE` 512 bits known at compiled time called `SVE512` in source code.
+  + `SVE` 1024 bits known at compiled time called `SVE1024` in source code.
+  + `SVE` 2048 bits known at compiled time called `SVE2048` in source code.
+- NVIDIA
+  + `CUDA` called `CUDA` in source code
+- AMD
+  + `ROCm` called `ROCM` in source code
 
 `nsimd` currently supports the following types:
 - `i8`: signed integers over 8 bits (usually `signed char`),
@@ -105,8 +114,22 @@ follows:
   + `NEON128`: `vfooq_f16` for `float16`s, `vfooq_f32` for `float`s and no
     intrinsics for `double`s.
   + `AARCH64`: same as `NEON128` but `vfooq_f64` for doubles.
-  + `SVE`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively `float16`s,
-    `float`s and `double`s.
+  + `SVE`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
+    `float16`s, `float`s and `double`s.
+  + `SVE128`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
+    `float16`s, `float`s and `double`s.
+  + `SVE256`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
+    `float16`s, `float`s and `double`s.
+  + `SVE512`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
+    `float16`s, `float`s and `double`s.
+  + `SVE1024`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
+    `float16`s, `float`s and `double`s.
+  + `SVE2048`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
+    `float16`s, `float`s and `double`s.
+- NVIDIA
+  + `CUDA`: no intrinsics is provided.
+- AMD
+  + `ROCM`: no intrinsics is provided.
 
 First thing to do is to declare this new intrinsic to the generation system.
 A lot of work is done by the generation system such as generating all functions
@@ -221,11 +244,14 @@ Default values are given in square brakets:
   comparison, then test the correctness of the operator against it.
 - `tests_ulps [= False]` in case the auto-generated tests has to compare ULPs
   (<https://en.wikipedia.org/wiki/Unit_in_the_last_place>).
+- `has_scalar_impl [= True]` in case the operator has a CPU scalar and GPU
+  implementation.
 
 ### Implementing the operator
 
 Now that the operator is registered, all signatures will be generated but
 the implemenatations will be missing. Type
+
 ```sh
 python3 egg/hatch.py -Af
 ```
@@ -241,6 +267,11 @@ and the following files (among many other) should appear:
 - `include/nsimd/arm/neon128/foo.h`
 - `include/nsimd/arm/aarch64/foo.h`
 - `include/nsimd/arm/sve/foo.h`
+- `include/nsimd/arm/sve128/foo.h`
+- `include/nsimd/arm/sve256/foo.h`
+- `include/nsimd/arm/sve512/foo.h`
+- `include/nsimd/arm/sve1024/foo.h`
+- `include/nsimd/arm/sve2048/foo.h`
 
 They each correspond to the implementations of the operator for each supported
 architectures. When openening one of these files the implementations in plain
@@ -252,15 +283,19 @@ architectures does not offer any SIMD.
 
 Providing implementations for `foo` is done by completing the following Python
 files:
+
 - `egg/platform_cpu.py`
 - `egg/platform_x86.py`
 - `egg/platform_arm.py`
+- `egg/scalar.py`
+- `egg/cuda.py`
+- `egg/hip.py`
 
 The idea is to produce plain C (not C++) code using Python string format. Each
-`platform_*.py` file provides some helper functions to ease as much as
-possible the programmer's job. But every `platform_*.py` file provides the
-same "global" variables available in every functions and is designed in the
-same way:
+of the Python files provides some helper functions to ease as much as
+possible the programmer's job. But every file provides the same "global"
+variables available in every functions and is designed in the same way:
+
 1. At the bottom of the file is the `get_impl` function taking the following
    arguments:
    + `func     ` the name of the operator the system is currently
@@ -281,6 +316,7 @@ Let's begin by the `cpu` implementations. It turns out that there is no SIMD
 extension in this case, and by convention, `simd_ext == 'cpu'` and this
 argument can therefore be ignored. So we first add an entry to the `impls`
 Python dictionary of the `get_impl` function:
+
 ```python
     impls = {
 
@@ -328,6 +364,7 @@ is a struct containing as much members as necessary so that `sizeof(T) *
 two cases (64-bits wide and 128-bits wide) the `func_body` function is provided
 as a helper. Note that the index `{{i}}` is in double curly brackets to go
 through two Python string formats:
+
 1. The first pass is done within the `foo1` Python function and replaces
    `{typ}` and `{in0}`. In this pass `{{i}}` is formatted into `{i}`.
 2. The second pass is done by the `func_body` function which unrolls the string
@@ -373,6 +410,7 @@ def foo1(simd_ext, typ):
 ```
 
 Here are some notes concerning the Intel implementation:
+
 1. `float16`s are emulated with two SIMD vectors of `float`s.
 2. When the intrinsic is provided by Intel one can access it easily by
    constructing it with `{pre}` and `{suf}`. Indeed all Intel intrinsics
@@ -408,6 +446,7 @@ def foo1(simd_ext, typ):
 ```
 
 Here are some notes concerning the ARM implementation:
+
 1. `float16`s can be natively supported but this is not mandatory.
 2. On 32-bits ARM chips, intrinsics on `double` almost never exist.
 3. The Python helper function `f16f64` hides a lot of details concerning the
@@ -420,6 +459,58 @@ Here are some notes concerning the ARM implementation:
 4. Do not forget to add the `foo` entry to the `impls` dictionary in the
    `get_impl` Python function.
 
+### The scalar CPU version
+
+```python
+def foo1(func, typ):
+    normal = \
+    'return ({typ})(1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0})));'. \
+    if typ == 'f16':
+        return \
+        '''#ifdef NSIMD_NATIVE_FP16
+             {normal}
+           #else
+             return nsimd_f32_to_f16({normal_fp16});
+           #endif'''. \
+           format(normal=normal.format(**fmtspec),
+                  normal_fp16=normal.format(in0='nsimd_f16_to_f32({in0})))
+    else:
+        return normal.format(**fmtspec)
+```
+
+The only caveat for the CPU scalar implementation is to handle float16
+correctly. The easiest way to do is to have the same implementation as float32
+but replacing `{in0}`'s by `nsimd_f16_to_f32({in0})`'s and converting back
+the float32 result to a float16.
+
+### The GPU versions
+
+The GPU generator Python files `cuda.py` and `rocm.py` are a bit different
+from the other files but it is easy to find where to add the relevant
+pieces of code as ROCm syntax is fully compatible with CUDA's one only needs
+to modify the `cuda.py` file.
+
+The code to add for float32's is as follows to be added inside the `get_impl`
+Python function.
+
+```python
+return '1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}))'.format(**fmtspec)
+```
+
+The code to add for float16's is as follows to be added inside the
+`get_impl_f16` Python function.
+
+```python
+arch53_code = '''__half one = __float2half(1.0f);
+                 return __hadd(
+                               __hdiv(one, __hsub(one, {in0})),
+                               __hmul(
+                                      __hdiv(one, __hsub(one, {in0})),
+                                      __hdiv(one, __hsub(one, {in0}))
+                                     )
+                              );'''.format(**fmtspec)
+```
+
 ### Implementing the test for the operator
 
 Now that we have written the implementations for the `foo` operator we must
@@ -429,6 +520,7 @@ implemented can be tested by an already-written test pattern code, namely by
 the `gen_test` Python function.
 
 Here is how the `egg/gen_tests.py` is organized:
+
 1. The entry point is the `doit` function located at the bottom of the file.
 2. In the `doit` function a dispatching is done according to the operator that
    is to be tested. All operators cannot be tested by the same C/C++ code. The
@@ -484,3 +576,64 @@ class DocMyCategoryName(DocCategory):
 The class must inherit from the `DocCategory` class and its name must begin
 with `Doc`. The system will then take it into account, generate the entry
 in the documentation and so on.
+
+## How to I add a new module?
+
+A module is a set of functionnalities that make sense to be provided alongside
+NSIMD but that cannot be part of NSIMD's core. Therefore it is not mandatory
+to provide all C and C++ APIs versions or to support all operators. For what
+follows let's call the module we want to implement `mymod`.
+
+Include files (written by hand or generated by Python) must be placed into
+the `nsimd/include/nsimd/modules/mymod` directory and a master header file must
+be placed at `nsimd/include/nsimd/modules/mymod.h`. You are free to organize
+the `nsimd/include/nsimd/modules/mymod` folder as you see fit.
+
+Your module has to be found by NSIMD generation system. For this you must
+create the `nsimd/egg/modules/mymod` directory and
+`nsimd/egg/modules/mymod/hatch.py` file. The latter must expose the following
+functions:
+
+- `def name()`  
+  Return a human readable module name beginning with a uppercase letter.
+
+- `def desc()`  
+  Return a small description of 4-5 lines of text for the module. This text
+  will appear in the `modules.md` file that lists all the available modules.
+
+- `def doc_menu()`  
+  Return a Python dictionnary containing the menu for when the generation
+  system produces the HTML pages of documentation for the module. The entry
+  markdown file must be `nsimd/doc/markdown/module_mymod_overview.md` for
+  module documentation. Then  if your module has no other documentation
+  pages this function can simply returns `dict()`. Otherwise if has to return
+  `{'menu_label': 'filename_suffix', ...}` where `menu_label` is a menu entry
+  to be displayed and pointing to `nsimd/egg/module_mymod_filename_suffix.md`.
+  Several fucntion in `egg/common.py` (`import common`) have to be used to
+  ease crafting documentation pages filenames:
+  + `def get_markdown_dir(opts)`  
+    Return the folder into which markdown for documentation have to be put.
+  + `def get_markdown_file(opts, name, module='')`  
+    Return the filename to be passed to the `common.open_utf8` function. The
+    `name` argument acts as a suffix as explained above while the `module`
+    argument if the name of the module.
+  
+- `def doit(opts)` 
+  Is the real entry point of the module. This function has the responsability
+  to generate all the code for your module. It can of course import all Python
+  files from NSIMD and take advantage of the `operators.py` file. To
+  respect the switches passed by the user at command line it is recommanded to
+  write this function as follows.
+
+  ```python
+  def doit(opts):
+      common.myprint(opts, 'Generating module mymod')
+      if opts.library:
+          gen_module_headers(opts)
+      if opts.tests:
+          gen_tests(opts)
+      if opts.doc:
+          gen_doc(opts)
+  ```
+
+Tests for the module have to be put into the `nsimd/tests/mymod` directory.
