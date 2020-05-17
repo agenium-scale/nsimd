@@ -151,12 +151,12 @@ struct KernelSIMD {};
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, spmd_unroll_, spmd_n_, \
                               ...)                                            \
   {                                                                           \
-    typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_,                \
-                          spmd_unroll_>::btype spmd_mask_(true);              \
+    spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_, spmd_unroll_>::btype    \
+        spmd_mask_(true);                                                     \
     nsimd_nat spmd_i_;                                                        \
     nsimd_nat len =                                                           \
-        nsimd::len(typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_, \
-                                         spmd_unroll_>::itype());             \
+        nsimd::len(spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_,          \
+                                spmd_unroll_>::itype());                      \
     for (spmd_i_ = 0; spmd_i_ + len <= spmd_n_; spmd_i_ += len) {             \
       name<spmd::KernelSIMD, spmd_scalar_bits_, spmd_unroll_>(                \
           spmd_i_, spmd_mask_, __VA_ARGS__);                                  \
