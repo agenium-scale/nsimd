@@ -46,11 +46,21 @@ __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
   int tid = threadIdx.x;
   int i = tid + blockIdx.x * blockDim.x;
   if (i < n) {
-    printf("DEBUG: %d: %f vs. %f\n", i, (double)src1[i], (double)src2[i]);
     buf[tid] = T(nsimd::gpu_eq(src1[i], src2[i]) ? 1 : 0);
   }
+
+  const int block_start = blockIdx.x * blockDim.x;
+  const int block_end = block_start + blockDim.x;
+
+  int size;
+  if (block_end < n) {
+    size = blockDim.x;
+  } else {
+    size = n - block_start;
+  }
+
   __syncthreads();
-  for (int s = blockDim.x / 2; s != 0; s /= 2) {
+  for (int s = size / 2; s != 0; s /= 2) {
     if (tid < s && i < n) {
       buf[tid] = nsimd::gpu_mul(buf[tid], buf[tid + s]);
       __syncthreads();
@@ -77,16 +87,15 @@ __global__ void device_cmp_array(int *dst, T *src1, int n) {
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   int host_ret;
   int *device_ret;
-  if (cuda_do(cudaMalloc((void **)&device_ret, sizeof(int)))) {
-    return false;
+  if (cudaMalloc((void **)&device_ret, sizeof(int)) != cudaSuccess) {
+    std::cerr << "ERROR: cannot cudaMalloc " << sizeof(int) << " bytes\n";
+    exit(EXIT_FAILURE);
   }
   device_cmp_blocks<<<(n + 127) / 128, 128, 128 * sizeof(T)>>>(src1, src2,
                                                                int(n));
   device_cmp_array<<<(n + 127) / 128, 128>>>(device_ret, src1, int(n));
-  if (cuda_do(cudaMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
-                 cudaMemcpyDeviceToHost))) {
-    host_ret = 0;
-  }
+  cudaMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
+             cudaMemcpyDeviceToHost);
   cudaFree((void *)device_ret);
   return bool(host_ret);
 }

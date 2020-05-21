@@ -53,6 +53,135 @@ namespace spmd {
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
+// 1d kernel definition
+#define spmd_kernel_1d(name, ...)                                             \
+  template <int spmd_ScalarBits_> __global__ void name(__VA_ARGS__, int n) {  \
+    int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
+    if (spmd_i_ < n) {
+
+// templated kernel definition
+#define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  __global__ void name(__VA_ARGS__, int n) {                                  \
+    int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
+    if (spmd_i_ < n) {
+
+#define spmd_kernel_end                                                       \
+  }                                                                           \
+  }
+
+// device function
+#define spmd_dev_func(type_name, ...)                                         \
+  template <int spmd_ScalarBits_> __device__ type_name(__VA_ARGS__) {
+
+// templated device function
+#define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  __device__ type_name(__VA_ARGS__) {
+
+#define spmd_dev_func_end }
+
+// call spmd_dev_function
+#define spmd_call_dev_func(name, ...) name<spmd_ScalarBits_>(__VA_ARGS__)
+
+// call templated spmd_dev_function
+#define spmd_call_tmpl_dev_func(name, template_argument, ...)                 \
+  name<template_argument, spmd_ScalarBits_>(__VA_ARGS__)
+
+// launch 1d kernel
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
+                              ...)                                            \
+  name<spmd_scalar_bits_>                                                     \
+      <<<(unsigned int)((n + threads_per_block - 1) / threads_per_block),     \
+         (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
+
+// supported types (generic)
+template <int ScalarBits> struct type_t {};
+
+// supported types (scalar)
+template <> struct type_t<8> {
+  typedef i8 itype;
+  typedef u8 utype;
+  typedef bool btype;
+};
+
+template <> struct type_t<16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+  typedef bool btype;
+};
+
+template <> struct type_t<32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+  typedef bool btype;
+};
+
+template <> struct type_t<64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+  typedef bool btype;
+};
+
+// supported types (generic)
+#define k_int typename spmd::type_t<spmd_ScalarBits_>::itype
+#define k_uint typename spmd::type_t<spmd_ScalarBits_>::utype
+#define k_float typename spmd::type_t<spmd_ScalarBits_>::ftype
+#define k_bool typename spmd::type_t<spmd_ScalarBits_>::btype
+
+// loads and stores (generic)
+#define k_store(base_addr, value)                                             \
+  do {                                                                        \
+    base_addr[spmd_i_] = value;                                               \
+  } while (0)
+
+#define k_unmasked_store(base_addr, value) k_store(base_addr, value)
+#define k_load(base_addr) base_addr[spmd_i_]
+#define k_unmasked_load(base_addr) k_load(base_addr)
+
+// f32 <--> f16 conversions
+#define k_f32_to_f16(a) __float2half(a)
+#define k_f16_to_f32(a) __half2float(a)
+
+// assignment statement
+#define k_set(var, value)                                                     \
+  do {                                                                        \
+    var = value;                                                              \
+  } while (0)
+
+#define k_unmasked_set(var, value) k_set(var, value)
+
+// while statement (k_while)
+#define k_while(cond) while (cond) {
+#define k_endwhile }
+
+// break statement (k_break)
+#define k_break break
+
+// continue statement (k_continue)
+#define k_continue continue
+
+// endwhile statement (k_endwhile)
+#define k_endwhile }
+
+// if statement (k_if)
+#define k_if(cond) if (cond) {
+
+// elseif statement (k_elseif)
+#define k_elseif(cond)                                                        \
+  }                                                                           \
+  else if (cond) {
+
+// else statement (k_else)
+#define k_else                                                                \
+  }                                                                           \
+  else {
+
+// endif statement (k_endif)
+#define k_endif }
 
 // ----------------------------------------------------------------------------
 // SIMD and SCALAR: dispatch between the two is done on a type
@@ -338,6 +467,10 @@ template <> struct load_helper<KernelSIMD> {
     return nsimd::loadu<nsimd::pack<T, N> >(addr);
   }
 };
+
+// f32 <--> f16 conversions
+#define k_f32_to_f16(a) nsimd_f32_to_f16(a)
+#define k_f16_to_f32(a) nsimd_f16_to_f32(a)
 
 // Clear lanes
 template <typename T, typename S, int N, typename SimdExt>

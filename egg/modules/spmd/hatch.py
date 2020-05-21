@@ -496,13 +496,13 @@ def gen_tests_for_shifts(opts, t, operator):
         // clang-format on
 
         int main() {{
-          for (unsigned int n = 64; n < 10000000; n *= 2) {{
+          for (unsigned int n = 10; n < 1000000; n *= 2) {{
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
-              {typ} *a0 = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
+              {typ} *a0 = nsimd::device_calloc<{typ}>(n);
               prng7(a0, n);
-              {typ} *ref = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
-              {typ} *out = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
+              {typ} *ref = nsimd::device_calloc<{typ}>(n);
+              {typ} *out = nsimd::device_calloc<{typ}>(n);
               spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0, s);
               compute_result(ref, a0, n, s);
               if (!cmp(ref, out, n)) {{
@@ -592,12 +592,12 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         // clang-format on
 
         int main() {{
-          for (unsigned int n = 64; n < 10000000; n *= 2) {{
+          for (unsigned int n = 10; n < 1000000; n *= 2) {{
             int ret = 0;
-            {typ} *a0 = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
+            {typ} *a0 = nsimd::device_calloc<{typ}>(n);
             prng7(a0, n);
-            {typ} *ref = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
-            {typ} *out = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
+            {typ} *ref = nsimd::device_calloc<{typ}>(n);
+            {typ} *out = nsimd::device_calloc<{typ}>(n);
             spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0);
             compute_result(ref, a0, n);
             if (!cmp(ref, out, n)) {{
@@ -632,24 +632,24 @@ def gen_tests_for(opts, t, operator):
     k_args = ', '.join(['{} *a{}'.format(t, i) for i in range(arity)])
     k_call_args = ', '.join(['a{}'.format(i) for i in range(arity)])
 
-    fill_tabs = '\n'.join(['{typ} *a{i} = nsimd::device_calloc<{typ}>(n * ' \
-                           'sizeof({typ}));\nprng{ip5}(a{i}, n);'. \
+    fill_tabs = '\n'.join(['{typ} *a{i} = nsimd::device_calloc<{typ}>(n);\n' \
+                           'prng{ip5}(a{i}, n);'. \
                            format(typ=t, i=i, ip5=i + 5) \
                            for i in range(arity)])
 
     free_tabs = '\n'.join(['nsimd::device_free(a{i});'. \
                            format(typ=t, i=i) for i in range(arity)])
 
-    def get_cte(typ, cte):
+    # spmd
+    def get_cte_spmd(typ, cte):
         if typ == 'f16':
-            return 'nsimd_f32_to_f16((f32){})'.format(cte)
+            return 'k_f32_to_f16((f32){})'.format(cte)
         else:
             return '({}){}'.format(typ, cte)
 
-    # spmd
     def spmd_load_code(param, typ, i):
         if param == 'l':
-            return 'k_lt(k_load(a{}), {})'.format(i, get_cte(typ, 4))
+            return 'k_lt(k_load(a{}), {})'.format(i, get_cte_spmd(typ, 4))
         if param == 'v':
             return 'k_load(a{})'.format(i)
 
@@ -667,9 +667,15 @@ def gen_tests_for(opts, t, operator):
                     k_endif'''.format(op_name, args)
 
     # gpu
+    def get_cte_gpu(typ, cte):
+        if typ == 'f16':
+            return '__float2half((f32){})'.format(cte)
+        else:
+            return '({}){}'.format(typ, cte)
+
     def gpu_load_code(param, typ, i):
         if param == 'l':
-            return 'nsimd::gpu_lt(a{}[i], {})'.format(i, get_cte(typ, 4))
+            return 'nsimd::gpu_lt(a{}[i], {})'.format(i, get_cte_gpu(typ, 4))
         if param == 'v':
             return 'a{}[i]'.format(i)
 
@@ -685,12 +691,20 @@ def gen_tests_for(opts, t, operator):
                         }} else {{
                           dst[i] = {zero};
                         }}'''.format(op_name=op_name, args=args,
-                                     one=get_cte(t, 1), zero=get_cte(t, 0))
+                                     one=get_cte_gpu(t, 1),
+                                     zero=get_cte_gpu(t, 0))
 
     # cpu
+    def get_cte_cpu(typ, cte):
+        if typ == 'f16':
+            return 'nsimd_f32_to_f16((f32){})'.format(cte)
+        else:
+            return '({}){}'.format(typ, cte)
+
     def gpu_load_code(param, typ, i):
         if param == 'l':
-            return 'nsimd::scalar_lt(a{}[i], {})'.format(i, get_cte(typ, 4))
+            return 'nsimd::scalar_lt(a{}[i], {})'. \
+                   format(i, get_cte_cpu(typ, 4))
         if param == 'v':
             return 'a{}[i]'.format(i)
 
@@ -706,7 +720,8 @@ def gen_tests_for(opts, t, operator):
                         }} else {{
                           dst[i] = {zero};
                         }}'''.format(op_name=op_name, args=args,
-                                     one=get_cte(t, 1), zero=get_cte(t, 0))
+                                     one=get_cte_cpu(t, 1),
+                                     zero=get_cte_cpu(t, 0))
 
 
     with common.open_utf8(opts, filename) as out:
@@ -768,14 +783,21 @@ def gen_tests_for(opts, t, operator):
 
         // clang-format on
 
+        #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+            defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+        #define THREADS_PER_BLOCK 128
+        #else
+        #define THREADS_PER_BLOCK 1
+        #endif
+
         int main() {{
-          for (unsigned int n = 64; n < 10000000; n *= 2) {{
+          for (unsigned int n = 10; n < 1000000; n *= 2) {{
             int ret = 0;
             {fill_tabs}
-            {typ} *ref = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
-            {typ} *out = nsimd::device_calloc<{typ}>(n * sizeof({typ}));
-            spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out,
-                                  {k_call_args});
+            {typ} *ref = nsimd::device_calloc<{typ}>(n);
+            {typ} *out = nsimd::device_calloc<{typ}>(n);
+            spmd_launch_kernel_1d(kernel, {typnbits}, THREADS_PER_BLOCK, n,
+                                  out, {k_call_args});
             compute_result(ref, {k_call_args}, n);
             if (!cmp(ref, out, n)) {{
               ret = -1;
@@ -872,7 +894,8 @@ def gen_functions(opts):
                             for i in range(1, len(operator.params)) \
                             if operator.params[i] != 'p'])
 
-        m_call_args = s_call_args
+        m_call_args_cpu = s_call_args
+        m_call_args_gpu = s_call_args
         to_type = ''
         ToType = ''
         v_op_name = op_name
@@ -884,6 +907,7 @@ def gen_functions(opts):
            op_name == 'to_mask':
             s_ret_typ = 'ToType'
             s_tmpl = append('typename ToType', s_tmpl)
+            m_call_args_gpu = append('to_type()', s_call_args)
             s_call_args = append('ToType()', s_call_args)
             v_tmpl = append('typename ToType', v_tmpl)
             to_type = '<to_type>'
@@ -902,7 +926,14 @@ def gen_functions(opts):
             s_tmpl = 'template <{}>'.format(s_tmpl)
 
         functions += \
-        '''template <typename KernelType, int N> struct {op_name}_helper {{}};
+        '''#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \\
+               defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+
+           {signature} nsimd::gpu_{s_op_name}({m_call_args_gpu})
+
+           #else
+
+           template <typename KernelType, int N> struct {op_name}_helper {{}};
 
            template <int N> struct {op_name}_helper<spmd::KernelScalar, N> {{
              {s_tmpl} static {s_ret_typ} impl({s_args}) {{
@@ -920,7 +951,9 @@ def gen_functions(opts):
            {signature} \\
                spmd::{op_name}_helper<spmd_KernelType_, \\
                                       spmd_N_>::{template}impl{to_type}( \\
-                                        {m_call_args})
+                                        {m_call_args_cpu})
+
+           #endif
 
            {hbar}
 
@@ -928,8 +961,9 @@ def gen_functions(opts):
                       s_ret_typ=s_ret_typ, s_args=s_args, v_args=v_args,
                       v_call_args=v_call_args, s_call_args=s_call_args,
                       v_tmpl=v_tmpl, v_ret_typ=v_ret_typ, ToType=ToType,
-                      m_call_args=m_call_args, to_type=to_type,
+                      m_call_args_cpu=m_call_args_cpu, to_type=to_type,
                       v_op_name=v_op_name, op_name=op_name, template=template,
+                      m_call_args_gpu=m_call_args_gpu,
                       signature=get_signature(operator))
 
     # Write the code to file

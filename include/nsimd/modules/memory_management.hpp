@@ -38,20 +38,20 @@ namespace nsimd {
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
 
 template <typename T> T *device_malloc(size_t sz) {
-  void *ptr;
-  if (cudaMalloc(&ptr, sz * sizeof(T)) != cudaSuccess) {
+  void *ret;
+  if (cudaMalloc(&ret, sz * sizeof(T)) != cudaSuccess) {
     return NULL;
   }
   return (T *)ret;
 }
 
 template <typename T> T *device_calloc(size_t sz) {
-  void *ptr;
-  if (cudaMalloc(&ptr, sz * sizeof(T)) != cudaSuccess) {
+  void *ret;
+  if (cudaMalloc(&ret, sz * sizeof(T)) != cudaSuccess) {
     return NULL;
   }
-  if (cudaMemset((void *)ret, 0, n * sizeof(T)) != cudaSuccess) {
-    cudaFree(ptr);
+  if (cudaMemset((void *)ret, 0, sz * sizeof(T)) != cudaSuccess) {
+    cudaFree(ret);
     return NULL;
   }
   return (T *)ret;
@@ -71,15 +71,17 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
              cudaMemcpyDeviceToHost);
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                    \
-  template <typename T> __global__ kernel_##func_name##_(T *ptr, int n) {     \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  __global__ void kernel_##func_name##_(T *ptr, int n) {                      \
+    int i = threadIdx.x + blockIdx.x * blockDim.x;                            \
     if (i < n) {                                                              \
       ptr[i] = (T)(expr);                                                     \
     }                                                                         \
   }                                                                           \
                                                                               \
   template <typename T> void func_name(T *ptr, size_t sz) {                   \
-    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128> > >(       \
+    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128>>>(         \
         ptr, int(sz));                                                        \
   }
 
@@ -175,7 +177,7 @@ template <typename T> paired_pointers_t<T> pair_calloc(size_t sz) {
     ret.host_ptr = NULL;
     return ret;
   }
-  ret.host_ptr = calloc(sz);
+  ret.host_ptr = calloc(sz, 1);
   if (ret.host_ptr == NULL) {
     device_free(ret.device_ptr);
     ret.device_ptr = NULL;
