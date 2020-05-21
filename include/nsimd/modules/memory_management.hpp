@@ -96,23 +96,23 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 #else
 
 template <typename T> T *device_malloc(size_t sz) {
-  return (T *)malloc(sz);
+  return (T *)malloc(sz * sizeof(T));
 }
 
 template <typename T> T *device_calloc(size_t sz) {
-  return (T *)calloc(sz, 1);
+  return (T *)calloc(sz * sizeof(T), 1);
 }
 
 template <typename T> void device_free(T *ptr) { free((void *)ptr); }
 
 template <typename T>
 void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
-  memcpy((void *)device_ptr, (void *)host_ptr, sz);
+  memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
 }
 
 template <typename T>
 void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
-  memcpy((void *)host_ptr, (void *)device_ptr, sz);
+  memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
 }
 
 #define nsimd_fill_dev_mem_func(func_name, expr)                              \

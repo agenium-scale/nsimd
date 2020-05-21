@@ -37,6 +37,20 @@ SOFTWARE.
 
 #if defined(NSIMD_CUDA)
 
+template <typename T> __device__ bool cmp_Ts(T a, T b) { return a == b; }
+
+__device__ bool cmp_Ts(__half a, __half b) {
+  return __half_as_short(a) == __half_as_short(b);
+}
+
+__device__ bool cmp_Ts(float a, float b) {
+  return __float_as_int(a) == __float_as_uint(b);
+}
+
+__device__ bool cmp_Ts(double a, double b) {
+  return __double_as_longlong(a) == __double_as_longlong(b);
+}
+
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
@@ -46,7 +60,7 @@ __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
   int tid = threadIdx.x;
   int i = tid + blockIdx.x * blockDim.x;
   if (i < n) {
-    buf[tid] = T(nsimd::gpu_eq(src1[i], src2[i]) ? 1 : 0);
+    buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
   }
 
   const int block_start = blockIdx.x * blockDim.x;

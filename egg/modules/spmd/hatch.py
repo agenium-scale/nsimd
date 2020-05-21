@@ -487,7 +487,7 @@ def gen_tests_for_shifts(opts, t, operator):
         // clang-format off
 
         nsimd_fill_dev_mem_func(prng7,
-            (((unsigned int)i * 22328380 + 644295) % 7))
+            1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         spmd_kernel_1d(kernel, {typ} *dst, {typ} *a0, int s)
           k_store(dst, k_{op_name}(k_load(a0), s));
@@ -582,7 +582,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         // clang-format off
 
         nsimd_fill_dev_mem_func(prng7,
-            (((unsigned int)i * 22328380 + 644295) % 7))
+            1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         spmd_kernel_1d(kernel, {typ} *dst, {typ} *a0)
           k_store(dst, k_{op_name}({k_typ}, k_{op_name}({k_totyp},
@@ -771,11 +771,11 @@ def gen_tests_for(opts, t, operator):
         // clang-format off
 
         nsimd_fill_dev_mem_func(prng5,
-            (((unsigned int)i * 69342380 + 414585) % 5))
+            1 + (((unsigned int)i * 69342380 + 414585) % 5))
         nsimd_fill_dev_mem_func(prng6,
-            (((unsigned int)i * 12528380 + 784535) % 6))
+            1 + (((unsigned int)i * 12528380 + 784535) % 6))
         nsimd_fill_dev_mem_func(prng7,
-            (((unsigned int)i * 22328380 + 644295) % 7))
+            1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         spmd_kernel_1d(kernel, {typ} *dst, {k_args})
           {k_code}

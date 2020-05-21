@@ -65,6 +65,30 @@ def get_impl_f16(operator, totyp, typ):
               #endif'''.format(arch53_code=arch53_code, emul=emul)
 
 # -----------------------------------------------------------------------------
+# Reinterprets on CUDA have intrinsics
+
+def reinterpret(totyp, typ):
+    if typ == totyp:
+        return 'return {in0};'.format(**fmtspec)
+    cuda_typ = { 'i16': 'short',
+                 'u16': 'ushort',
+                 'f16': 'half',
+                 'i32': 'int',
+                 'u32': 'uint',
+                 'f32': 'float',
+                 'f64': 'double',
+                 'i64': 'longlong' }
+    if typ in cuda_typ and totyp in cuda_typ and \
+       ((typ in common.ftypes and totyp in common.iutypes) or \
+        (typ in common.iutypes and totyp in common.ftypes)):
+        return 'return __{typ2}_as_{totyp2}({in0});'. \
+               format(typ2=cuda_typ[typ], totyp2=cuda_typ[totyp], **fmtspec)
+    else:
+        return '''{totyp} ret;
+                  memcpy((void *)&ret, (void *)&{in0}, sizeof({in0}));
+                  return ret;'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 
 def get_impl(operator, totyp, typ):
 
@@ -117,9 +141,7 @@ def get_impl(operator, totyp, typ):
         return pun_operators[operator.name]()
     # reinterpret
     if operator.name == 'reinterpret':
-        return '''{totyp} ret;
-                  memcpy((void *)&ret, (void *)&{in0}, sizeof({in0}));
-                  return ret;'''.format(**fmtspec)
+        return reinterpret(totyp, typ)
     # cvt
     if operator.name == 'cvt':
         return 'return ({totyp}){in0};'.format(**fmtspec)
