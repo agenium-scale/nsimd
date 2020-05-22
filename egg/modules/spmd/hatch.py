@@ -829,6 +829,10 @@ def gen_tests(opts):
 
         for t in operator.types:
 
+            if operator.name in ['notb', 'andb', 'xorb', 'orb',
+                                 'andnotb'] and t == 'f16':
+                continue
+
             tts = common.get_output_types(t, operator.output_to)
 
             for tt in tts:
