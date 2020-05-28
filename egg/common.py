@@ -354,6 +354,7 @@ def enum(l):
 # List of supported SIMD operators/functions
 
 # v   = SIMD vector parameter
+# vi  = SIMD vector of signed integers parameter
 # vx2 = struct of 2 SIMD vector parameters
 # vx3 = struct of 3 SIMD vector parameters
 # vx4 = struct of 4 SIMD vector parameters
@@ -379,6 +380,8 @@ def get_one_type_generic(param, typ):
         return '{}*'.format(typ)
     elif param == 'c*':
         return '{} const*'.format(typ)
+    elif param == 'vi':
+        return 'vi{}'.format(typ[1:])
     elif param == 'v':
         return 'v{}'.format(typ)
     elif param == 'vx2':
@@ -403,6 +406,8 @@ def get_one_type_specific(param, ext, typ):
         return '{}*'.format(typ)
     elif param == 'c*':
         return '{} const*'.format(typ)
+    elif param == 'vi':
+        return 'nsimd_{}_vi{}'.format(ext, typ[1:])
     elif param == 'v':
         return 'nsimd_{}_v{}'.format(ext, typ)
     elif param == 'vx2':
@@ -427,11 +432,17 @@ def get_one_type_pack(param, inout, N):
         return 'T const*'
     if param == 's':
         return 'T'
-    if param.startswith('v'):
+    if param == 'v':
         if inout == 0:
             return 'pack<T, {}, SimdExt> const&'.format(N)
         else:
             return 'pack<T, {}, SimdExt>'.format(N)
+    if param == 'vi':
+        if inout == 0:
+            return 'pack<typename traits<T>::itype, {}, SimdExt> const&'. \
+                   format(N)
+        else:
+            return 'pack<typename traits<T>::itype, {}, SimdExt>'.format(N)
     if param == 'l':
         if inout == 0:
             return 'packl<T, {}, SimdExt> const&'.format(N)
@@ -452,6 +463,8 @@ def get_one_type_generic_adv_cxx(param, T, N):
         return T
     elif param == 'v':
         return 'pack<{}, {}, SimdExt>'.format(T, N)
+    elif param == 'vi':
+        return 'pack<i{}, {}, SimdExt>'.format(T[1:], N)
     elif param == 'vx2':
         return 'packx2<{}, {}, SimdExt>'.format(T, N)
     elif param == 'vx3':

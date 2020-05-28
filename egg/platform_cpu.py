@@ -552,6 +552,26 @@ def iota(typ):
 
 # -----------------------------------------------------------------------------
 
+def gather(typ):
+    if typ == 'f16':
+        return func_body(
+               'ret.v{{i}} = nsimd_f16_to_f32({in0}[{in1}.v{{i}}]);'. \
+               format(**fmtspec), typ)
+    return func_body('ret.v{{i}} = {in0}[{in1}.v{{i}}];'. \
+                     format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
+def scatter(typ):
+    if typ == 'f16':
+        return repeat_stmt(
+               '{in0}[{in1}.v{{i}}] = nsimd_f32_to_f16({in2}.v{{i}});'. \
+               format(**fmtspec), typ)
+    return repeat_stmt('{in0}[{in1}.v{{i}}] = {in2}.v{{i}};'. \
+                       format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
 def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -594,6 +614,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'store4u': lambda: store_deg234(from_typ, 4),
         'loadla': lambda: loadl(from_typ),
         'loadlu': lambda: loadl(from_typ),
+        'gather': lambda: gather(from_typ),
+        'scatter': lambda: scatter(from_typ),
         'storela': lambda: storel(from_typ),
         'storelu': lambda: storel(from_typ),
         'add': lambda: op2('+', from_typ),

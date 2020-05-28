@@ -38,7 +38,7 @@ def get_cxx_advanced_generic(operator):
     # Compute parameters passed to the base C++ API functions
     def var(arg, N):
         member = 'car' if N == '1' else 'cdr'
-        if arg[1] in ['v', 'l']:
+        if arg[1] in ['vi', 'v', 'l']:
             return 'a{}.{}'.format(arg[0], member)
         elif (arg[1] in ['*', 'c*']) and N != '1':
             return 'a{} + len_'.format(arg[0])
@@ -67,7 +67,7 @@ def get_cxx_advanced_generic(operator):
                                                             'T', 'N')
 
     # Dump C++
-    if operator.params[0] in ['v', 'l']:
+    if operator.params[0] in ['v', 'vi', 'l']:
         return_ret = 'return ret;'
         ret_car = 'ret.car = '
         ret_cdr = 'ret.cdr = '

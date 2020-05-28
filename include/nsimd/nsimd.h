@@ -542,7 +542,7 @@ namespace nsimd {
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Sorter typedefs for floatting point types */
+/* Shorter typedefs for floatting point types */
 
 #if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                    \
      defined(NSIMD_FP16)) || defined(NSIMD_SVE)
@@ -574,6 +574,91 @@ typedef double f64;
 namespace nsimd {
 typedef nsimd_nat nat;
 } // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* C++ traits for base types */
+
+#if NSIMD_CXX > 0
+
+namespace nsimd {
+
+template <typename T> struct traits {};
+
+// 8-bits
+
+template <> struct traits<i8> {
+  typedef i8 itype;
+  typedef u8 utype;
+};
+
+template <> struct traits<u8> {
+  typedef i8 itype;
+  typedef u8 utype;
+};
+
+// 16-bits
+
+template <> struct traits<i16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+};
+
+template <> struct traits<u16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+};
+
+template <> struct traits<f16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+};
+
+// 32-bits
+
+template <> struct traits<i32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+};
+
+template <> struct traits<u32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+};
+
+template <> struct traits<f32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+};
+
+// 64-bits
+
+template <> struct traits<i64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+};
+
+template <> struct traits<u64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+};
+
+template <> struct traits<f64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+};
+
+} // namespace nsimd
+
 #endif
 
 /* ------------------------------------------------------------------------- */

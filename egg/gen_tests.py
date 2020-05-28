@@ -1890,6 +1890,101 @@ def gen_load_store(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
+# Tests for gather/scatter
+
+def gen_gather_scatter(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+
+    ityp = 'i' + typ[1:]
+
+    if lang == 'c_base':
+        gather_scatter = \
+            '''vec({ityp}) offsets = vmul(viota({ityp}), vset1(({ityp})2,
+                                          {ityp}), {ityp});
+               vec({typ}) v = vgather(vin, offsets, {typ});
+               offsets = vadd(offsets, vset1(({ityp})1, {ityp}), {ityp});
+               vscatter(vout, offsets, v, {typ});'''. \
+               format(typ=typ, ityp=ityp)
+    elif lang == 'cxx_base':
+        gather_scatter = \
+            '''vec({ityp}) offsets = nsimd::mul(nsimd::iota({ityp}()),
+                                     nsimd::set1(({ityp})2, {ityp}()),
+                                     {ityp}());
+               vec({typ}) v = nsimd::gather(vin, offsets, {typ}());
+               offsets = nsimd::add(offsets, nsimd::set1(({ityp})1, {ityp}()),
+                                    {ityp}());
+               nsimd::scatter(vout, offsets, v, {typ}());'''. \
+               format(typ=typ, ityp=ityp)
+    else:
+        gather_scatter = \
+            '''typedef nsimd::pack<{typ}> pack;
+               typedef nsimd::pack<{ityp}> ipack;
+               ipack offsets = nsimd::mul(nsimd::iota<ipack>(),
+                               nsimd::set1<ipack>(({ityp})2));
+               pack v = nsimd::gather<pack>(vin, offsets);
+               offsets = nsimd::add(offsets, nsimd::set1<ipack>(({ityp})1));
+               nsimd::scatter(vout, offsets, v);'''. \
+               format(typ=typ, ityp=ityp)
+
+    if typ == 'f16':
+        one = 'nsimd_f32_to_f16(1.0f)'
+        zero = 'nsimd_f32_to_f16(0.0f)'
+        comp = 'nsimd_f16_to_f32(vout[i]) != 0.0f'
+    else:
+        one = '({typ})1'.format(typ=typ)
+        zero = '({typ})0'.format(typ=typ)
+        comp = 'vout[i] != ({typ})0'.format(typ=typ)
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+           '''{includes}
+
+           #define STATUS "test of {op_name} over {typ}"
+
+           int main(void) {{
+             int n = 2 * vlen({typ});
+             int i;
+             {typ} vin[2 * NSIMD_MAX_LEN({typ})];
+             {typ} vout[2 * NSIMD_MAX_LEN({typ})];
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+             /* Fill input and output with 0 1 0 1 0 1 ... */
+             for (i = 0; i < n; i++) {{
+               if ((i % 2) == 1) {{
+                 vin[i] = {one};
+                 vout[i] = {one};
+               }} else {{
+                 vin[i] = {zero};
+                 vout[i] = {zero};
+               }}
+             }}
+
+             /* We gather odd offsets elements from vin and put then at even */
+             /* offsets. */
+             {{
+               {gather_scatter}
+             }}
+
+             /* Compare results */
+             for (i = 0; i < n; i++) {{
+               if ({comp}) {{
+                 fprintf(stdout, STATUS "... FAIL\\n");
+                 fflush(stdout);
+                 return -1;
+               }}
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             return EXIT_SUCCESS;
+           }}'''.format(includes=get_includes(lang), ityp=ityp, comp=comp,
+                        typ=typ, year=date.today().year, op_name=op.name,
+                        gather_scatter=gather_scatter, zero=zero, one=one))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
 # Tests for masked loads
 
 def gen_mask_load(opts, op, typ, lang):
@@ -2894,7 +2989,7 @@ def doit(opts):
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
                         'store4a', 'store4u', 'downcvt', 'to_logical',
-                        'mask_for_loop_tail', 'set1l']:
+                        'mask_for_loop_tail', 'set1l', 'scatter']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb', 'andnotb'] and \
@@ -2940,6 +3035,10 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
                 gen_load_store_ravel(opts, operator, typ, 'c_base')
+            elif operator.name == 'gather':
+                gen_gather_scatter(opts, operator, typ, 'c_base')
+                gen_gather_scatter(opts, operator, typ, 'cxx_base')
+                gen_gather_scatter(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['masko_loada1', 'masko_loadu1',
                                    'maskz_loada1', 'maskz_loadu1']:
                 gen_mask_load(opts, operator, typ, 'c_base')

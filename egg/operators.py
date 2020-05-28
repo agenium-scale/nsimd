@@ -675,6 +675,23 @@ class Store4a(Operator):
     desc = 'Store 4 SIMD vectors as array of structures of 4 members into ' + \
            'aligned memory.'
 
+class Gather(Operator):
+    full_name = 'gather elements from memory into a SIMD vector'
+    signature = 'v gather * vi'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Gather elements from memory with base address given as first ' \
+           'argument and offsets given as second argument.'
+
+class Scatter(Operator):
+    full_name = 'scatter elements from SIMD vector to memory'
+    signature = '_ scatter * vi v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Scatter elements from third argument to memory with base ' \
+           'address given as first argument and offsets given as second ' \
+           'argument.'
+
 class Storelu(Operator):
     full_name = 'store vector of logicals'
     signature = '_ storelu * l'

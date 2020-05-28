@@ -3499,6 +3499,86 @@ def iota(simd_ext, typ):
                                 if typ in common.iutypes else '', **fmtspec)
 
 # -----------------------------------------------------------------------------
+# scatter
+
+def scatter(simd_ext, typ):
+    if typ == 'f16':
+        return '''int i;
+                  f32 buf[{le}];
+                  i16 offset_buf[{le}];
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in1});
+                  {pre}storeu_ps(buf, {in2}.v0);
+                  {pre}storeu_ps(buf + {leo2}, {in2}.v1);
+                  for (i = 0; i < {le}; i++) {{
+                    {in0}[offset_buf[i]] = nsimd_f32_to_f16(buf[i]);
+                  }}'''.format(leo2=int(fmtspec['le']) // 2, **fmtspec)
+    if simd_ext in (sse + avx) or typ in ['i8', 'u8', 'i16', 'u16']:
+        if typ in common.iutypes:
+            cast = '(__m{nbits}i*)'.format(**fmtspec)
+        else:
+            cast = ''
+        return '''int i;
+                  {typ} buf[{le}];
+                  {ityp} offset_buf[{le}];
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in1});
+                  {pre}storeu{sufsi}({cast}buf, {in2});
+                  for (i = 0; i < {le}; i++) {{
+                    {in0}[offset_buf[i]] = buf[i];
+                  }}'''.format(ityp='i' + typ[1:], cast=cast, **fmtspec)
+    # getting here means 32 and 64-bits types for avx512
+    return '''{pre}i{typnbits}scatter{suf}(
+                  (void *){in0}, {in1}, {in2}, {scale});'''. \
+                  format(scale=int(typ[1:]) // 8, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# gather
+
+def gather(simd_ext, typ):
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  int i;
+                  f32 buf[{le}];
+                  i16 offset_buf[{le}];
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in1});
+                  for (i = 0; i < {le}; i++) {{
+                    buf[i] = nsimd_f16_to_f32({in0}[offset_buf[i]]);
+                  }}
+                  ret.v0 = {pre}loadu_ps(buf);
+                  ret.v1 = {pre}loadu_ps(buf + {leo2});
+                  return ret;'''.format(leo2=int(fmtspec['le']) // 2,
+                                        **fmtspec)
+    if simd_ext in (sse + ['avx']) or typ in ['i8', 'u8', 'i16', 'u16']:
+        if typ in common.iutypes:
+            cast = '(__m{nbits}i*)'.format(**fmtspec)
+        else:
+            cast = ''
+        return '''int i;
+                  {typ} buf[{le}];
+                  {ityp} offset_buf[{le}];
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in1});
+                  for (i = 0; i < {le}; i++) {{
+                    buf[i] = {in0}[offset_buf[i]];
+                  }}
+                  return {pre}loadu{sufsi}({cast}buf);'''. \
+                  format(ityp='i' + typ[1:], cast=cast, **fmtspec)
+    # getting here means 32 and 64-bits types for avx2 and avx512
+    if simd_ext == 'avx2':
+        if typ in ['i64', 'u64']:
+            cast = '(nsimd_longlong *)'
+        elif typ in ['i32', 'u32']:
+            cast = '(int *)'
+        else:
+            cast = '({typ} *)'.format(**fmtspec)
+        return '''return {pre}i{typnbits}gather{suf}(
+                             {cast}{in0}, {in1}, {scale});'''. \
+                             format(scale=int(typ[1:]) // 8, cast=cast,
+                                    **fmtspec)
+    elif simd_ext in avx512:
+        return 'return {pre}i{typnbits}gather{suf}({in1}, ' \
+                      '(const void *){in0}, {scale});'. \
+                      format(scale=int(typ[1:]) // 8, **fmtspec)
+
+# -----------------------------------------------------------------------------
 # get_impl function
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ):
@@ -3547,6 +3627,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store2u': lambda: store_deg234(simd_ext, from_typ, False, 2),
         'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
         'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
+        'gather': lambda: gather(simd_ext, from_typ),
+        'scatter': lambda: scatter(simd_ext, from_typ),
         'andb': lambda: binop2('andb', simd_ext, from_typ),
         'xorb': lambda: binop2('xorb', simd_ext, from_typ),
         'orb': lambda: binop2('orb', simd_ext, from_typ),
