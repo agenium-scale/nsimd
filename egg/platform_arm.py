@@ -2293,6 +2293,79 @@ def zip_unzip(func, simd_ext, typ):
            return content
 
 # -----------------------------------------------------------------------------
+# gather
+
+def gather(simd_ext, typ):
+    emul = '''int i;
+              {typ} buf[{le}];
+              i{typnbits} offset_buf[{le}];
+              vst1q_s{typnbits}(offset_buf, {in1});
+              for (i = 0; i < {le}; i++) {{
+                buf[i] = {in0}[offset_buf[i]];
+              }}
+              return vld1_{suf}({cast}buf);'''.format(**fmtspec)
+    if typ == 'f16':
+        if simd_ext in sve:
+            return emul
+        return '''#ifdef NSIMD_NATIVE_FP16
+                    {emul}
+                  #else
+                    nsimd_{simd_ext}_vf16 ret;
+                    int i;
+                    f32 buf[{le}];
+                    i16 offset_buf[{le}];
+                    vst1q_s16(offset_buf, {in1});
+                    for (i = 0; i < {le}; i++) {{
+                      buf[i] = nsimd_f16_to_f32({in0}[offset_buf[i]]);
+                    }}
+                    ret.v0 = vld1q_f32(buf);
+                    ret.v1 = vld1q_f32(buf + {leo2});
+                    return ret;
+                  #endif'''.format(leo2=int(fmtspec['le']) // 2,
+                                        **fmtspec)
+    if simd_ext in neon or typ in ['i8', 'u8', 'i16', 'u16']:
+        return emul
+    # getting here means SVE
+    return 'svld1_gather_s{typnbits}offset_{suf}({svtrue}, {in0}, {in1})'. \
+           format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# scatter
+
+def scatter(simd_ext, typ):
+    emul = '''int i;
+              {typ} buf[{le}];
+              i{typnbits} offset_buf[{le}];
+              vst1q_s{typnbits}(offset_buf, {in1});
+              vst1q_{suf}(buf, {in2});
+              for (i = 0; i < {le}; i++) {{
+                {in0}[offset_buf[i]] = buf[i];
+              }}'''.format(**fmtspec)
+    if typ == 'f16':
+        if simd_ext in sve:
+            return emul
+        return '''#ifdef NSIMD_NATIVE_FP16
+                    {emul}
+                  #else
+                    nsimd_{simd_ext}_vf16 ret;
+                    int i;
+                    f32 buf[{le}];
+                    i16 offset_buf[{le}];
+                    vst1q_s16(offset_buf, {in1});
+                    vst1q_f32(buf, {in2}.v0);
+                    vst1q_f32(buf + {leo2}, {in2}.v1);
+                    for (i = 0; i < {le}; i++) {{
+                      {in0}[offset_buf[i]] = nsimd_f32_to_f16(buf[i]);
+                    }}
+                  #endif'''.format(leo2=int(fmtspec['le']) // 2,
+                                        **fmtspec)
+    if simd_ext in neon or typ in ['i8', 'u8', 'i16', 'u16']:
+        return emul
+    # getting here means SVE
+    return 'svst1_scatter_s{typnbits}offset_{suf}({svtrue}, {in0}, ' \
+           '{in1}, {in2})'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
 # get_impl function
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ):
