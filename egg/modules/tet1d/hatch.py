@@ -47,6 +47,52 @@ def gen_doc(opts):
 
 # -----------------------------------------------------------------------------
 
+# TODO: ROCM
+random_array_generation = '''
+#if defined(NSIMD_CUDA)
+  __device__ int rand() {{
+    static int seed = threadIdx.x + blockIdx.x * blockDim.x;
+    return (seed = (1103515245 * seed + 12345));
+  }}
+#endif
+  
+  {rands}
+  
+  {fills}
+'''
+
+fill_array = '''
+#if defined(NSIMD_CUDA)
+__global__ void fill_array_device{i}({t} *dst, unsigned int n) {{
+  unsigned int i = threadIdx.x + blockIdx.x * blockDim.x;
+  if (i < n) {{
+    dst[i] = rand{i}();
+  }}
+}}
+
+void fill_array{i}({t} *dst, unsigned int n) {{
+  fill_array_device{i}<<<{gpu_params}>>>(dst, n);
+}}
+
+#elif defined(NSIMD_ROCM)
+// TODO
+#else
+void fill_array{i}({t} *dst, unsigned int n) {{
+  for (unsigned int i=0; i<n; ++i) {{
+    dst[i] = rand{i}();
+  }}
+}}
+#endif
+
+'''
+
+def gen_random(operator, typ):
+    nargs = len(operator.params[1:])+1
+    rands = operator.domain.gen_rand(typ)
+    fills = '\n'.join([fill_array.format(gpu_params=gpu_params,i=i,t=typ) \
+            for i in range(1, nargs)])
+    return random_array_generation.format(rands=rands, fills=fills)
+
 def gen_tests_for_shifts(opts, t, operator):
     op_name = operator.name
     dirname = os.path.join(opts.tests_dir, 'modules', 'tet1d')
@@ -58,6 +104,8 @@ def gen_tests_for_shifts(opts, t, operator):
         out.write(
         '''#include <nsimd/modules/tet1d.hpp>
         #include "common.hpp"
+
+        {random}
 
         #if defined(NSIMD_CUDA)
 
@@ -99,9 +147,10 @@ def gen_tests_for_shifts(opts, t, operator):
           for (unsigned int n = 10; n < 10000000; n *= 2) {{
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
-              {t} *tab0 = get123<{t}>(n);
-              {t} *ref = get000<{t}>(n);
-              {t} *out = get000<{t}>(n);
+              {t} *tab0 = get_array<{t}>(n);
+              fill_array1(tab0, n);
+              {t} *ref = get_array<{t}>(n);
+              {t} *out = get_array<{t}>(n);
               compute_result(ref, tab0, n, s);
               tet1d::out(out) = tet1d::{op_name}(tet1d::in(tab0, n), s);
               if (!cmp(ref, out, n)) {{
@@ -120,6 +169,7 @@ def gen_tests_for_shifts(opts, t, operator):
           return 0;
         }}
         '''.format(gpu_params=gpu_params, op_name=op_name, t=t,
+                   random=gen_random(operator, t),
                    typnbits=t[1:]))
 
 def gen_tests_for(opts, t, tt, operator):
@@ -131,11 +181,6 @@ def gen_tests_for(opts, t, tt, operator):
     if not common.can_create_filename(opts, filename):
         return
 
-    if operator.params == ['l'] * len(operator.params):
-        random = ['get101', 'get110', 'get101']
-    else:
-        random = ['get123', 'get321', 'get123']
-
     arity = len(operator.params[1:])
     args_tabs = ', '.join(['{typ} *tab{i}'.format(typ=t, i=i) \
                            for i in range(arity)])
@@ -146,18 +191,19 @@ def gen_tests_for(opts, t, tt, operator):
     args_in_tabs_call = ', '.join(['tet1d::in(tab{i}, n)'. \
                                    format(i=i) \
                                    for i in range(arity)])
-    fill_tabs = '\n'.join(['{typ} *tab{i} = {random}<{typ}>(n);'. \
-                           format(typ=t, i=i, random=random[i]) \
+    fill_tabs = '\n'.join(['''{typ} *tab{i} = get_array<{typ}>(n);
+        fill_array{j}(tab{i}, n);'''. \
+                           format(typ=t, i=i, j=i+1) \
                            for i in range(arity)])
     del_tabs = '\n'.join(['del(tab{i});'.format(i=i) \
                            for i in range(arity)])
 
     zero = '{}(0)'.format(t) if t != 'f16' else '{f32_to_f16}(0.0f)'
     one = '{}(1)'.format(t) if t != 'f16' else '{f32_to_f16}(1.0f)'
-    comp_tab0_to_1 = 'tab0[i] == {}(1)'.format(t) if t != 'f16' else \
-                     '{f16_to_f32}(tab0[i]) != 1.0f'
-    comp_tab1_to_1 = 'tab1[i] == {}(1)'.format(t) if t != 'f16' else \
-                     '{f16_to_f32}(tab1[i]) != 1.0f'
+    comp_tab0_to_1 = '(bool)tab0[i]'.format(t) if t != 'f16' else \
+                     '(bool){f16_to_f32}(tab0[i])'
+    comp_tab1_to_1 = '(bool)tab1[i]'.format(t) if t != 'f16' else \
+                     '(bool){f16_to_f32}(tab1[i])'
 
     if op_name == 'cvt':
         tet1d_code = \
@@ -234,9 +280,9 @@ def gen_tests_for(opts, t, tt, operator):
     elif operator.params == ['l'] * len(operator.params):
         if len(operator.params[1:]) == 1:
             if operator.cxx_operator != None:
-                cond = '{}(A == 1)'.format(operator.cxx_operator[8:])
+                cond = '{}(A != 0)'.format(operator.cxx_operator[8:])
             else:
-                cond = 'tet1d::{}(A == 1)'.format(op_name)
+                cond = 'tet1d::{}(A != 0)'.format(op_name)
             tet1d_code = \
                 '''TET1D_OUT({typ}) Z = tet1d::out(out);
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
@@ -250,9 +296,9 @@ def gen_tests_for(opts, t, tt, operator):
                                   comp_tab0_to_1=comp_tab0_to_1)
         if len(operator.params[1:]) == 2:
             if operator.cxx_operator != None:
-                cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator[8:])
+                cond = '(A != 0) {} (B != 0)'.format(operator.cxx_operator[8:])
             else:
-                cond = 'tet1d::{}(A == 1, B == 1)'.format(op_name)
+                cond = 'tet1d::{}(A != 0, B != 0)'.format(op_name)
             tet1d_code = \
                 '''TET1D_OUT({typ}) Z = tet1d::out(out);
                    TET1D_IN({typ}) A = tet1d::in(tab0, n);
@@ -281,6 +327,8 @@ def gen_tests_for(opts, t, tt, operator):
         out.write(
         '''#include <nsimd/modules/tet1d.hpp>
         #include "common.hpp"
+
+        {random}
 
         #if defined(NSIMD_CUDA)
 
@@ -324,8 +372,8 @@ def gen_tests_for(opts, t, tt, operator):
           for (unsigned int n = 10; n < 10000000; n *= 2) {{
             int ret = 0;
             {fill_tabs}
-            {typ} *ref = get000<{typ}>(n);
-            {typ} *out = get000<{typ}>(n);
+            {typ} *ref = get_array<{typ}>(n);
+            {typ} *out = get_array<{typ}>(n);
             compute_result(ref, {args_tabs_call}, n);
             {tet1d_code}
             if (!cmp(ref, out, n)) {{
@@ -345,7 +393,8 @@ def gen_tests_for(opts, t, tt, operator):
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
                    args_tabs_call=args_tabs_call, gpu_params=gpu_params,
                    del_tabs=del_tabs, tet1d_code=tet1d_code,
-                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel))
+                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
+                   random=gen_random(operator, t)))
 
     common.clang_format(opts, filename, cuda=True)
 

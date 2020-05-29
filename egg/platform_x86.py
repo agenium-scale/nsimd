@@ -2875,7 +2875,7 @@ def to_logical1(simd_ext, typ):
 # is_nan
 
 def is_nan():
-    return '''return nsimd_not_{simd_ext}_{typ}(
+    return '''return nsimd_notl_{simd_ext}_{typ}(
                      nsimd_eq_{simd_ext}_{typ}({in0}, {in0}));'''. \
              format(**fmtspec)
 

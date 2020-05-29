@@ -32,12 +32,12 @@ SOFTWARE.
 #include <cerrno>
 #include <cstdlib>
 #include <cmath>
-#include <cuda_fp16.h>
 
 // ----------------------------------------------------------------------------
 // CUDA
 
 #if defined(NSIMD_CUDA)
+#include <cuda_fp16.h>
 
 template <typename T>
 __global__ void device_fill(T *dst, int n, int variant) {
@@ -65,28 +65,29 @@ __device__ T device_cmp_numbers(const T &src1, const T &src2) {
   return T(nsimd::gpu_eq(src1, src2) ? 1 : 0);
 }
 
-template <>
-__device__ f32 device_cmp_numbers(const f32 &src1, const f32 &src2) {
-  if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
-    return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
+namespace detail {
+  template <typename T>
+  T device_cmp_float(const T &src1, const T &src2) {
+    if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
+      return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
+    }
+    return T(nsimd::gpu_eq(src1, src2) ? 1 : 0);
   }
-  return f32(nsimd::gpu_eq(src1, src2) ? 1 : 0);
-}
-
-template <>
-__device__ f64 device_cmp_numbers(const f64 &src1, const f64 &src2) {
-  if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
-    return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
-  }
-  return f64(nsimd::gpu_eq(src1, src2) ? 1 : 0);
 }
 
 template <>
 __device__ f16 device_cmp_numbers(const f16 &src1, const f16 &src2) {
-  if (nsimd::gpu_is_nan(src1) || nsimd::gpu_is_nan(src2)) {
-    return nsimd::gpu_is_nan(src1) && nsimd::gpu_is_nan(src2);
-  }
-  return f16(nsimd::gpu_eq(src1, src2) ? 1 : 0);
+  detail::device_cmp_float(src1, src2);
+}
+
+template <>
+__device__ f32 device_cmp_numbers(const f32 &src1, const f32 &src2) {
+  detail::device_cmp_float(src1, src2);
+}
+
+template <>
+__device__ f64 device_cmp_numbers(const f64 &src1, const f64 &src2) {
+  detail::device_cmp_float(src1, src2);
 }
 
 // perform reduction on blocks first, note that this could be optimized
@@ -151,7 +152,7 @@ inline int gpuCheck(cudaError_t code, const char *file, int line) {
     exit((ans));                                                              \
   }
 
-template <typename T> T *get000(unsigned int n) {
+template <typename T> T *get_array(unsigned int n) {
   T *ret;
   if (cuda_check_error(cudaMalloc((void **)&ret, n * sizeof(T)))) {
     return NULL;
@@ -271,7 +272,7 @@ int hip_do(hipError_t code) {
   return 0;
 }
 
-template <typename T> T *get000(unsigned int n) {
+template <typename T> T *get_array(unsigned int n) {
   T *ret;
   if (hip_do(hipMalloc((void **)&ret, n * sizeof(T)))) {
     return NULL;
@@ -317,7 +318,7 @@ template <typename T> void del(T *ptr) { hipFree(ptr); }
 // ----------------------------------------------------------------------------
 // SIMD
 
-template <typename T> T *get000(unsigned int n) {
+template <typename T> T *get_array(unsigned int n) {
   return (T *)calloc(n, sizeof(T));
 }
 
@@ -357,8 +358,53 @@ template <typename T> T *getXXX(unsigned int n, int variant) {
   return ret;
 }
 
+namespace detail {
+  template <typename T>
+  bool float_eq(const T &src1, const T &src2) {
+    if (nsimd::scalar_is_nan(src1) || nsimd::scalar_is_nan(src2)) {
+      return nsimd::scalar_is_nan(src1) && nsimd::scalar_is_nan(src2);
+    }
+    return nsimd::scalar_eq(src1, src2);
+  }
+
+  template<typename T>
+  bool cmp_float(T* src1, T* src2, unsigned int n) {
+    for (unsigned int i=0; i<n;++i) {
+      if (!float_eq(src1[i], src2[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template<>
+  bool cmp_float(f32* src1, f32* src2, unsigned int n) {
+    for (unsigned int i=0; i<n;++i) {
+      if (!float_eq(src1[i], src2[i])) {
+        printf ("%i: %f 0x%x / %f 0x%x\n", i,
+            (double)(src1[i]), *(u32*)&src1[i], 
+            (double)(src2[i]), *(u32*)&src2[i]);
+        //return false;
+      }
+    }
+    return true;
+  }
+}
+
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   return memcmp(src1, src2, n * sizeof(T)) == 0;
+}
+
+template <> bool cmp(f16 *src1, f16 *src2, unsigned int n) {
+  return detail::cmp_float(src1, src2, n);
+}
+
+template <> bool cmp(f32 *src1, f32 *src2, unsigned int n) {
+  return detail::cmp_float(src1, src2, n);
+}
+
+template <> bool cmp(f64 *src1, f64 *src2, unsigned int n) {
+  return detail::cmp_float(src1, src2, n);
 }
 
 template <typename T> void del(T *ptr) { free(ptr); }
