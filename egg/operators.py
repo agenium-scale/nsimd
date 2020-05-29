@@ -680,6 +680,7 @@ class Gather(Operator):
     signature = 'v gather * vi'
     load_store = True
     categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
     desc = 'Gather elements from memory with base address given as first ' \
            'argument and offsets given as second argument.'
 
@@ -688,6 +689,7 @@ class Scatter(Operator):
     signature = '_ scatter * vi v'
     load_store = True
     categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
     desc = 'Scatter elements from third argument to memory with base ' \
            'address given as first argument and offsets given as second ' \
            'argument.'

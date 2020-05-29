@@ -263,6 +263,9 @@ def get_additional_include(func, platform, simd_ext):
     if func == 'subs':
         ret += '''#include <nsimd/arm/{simd_ext}/sub.h>
                   '''.format(simd_ext=simd_ext)
+    if func in ['gather', 'scatter'] and simd_ext == 'sve':
+        ret += '''#include <nsimd/arm/sve/len.h>
+                  '''
     return ret
 
 # -----------------------------------------------------------------------------
@@ -2296,14 +2299,33 @@ def zip_unzip(func, simd_ext, typ):
 # gather
 
 def gather(simd_ext, typ):
+    if simd_ext == 'sve':
+        le = 2048 // int(typ[1:])
+        real_le = 'nsimd_len_sve_{typ}()'.format(**fmtspec)
+    elif simd_ext in fixed_sized_sve:
+        le = int(simd_ext[3:]) // int(typ[1:])
+        real_le = le
+    else:
+        le = 128 // int(typ[1:])
+        real_le = le
+
+    if simd_ext in sve:
+        store = 'svst1_s{typnbits}({svtrue}, offset_buf, {in1});'. \
+                format(**fmtspec)
+        load = 'svld1_{suf}({svtrue}, buf)'.format(**fmtspec)
+    else:
+        store = 'vst1q_s{typnbits}(offset_buf, {in1});'.format(**fmtspec)
+        load = 'vld1q_{suf}(buf)'.format(**fmtspec)
+
     emul = '''int i;
               {typ} buf[{le}];
               i{typnbits} offset_buf[{le}];
-              vst1q_s{typnbits}(offset_buf, {in1});
-              for (i = 0; i < {le}; i++) {{
+              {store}
+              for (i = 0; i < {real_le}; i++) {{
                 buf[i] = {in0}[offset_buf[i]];
               }}
-              return vld1_{suf}({cast}buf);'''.format(**fmtspec)
+              return {load};'''. \
+              format(le=le, real_le=real_le, store=store, load=load, **fmtspec)
     if typ == 'f16':
         if simd_ext in sve:
             return emul
@@ -2321,33 +2343,54 @@ def gather(simd_ext, typ):
                     ret.v0 = vld1q_f32(buf);
                     ret.v1 = vld1q_f32(buf + {leo2});
                     return ret;
-                  #endif'''.format(leo2=int(fmtspec['le']) // 2,
-                                        **fmtspec)
+                  #endif'''.format(emul=emul, leo2=le // 2, le=le, **fmtspec)
+    if simd_ext == 'neon128' and typ == 'f64':
+        return '''nsimd_neon128_vf64 ret;
+                  i64 offset_buf[2];
+                  vst1q_s64(offset_buf, {in1});
+                  ret.v0 = {in0}[offset_buf[0]];
+                  ret.v1 = {in0}[offset_buf[1]];
+                  return ret;'''.format(**fmtspec)
     if simd_ext in neon or typ in ['i8', 'u8', 'i16', 'u16']:
         return emul
     # getting here means SVE
-    return 'svld1_gather_s{typnbits}offset_{suf}({svtrue}, {in0}, {in1})'. \
-           format(**fmtspec)
+    return 'return svld1_gather_s{typnbits}index_{suf}({svtrue}, {in0}, ' \
+           '{in1});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # scatter
 
 def scatter(simd_ext, typ):
+    if simd_ext == 'sve':
+        le = 2048 // int(typ[1:])
+        real_le = 'nsimd_len_sve_{typ}()'.format(**fmtspec)
+    elif simd_ext in fixed_sized_sve:
+        le = int(simd_ext[3:]) // int(typ[1:])
+        real_le = le
+    else:
+        le = 128 // int(typ[1:])
+        real_le = le
+
+    if simd_ext in sve:
+        store = '''svst1_s{typnbits}({svtrue}, offset_buf, {in1});
+                   svst1_{suf}({svtrue}, buf, {in2});'''.format(**fmtspec)
+    else:
+        store = '''vst1q_s{typnbits}(offset_buf, {in1});
+                   vst1q_{suf}(buf, {in2});'''.format(**fmtspec)
+
     emul = '''int i;
               {typ} buf[{le}];
               i{typnbits} offset_buf[{le}];
-              vst1q_s{typnbits}(offset_buf, {in1});
-              vst1q_{suf}(buf, {in2});
-              for (i = 0; i < {le}; i++) {{
+              {store}
+              for (i = 0; i < {real_le}; i++) {{
                 {in0}[offset_buf[i]] = buf[i];
-              }}'''.format(**fmtspec)
+              }}'''.format(le=le, real_le=real_le, store=store, **fmtspec)
     if typ == 'f16':
         if simd_ext in sve:
             return emul
         return '''#ifdef NSIMD_NATIVE_FP16
                     {emul}
                   #else
-                    nsimd_{simd_ext}_vf16 ret;
                     int i;
                     f32 buf[{le}];
                     i16 offset_buf[{le}];
@@ -2357,13 +2400,17 @@ def scatter(simd_ext, typ):
                     for (i = 0; i < {le}; i++) {{
                       {in0}[offset_buf[i]] = nsimd_f32_to_f16(buf[i]);
                     }}
-                  #endif'''.format(leo2=int(fmtspec['le']) // 2,
-                                        **fmtspec)
+                  #endif'''.format(emul=emul, le=le, leo2=le // 2, **fmtspec)
+    if simd_ext == 'neon128' and typ == 'f64':
+        return '''i64 offset_buf[2];
+                  vst1q_s64(offset_buf, {in1});
+                  {in0}[offset_buf[0]] = {in2}.v0;
+                  {in0}[offset_buf[1]] = {in2}.v1;'''.format(**fmtspec)
     if simd_ext in neon or typ in ['i8', 'u8', 'i16', 'u16']:
         return emul
     # getting here means SVE
-    return 'svst1_scatter_s{typnbits}offset_{suf}({svtrue}, {in0}, ' \
-           '{in1}, {in2})'.format(**fmtspec)
+    return 'svst1_scatter_s{typnbits}index_{suf}({svtrue}, {in0}, ' \
+           '{in1}, {in2});'.format(le=le, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # get_impl function
@@ -2415,6 +2462,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store2u': lambda: store1234(opts, simd_ext, from_typ, 2),
         'store3u': lambda: store1234(opts, simd_ext, from_typ, 3),
         'store4u': lambda: store1234(opts, simd_ext, from_typ, 4),
+        'gather': lambda: gather(simd_ext, from_typ),
+        'scatter': lambda: scatter(simd_ext, from_typ),
         'andb': lambda: binop2("andb", simd_ext2, from_typ),
         'xorb': lambda: binop2("xorb", simd_ext2, from_typ),
         'orb': lambda: binop2("orb", simd_ext2, from_typ),
