@@ -975,6 +975,8 @@ def gen_code(f, simd, typ, category):
         code = gen_bench_from_basic_fun(f, simd, typ, category=category)
     if f.match_sig('p * l'):
         return TODO(f)
+    if f.match_sig('l * p'):
+        return TODO(f)
     if f.match_sig('v * s'):
         return TODO(f)
     if f.match_sig('p *'):
