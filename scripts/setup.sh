@@ -28,25 +28,18 @@ set -e
 ###############################################################################
 # Init
 
-GH_PAGES_DIR="${PWD}/gh-pages"
-HTML_DOC_DIR="${PWD}/../doc/html"
-EGG_DIR="${PWD}/../egg"
+NSTOOLS_DIR="${PWD}/../nstools"
+NSTOOLS_URL="git@github.com:agenium-scale/nstools.git"
 
 ###############################################################################
-# Generates HTML documentation
+# Build nsconfig (if not already built)
 
-rm -f "${HTML_DOC_DIR}/*.html"
-python3 "${EGG_DIR}/hatch.py" -fd
+[ -e "${NSTOOLS_DIR}/README.md" ] || \
+    ( cd "${PWD}/.." && git clone "${NSTOOLS_URL}" )
 
-###############################################################################
-# Put all HTML files into the gh-pages branch of NSIMD
+[ -e "${NSTOOLS_DIR}/bin" ] || ( mkdir -p "${NSTOOLS_DIR}/bin" )
 
-rm -rf "${GH_PAGES_DIR}"
-git clone git@github.com:agenium-scale/nsimd.git "${GH_PAGES_DIR}"
-git -C "${GH_PAGES_DIR}" checkout gh-pages
-git -C "${GH_PAGES_DIR}" rm -f '*.html'
-cp ${HTML_DOC_DIR}/*.html ${GH_PAGES_DIR}
-git -C "${GH_PAGES_DIR}" add '*.html'
-git -C "${GH_PAGES_DIR}" commit -m "Documentation auto-generated on `date`"
-git -C "${GH_PAGES_DIR}" push
-rm -rf "${GH_PAGES_DIR}"
+[ -e "${NSTOOLS_DIR}/bin/nsconfig" ] || \
+    ( cd "${NSTOOLS_DIR}/nsconfig" && make -f Makefile.nix all && \
+      cp "nsconfig" "${NSTOOLS_DIR}/bin" && \
+      cp "nstest" "${NSTOOLS_DIR}/bin" )

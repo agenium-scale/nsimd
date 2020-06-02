@@ -1,10 +1,16 @@
-# Build system
+# Common build dirs
 build*/
+
+# Dependencies
+nstools/
 
 # Binaries
 *.o
 *.so
 *.pyc
+*.exe
+*.dll
+*.dylib
 
 # Generated files
 ## API
@@ -32,6 +38,7 @@ benches/cxx_adv
 
 ## Modules
 include/nsimd/modules/tet1d/
+include/nsimd/modules/spmd/
 include/nsimd/modules/fixed_point/
 include/nsimd/scalar_utilities.h
 
@@ -42,6 +49,9 @@ doc/markdown/api.md
 doc/markdown/api_*.md
 doc/markdown/module_fixed_point_api*.md
 doc/markdown/module_fixed_point_overview.md
+doc/markdown/module_spmd_api*.md
+doc/markdown/module_spmd_overview.md
+doc/markdown/module_memory_management_overview.md
 doc/md2html
 doc/tmp.html
 
