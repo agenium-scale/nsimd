@@ -1,5 +1,6 @@
 @echo off
-REM Copyright (c) 2019 Agenium Scale
+
+REM Copyright (c) 2020 Agenium Scale
 REM
 REM Permission is hereby granted, free of charge, to any person obtaining a copy
 REM of this software and associated documentation files (the "Software"), to deal
@@ -21,33 +22,38 @@ REM SOFTWARE.
 
 REM ###########################################################################
 
-cd `dirname $0`
-set -x
-set -e
+pushd "%~dp0"
 
 REM ###########################################################################
 REM Init
 
-set NSTOOLS_DIR="${PWD}/../nstools"
+set NSTOOLS_DIR="%CD%\..\nstools"
 set NSTOOLS_URL="git@github.com:agenium-scale/nstools.git"
+set NSTOOLS_URL2="https://github.com/agenium-scale/nsimd.git"
 
 REM ###########################################################################
 REM Build nsconfig (if not already built)
 
-if not exist "%NSTOOLS_DIR%\README.md" (
-  pushd "%PWD%\.."
-  git clone "${NSTOOLS_URL}"
+if exist "%NSTOOLS_DIR%\README.md" (
+  pushd %NSTOOLS_DIR%
+  git pull
+  popd
+) else (
+  pushd ".."
+  git clone %NSTOOLS_URL% || git clone %NSTOOLS_URL2%
   popd
 )
 
-if not exist "${NSTOOLS_DIR}/bin" (
-  md "${NSTOOLS_DIR}/bin"
+if not exist %NSTOOLS_DIR%\bin (
+  md %NSTOOLS_DIR%\bin
 )
 
-if not exist "${NSTOOLS_DIR}/bin/nsconfig" (
-  pushd "${NSTOOLS_DIR}/nsconfig"
+if not exist %NSTOOLS_DIR%\bin\nsconfig.exe (
+  pushd %NSTOOLS_DIR%\nsconfig
   nmake /F Makefile.win all
-  copy "nsconfig.exe" "${NSTOOLS_DIR}/bin"
-  copy "nstest.exe" "${NSTOOLS_DIR}/bin"
+  copy "nsconfig.exe" %NSTOOLS_DIR%\bin
+  copy "nstest.exe" %NSTOOLS_DIR%\bin
   popd
 )
+
+popd
