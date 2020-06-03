@@ -449,9 +449,9 @@ def emulate_op1(opts, func, simd_ext, typ):
               return {pre}loadu{sufsi}({cast}buf0);'''. \
               format(cast=cast, func=func, **fmtspec)
 
-def emulate_arg2(func, simd_ext, typ):
+def emulate_arg2(opts, func, simd_ext, typ):
     if typ in common.iutypes:
-        cast = '({}*)'.format(get_type(simd_ext, typ))
+        cast = '({}*)'.format(get_type(opts, simd_ext, typ))
     else:
         cast = ''
     return '''int i;
@@ -3237,59 +3237,59 @@ def unzip(simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 
-def clz(simd_ext, from_typ):
+def clz(opts, simd_ext, from_typ):
   if simd_ext in avx512:
     if from_typ in [ 'i32' , 'u32' , 'i64' , 'u64' ]:
       return '''\
       return _mm{nbits}_lzcnt_epi_{typnbits}( {in0} );
       '''.format(**fmtspec)
     else:
-      return emulate_op1('clz', simd_ext, from_typ)
+      return emulate_op1(opts, 'clz', simd_ext, from_typ)
   else:
-    return emulate_op1('clz', simd_ext, from_typ)
+    return emulate_op1(opts, 'clz', simd_ext, from_typ)
 
 
 # TODO: Test if upcvt is better than emulation for 16/8 bits
-def shlv(simd_ext, from_typ):
+def shlv(opts, simd_ext, from_typ):
   if   simd_ext in [ 'avx2' ]:
     if   from_typ in [ 'i32' , 'u32' , 'i64' , 'u64' ]:
       return '''\
       return _mm256_sllv_epi{typnbits}( {in0} , {in1} );
       '''.format(**fmtspec)
     else:
-      return emulate_arg2('shlv', simd_ext, from_typ)
+      return emulate_arg2(opts, 'shlv', simd_ext, from_typ)
   elif simd_ext in avx512:
     if   from_typ in [ 'i16' , 'u16' , 'i32' , 'u32' , 'i64' , 'u64' ]:
       return '''\
       return _mm{nbits}_sllv_epi{typnbits}( {in0} , {in1} );
       '''.format(**fmtspec)
     else:
-      return emulate_arg2('shlv', simd_ext, from_typ)
+      return emulate_arg2(opts, 'shlv', simd_ext, from_typ)
   else:
-    return emulate_arg2('shlv', simd_ext, from_typ)
+    return emulate_arg2(opts, 'shlv', simd_ext, from_typ)
 
-def shrv(simd_ext, from_typ):
+def shrv(opts, simd_ext, from_typ):
   if   simd_ext in [ 'avx2' ]:
     if   from_typ in [ 'i32' , 'u32' ]:
       return '''\
       return _mm256_srav_epi{typnbits}( {in0} , {in1} );
       '''.format(**fmtspec)
     else:
-      return emulate_arg2('shrv', simd_ext, from_typ)
+      return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
   elif simd_ext in avx512:
     if   from_typ in [ 'i16' , 'u16' , 'i32' , 'u32' , 'i64' , 'u64' ]:
       return '''\
       return _mm{nbits}_srav_epi{typnbits}( {in0} , {in1} );
       '''.format(**fmtspec)
     else:
-      return emulate_arg2('shrv', simd_ext, from_typ)
+      return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
   else:
-    return emulate_arg2('shrv', simd_ext, from_typ)
+    return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
 
 # -----------------------------------------------------------------------------
 
 # Same as cpu code
-def powi(simd_ext, from_typ):
+def powi(opts, simd_ext, from_typ):
   algo = '''\
   nsimd_{simd_ext}_v{typ} x = {in0};
   nsimd_{simd_ext}_v{typ} one = nsimd_set1_{simd_ext}_{typ}(1);
@@ -3333,7 +3333,7 @@ def powi(simd_ext, from_typ):
     return algo
   else:
     if '64' in from_typ:
-      return emulate_arg2('powi', simd_ext, from_typ)
+      return emulate_arg2(opts, 'powi', simd_ext, from_typ)
     else:
       return algo
 
@@ -3449,10 +3449,10 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unziphi': lambda: unzip_half(opts, 'unziphi', simd_ext, from_typ),
         'zip' : lambda : zip(simd_ext, from_typ),
         'unzip' : lambda : unzip(simd_ext, from_typ),
-        'clz' : lambda : clz(simd_ext, from_typ),
-        'shlv' : lambda : shlv(simd_ext, from_typ),
-        'shrv' : lambda : shrv(simd_ext, from_typ),
-        'powi' : lambda : powi(simd_ext, from_typ)
+        'clz' : lambda : clz(opts, simd_ext, from_typ),
+        'shlv' : lambda : shlv(opts, simd_ext, from_typ),
+        'shrv' : lambda : shrv(opts, simd_ext, from_typ),
+        'powi' : lambda : powi(opts, simd_ext, from_typ)
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

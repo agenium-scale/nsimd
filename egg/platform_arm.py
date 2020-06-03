@@ -314,7 +314,7 @@ def emulate_op2(op, simd_ext, typ):
                   return svld1_{suf}({svtrue}, buf0); '''. \
                   format(op=op, le=le, **fmtspec)
 
-def emulate_arg2(func, simd_ext, typ):
+def emulate_arg2(opts, func, simd_ext, typ):
     le = 0
     if simd_ext == 'sve':
         le = 2048 // int(typ[1:])
@@ -324,7 +324,7 @@ def emulate_arg2(func, simd_ext, typ):
         le = 64 // int(typ[1:])
 
     if typ in common.iutypes:
-        cast = '({}*)'.format(get_type(simd_ext, typ))
+        cast = '({}*)'.format(get_type(opts, simd_ext, typ))
     else:
         cast = ''
     return '''int i;
@@ -2133,8 +2133,8 @@ def shlv(simd_ext, from_typ):
         return vshlq_{suf}( {in0} , {in1} );
         '''.format(**fmtspec)
 
-def shrv(simd_ext, from_typ):
-      return emulate_arg2('shrv', simd_ext, from_typ)
+def shrv(opts, simd_ext, from_typ):
+      return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
 
 # -----------------------------------------------------------------------------
 
@@ -2295,7 +2295,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ),
         'clz' : lambda : clz(simd_ext2, from_typ),
         'shlv' : lambda : shlv(simd_ext2, from_typ),
-        'shrv' : lambda : shrv(simd_ext2, from_typ),
+        'shrv' : lambda : shrv(opts, simd_ext2, from_typ),
         'powi' : lambda : powi(simd_ext2, from_typ)
     }
     if simd_ext not in get_simd_exts():
