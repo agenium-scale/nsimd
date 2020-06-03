@@ -30,12 +30,15 @@ set -e
 
 NSTOOLS_DIR="${PWD}/../nstools"
 NSTOOLS_URL="git@github.com:agenium-scale/nstools.git"
+NSTOOLS_URL2="https://github.com/agenium-scale/nsimd.git"
 
 ###############################################################################
 # Build nsconfig (if not already built)
 
-[ -e "${NSTOOLS_DIR}/README.md" ] || \
-    ( cd "${PWD}/.." && git clone "${NSTOOLS_URL}" )
+[ -e "${NSTOOLS_DIR}/README.md" ] && \
+    ( cd "${NSTOOLS_DIR}" && git pull ) || \
+    ( cd "${PWD}/.." && \
+      ( git clone "${NSTOOLS_URL}" || git clone "${NSTOOLS_URL2}" ) )
 
 [ -e "${NSTOOLS_DIR}/bin" ] || ( mkdir -p "${NSTOOLS_DIR}/bin" )
 
