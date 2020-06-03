@@ -1118,6 +1118,248 @@ def powi(from_typ):
 
 # -----------------------------------------------------------------------------
 
+def clz_helper( depth ):
+  compare = [ '0x3' , '0xF' , '0xFF' , '0xFFFF' , '0xFFFFFFFF' ]
+  shift   = [ '1' , '2' , '3' , '4' , '5' ]
+  maxes   = [ 1 , 3 , 7 , 15 , 31 , 63 ]
+  nmx = str(maxes[depth])
+
+  compare = compare[0:depth]
+  shift   = shift  [0:depth]
+
+  compare = compare[::-1]
+  shift   = shift  [::-1]
+
+  prelude = '''\
+  nsimd_{simd_ext}_v{from_typ} ones   = nsimd_set1_{simd_ext}_{from_typ}(1);
+  nsimd_{simd_ext}_v{from_typ} zeroes = nsimd_set1_{simd_ext}_{from_typ}(0);
+  nsimd_{simd_ext}_vl{from_typ} q_gt, lt_zero;
+  nsimd_{simd_ext}_v{from_typ} q, r;
+  nsimd_{simd_ext}_v{from_typ} x = {in0};
+  '''.format(**fmtspec)
+
+  intro = '''\
+
+  q_gt = nsimd_gt_{simd_ext}_{from_typ}( x , nsimd_set1_{simd_ext}_{from_typ}({comp}) );
+  q    = nsimd_shl_{simd_ext}_{from_typ}( nsimd_if_else1_{simd_ext}_{from_typ}( q_gt , ones , zeroes ) , {sh} );
+  x = nsimd_shrv_{simd_ext}_{from_typ}( x , q );
+  r = q;
+  '''.format(**fmtspec, comp=compare[0], sh=shift[0])
+
+  compare = compare[1:]
+  shift   = shift  [1:]
+
+  body = ''
+  for i in range( 0 , len(compare) ):
+    body += '''\
+
+    q_gt = nsimd_gt_{simd_ext}_{from_typ}( x , nsimd_set1_{simd_ext}_{from_typ}({comp}) );
+    q    = nsimd_shl_{simd_ext}_{from_typ}( nsimd_if_else1_{simd_ext}_{from_typ}( q_gt , ones , zeroes ) , {sh} );
+    x = nsimd_shrv_{simd_ext}_{from_typ}( x , q );
+    r = nsimd_orb_{simd_ext}_{from_typ}( r , q );
+    '''.format(**fmtspec, comp=compare[i], sh=shift[i])
+
+  outro = '''\
+
+  r = nsimd_orb_{simd_ext}_{from_typ}( r , nsimd_shr_{simd_ext}_{from_typ}( x , 1 ) );
+  r = nsimd_sub_{simd_ext}_{from_typ}( nsimd_set1_{simd_ext}_{from_typ}({nearmax}) , r );
+  lt_zero = nsimd_lt_{simd_ext}_{from_typ}( x , zeroes );
+  r = nsimd_if_else1_{simd_ext}_{from_typ}( lt_zero , zeroes , r );
+  return r;
+  '''.format(**fmtspec, nearmax=nmx)
+
+  return (prelude + intro + body + outro)
+
+
+# Using algorithm from:
+#   https://en.wikipedia.org/wiki/Find_first_set#CLZ - clz5
+#   No benchmarking was done to compare performance of the different algorithms
+# Note: builtins have different behaviour for 0, so we should avoid 0 in tests
+def clz(from_typ):
+  r = ''
+  if from_typ in [ 'i8'  , 'u8'  ]:
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 8;'. \
+                                format(op='__builtin_clzs', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 24;'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 8;'. \
+                                format(op='__lzcnt16', **fmtspec), from_typ)
+              )
+    r += clz_helper( 2 )
+    r += '''
+    #endif
+    '''
+    return r
+  if from_typ in [ 'i16' , 'u16' ]:
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clzs', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}}) - 16;'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__lzcnt16', **fmtspec), from_typ)
+              )
+    r += clz_helper( 3 )
+    r += '''
+    #endif
+    '''
+    return r
+  if from_typ in [ 'i32' , 'u32' ]:
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clz', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__lzcnt', **fmtspec), from_typ)
+              )
+    r += clz_helper( 4 )
+    r += '''
+    #endif
+    '''
+    return r
+  if from_typ in [ 'i64' , 'u64' ]:
+    r += '''\
+    #if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_ICC)
+      {clicc}
+    #elif defined(NSIMD_IS_GCC)
+      {gcc}
+    #elif defined(NSIMD_IS_MSVC)
+      {msvc}
+    #else
+    '''.format(**fmtspec
+              , clicc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clzl', **fmtspec), from_typ)
+              , gcc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__builtin_clzl', **fmtspec), from_typ)
+              , msvc=func_body('ret.v{{i}} = ({typ}){op}({in0}.v{{i}});'. \
+                                format(op='__lzcnt64', **fmtspec), from_typ)
+              )
+    r += clz_helper( 5 )
+    r += '''
+    #endif
+    '''
+    return r
+
+# -----------------------------------------------------------------------------
+
+# Barely modified from shra
+def shrv(typ):
+    n = get_nb_el(typ)
+    content = ''
+    # Sign extension for a right shift has implementation-defined behaviour.
+    # To be sure it is performed, we do it manually.
+    content = '\n'.join('''\
+    /* -------------------------------------------- */
+    const int shift{i} = {typnbits} - 1 - {in1}.v{i};
+
+    val.i = {in0}.v{i};
+    mask = (u{typnbits})((val.u >> ({typnbits} - 1)) * ~(u{typnbits})(0) << shift{i});
+
+    ret.v{i} = ({typ})((val.u >> {in1}.v{i}) | mask);'''.\
+                    format(**fmtspec, i=i)for i in range(0, n))
+    if typ in common.utypes:
+        return func_body('ret.v{{i}} = ({typ})({in0}.v{{i}} {op} {in1}.v{{i}});'. \
+                         format(op='>>', **fmtspec), typ)
+    else:
+        return '''\
+        union {{i{typnbits} i; u{typnbits} u;}} val;
+
+        nsimd_cpu_v{typ} ret;
+        u{typnbits} mask;
+
+        {content}
+
+        return ret;'''.format(content=content, **fmtspec)
+
+
+def shlv(from_typ):
+    if from_typ in common.utypes:
+        return func_body('ret.v{{i}} = ({typ})({in0}.v{{i}} {op} {in1}.v{{i}});'. \
+                         format(op='<<', **fmtspec), from_typ)
+    else:
+        return '''nsimd_cpu_v{typ} ret;
+                  union {{ {typ} i; {utyp} u; }} buf;
+                  {content}
+                  return ret;'''. \
+                  format(content=repeat_stmt(
+                  '''buf.i = {in0}.v{{i}};
+                     buf.u = ({utyp})(buf.u {op} {in1}.v{{i}});
+                     ret.v{{i}} = buf.i;'''.format(op='<<', **fmtspec), typ=from_typ),
+                     **fmtspec)
+
+
+# -----------------------------------------------------------------------------
+
+# Note: while loop should never be longer than nbits. Can we use this?
+def powi(from_typ):
+  return '''\
+  nsimd_{simd_ext}_v{typ} x = {in0};
+  nsimd_{simd_ext}_v{typ} one = nsimd_set1_{simd_ext}_{typ}(1);
+  nsimd_{simd_ext}_v{typ} y = one;
+  nsimd_{simd_ext}_v{typ} n = {in1};
+
+  nsimd_{simd_ext}_vl{typ} gt1 = nsimd_gt_{simd_ext}_{typ}( n , one );
+  nsimd_{simd_ext}_v{typ} odd;
+  nsimd_{simd_ext}_v{typ} tmp;
+  nsimd_{simd_ext}_v{typ} x_final;
+  nsimd_{simd_ext}_v{typ} y_final;
+  while( nsimd_any_{simd_ext}_{typ}( gt1 ) ) {{
+    nsimd_{simd_ext}_vl{typ} to_store = nsimd_eq_{simd_ext}_{typ}( n , one );
+    x_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , x , x_final );
+    y_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , y , y_final );
+
+    odd = nsimd_andb_{simd_ext}_{typ}( one , n );
+    tmp = nsimd_sub_{simd_ext}_{typ}( x , one );
+    tmp = nsimd_mul_{simd_ext}_{typ}( tmp , odd );
+    tmp = nsimd_add_{simd_ext}_{typ}( tmp , one );
+    y = nsimd_mul_{simd_ext}_{typ}( y , tmp );
+    x = nsimd_mul_{simd_ext}_{typ}( x , x );
+    n = nsimd_shr_{simd_ext}_{typ}( n , 1 );
+
+    gt1 = nsimd_gt_{simd_ext}_{typ}( n , one );
+  }}
+  nsimd_{simd_ext}_vl{typ} to_store = nsimd_eq_{simd_ext}_{typ}( n , one );
+  x_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , x , x_final );
+  y_final = nsimd_if_else1_{simd_ext}_{typ}( to_store , y , y_final );
+
+
+  nsimd_{simd_ext}_v{typ} ret =  nsimd_mul_{simd_ext}_{typ}( x_final , y_final );
+
+  nsimd_{simd_ext}_v{typ} zero; zero = nsimd_xorb_{simd_ext}_{typ}( zero , zero );
+  nsimd_{simd_ext}_vl{typ} is_zero = nsimd_eq_{simd_ext}_{typ}( {in1} , zero );
+  ret = nsimd_if_else1_{simd_ext}_{typ}( is_zero , one , ret );
+
+  return ret;
+  '''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+
 def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
