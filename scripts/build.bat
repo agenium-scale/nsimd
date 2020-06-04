@@ -27,65 +27,75 @@ pushd "%~dp0"
 REM ###########################################################################
 REM Init
 
-set SETUP_SH="%CD%/setup.sh"
-set NSCONFIG="%CD%/../nstools/bin/nsconfig"
-set HATCH_PY="%CD%/../egg/hatch.py"
-set BUILD_ROOT="%CD%/.."
+set SETUP_SH="%CD%\setup.sh"
+set NSCONFIG="%CD%\..\nstools\bin\nsconfig.exe"
+set HATCH_PY="%CD%\..\egg\hatch.py"
+set BUILD_ROOT="%CD%\.."
 
-###############################################################################
-# Generate NSIMD
+REM ###########################################################################
+REM Generate NSIMD
 
-python3 "%HATCH_PY%" -lf
+REM python %HATCH_PY% -lf
 
-###############################################################################
-# Check/parse command line arguments
+REM ###########################################################################
+REM Check/parse command line arguments
 
 goto end_usage
 
 :usage
-echo "$0: usage: $0 for simd_ext1,...,simd_ext2 [with compiler]"
+echo %0: usage: %0 for simd_ext1/.../simd_ext2 [with compiler1/.../compiler2]
+popd
 exit /B 0
 :end_usage
 
 if "%1" == "" goto usage
 if "%1" == "--help" goto usage
 
-if "${1}" != "for" (
-  echo "ERROR: expected 'for' as first argument"
+if not "%1" == "for" (
+  echo ERROR: expected 'for' as first argument
+  popd
   exit /B 1
-)  :wq
+)
 
+set TMP=%2
+set SIMD_EXTS=%TMP:/=,%
 
-SIMD_EXTS=`echo "${2}" | sed -e 's/,/ /g'`
+if "%3" == "" (
+  set COMPILER_ARG=cl
+) else ( if "%3" == "with" (
+  set COMPILER_ARG=%4
+) else (
+  echo ERROR: expected 'with' as fourth argument
+  popd
+  exit /B 1
+) )
 
-if [ "${3}" == "" ]; then
-  COMPILER_ARG="gcc"
-elif [ "${3}" == "with" ]; then
-  COMPILER_ARG="${4}"
-else
-  echo "ERROR: expected 'with' as fourth argument"
-  exit 1
-fi
+set COMPILERS=%COMPILER_ARG:/=,%
 
-COMPILERS=`echo ${COMPILER_ARG} | sed 's/,/ /g'`
-for compiler in ${COMPILERS}; do
-  (${compiler} --version 1>/dev/null 2>/dev/null)
-  if [ "$?" != "0" ]; then
-    echo "ERROR: compiler ${compiler} not found in PATH"
-    exit 1
-  fi
-done
+for %%g in (%COMPILERS%) do (
+  %%g 1>nul 2>nul
+  if errorlevel 1 (
+    echo ERROR: compiler %%g not found in PATH
+    popd
+    exit /B 1
+  )
+)
 
-###############################################################################
-# Build NSIMD : one build directory per SIMD extension per compiler
+REM ###########################################################################
+REM Build NSIMD : one build directory per SIMD extension per compiler
 
-for compiler in ${COMPILERS}; do
-  for simd_ext in ${SIMD_EXTS}; do
-    BUILD_DIR="${BUILD_ROOT}/build-${simd_ext}-${compiler}"
-    rm -rf "${BUILD_DIR}"
-    mkdir -p "${BUILD_DIR}"
-    (cd "${BUILD_DIR}" && \
-        "${NSCONFIG}" .. -Dsimd=${simd_ext} -comp=${compiler})
-    (cd "${BUILD_DIR}" && ninja)
-  done
-done
+setlocal EnableDelayedExpansion
+
+for %%g in (%COMPILERS%) do (
+  for %%h in (%SIMD_EXTS%) do (
+    set BUILD_DIR=%BUILD_ROOT%\build-%%h-%%g
+    if exist !BUILD_DIR! rd /Q /S !BUILD_DIR!
+    md !BUILD_DIR!
+    pushd !BUILD_DIR!
+      %NSCONFIG% .. -Dsimd=%%h -comp=%%g
+      ninja
+    popd
+  )
+)
+
+popd
