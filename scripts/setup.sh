@@ -30,7 +30,7 @@ set -e
 
 NSTOOLS_DIR="${PWD}/../nstools"
 NSTOOLS_URL="git@github.com:agenium-scale/nstools.git"
-NSTOOLS_URL2="https://github.com/agenium-scale/nsimd.git"
+NSTOOLS_URL2="https://github.com/agenium-scale/nstools.git"
 
 ###############################################################################
 # Build nsconfig (if not already built)
