@@ -2533,7 +2533,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'unziphi': lambda: zip_unzip_half("uzp2", simd_ext2, from_typ),
         'zip' : lambda: zip_unzip("zip", simd_ext2, from_typ),
         'unzip' : lambda: zip_unzip("uzp", simd_ext2, from_typ),
-        'mask_for_loop_tail': lambda : mask_for_loop_tail(simd_ext2, from_typ),
+        'mask_for_loop_tail': lambda : mask_for_loop_tail(simd_ext, from_typ),
         'iota': lambda : iota(simd_ext2, from_typ)
     }
     if simd_ext not in get_simd_exts():

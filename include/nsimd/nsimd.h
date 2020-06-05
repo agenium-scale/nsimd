@@ -545,7 +545,9 @@ namespace nsimd {
 /* Shorter typedefs for floatting point types */
 
 #if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                    \
-     defined(NSIMD_FP16)) || defined(NSIMD_SVE)
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) ||   \
+     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || defined(NSIMD_SVE1024) \
+     || defined(NSIMD_SVE2048)
   #define NSIMD_NATIVE_FP16
 #endif
 
