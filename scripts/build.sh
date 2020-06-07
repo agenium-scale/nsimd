@@ -34,40 +34,50 @@ HATCH_PY="${PWD}/../egg/hatch.py"
 BUILD_ROOT="${PWD}/.."
 
 ###############################################################################
+# Run setup
+
+sh "${SETUP_SH}"
+
+###############################################################################
 # Generate NSIMD
 
-python3 "${HATCH_PY}" -lf
+python3 --version 1>/dev/null 2>/dev/null && \
+  python3 "${HATCH_PY}" -lf || \
+  python "${HATCH_PY}" -lf
 
 ###############################################################################
 # Check/parse command line arguments
 
-usage() {
+if [ "${1}" == "" ]; then
   echo "$0: usage: $0 for simd_ext1,...,simd_ext2 [with compiler]"
-}
-
-if [ "${1}" == "" ] || [ "${1}" == "--help" ]; then
-  usage
   exit 0
 fi
 
 if [ "${1}" != "for" ]; then
   echo "ERROR: expected 'for' as first argument"
-  usage
   exit 1
 fi
 
-SIMD_EXTS=`echo "${2}" | sed -e 's/,/ /g'`
+if [ "${2}" == "" ]; then
+  echo "ERROR: no SIMD extension given after 'for'"
+  exit 1
+fi
+SIMD_EXTS=`echo "${2}" | sed -e 's,/, ,g'`
 
 if [ "${3}" == "" ]; then
   COMPILER_ARG="gcc"
 elif [ "${3}" == "with" ]; then
+  if [ "${4}" == "" ]; then
+    echo "ERROR: no compiler given after 'with'"
+    exit 1
+  fi
   COMPILER_ARG="${4}"
 else
   echo "ERROR: expected 'with' as fourth argument"
   exit 1
 fi
 
-COMPILERS=`echo ${COMPILER_ARG} | sed 's/,/ /g'`
+COMPILERS=`echo ${COMPILER_ARG} | sed 's,/, ,g'`
 for compiler in ${COMPILERS}; do
   (${compiler} --version 1>/dev/null 2>/dev/null)
   if [ "$?" != "0" ]; then
