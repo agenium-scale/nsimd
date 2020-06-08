@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2020 Agenium Scale
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,17 +18,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-NS2_ROOT         = ../../../_install
-NS2_INCLUDE_DIR  = $(NS2_ROOT)/include
-NS2_LIBRARY_DIR  = $(NS2_ROOT)/lib
+NS2_ROOT         = ../nstools/ns2
 CXX              = c++
-CXX_FLAGS        = -O3 -Wall -Wextra -pedantic -std=c++11 -I$(NS2_INCLUDE_DIR) 
-CXX_LDFLAGS      = -L$${PWD} -lns2 '-Wl,-rpath=$$ORIGIN'
+CXX_FLAGS        = -O2 -Wall -Wextra -pedantic -std=c++11
 
 all: md2html
 
-md2html: libns2.so md2html.cpp Makefile.nix
-	$(CXX) $(CXX_FLAGS) md2html.cpp -o $@ $(CXX_LDFLAGS)
+libns2.a: $(NS2_ROOT)/../.git/logs/HEAD Makefile.nix
+	rm -rf libns2
+	mkdir -p libns2
+	cp $(NS2_ROOT)/src/*.cpp libns2
+	(cd libns2 && $(CXX) $(CXX_FLAGS) -I../$(NS2_ROOT)/include -c *.cpp)
+	ar rcs $@ libns2/*.o
+	rm -rf libns2
 
-libns2.so: $(NS2_LIBRARY_DIR)/libns2.so Makefile.nix
-	cp -f "$(NS2_LIBRARY_DIR)/$@" "$@"
+md2html: libns2.a md2html.cpp Makefile.nix
+	$(CXX) $(CXX_FLAGS) md2html.cpp -I$(NS2_ROOT)/include -o $@ -L. -lns2
+

@@ -18,21 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-NS2_ROOT         = ..\..\..\_install
-NS2_INCLUDE_DIR  = $(NS2_ROOT)\include
-NS2_LIBRARY_DIR  = $(NS2_ROOT)\lib
+NS2_ROOT         = ..\nstools\ns2
 CXX              = cl
-CXX_FLAGS        = /Ox /W3 /EHsc /Fotemp\ /I$(NS2_INCLUDE_DIR) 
-CXX_LDFLAGS      = libns2.lib
+CXX_FLAGS        = /Ox /W3 /EHsc /Fotemp\
 
 all: md2html.exe
 
-md2html.exe: libns2.dll libns2.lib md2html.cpp Makefile.win
+libns2.lib: $(NS2_ROOT)\..\.git\logs\HEAD Makefile.win
+	rd /Q /S libns2
+	md libns2
+	copy /Y $(NS2_ROOT)\src\*.cpp libns2
+	(cd libns2 && $(CXX) $(CXX_FLAGS) -I..\$(NS2_ROOT)\include /c *.cpp)
+
+md2html.exe: libns2.lib md2html.cpp Makefile.win
 	if not exist temp md temp
 	$(CXX) $(CXX_FLAGS) $(CXX_LDFLAGS) md2html.cpp /Fe$@
 
-libns2.lib: $(NS2_LIBRARY_DIR)\libns2.lib Makefile.win
-	copy "$(NS2_LIBRARY_DIR)\libns2.lib" "$@"
-
-libns2.dll: $(NS2_LIBRARY_DIR)\libns2.dll Makefile.win
-	copy "$(NS2_LIBRARY_DIR)\libns2.dll" "$@"
