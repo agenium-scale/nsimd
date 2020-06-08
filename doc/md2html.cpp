@@ -40,8 +40,9 @@ std::pair<int, int> extract_lines(std::string const &s) {
     try {
       r.first = std::stoi(lines[1]);
       r.second = std::stoi(lines[2]);
-    } catch (std::exception const &e) {
-      // r.first and r.second are -1
+    } catch (std::exception const &) {
+      r.first = -1;
+      r.second = -1;
     }
   }
   return r;

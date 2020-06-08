@@ -20,17 +20,20 @@
 
 NS2_ROOT         = ..\nstools\ns2
 CXX              = cl
-CXX_FLAGS        = /Ox /W3 /EHsc /Fotemp\
+CXX_FLAGS        = /nologo /Ox /W3 /EHsc /DNS_NO_DLLSPEC \
+                   /D_CRT_SECURE_NO_WARNINGS
 
 all: md2html.exe
 
 libns2.lib: $(NS2_ROOT)\..\.git\logs\HEAD Makefile.win
-	rd /Q /S libns2
+	if exist libns2 rd /Q /S libns2
 	md libns2
 	copy /Y $(NS2_ROOT)\src\*.cpp libns2
 	(cd libns2 && $(CXX) $(CXX_FLAGS) -I..\$(NS2_ROOT)\include /c *.cpp)
+	lib /nologo /out:libns2.lib libns2\*.obj
+	rd /Q /S libns2
 
 md2html.exe: libns2.lib md2html.cpp Makefile.win
-	if not exist temp md temp
-	$(CXX) $(CXX_FLAGS) $(CXX_LDFLAGS) md2html.cpp /Fe$@
+	$(CXX) $(CXX_FLAGS) /I$(NS2_ROOT)\include md2html.cpp libns2.lib \
+	       Shlwapi.lib Dbghelp.lib /Fe$@
 
