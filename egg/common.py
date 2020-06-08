@@ -432,7 +432,7 @@ def get_one_type_pack(param, inout, N):
         return 'T const*'
     if param == 's':
         return 'T'
-    if param == 'v':
+    if param in ['v', 'vx2', 'vx3', 'vx4']:
         if inout == 0:
             return 'pack<T, {}, SimdExt> const&'.format(N)
         else:
@@ -1302,13 +1302,17 @@ def gen_doc_html(opts, title):
         doc_dir = os.path.join(opts.script_dir, '..', 'doc')
         full_path_md2html = os.path.join(doc_dir, md2html)
         if not os.path.isfile(full_path_md2html):
-            msg = 'Cannot generate HTML: {} not found. '.format(md2html)
             if platform.system() == 'Windows':
-                msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
+                code = os.system('cd {} && nmake /F Makefile.win'. \
+                                 format(os.path.normpath(doc_dir)))
             else:
-                msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
-            myprint(opts, msg)
-            return
+                code = os.system('cd {} && make -f Makefile.nix'. \
+                                 format(os.path.normpath(doc_dir)))
+            if code == 0:
+                myprint(opts, '-- Created {}'.format(md2html))
+            else:
+                myprint(opts, '-- Cannot Create {}'.format(md2html))
+                return
 
     # get all markdown files
     md_dir = get_markdown_dir(opts)
