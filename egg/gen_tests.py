@@ -45,8 +45,8 @@ def get_filename(opts, op, typ, lang, custom_name=''):
         filename = os.path.join(tests_dir, '{}.{}.{}'.format(op.name, typ,
                      'c' if lang == 'c_base' else 'cpp'))
     else:
-        filename = os.path.join(tests_dir, '{}_{}.{}.{}'.format(op.name, custom_name, typ,
-                     'c' if lang == 'c_base' else 'cpp'))
+        filename = os.path.join(tests_dir, '{}_{}.{}.{}'.format(op.name,
+                     custom_name, typ, 'c' if lang == 'c_base' else 'cpp'))
     if common.can_create_filename(opts, filename):
         return filename
     else:
@@ -1985,6 +1985,115 @@ def gen_gather_scatter(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
+# Tests for masked scatter
+
+def gen_mask_scatter(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+
+    ityp = 'i' + typ[1:]
+
+    if typ == 'f16':
+        two = 'nsimd_f32_to_f16(2.0f)'
+        one = 'nsimd_f32_to_f16(1.0f)'
+        zero = 'nsimd_f32_to_f16(0.0f)'
+        comp_with_0 = 'nsimd_f16_to_f32(vout[2 * k]) != 0.0f'
+        comp_with_1 = 'nsimd_f16_to_f32(vout[2 * k + 1]) != 1.0f'
+        comp_with_2 = 'nsimd_f16_to_f32(vout[2 * k]) != 2.0f'
+    else:
+        two = '({typ})2'.format(typ=typ)
+        one = '({typ})1'.format(typ=typ)
+        zero = '({typ})0'.format(typ=typ)
+        comp_with_0 = 'vout[2 * k] != ({typ})0'.format(typ=typ)
+        comp_with_1 = 'vout[2 * k + 1] != ({typ})1'.format(typ=typ)
+        comp_with_2 = 'vout[2 * k] != ({typ})2'.format(typ=typ)
+
+    if lang == 'c_base':
+        mask_scatter = \
+            '''vec({ityp}) offsets = vmul(viota({ityp}), vset1(({ityp})2,
+                                          {ityp}), {ityp});
+               vecl({typ}) mask = vmask_for_loop_tail(0, i, {typ});
+               vmask_scatter(mask, vout, offsets, vset1({two}, {typ}),
+                             {typ});'''.format(two=two, typ=typ, ityp=ityp)
+    elif lang == 'cxx_base':
+        mask_scatter = \
+            '''vec({ityp}) offsets = nsimd::mul(nsimd::iota({ityp}()),
+                                     nsimd::set1(({ityp})2, {ityp}()),
+                                     {ityp}());
+               vecl({typ}) mask = nsimd::mask_for_loop_tail(0, i, {typ}());
+               nsimd::mask_scatter(mask, vout, offsets, nsimd::set1(
+                                   {two}, {typ}()), {typ}());'''. \
+                                   format(two=two, typ=typ, ityp=ityp)
+    else:
+        mask_scatter = \
+            '''typedef nsimd::pack<{typ}> pack;
+               typedef nsimd::pack<{ityp}> ipack;
+               typedef nsimd::packl<{typ}> packl;
+               ipack offsets = nsimd::mul(nsimd::iota<ipack>(),
+                               nsimd::set1<ipack>(({ityp})2));
+               packl mask = nsimd::mask_for_loop_tail<packl>(0, i);
+               nsimd::mask_scatter(mask, vout, offsets,
+                                   nsimd::set1<pack>({two}));'''. \
+                                   format(two=two, typ=typ, ityp=ityp)
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+           '''{includes}
+
+           #define STATUS "test of {op_name} over {typ}"
+
+           int main(void) {{
+             int n = 2 * vlen({typ});
+             int i, j, k;
+             {typ} vout[2 * NSIMD_MAX_LEN({typ})];
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+             for (i = 0; i < n / 2; i++) {{
+               /* Fill output with 0 1 0 1 0 1 ... */
+               for (j = 0; j < n; j++) {{
+                 vout[j] = (j % 2 == 0 ? {zero} : {one});
+               }}
+
+               {{
+                 {mask_scatter}
+               }}
+
+               /* Check results */
+               for (k = 0; k < n / 2; k++) {{
+                 if ({comp_with_1}) {{
+                   goto error;
+                 }}
+               }}
+               for (k = 0; k < i; k++) {{
+                 if ({comp_with_2}) {{
+                   goto error;
+                 }}
+               }}
+               for (; k < n / 2; k++) {{
+                 if ({comp_with_0}) {{
+                   goto error;
+                 }}
+               }}
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             fflush(stdout);
+             return EXIT_SUCCESS;
+
+           error:
+             fprintf(stdout, STATUS "... FAIL\\n");
+             fflush(stdout);
+             return EXIT_FAILURE;
+           }}'''.format(includes=get_includes(lang), ityp=ityp, two=two,
+                        typ=typ, year=date.today().year, op_name=op.name,
+                        mask_scatter=mask_scatter, zero=zero, one=one,
+                        comp_with_0=comp_with_0, comp_with_2=comp_with_2,
+                        comp_with_1=comp_with_1))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
 # Tests for masked loads
 
 def gen_mask_load(opts, op, typ, lang):
@@ -3039,6 +3148,10 @@ def doit(opts):
                 gen_gather_scatter(opts, operator, typ, 'c_base')
                 gen_gather_scatter(opts, operator, typ, 'cxx_base')
                 gen_gather_scatter(opts, operator, typ, 'cxx_adv')
+            elif operator.name == 'mask_scatter':
+                gen_mask_scatter(opts, operator, typ, 'c_base')
+                gen_mask_scatter(opts, operator, typ, 'cxx_base')
+                gen_mask_scatter(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['masko_loada1', 'masko_loadu1',
                                    'maskz_loada1', 'maskz_loadu1']:
                 gen_mask_load(opts, operator, typ, 'c_base')

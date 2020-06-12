@@ -694,6 +694,16 @@ class Scatter(Operator):
            'address given as first argument and offsets given as second ' \
            'argument.'
 
+class MaskScatter(Operator):
+    full_name = 'scatter active elements from SIMD vector to memory'
+    signature = '_ mask_scatter l * vi v'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+    desc = 'Scatter active (first argument) elements from fourth argument ' \
+           'to memory with base address given as second argument and ' \
+           'offsets given as third argument.'
+
 class Storelu(Operator):
     full_name = 'store vector of logicals'
     signature = '_ storelu * l'

@@ -44,13 +44,26 @@ struct node {};
 const nsimd::nat end = nsimd::nat(-1);
 
 // ----------------------------------------------------------------------------
+// Error management
+#if defined(NSIMD_CUDA)
+#define nsimd_cuda_assert(ans) tet1d::gpuCheck((ans), __FILE__, __LINE__)
+inline void gpuCheck(cudaError_t code, const char *file, int line) {
+  if (code != cudaSuccess) {
+    fprintf(stderr, "NSIMD Internal error:\n\ttet1d Error: %s %s %d\n",
+        cudaGetErrorString(code), file, line);
+    exit(code);
+  }
+}
+#endif
+
+// ----------------------------------------------------------------------------
 // supported kernels
 
 #if defined(NSIMD_CUDA)
 
 // CUDA component wise kernel
 template <typename T, typename Expr>
-__global__ void gpu_kernel_component_wise(T *dst, Expr const &expr,
+__global__ void gpu_kernel_component_wise(T *dst, Expr const expr,
                                           nsimd::nat n) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n) {
@@ -60,8 +73,8 @@ __global__ void gpu_kernel_component_wise(T *dst, Expr const &expr,
 
 // CUDA component wise kernel with masked output
 template <typename T, typename Mask, typename Expr>
-__global__ void gpu_kernel_component_wise_mask(T *dst, Mask const &mask,
-                                               Expr const &expr,
+__global__ void gpu_kernel_component_wise_mask(T *dst, Mask const mask,
+                                               Expr const expr,
                                                nsimd::nat n) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n && mask.gpu_get(i)) {
@@ -300,21 +313,24 @@ struct node<mask_out_t, Mask, none_t, Pack> {
   node<mask_out_t, Mask, none_t, Pack>
   operator=(node<Op, Left, Right, Extra> const &expr) {
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+    nsimd::nat expr_size = compute_size(mask.size(), expr.size());
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
-    nsimd::nat nb = expr.size() + (nt - 1) / nt;
+    nsimd::nat nb = (expr_size + nt - 1) / nt; // div rounded up
     assert(nt > 0 && nt <= UINT_MAX);
     assert(nb > 0 && nb <= UINT_MAX);
 #if defined(NSIMD_CUDA)
     cudaStream_t s = (stream == NULL ? NULL : *(cudaStream_t *)stream);
+
     // clang-format off
     gpu_kernel_component_wise_mask<<<(unsigned int)(nb), (unsigned int)(nt),
-                                     0, s>>>(data, mask, expr, expr.size());
+                                     0, s>>>
+                                     (data, mask, expr, expr_size);
     // clang-format on
 #elif defined(NSIMD_ROCM)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
     hipLaunchKernelGGL(gpu_kernel_component_wise_mask, (unsigned int)(nb),
                        (unsigned int)(nt), 0, s, data, mask, expr,
-                       expr.size());
+                       expr_size);
 #endif
 #else
     cpu_kernel_component_wise_mask<Pack>(
@@ -361,15 +377,17 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
   operator=(node<Op, Left, Right, Extra> const &expr) {
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
-    nsimd::nat nb = expr.size() + (nt - 1) / nt;
+    nsimd::nat nb = (expr.size() + nt - 1) / nt; // div rounded up
     assert(nt > 0 && nt <= UINT_MAX);
     assert(nb > 0 && nb <= UINT_MAX);
 #if defined(NSIMD_CUDA)
     cudaStream_t s = stream == NULL ? NULL : *(cudaStream_t *)stream;
+
     // clang-format off
     gpu_kernel_component_wise<<<(unsigned int)(nb), (unsigned int)(nt),
                                 0, s>>>(data, expr, expr.size());
     // clang-format on
+
 #elif defined(NSIMD_ROCM)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
     hipLaunchKernelGGL(

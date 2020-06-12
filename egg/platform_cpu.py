@@ -572,6 +572,18 @@ def scatter(typ):
 
 # -----------------------------------------------------------------------------
 
+def mask_scatter(typ):
+    if typ == 'f16':
+        return repeat_stmt(
+               '''if ({in0}.v{{i}}) {{{{
+                    {in1}[{in2}.v{{i}}] = nsimd_f32_to_f16({in3}.v{{i}});
+                  }}}}'''.format(**fmtspec), typ)
+    return repeat_stmt('''if ({in0}.v{{i}}) {{{{
+                            {in1}[{in2}.v{{i}}] = {in3}.v{{i}};
+                          }}}}'''.format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
 def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
 
     global fmtspec
@@ -616,6 +628,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'loadlu': lambda: loadl(from_typ),
         'gather': lambda: gather(from_typ),
         'scatter': lambda: scatter(from_typ),
+        'mask_scatter': lambda: mask_scatter(from_typ),
         'storela': lambda: storel(from_typ),
         'storelu': lambda: storel(from_typ),
         'add': lambda: op2('+', from_typ),

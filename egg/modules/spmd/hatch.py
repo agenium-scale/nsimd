@@ -446,7 +446,7 @@ def gen_tests_for_shifts(opts, t, operator):
         '''#include <nsimd/modules/spmd.hpp>
         #include <nsimd/modules/memory_management.hpp>
         #include <nsimd/scalar_utilities.h>
-        #include "common.hpp"
+        #include "../common.hpp"
 
         #if defined(NSIMD_CUDA)
 
@@ -538,7 +538,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         '''#include <nsimd/modules/spmd.hpp>
         #include <nsimd/modules/memory_management.hpp>
         #include <nsimd/scalar_utilities.h>
-        #include "common.hpp"
+        #include "../common.hpp"
 
         #if defined(NSIMD_CUDA)
 
@@ -729,7 +729,7 @@ def gen_tests_for(opts, t, operator):
         '''#include <nsimd/modules/spmd.hpp>
         #include <nsimd/modules/memory_management.hpp>
         #include <nsimd/scalar_utilities.h>
-        #include "common.hpp"
+        #include "../common.hpp"
 
         #if defined(NSIMD_CUDA)
 
