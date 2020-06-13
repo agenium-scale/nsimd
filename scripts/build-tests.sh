@@ -42,7 +42,7 @@ python3 --version 1>/dev/null 2>/dev/null && \
 ###############################################################################
 # Run setup
 
-sh "${BUILD_SH}" "$@" || exit 1
+bash "${BUILD_SH}" "$@" || exit 1
 
 ###############################################################################
 # Parse command line arguments (check has been done by build.sh)
