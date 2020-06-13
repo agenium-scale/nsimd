@@ -3531,6 +3531,68 @@ def scatter(simd_ext, typ):
                   format(scale=int(typ[1:]) // 8, **fmtspec)
 
 # -----------------------------------------------------------------------------
+# mask_scatter
+
+def mask_scatter(simd_ext, typ):
+    if typ == 'f16':
+        le2 = fmtspec['le'] // 2
+        if simd_ext in sse + avx:
+            store_mask = '''{pre}storeu_ps(mask, {in0}.v0);
+                            {pre}storeu_ps(mask + {le2}, {in0}.v1);'''. \
+                            format(le2=le2, **fmtspec)
+        else:
+            store_mask = '''_mm512_storeu_ps(mask, _mm512_maskz_mov_ps(
+                              {in0}.v0, _mm512_set1_ps(1.0f)));
+                            _mm512_storeu_ps(mask + {le2}, _mm512_maskz_mov_ps(
+                              {in0}.v1, _mm512_set1_ps(1.0f)));'''. \
+                            format(le2=le2, **fmtspec)
+        return '''int i;
+                  f32 mask[{le}], buf[{le}];
+                  i16 offset_buf[{le}];
+                  {store_mask}
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in2});
+                  {pre}storeu_ps(buf, {in3}.v0);
+                  {pre}storeu_ps(buf + {le2}, {in3}.v1);
+                  for (i = 0; i < {le}; i++) {{
+                    if (nsimd_scalar_reinterpret_u32_f32(mask[i]) != (u32)0) {{
+                      {in1}[offset_buf[i]] = nsimd_f32_to_f16(buf[i]);
+                    }}
+                  }}'''.format(le2=le2, store_mask=store_mask, **fmtspec)
+    if simd_ext in (sse + avx) or typ in ['i8', 'u8', 'i16', 'u16']:
+        if typ in common.iutypes:
+            cast = '(__m{nbits}i*)'.format(**fmtspec)
+        else:
+            cast = ''
+        if simd_ext == 'avx512_knl':
+            mask_decl = 'u64 mask;'
+            store_mask = 'mask = (u64){in0};'.format(**fmtspec)
+            cond = '(mask >> i) & 1'
+        else:
+            mask_decl = '{typ} mask[{le}];'.format(**fmtspec)
+            store_mask = '{pre}storeu{sufsi}({cast}mask, {in0});'. \
+                         format(cast=cast, **fmtspec)
+            cond = 'nsimd_scalar_reinterpret_{utyp}_{typ}(mask[i]) != '\
+                   '({utyp})0'.format(utyp='u' + typ[1:], **fmtspec)
+        return '''int i;
+                  {typ} buf[{le}];
+                  {mask_decl}
+                  {ityp} offset_buf[{le}];
+                  {store_mask}
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in2});
+                  {pre}storeu{sufsi}({cast}buf, {in3});
+                  for (i = 0; i < {le}; i++) {{
+                    if ({cond}) {{
+                      {in1}[offset_buf[i]] = buf[i];
+                    }}
+                  }}'''.format(ityp='i' + typ[1:], cast=cast, cond=cond,
+                               mask_decl=mask_decl, store_mask=store_mask,
+                               **fmtspec)
+    # getting here means 32 and 64-bits types for avx512
+    return '''{pre}mask_i{typnbits}scatter{suf}(
+                  (void *){in1}, {in0}, {in2}, {in3}, {scale});'''. \
+                  format(scale=int(typ[1:]) // 8, **fmtspec)
+
+# -----------------------------------------------------------------------------
 # gather
 
 def gather(simd_ext, typ):
@@ -3629,6 +3691,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
         'gather': lambda: gather(simd_ext, from_typ),
         'scatter': lambda: scatter(simd_ext, from_typ),
+        'mask_scatter': lambda: mask_scatter(simd_ext, from_typ),
         'andb': lambda: binop2('andb', simd_ext, from_typ),
         'xorb': lambda: binop2('xorb', simd_ext, from_typ),
         'orb': lambda: binop2('orb', simd_ext, from_typ),
