@@ -2094,6 +2094,130 @@ def gen_mask_scatter(opts, op, typ, lang):
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
+# Tests for masked gather
+
+def gen_maskoz_gather(opts, op, typ, lang):
+    filename = get_filename(opts, op, typ, lang)
+    if filename == None:
+        return
+
+    ityp = 'i' + typ[1:]
+
+    if typ == 'f16':
+        three = 'nsimd_f32_to_f16(3.0f)'
+        two = 'nsimd_f32_to_f16(2.0f)'
+        one = 'nsimd_f32_to_f16(1.0f)'
+        zero = 'nsimd_f32_to_f16(0.0f)'
+        comp_with_1 = 'nsimd_f16_to_f32(vout[k]) != 1.0f'
+        if op.name == 'maskz_gather':
+            comp_with_0_or_3 = 'nsimd_f16_to_f32(vout[k]) != 0.0f'
+        else:
+            comp_with_0_or_3 = 'nsimd_f16_to_f32(vout[k]) != 3.0f'
+    else:
+        three = '({typ})3'.format(typ=typ)
+        two = '({typ})2'.format(typ=typ)
+        one = '({typ})1'.format(typ=typ)
+        zero = '({typ})0'.format(typ=typ)
+        comp_with_1 = 'vout[k] != ({typ})1'.format(typ=typ)
+        if op.name == 'maskz_gather':
+            comp_with_0_or_3 = 'vout[k] != ({typ})0'.format(typ=typ)
+        else:
+            comp_with_0_or_3 = 'vout[k] != ({typ})3'.format(typ=typ)
+
+    oz = 'o' if op.name == 'masko_gather' else 'z'
+
+    if lang == 'c_base':
+        ta = ', vset1({three}, {typ})'.format(three=three, typ=typ) \
+             if op.name == 'masko_gather' else ''
+        maskoz_gather = \
+            '''vec({ityp}) offsets = vmul(viota({ityp}), vset1(({ityp})2,
+                                          {ityp}), {ityp});
+               vecl({typ}) mask = vmask_for_loop_tail(0, i, {typ});
+               vstoreu(vout, vmask{oz}_gather(mask, vin, offsets{ta},
+                       {typ}), {typ});'''. \
+                       format(typ=typ, ityp=ityp, ta=ta, oz=oz)
+    elif lang == 'cxx_base':
+        ta = ', nsimd::set1({three}, {typ}())'.format(three=three, typ=typ) \
+             if op.name == 'masko_gather' else ''
+        maskoz_gather = \
+            '''vec({ityp}) offsets = nsimd::mul(nsimd::iota({ityp}()),
+                                     nsimd::set1(({ityp})2, {ityp}()),
+                                     {ityp}());
+               vecl({typ}) mask = nsimd::mask_for_loop_tail(0, i, {typ}());
+               nsimd::storeu(vout, nsimd::mask{oz}_gather(
+                   mask, vin, offsets{ta}, {typ}()), {typ}());'''. \
+                   format(typ=typ, ityp=ityp, ta=ta, oz=oz)
+    else:
+        ta = ', nsimd::set1<nsimd::pack<{typ}> >({three})'. \
+             format(three=three, typ=typ) if op.name == 'masko_gather' else ''
+        maskoz_gather = \
+            '''typedef nsimd::pack<{ityp}> ipack;
+               typedef nsimd::packl<{typ}> packl;
+               ipack offsets = nsimd::mul(nsimd::iota<ipack>(),
+                               nsimd::set1<ipack>(({ityp})2));
+               packl mask = nsimd::mask_for_loop_tail<packl>(0, i);
+               nsimd::storeu(vout, nsimd::mask{oz}_gather(
+                   mask, vin, offsets{ta}));'''. \
+                   format(ta=ta, oz=oz, typ=typ, ityp=ityp)
+
+    with common.open_utf8(opts, filename) as out:
+        out.write(
+           '''{includes}
+
+           #define STATUS "test of {op_name} over {typ}"
+
+           int main(void) {{
+             int n = 2 * vlen({typ});
+             int i, j, k;
+             {typ} vin[2 * NSIMD_MAX_LEN({typ})];
+             {typ} vout[NSIMD_MAX_LEN({typ})];
+
+             fprintf(stdout, "test of {op_name} over {typ}...\\n");
+
+             for (i = 0; i < n / 2; i++) {{
+               /* Fill input with 1 0 1 0 1 0 ... */
+               for (j = 0; j < n; j++) {{
+                 vin[j] = (j % 2 == 1 ? {zero} : {one});
+               }}
+
+               /* Fill output with 2's ... */
+               for (j = 0; j < n / 2; j++) {{
+                 vout[j] = {two};
+               }}
+
+               {{
+                 {maskoz_gather}
+               }}
+
+               /* Check results */
+               for (k = 0; k < i; k++) {{
+                 if ({comp_with_1}) {{
+                   goto error;
+                 }}
+               }}
+               for (; k < n / 2; k++) {{
+                 if ({comp_with_0_or_3}) {{
+                   goto error;
+                 }}
+               }}
+             }}
+
+             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+             fflush(stdout);
+             return EXIT_SUCCESS;
+
+           error:
+             fprintf(stdout, STATUS "... FAIL\\n");
+             fflush(stdout);
+             return EXIT_FAILURE;
+           }}'''.format(includes=get_includes(lang), ityp=ityp, two=two,
+                        typ=typ, year=date.today().year, op_name=op.name,
+                        maskoz_gather=maskoz_gather, zero=zero, one=one,
+                        comp_with_0_or_3=comp_with_0_or_3, three=three,
+                        comp_with_1=comp_with_1))
+    common.clang_format(opts, filename)
+
+# -----------------------------------------------------------------------------
 # Tests for masked loads
 
 def gen_mask_load(opts, op, typ, lang):
@@ -3152,6 +3276,10 @@ def doit(opts):
                 gen_mask_scatter(opts, operator, typ, 'c_base')
                 gen_mask_scatter(opts, operator, typ, 'cxx_base')
                 gen_mask_scatter(opts, operator, typ, 'cxx_adv')
+            elif operator.name in ['maskz_gather', 'masko_gather']:
+                gen_maskoz_gather(opts, operator, typ, 'c_base')
+                gen_maskoz_gather(opts, operator, typ, 'cxx_base')
+                gen_maskoz_gather(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['masko_loada1', 'masko_loadu1',
                                    'maskz_loada1', 'maskz_loadu1']:
                 gen_mask_load(opts, operator, typ, 'c_base')

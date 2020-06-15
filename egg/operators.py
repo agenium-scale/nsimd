@@ -684,6 +684,29 @@ class Gather(Operator):
     desc = 'Gather elements from memory with base address given as first ' \
            'argument and offsets given as second argument.'
 
+class MaskzGather(Operator):
+    full_name = 'gather active elements from SIMD vector to memory and put ' \
+                'zeros in inactive elements.'
+    signature = 'v maskz_gather l * vi'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+    desc = 'Gather elements from memory with base address given as second ' \
+           'argument and offsets given as third argument. Inactive elements ' \
+           '(first argument) are set to zero.'
+
+class MaskoGather(Operator):
+    full_name = 'gather active elements from SIMD vector to memory and put ' \
+                'zeros in inactive elements.'
+    signature = 'v masko_gather l * vi v'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+    desc = 'Gather elements from memory with base address given as second ' \
+           'argument and offsets given as third argument. Inactive elements ' \
+           '(first argument) are set to corresponding elements from fourth ' \
+           'argument.'
+
 class Scatter(Operator):
     full_name = 'scatter elements from SIMD vector to memory'
     signature = '_ scatter * vi v'

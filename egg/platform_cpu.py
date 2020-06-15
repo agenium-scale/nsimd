@@ -562,6 +562,25 @@ def gather(typ):
 
 # -----------------------------------------------------------------------------
 
+def maskoz_gather(op, typ):
+    if typ == 'f16':
+        oz = '0.0f' if op == 'z' else '{in3}.v{{i}}'
+        return func_body(
+               ('''if ({in0}.v{{i}}) {{{{
+                     ret.v{{i}} = nsimd_f16_to_f32({in1}[{in2}.v{{i}}]);
+                   }}}} else {{{{
+                     ret.v{{i}} = ''' + oz + ''';
+                   }}}}''').format(**fmtspec), typ)
+
+    oz = '({typ})0' if op == 'z' else '{in3}.v{{i}}'
+    return func_body(('''if ({in0}.v{{i}}) {{{{
+                           ret.v{{i}} = {in1}[{in2}.v{{i}}];
+                         }}}} else {{{{
+                           ret.v{{i}} = ''' + oz + ''';
+                         }}}}''').format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
 def scatter(typ):
     if typ == 'f16':
         return repeat_stmt(
@@ -627,6 +646,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'loadla': lambda: loadl(from_typ),
         'loadlu': lambda: loadl(from_typ),
         'gather': lambda: gather(from_typ),
+        'maskz_gather': lambda: maskoz_gather('z', from_typ),
+        'masko_gather': lambda: maskoz_gather('o', from_typ),
         'scatter': lambda: scatter(from_typ),
         'mask_scatter': lambda: mask_scatter(from_typ),
         'storela': lambda: storel(from_typ),
