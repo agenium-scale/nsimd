@@ -2367,6 +2367,106 @@ def gather(simd_ext, typ):
            '{in1});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
+# masked gather
+
+def maskoz_gather(oz, simd_ext, typ):
+    le = max_len(simd_ext, typ)
+    real_le = real_len(simd_ext, typ)
+
+    if simd_ext in sve:
+        utyp = 'u{typnbits}'.format(**fmtspec)
+        store = '''svst1_s{typnbits}({svtrue}, offset_buf, {in2});
+                   svst1_{utyp}({svtrue}, mask, svsel_{utyp}(
+                       {in0}, svdup_n_{utyp}(({utyp})-1), svdup_n_{utyp}(
+                         ({utyp})0)));
+                         '''.format(utyp=utyp, **fmtspec)
+        if oz == 'z':
+            store += 'svst1_{suf}({svtrue}, buf, svdup_n_{suf}(({typ})0));'. \
+                     format(**fmtspec)
+        else:
+            store += 'svst1_{suf}({svtrue}, buf, {in3});'.format(**fmtspec)
+        load = 'svld1_{suf}({svtrue}, buf)'.format(**fmtspec)
+    else:
+        store = '''vst1q_s{typnbits}(offset_buf, {in2});
+                   vst1q_u{typnbits}(mask, {in0});'''.format(**fmtspec)
+        if oz == 'z':
+            store += 'vst1q_{suf}(buf, vdupq_n_{suf}(({typ})0));'. \
+                     format(**fmtspec)
+        else:
+            store += 'vst1q_{suf}(buf, {in3});'.format(**fmtspec)
+        load = 'vld1q_{suf}(buf)'.format(**fmtspec)
+
+    emul = '''int i;
+              {typ} buf[{le}];
+              u{typnbits} mask[{le}];
+              i{typnbits} offset_buf[{le}];
+              {store}
+              for (i = 0; i < {real_le}; i++) {{
+                if (mask[i]) {{
+                  buf[i] = {in1}[offset_buf[i]];
+                }}
+              }}
+              return {load};'''. \
+              format(le=le, real_le=real_le, store=store, load=load, **fmtspec)
+    if typ == 'f16':
+        if simd_ext in sve:
+            return emul
+        if oz == 'z':
+            oz0 = 'vdupq_n_f32(0.0f)'
+            oz1 = oz0
+        else:
+            oz0 = '{in3}.v0'.format(**fmtspec)
+            oz1 = '{in3}.v1'.format(**fmtspec)
+        return '''#ifdef NSIMD_NATIVE_FP16
+                    {emul}
+                  #else
+                    nsimd_{simd_ext}_vf16 ret;
+                    int i;
+                    f32 buf[{le}];
+                    u32 mask[{le}];
+                    i16 offset_buf[{le}];
+                    vst1q_s16(offset_buf, {in2});
+                    vst1q_f32(buf, {oz0});
+                    vst1q_f32(buf + {le}, {oz1});
+                    vst1q_u32(mask, {in0}.v0);
+                    vst1q_u32(mask + {le}, {in0}.v1);
+                    for (i = 0; i < {le}; i++) {{
+                      if (mask[i]) {{
+                        buf[i] = nsimd_f16_to_f32({in1}[offset_buf[i]]);
+                      }}
+                    }}
+                    ret.v0 = vld1q_f32(buf);
+                    ret.v1 = vld1q_f32(buf + {leo2});
+                    return ret;
+                  #endif'''.format(emul=emul, leo2=le // 2, le=le, oz0=oz0,
+                                   oz1=oz1, **fmtspec)
+    if simd_ext == 'neon128' and typ == 'f64':
+        oz0 = '0.0' if oz == 'z' else '{in3}.v0'.format(**fmtspec)
+        oz1 = '0.0' if oz == 'z' else '{in3}.v1'.format(**fmtspec)
+        return '''nsimd_neon128_vf64 ret;
+                  i64 offset_buf[2];
+                  vst1q_s64(offset_buf, {in2});
+                  if ({in0}.v0) {{
+                    ret.v0 = {in1}[offset_buf[0]];
+                  }} else {{
+                    ret.v0 = {oz0};
+                  }}
+                  if ({in0}.v1) {{
+                    ret.v1 = {in1}[offset_buf[1]];
+                  }} else {{
+                    ret.v1 = {oz1};
+                  }}
+                  return ret;'''.format(oz0=oz0, oz1=oz1, **fmtspec)
+    if simd_ext in neon or typ in ['i8', 'u8', 'i16', 'u16']:
+        return emul
+    # getting here means SVE
+    oz0 = 'svdup_n_{suf}(({typ})0)'.format(**fmtspec) if oz == 'z' \
+          else '{in3}'.format(**fmtspec)
+    return '''return svsel_{suf}({in0}, svld1_gather_s{typnbits}index_{suf}(
+                         {in0}, {in1}, {in2}), {oz0});'''. \
+                         format(oz0=oz0, **fmtspec)
+
+# -----------------------------------------------------------------------------
 # scatter
 
 def scatter(simd_ext, typ):
@@ -2530,6 +2630,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store3u': lambda: store1234(opts, simd_ext, from_typ, 3),
         'store4u': lambda: store1234(opts, simd_ext, from_typ, 4),
         'gather': lambda: gather(simd_ext, from_typ),
+        'maskz_gather': lambda: maskoz_gather('z', simd_ext, from_typ),
+        'masko_gather': lambda: maskoz_gather('o', simd_ext, from_typ),
         'scatter': lambda: scatter(simd_ext, from_typ),
         'mask_scatter': lambda: mask_scatter(simd_ext, from_typ),
         'andb': lambda: binop2("andb", simd_ext2, from_typ),
