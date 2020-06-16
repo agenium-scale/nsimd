@@ -57,7 +57,7 @@ def emulate_fp16(simd_ext):
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     return True
 
-def get_type(opts, simd_ext, typ):
+def get_type(opts, simd_ext, typ, nsimd_typ):
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     if typ not in common.types:
@@ -65,16 +65,16 @@ def get_type(opts, simd_ext, typ):
     typ2 = typ if typ != 'f16' else 'f32'
     members = '\n'.join('{} v{};'.format(typ2, i) \
                         for i in range(0, get_nb_el(typ)))
-    return 'struct {{ {} }}'.format(members)
+    return 'typedef struct {{ {} }} {};'.format(members, nsimd_typ)
 
-def get_logical_type(opts, simd_ext, typ):
+def get_logical_type(opts, simd_ext, typ, nsimd_typ):
     if simd_ext != 'cpu':
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     members = '\n'.join('unsigned int v{};'.format(i) \
                         for i in range(0, get_nb_el(typ)))
-    return 'struct {{ {} }}'.format(members)
+    return 'typedef struct {{ {} }} {};'.format(members, nsimd_typ)
 
 def get_nb_registers(simd_ext):
     if simd_ext != 'cpu':

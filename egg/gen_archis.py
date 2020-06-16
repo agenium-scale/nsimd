@@ -219,17 +219,18 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
     if not common.can_create_filename(opts, filename):
         return
     mod = opts.platforms[platform]
-    c_code = '\n'.join(['typedef {} nsimd_{}_v{};'.format(mod.get_type(
-                       opts, simd_ext, t), simd_ext, t) for t in common.types])
+    c_code = '\n'.join([mod.get_type(opts, simd_ext, t,
+                                     'nsimd_{}_v{}'.format(simd_ext, t)) \
+                                     for t in common.types])
     c_code += '\n\n'
-    c_code += '\n'.join(['typedef {} nsimd_{}_vl{};'.format(
-              mod.get_logical_type(opts, simd_ext, t), simd_ext, t)
-              for t in common.types])
+    c_code += '\n'.join([mod.get_logical_type(
+                             opts, simd_ext, t, 'nsimd_{}_vl{}'. \
+                             format(simd_ext, t)) for t in common.types])
     if mod.has_compatible_SoA_types(simd_ext):
         for deg in range(2, 5):
-            c_code += '\n'.join(['typedef {} nsimd_{}_v{}x{};'. \
-                                 format(mod.get_SoA_type(simd_ext, typ, deg),
-                                 simd_ext, typ, deg) for typ in common.types])
+            c_code += '\n'.join([mod.get_SoA_type(simd_ext, typ, deg,
+                                'nsimd_{}_v{}x{}'.format(simd_ext, typ, deg)) \
+                                for typ in common.types])
     else:
         c_code += '\n'.join(['''
                              typedef struct nsimd_{simd_ext}_v{typ}x2 {{

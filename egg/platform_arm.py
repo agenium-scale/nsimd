@@ -100,32 +100,34 @@ def emulate_fp16(simd_ext):
     else:
         return True
 
-def get_type(opts, simd_ext, typ):
+def get_type(opts, simd_ext, typ, nsimd_typ):
     if simd_ext in neon:
         if typ == 'f64':
             if simd_ext == 'neon128':
-                return 'struct { double v0; double v1; }'
+                return 'typedef struct {{ double v0; double v1; }} {};'. \
+                       format(nsimd_typ)
             else:
-                return neon_typ('f64')
+                return 'typedef {} {};'.format(neon_typ('f64'), nsimd_typ)
         elif typ == 'f16':
             return '''
                    #ifdef NSIMD_NATIVE_FP16
-                     float16x8_t
+                     typedef float16x8_t {nsimd_typ};
                    #else
-                     struct { float32x4_t v0; float32x4_t v1; }
+                     typedef struct {{ float32x4_t v0; float32x4_t v1; }}
+                         {nsimd_typ};
                    #endif
-                   ''' # extra \n are necessary
+                   '''.format(nsimd_typ=nsimd_typ) # extra \n are necessary
         else:
-            return neon_typ(typ)
+            return 'typedef {} {};'.format(neon_typ(typ), nsimd_typ)
     elif simd_ext == 'sve':
-        return sve_typ(typ)
+        return 'typedef {} {};'.format(sve_typ(typ), nsimd_typ)
     elif simd_ext in fixed_sized_sve:
-        return '{} __attribute__ ((vector_size({})))'. \
-               format(typ, int(simd_ext[3:]) // 8)
+        return 'typedef {} {} __attribute__((arm_sve_vector_bits({})));'. \
+               format(sve_typ(typ), nsimd_typ, simd_ext[3:])
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
-def get_logical_type(opts, simd_ext, typ):
+def get_logical_type(opts, simd_ext, typ, nsimd_typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     if simd_ext not in get_simd_exts():
@@ -141,25 +143,27 @@ def get_logical_type(opts, simd_ext, typ):
             return \
             '''
             #ifdef NSIMD_NATIVE_FP16
-              uint16x8_t
+              typedef uint16x8_t {nsimd_typ};
             #else
-              struct { uint32x4_t v0; uint32x4_t v1; }
+              typedef struct {{ uint32x4_t v0; uint32x4_t v1; }} {nsimd_typ};
             #endif
-            ''' # extra \n are necessary
+            '''.format(nsimd_typ=nsimd_typ) # extra \n are necessary
         elif typ == 'f64':
-            return 'struct { u64 v0; u64 v1; }'
+            return 'typedef struct {{ u64 v0; u64 v1; }} {};'.format(nsimd_typ)
         else:
-            return get_type(opts, simd_ext, typ2)
+            return get_type(opts, simd_ext, typ2, nsimd_typ)
     if simd_ext == 'aarch64':
         if typ == 'f16':
-            return get_logical_type(opts, 'neon128', 'f16')
+            return get_logical_type(opts, 'neon128', 'f16', nsimd_typ)
         else:
-            return get_type(opts, simd_ext, typ2)
+            return get_type(opts, simd_ext, typ2, nsimd_typ)
     elif simd_ext in sve:
         if opts.sve_emulate_bool:
-            return get_type(opts, simd_ext, 'u'+typ[1:])
+            return get_type(opts, simd_ext, 'u' + typ[1:], nsimd_typ)
         else:
-            return 'svbool_t'
+            return \
+            'typedef svbool_t {} __attribute__((arm_sve_vector_bits({})));'. \
+            format(nsimd_typ, simd_ext[3:])
 
 def get_nb_registers(simd_ext):
     if simd_ext in neon:
@@ -170,10 +174,21 @@ def get_nb_registers(simd_ext):
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
 
-def get_SoA_type(simd_ext, typ, deg):
+def get_native_soa_typ(simd_ext, typ, deg):
+    prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }[typ[0]]
+    if simd_ext in sve:
+        return 'sv{}x{}_t'.format(prefix + typ[1:], deg)
+    else:
+        return '{}{}x{}x{}_t'.format(prefix, typ[1:], 128 // int(typ[1:]),
+                                     deg)
+
+
+def get_SoA_type(simd_ext, typ, deg, nsimd_typ):
     if simd_ext != 'sve':
-        raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
-    return '{}x{}_t'.format(sve_typ(typ)[0:-2], deg)
+        raise ValueError('SIMD extension must be "sve"')
+    prefix = { 'i': 'int', 'u': 'uint', 'f': 'float' }[typ[0]]
+    return 'typedef {} {};'.format(get_native_soa_typ(simd_ext, typ, deg),
+                                   nsimd_typ)
 
 
 def has_compatible_SoA_types(simd_ext):
@@ -435,13 +450,6 @@ def real_len(simd_ext, typ):
         return max_len(simd_ext, typ)
 
 # -----------------------------------------------------------------------------
-# Get SoA types
-
-def get_soa_typ(opts, simd_ext, typ, deg):
-    ntyp = get_type(opts, simd_ext, typ) if typ != 'f16' else 'float16x8_t'
-    return '{}x{}_t'.format(ntyp[:-2], deg)
-
-# -----------------------------------------------------------------------------
 # Loads of degree 1, 2, 3 and 4
 
 def load1234(opts, simd_ext, typ, deg):
@@ -483,7 +491,7 @@ def load1234(opts, simd_ext, typ, deg):
                {soa_typ} buf = vld{deg}q_{suf}({in0});
                {assignment}
                return ret;'''. \
-               format(deg=deg, soa_typ=get_soa_typ(opts, simd_ext, typ, deg),
+               format(deg=deg, soa_typ=get_native_soa_typ(simd_ext, typ, deg),
                       assignment='\n'.join(['ret.v{i} = buf.val[{i}];'. \
                       format(i=i) for i in range(0, deg)]), **fmtspec)
             if typ == 'f16':
@@ -499,7 +507,7 @@ def load1234(opts, simd_ext, typ, deg):
                    return ret;'''. \
                    format(deg=deg, assignment='\n'.join([assignment. \
                           format(i=i) for i in range(0, deg)]),
-                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg),
+                          soa_typ=get_native_soa_typ(simd_ext, 'u16', deg),
                           **fmtspec)
             elif typ in 'f64' and simd_ext == 'neon128':
                 return \
@@ -533,7 +541,7 @@ def load1234(opts, simd_ext, typ, deg):
            return ret;'''.format(assignment=\
            '\n'.join(['ret.v{i} = svget{deg}_{suf}(buf, {i});'. \
                       format(i=i, deg=deg, **fmtspec) for i in range(deg)]),
-                      sve_typ=get_SoA_type('sve', typ, deg), deg=deg,
+                      sve_typ=get_native_soa_typ('sve', typ, deg), deg=deg,
                       **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -643,7 +651,8 @@ def store1234(opts, simd_ext, typ, deg):
                format(deg=deg, assignment='\n'.join([
                       'buf.val[{{}}] = {{in{}}};'.format(i). \
                       format(i - 1, **fmtspec) for i in range(1, deg + 1)]),
-                      soa_typ=get_soa_typ(opts, simd_ext, typ, deg), **fmtspec)
+                      soa_typ=get_native_soa_typ(simd_ext, typ, deg),
+                      **fmtspec)
             if typ == 'f16':
                 assignment = \
                 '''nsimd_storeu_{{simd_ext}}_f16((f16 *)buf, {{in{}}});
@@ -661,7 +670,7 @@ def store1234(opts, simd_ext, typ, deg):
                           format(i - 1, **fmtspec) \
                           for i in range(1, deg + 1)]),
                           deg=deg, normal=normal,
-                          soa_typ=get_soa_typ(opts, simd_ext, 'u16', deg),
+                          soa_typ=get_native_soa_typ(simd_ext, 'u16', deg),
                           **fmtspec)
             elif typ == 'f64' and simd_ext == 'neon128':
                 return \
@@ -701,7 +710,7 @@ def store1234(opts, simd_ext, typ, deg):
         '''{soa_typ} tmp;
            {fill_soa_typ}
            svst{deg}_{suf}({svtrue}, {in0}, tmp);'''. \
-           format(soa_typ=get_SoA_type('sve', typ, deg), deg=deg,
+           format(soa_typ=get_native_soa_typ('sve', typ, deg), deg=deg,
                   fill_soa_typ=fill_soa_typ, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -2591,7 +2600,6 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
       'simd_ext': simd_ext,
       'simd_ext2': simd_ext2,
       'typ': from_typ,
-      'styp': get_type(opts, simd_ext2, from_typ),
       'from_typ': from_typ,
       'to_typ': to_typ,
       'suf': suf(from_typ),

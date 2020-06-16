@@ -263,26 +263,32 @@ namespace nsimd {
 
 #if defined(SVE) && !defined(NSIMD_SVE)
   #define NSIMD_SVE
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE128) && !defined(NSIMD_SVE128)
   #define NSIMD_SVE128
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE256) && !defined(NSIMD_SVE256)
   #define NSIMD_SVE256
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE512) && !defined(NSIMD_SVE512)
   #define NSIMD_SVE512
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE1024) && !defined(NSIMD_SVE1024)
   #define NSIMD_SVE1024
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE2048) && !defined(NSIMD_SVE2048)
   #define NSIMD_SVE2048
+  #define NSIMD_SVE_FAMILY
 #endif
 
 /* PPC */
@@ -545,9 +551,7 @@ namespace nsimd {
 /* Shorter typedefs for floatting point types */
 
 #if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                    \
-     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) ||   \
-     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || defined(NSIMD_SVE1024) \
-     || defined(NSIMD_SVE2048)
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE_FAMILY)
   #define NSIMD_NATIVE_FP16
 #endif
 
