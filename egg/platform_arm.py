@@ -2427,9 +2427,9 @@ def maskoz_gather(oz, simd_ext, typ):
                     i16 offset_buf[{le}];
                     vst1q_s16(offset_buf, {in2});
                     vst1q_f32(buf, {oz0});
-                    vst1q_f32(buf + {le}, {oz1});
+                    vst1q_f32(buf + {leo2}, {oz1});
                     vst1q_u32(mask, {in0}.v0);
-                    vst1q_u32(mask + {le}, {in0}.v1);
+                    vst1q_u32(mask + {leo2}, {in0}.v1);
                     for (i = 0; i < {le}; i++) {{
                       if (mask[i]) {{
                         buf[i] = nsimd_f16_to_f32({in1}[offset_buf[i]]);
