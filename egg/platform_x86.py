@@ -583,6 +583,7 @@ def load(simd_ext, typ, aligned):
         return 'return {pre}load{align}{sufsi}({cast}{in0});'. \
                format(align=align, cast=cast, **fmtspec)
 
+# -----------------------------------------------------------------------------
 # masked loads
 
 def maskoz_load(simd_ext, typ, oz, aligned):
@@ -3641,6 +3642,107 @@ def gather(simd_ext, typ):
                       format(scale=int(typ[1:]) // 8, **fmtspec)
 
 # -----------------------------------------------------------------------------
+# maksed gather
+
+def maskoz_gather(oz, simd_ext, typ):
+    if typ == 'f16':
+        le2 = fmtspec['le'] // 2
+        if simd_ext in sse + avx:
+            store_mask = '''{pre}storeu_ps(mask, {in0}.v0);
+                            {pre}storeu_ps(mask + {le2}, {in0}.v1);'''. \
+                            format(le2=le2, **fmtspec)
+        else:
+            store_mask = '''_mm512_storeu_ps(mask, _mm512_maskz_mov_ps(
+                              {in0}.v0, _mm512_set1_ps(1.0f)));
+                            _mm512_storeu_ps(mask + {le2}, _mm512_maskz_mov_ps(
+                              {in0}.v1, _mm512_set1_ps(1.0f)));'''. \
+                            format(le2=le2, **fmtspec)
+        if oz == 'z':
+            store_oz = '''{pre}storeu_ps(buf, {pre}setzero_ps());
+                          {pre}storeu_ps(buf + {le2}, {pre}setzero_ps());'''. \
+                          format(le2=le2, **fmtspec)
+        else:
+            store_oz = '''{pre}storeu_ps(buf, {in3}.v0);
+                          {pre}storeu_ps(buf + {le2}, {in3}.v1);'''. \
+                          format(le2=le2, **fmtspec)
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  int i;
+                  f32 buf[{le}], mask[{le}];
+                  i16 offset_buf[{le}];
+                  {store_mask}
+                  {store_oz}
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in2});
+                  for (i = 0; i < {le}; i++) {{
+                    if (nsimd_scalar_reinterpret_u32_f32(mask[i]) != (u32)0) {{
+                      buf[i] = nsimd_f16_to_f32({in1}[offset_buf[i]]);
+                    }}
+                  }}
+                  ret.v0 = {pre}loadu_ps(buf);
+                  ret.v1 = {pre}loadu_ps(buf + {leo2});
+                  return ret;'''.format(leo2=le2, store_mask=store_mask,
+                                        store_oz=store_oz, **fmtspec)
+    if simd_ext in (sse + ['avx']) or typ in ['i8', 'u8', 'i16', 'u16']:
+        if typ in common.iutypes:
+            cast = '(__m{nbits}i*)'.format(**fmtspec)
+        else:
+            cast = ''
+        if simd_ext in sse + avx:
+            store_mask = '{pre}storeu{sufsi}({cast}mask, {in0});'. \
+                         format(cast=cast, **fmtspec)
+        else:
+            store_mask = '''_mm512_storeu{sufsi}({cast}mask,
+                              _mm512_maskz_mov_ps({in0},
+                                _mm512_set1_ps(1.0f)));'''. \
+                                format(cast=cast, **fmtspec)
+        if oz == 'z':
+            store_oz = '''{pre}storeu{sufsi}({cast}buf,
+                                             {pre}setzero{sufsi}());'''. \
+                                             format(cast=cast, **fmtspec)
+        else:
+            store_oz = '{pre}storeu{sufsi}({cast}buf, {in3});'. \
+                       format(cast=cast, **fmtspec)
+        if typ in common.iutypes:
+            comp = 'mask[i]'
+        else:
+            comp = 'nsimd_scalar_reinterpret_u{typnbits}_{typ}(mask[i])'. \
+                   format(**fmtspec)
+        return '''int i;
+                  {typ} buf[{le}], mask[{le}];
+                  {ityp} offset_buf[{le}];
+                  {store_mask}
+                  {store_oz}
+                  {pre}storeu_si{nbits}((__m{nbits}i *)offset_buf, {in2});
+                  for (i = 0; i < {le}; i++) {{
+                    if ({comp}) {{
+                      buf[i] = {in1}[offset_buf[i]];
+                    }}
+                  }}
+                  return {pre}loadu{sufsi}({cast}buf);'''. \
+                  format(ityp='i' + typ[1:], cast=cast, store_mask=store_mask,
+                         store_oz=store_oz, comp=comp, **fmtspec)
+    # getting here means 32 and 64-bits types for avx2 and avx512
+    if oz == 'o':
+        src = '{in3}'.format(**fmtspec)
+    else:
+        src = '{pre}setzero{sufsi}()'.format(**fmtspec)
+    if simd_ext == 'avx2':
+        if typ in ['i64', 'u64']:
+            cast = '(nsimd_longlong *)'
+        elif typ in ['i32', 'u32']:
+            cast = '(int *)'
+        else:
+            cast = '({typ} *)'.format(**fmtspec)
+        return '''return {pre}mask_i{typnbits}gather{suf}({src},
+                             {cast}{in1}, {in2}, {in0}, {scale});'''. \
+                             format(scale=int(typ[1:]) // 8, cast=cast,
+                                    src=src, **fmtspec)
+    elif simd_ext in avx512:
+        return 'return {pre}mask_i{typnbits}gather{suf}({src}, {in0}, ' \
+                      '{in2}, (const void *){in1}, {scale});'. \
+                      format(src=src, scale=int(typ[1:]) // 8, **fmtspec)
+
+
+# -----------------------------------------------------------------------------
 # get_impl function
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ):
@@ -3690,6 +3792,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
         'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
         'gather': lambda: gather(simd_ext, from_typ),
+        'masko_gather': lambda: maskoz_gather('o', simd_ext, from_typ),
+        'maskz_gather': lambda: maskoz_gather('z', simd_ext, from_typ),
         'scatter': lambda: scatter(simd_ext, from_typ),
         'mask_scatter': lambda: mask_scatter(simd_ext, from_typ),
         'andb': lambda: binop2('andb', simd_ext, from_typ),
