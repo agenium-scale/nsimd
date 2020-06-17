@@ -70,8 +70,8 @@ def get_type(opts, simd_ext, typ, nsimd_typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     if typ == 'f16':
-        return 'typedef struct {{__m{} v0; __m{} v1; }} {};'. \
-               format(nbits, nbits, nsimd_typ)
+        return 'typedef struct {{{t} v0; {t} v1; }} {nsimd_typ};'. \
+               format(t=get_native_typ(simd_ext, 'f32'), nsimd_typ=nsimd_typ)
     else:
         return 'typedef {} {};'.format(get_native_typ(simd_ext, typ),
                                        nsimd_typ)
