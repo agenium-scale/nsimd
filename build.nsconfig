@@ -152,7 +152,7 @@ install_dir $root$/nsimd/doc/html doc
 set tests_comp_for_               = c++
 set tests_comp_for_cpu            = c++
 set tests_comp_for_cuda           = nvcc
-set tests_comp_for_rocm           = [*:P] hipcc --amdgpu-target=gfx900
+set tests_comp_for_rocm           = hipcc
 set tests_comp_for_sse2           = c++
 set tests_comp_for_sse42          = c++
 set tests_comp_for_avx            = c++

@@ -391,7 +391,7 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
 #elif defined(NSIMD_ROCM)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
     hipLaunchKernelGGL(
-        gpu_kernel_component_wise<T, node<Op, Left, Right, Extra> >,
+        (gpu_kernel_component_wise<T, node<Op, Left, Right, Extra> >),
         (unsigned int)(nb), (unsigned int)(nt), 0, s, data, expr, expr.size());
 #endif
 #else

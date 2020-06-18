@@ -90,6 +90,54 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 
 #elif defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
+template <typename T> T *device_malloc(size_t sz) {
+  void *ret;
+  if (hipMalloc(&ret, sz * sizeof(T)) != hipSuccess) {
+    return NULL;
+  }
+  return (T *)ret;
+}
+
+template <typename T> T *device_calloc(size_t sz) {
+  void *ret;
+  if (hipMalloc(&ret, sz * sizeof(T)) != hipSuccess) {
+    return NULL;
+  }
+  if (hipMemset((void *)ret, 0, sz * sizeof(T)) != hipSuccess) {
+    hipFree(ret);
+    return NULL;
+  }
+  return (T *)ret;
+}
+
+template <typename T> void device_free(T *ptr) { hipFree((void *)ptr); }
+
+template <typename T>
+void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
+  hipMemcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T),
+            hipMemcpyHostToDevice);
+}
+
+template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
+  hipMemcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T),
+            hipMemcpyDeviceToHost);
+}
+
+#define nsimd_fill_dev_mem_func(func_name, expr)                               \
+  template <typename T>                                                        \
+  __global__ void kernel_##func_name##_(T *ptr, unsigned int n) {              \
+    unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;           \
+    if (i < n) {                                                               \
+      ptr[i] = (T)(expr);                                                      \
+    }                                                                          \
+  }                                                                            \
+                                                                               \
+  template <typename T> void func_name(T *ptr, size_t sz) {                    \
+    hipLaunchKernelGGL((kernel_##func_name##_<T>),                             \
+                       (unsigned int)((sz + 127) / 128), 128, 0, NULL, ptr,    \
+                       (unsigned int)sz);                                      \
+  }
+
 // ----------------------------------------------------------------------------
 // CPU
 
