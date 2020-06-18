@@ -53,6 +53,8 @@ namespace spmd {
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
+
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_> __global__ void name(__VA_ARGS__, int n) {  \
@@ -65,6 +67,24 @@ namespace spmd {
   __global__ void name(__VA_ARGS__, int n) {                                  \
     int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
     if (spmd_i_ < n) {
+
+#else
+
+// 1d kernel definition
+#define spmd_kernel_1d(name, ...)                                             \
+  template <int spmd_ScalarBits_>                                             \
+  __global__ void name(__VA_ARGS__, unsigned int n) {                         \
+    unsigned int spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;    \
+    if (spmd_i_ < n) {
+
+// templated kernel definition
+#define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  __global__ void name(__VA_ARGS__, unsigned int n) {                         \
+    unsigned int spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;    \
+    if (spmd_i_ < n) {
+
+#endif
 
 #define spmd_kernel_end                                                       \
   }                                                                           \
@@ -88,12 +108,27 @@ namespace spmd {
 #define spmd_call_tmpl_dev_func(name, template_argument, ...)                 \
   name<template_argument, spmd_ScalarBits_>(__VA_ARGS__)
 
-// launch 1d kernel
+#ifdef NSIMD_CUDA_COMPILING_FOR_DEVICE
+
+// launch 1d kernel CUDA
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
                               ...)                                            \
   name<spmd_scalar_bits_>                                                     \
       <<<(unsigned int)((n + threads_per_block - 1) / threads_per_block),     \
          (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
+
+#else
+
+// launch 1d kernel ROCm
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
+                              ...)                                            \
+  hipLaunchKernelGGL(                                                         \
+      (name<spmd_scalar_bits_>),                                              \
+      (unsigned int)((n + threads_per_block - 1) / threads_per_block),        \
+      (unsigned int)(threads_per_block), 0, NULL, __VA_ARGS__,                \
+      (unsigned int)n)
+
+#endif
 
 // supported types (generic)
 template <int ScalarBits> struct type_t {};
