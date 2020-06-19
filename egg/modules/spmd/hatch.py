@@ -819,7 +819,7 @@ def gen_tests_for(opts, t, operator):
     common.clang_format(opts, filename, cuda=True)
 
 def gen_tests(opts):
-    for _, operator in operators.operators.items():
+    for op_name, operator in operators.operators.items():
         if not operator.has_scalar_impl:
             continue
 
@@ -836,6 +836,9 @@ def gen_tests(opts):
             tts = common.get_output_types(t, operator.output_to)
 
             for tt in tts:
+                if t == 'f16' and op_name in ['notb', 'andnotb', 'orb',
+                                              'xorb', 'andb']:
+                    continue
                 if operator.name in ['shl', 'shr', 'shra']:
                     gen_tests_for_shifts(opts, t, operator)
                 elif operator.name in ['cvt', 'reinterpret', 'reinterpretl']:

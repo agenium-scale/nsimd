@@ -463,21 +463,23 @@ def get_content(op, typ, lang):
 
     elif op.params == ['v', 'v', 'p']:
         vin_defi = \
-            '''{typ} *vin1;
+        '''{typ} *vin1;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
         vin_rand = 'vin1[i] = rand1();'.format(typ=typ)
-        vout_ref_comp = '''nsimd_cpu_v{typ} va1, vc;
-                        va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
-                        vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % {typnbytes});
-                        nsimd_storeu_cpu_{typ}(&vout_ref[i], vc);'''. \
-                                format(typ=typ, op_name=op.name, typnbytes=typ[1:])
+        vout_ref_comp = \
+        '''nsimd_cpu_v{typ} va1, vc;
+           va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
+           vc = nsimd_{op_name}_cpu_{typ}(va1, (i / step) % {typnbytes});
+           nsimd_storeu_cpu_{typ}(&vout_ref[i], vc);'''. \
+           format(typ=typ, op_name=op.name, typnbytes=typ[1:])
         if lang == 'c_base':
-            vout_nsimd_comp = '''vec({typ}) va1, vc;
-                            va1 = vloadu(&vin1[i], {typ});
-                            vc = v{op_name}(va1, (i / step) % {typnbytes}, {typ});
-                            vstoreu(&vout_nsimd[i], vc, {typ});'''. \
-                                    format(typ=typ, op_name=op.name, typnbytes=typ[1:])
+            vout_nsimd_comp = \
+            '''vec({typ}) va1, vc;
+               va1 = vloadu(&vin1[i], {typ});
+               vc = v{op_name}(va1, (i / step) % {typnbytes}, {typ});
+               vstoreu(&vout_nsimd[i], vc, {typ});'''. \
+               format(typ=typ, op_name=op.name, typnbytes=typ[1:])
         if lang == 'cxx_base':
             vout_nsimd_comp = \
             '''vec({typ}) va1, vc;
@@ -488,10 +490,11 @@ def get_content(op, typ, lang):
         if lang == 'cxx_adv':
             if op.cxx_operator:
                 do_computation = 'vc = va1 {} ((i / step) % {typnbytes});'. \
-                        format(op.cxx_operator[8:], typnbytes=typ[1:])
+                                 format(op.cxx_operator[8:], typnbytes=typ[1:])
             else:
-                do_computation = 'vc = nsimd::{}(va1, (i / step) % {typnbytes});'. \
-                        format(op.name, typnbytes=typ[1:])
+                do_computation = \
+                'vc = nsimd::{}(va1, (i / step) % {typnbytes});'. \
+                format(op.name, typnbytes=typ[1:])
             vout_nsimd_comp = \
             '''nsimd::pack<{typ}> va1, vc;
                va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
@@ -520,8 +523,9 @@ def gen_test(opts, op, typ, lang, ulps):
     extra_code = op.domain.gen_rand(typ)
 
     if op.name in ['notb', 'andb', 'orb', 'xorb', 'andnotb']:
-        comp = 'return *({uT}*)&mpfr_out != *({uT}*)&nsimd_out'. \
-               format(uT=common.bitfield_type[typ])
+        comp = 'return nsimd_scalar_reinterpret_{uT}_{typ}(mpfr_out) != ' \
+                      'nsimd_scalar_reinterpret_{uT}_{typ}(nsimd_out)'. \
+               format(typ=typ, uT=common.bitfield_type[typ])
     elif op.name in ['max', 'min'] and typ in common.ftypes:
         if typ == 'f16':
             left = 'nsimd_f16_to_f32(mpfr_out)'
@@ -534,14 +538,15 @@ def gen_test(opts, op, typ, lang, ulps):
                   #pragma GCC diagnostic ignored "-Wconversion"
                   #pragma GCC diagnostic ignored "-Wdouble-promotion"
 
-                  // None of the architecture correctly manage NaN with the function min and max.
-                  // According to IEEE754, min(a, NaN) should return a but every architecture returns NaN.
+                  // None of the architecture correctly manage NaN with the
+                  // function min and max. According to IEEE754, min(a, NaN)
+                  // should return a but every architecture returns NaN.
                   if({isnan}({right})) {{
                     return 0;
                   }}
 
-                  // PPC doesn't correctly manage +Inf and -Inf in relation with NaN either
-                  // (min(NaN, -Inf) returns -Inf).
+                  // PPC doesn't correctly manage +Inf and -Inf in relation
+                  // with NaN either (min(NaN, -Inf) returns -Inf).
                   #ifdef NSIMD_POWERPC
                   if({isinf}({right})) {{
                     return 0;

@@ -995,7 +995,8 @@ def binlop2(func, simd_ext, typ):
             # icc: tests fail with _{op_fct}_mask8 for f64, u64 and i64
             r = ''
             if fmtspec['le'] == 8:
-                r += '#if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_GCC) || defined(NSIMD_IS_ICC)'
+                r += '#if defined(NSIMD_IS_CLANG) || defined(NSIMD_IS_GCC) ' \
+                     '|| defined(NSIMD_IS_ICC)'
                 r += '\n'
             else:
                 r += '#if defined(NSIMD_IS_CLANG)' + '\n'
@@ -3568,7 +3569,7 @@ def mask_scatter(simd_ext, typ):
             cast = '(__m{nbits}i*)'.format(**fmtspec)
         else:
             cast = ''
-        if simd_ext == 'avx512_knl':
+        if simd_ext in avx512:
             mask_decl = 'u64 mask;'
             store_mask = 'mask = (u64){in0};'.format(**fmtspec)
             cond = '(mask >> i) & 1'
@@ -3691,13 +3692,18 @@ def maskoz_gather(oz, simd_ext, typ):
         else:
             cast = ''
         if simd_ext in sse + avx:
+            mask_decl = '{typ} mask[{le}];'.format(**fmtspec)
             store_mask = '{pre}storeu{sufsi}({cast}mask, {in0});'. \
                          format(cast=cast, **fmtspec)
+            if typ in common.iutypes:
+                comp = 'mask[i]'
+            else:
+                comp = 'nsimd_scalar_reinterpret_u{typnbits}_{typ}(mask[i])'. \
+                       format(**fmtspec)
         else:
-            store_mask = '''_mm512_storeu{sufsi}({cast}mask,
-                              _mm512_maskz_mov_ps({in0},
-                                _mm512_set1_ps(1.0f)));'''. \
-                                format(cast=cast, **fmtspec)
+            mask_decl = 'u64 mask;'
+            store_mask = 'mask = (u64){in0};'.format(**fmtspec)
+            comp = '(mask >> i) & 1'
         if oz == 'z':
             store_oz = '''{pre}storeu{sufsi}({cast}buf,
                                              {pre}setzero{sufsi}());'''. \
@@ -3705,13 +3711,9 @@ def maskoz_gather(oz, simd_ext, typ):
         else:
             store_oz = '{pre}storeu{sufsi}({cast}buf, {in3});'. \
                        format(cast=cast, **fmtspec)
-        if typ in common.iutypes:
-            comp = 'mask[i]'
-        else:
-            comp = 'nsimd_scalar_reinterpret_u{typnbits}_{typ}(mask[i])'. \
-                   format(**fmtspec)
         return '''int i;
-                  {typ} buf[{le}], mask[{le}];
+                  {typ} buf[{le}];
+                  {mask_decl}
                   {ityp} offset_buf[{le}];
                   {store_mask}
                   {store_oz}
@@ -3723,7 +3725,8 @@ def maskoz_gather(oz, simd_ext, typ):
                   }}
                   return {pre}loadu{sufsi}({cast}buf);'''. \
                   format(ityp='i' + typ[1:], cast=cast, store_mask=store_mask,
-                         store_oz=store_oz, comp=comp, **fmtspec)
+                         store_oz=store_oz, comp=comp, mask_decl=mask_decl,
+                         **fmtspec)
     # getting here means 32 and 64-bits types for avx2 and avx512
     if oz == 'o':
         src = '{in3}'.format(**fmtspec)
