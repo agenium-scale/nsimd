@@ -302,12 +302,20 @@ def get_content(op, typ, lang):
         code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'.
                  format(i, typ, common.sizeof(typ)) for i in nargs]
         vin_defi = '\n'.join(code)
-        code = ['vin{}[i] = rand{}();'.format(i,i) for i in nargs]
+        if op.name in ['rec11', 'rec8', 'rsqrt11', 'rsqrt8']:
+            if typ == 'f16':
+                code = ['vin{}[i] = nsimd_f32_to_f16((float)rand() / ' \
+                        '(float)INT_MAX);'.format(i) for i in nargs]
+            else:
+                code = ['vin{}[i] = ({})((float)rand() / (float)INT_MAX);'. \
+                        format(i, typ) for i in nargs]
+        else:
+            code = ['vin{}[i] = rand{}();'.format(i, i) for i in nargs]
         vin_rand = '\n'.join(code)
 
         # lgamma doesn't work for negative input or for too big inputs.
         if op.name == 'lgamma' and typ == 'f64':
-            vin_rand = 'vin1[i] = rand()%64;'
+            vin_rand = 'vin1[i] = rand() % 64;'
 
         # Make vout_ref_comp
         # We use MPFR on Linux to compare numerical results, but it is only on
@@ -572,7 +580,8 @@ def gen_test(opts, op, typ, lang, ulps):
         relative_distance = relative_distance_c if lang == 'c_base' \
                             else relative_distance_cpp
         if op.tests_ulps and typ in common.ftypes:
-            comp = 'return relative_distance((double){}, (double){}) > get_2th_power(-{nbits})'. \
+            comp = 'return relative_distance((double){}, ' \
+                   '(double){}) > get_2th_power(-{nbits})'. \
                    format(left, right, nbits=op.tests_ulps[typ])
             extra_code += relative_distance
         elif op.src:
@@ -587,28 +596,33 @@ def gen_test(opts, op, typ, lang, ulps):
                           #pragma GCC diagnostic ignored "-Wdouble-promotion"
                           '''
                 if nan_error:
-                    # Ignore error with NaN output, we know we will encounter some
+                    # Ignore error with NaN output, we know we will encounter
+                    # some
                     comp += 'if ({isnan}({left})) return 0;\n'
                 else:
                     # Return false if one is NaN and not the other
                     comp += 'if ({isnan}({left}) ^ isnan({rigth})) return 1;\n'
 
                 if inf_error:
-                    # Ignore error with infinite output, we know we will encounter some
+                    # Ignore error with infinite output, we know we will
+                    # encounter some
                     comp += 'if ({isinf}({left})) return 0;\n'
                 else:
                     # One is infinite and not the other
-                    comp += 'if ({isinf}({left}) ^ {isinf}({rigth})) return 1;\n'
+                    comp += \
+                    'if ({isinf}({left}) ^ {isinf}({rigth})) return 1;\n'
                     # Wrong sign for infinite
-                    comp += 'if ({isinf}({left}) && {isinf}({rigth}) \
-                                    && ({right}*{left} < 0)) \
-                                        return 1;\n'
+                    comp += 'if ({isinf}({left}) && {isinf}({rigth}) ' \
+                                   '&& ({right}*{left} < 0)) ' \
+                                       'return 1;\n'
 
                 comp += '''
                 if ({isnormal}({left})) {{
-                    return relative_distance((double){left}, (double){right}) > get_2th_power(-({nbits}));
+                    return relative_distance((double){left}, (double){right})
+                             > get_2th_power(-({nbits}));
                 }} else {{
-                    return relative_distance((double){left}, (double){right}) > get_2th_power(-({nbits_dnz}));
+                    return relative_distance((double){left}, (double){right})
+                             > get_2th_power(-({nbits_dnz}));
                 }}
                 #pragma GCC diagnostic pop
                 '''
@@ -632,8 +646,9 @@ def gen_test(opts, op, typ, lang, ulps):
 
             else:
                 nbits = {'f16': '10', 'f32': 21, 'f64': '48'}
-                comp = 'return relative_distance((double){}, (double){}) > get_2th_power(-{nbits})'. \
-                        format(left, right, nbits=nbits[typ])
+                comp = 'return relative_distance((double){}, (double){}) ' \
+                       '> get_2th_power(-{nbits})'. \
+                       format(left, right, nbits=nbits[typ])
 
             extra_code += relative_distance
         else:
