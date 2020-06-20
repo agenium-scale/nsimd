@@ -2328,22 +2328,22 @@ def gather(simd_ext, typ):
     real_le = real_len(simd_ext, typ)
 
     if simd_ext in sve:
-        store = 'svst1_s{typnbits}({svtrue}, offset_buf, {in1});'. \
-                format(**fmtspec)
-        load = 'svld1_{suf}({svtrue}, buf)'.format(**fmtspec)
+        emul = '''int i;
+                  {typ} buf[{le}];
+                  i{typnbits} offset_buf[{le}];
+                  svst1_s{typnbits}({svtrue}, offset_buf, {in1});
+                  for (i = 0; i < {real_le}; i++) {{
+                    buf[i] = {in0}[offset_buf[i]];
+                  }}
+                  return svld1_{suf}({svtrue}, buf);'''. \
+                  format(le=le, real_le=real_le, **fmtspec)
     else:
-        store = 'vst1q_s{typnbits}(offset_buf, {in1});'.format(**fmtspec)
-        load = 'vld1q_{suf}(buf)'.format(**fmtspec)
+        emul = '{typ} buf[{le}];\n'.format(le=le, **fmtspec)
+        emul += ''.join(['buf[{i}] = {in0}[vgetq_lane_s{typnbits}({in1}, ' \
+                         '{i})];\n'.format(i=i, **fmtspec) \
+                         for i in range(int(le))])
+        emul += 'return vld1q_{suf}(buf);'.format(**fmtspec)
 
-    emul = '''int i;
-              {typ} buf[{le}];
-              i{typnbits} offset_buf[{le}];
-              {store}
-              for (i = 0; i < {real_le}; i++) {{
-                buf[i] = {in0}[offset_buf[i]];
-              }}
-              return {load};'''. \
-              format(le=le, real_le=real_le, store=store, load=load, **fmtspec)
     if typ == 'f16':
         if simd_ext in sve:
             return emul
@@ -2351,17 +2351,18 @@ def gather(simd_ext, typ):
                     {emul}
                   #else
                     nsimd_{simd_ext}_vf16 ret;
-                    int i;
-                    f32 buf[{le}];
-                    i16 offset_buf[{le}];
-                    vst1q_s16(offset_buf, {in1});
-                    for (i = 0; i < {le}; i++) {{
-                      buf[i] = nsimd_f16_to_f32({in0}[offset_buf[i]]);
-                    }}
-                    ret.v0 = vld1q_f32(buf);
-                    ret.v1 = vld1q_f32(buf + {leo2});
+                    f32 buf[8];
+                  '''.format(emul=emul, **fmtspec) + \
+                  ''.join(['buf[{i}] = nsimd_f16_to_f32({in0}[' \
+                           'vgetq_lane_s16({in1}, {i})]);\n'. \
+                           format(i=i, **fmtspec) for i in range(4)]) + \
+                  ''.join(['buf[4 + {i}] = nsimd_f16_to_f32({in0}[' \
+                           'vgetq_lane_s16({in1}, 4 + {i})]);\n'. \
+                           format(i=i, **fmtspec) for i in range(4)]) + \
+               '''  ret.v0 = vld1q_f32(buf);
+                    ret.v1 = vld1q_f32(buf + 4);
                     return ret;
-                  #endif'''.format(emul=emul, leo2=le // 2, le=le, **fmtspec)
+                  #endif'''.format(**fmtspec)
     if simd_ext == 'neon128' and typ == 'f64':
         return '''nsimd_neon128_vf64 ret;
                   i64 offset_buf[2];
@@ -2483,35 +2484,36 @@ def scatter(simd_ext, typ):
     real_le = real_len(simd_ext, typ)
 
     if simd_ext in sve:
-        store = '''svst1_s{typnbits}({svtrue}, offset_buf, {in1});
-                   svst1_{suf}({svtrue}, buf, {in2});'''.format(**fmtspec)
+        emul = '''int i;
+                  {typ} buf[{le}];
+                  i{typnbits} offset_buf[{le}];
+                  svst1_s{typnbits}({svtrue}, offset_buf, {in1});
+                  svst1_{suf}({svtrue}, buf, {in2});
+                  for (i = 0; i < {real_le}; i++) {{
+                    {in0}[offset_buf[i]] = buf[i];
+                  }}'''.format(le=le, real_le=real_le, **fmtspec)
     else:
-        store = '''vst1q_s{typnbits}(offset_buf, {in1});
-                   vst1q_{suf}(buf, {in2});'''.format(**fmtspec)
+        emul = '\n'.join(['{in0}[vgetq_lane_s{typnbits}({in1}, {i})] = ' \
+                          'vgetq_lane_{suf}({in2}, {i});\n'. \
+                          format(i=i, **fmtspec) for i in range(int(le))])
 
-    emul = '''int i;
-              {typ} buf[{le}];
-              i{typnbits} offset_buf[{le}];
-              {store}
-              for (i = 0; i < {real_le}; i++) {{
-                {in0}[offset_buf[i]] = buf[i];
-              }}'''.format(le=le, real_le=real_le, store=store, **fmtspec)
     if typ == 'f16':
         if simd_ext in sve:
             return emul
         return '''#ifdef NSIMD_NATIVE_FP16
                     {emul}
                   #else
-                    int i;
-                    f32 buf[{le}];
-                    i16 offset_buf[{le}];
-                    vst1q_s16(offset_buf, {in1});
-                    vst1q_f32(buf, {in2}.v0);
-                    vst1q_f32(buf + {leo2}, {in2}.v1);
-                    for (i = 0; i < {le}; i++) {{
-                      {in0}[offset_buf[i]] = nsimd_f32_to_f16(buf[i]);
-                    }}
-                  #endif'''.format(emul=emul, le=le, leo2=le // 2, **fmtspec)
+                  '''.format(emul=emul) + \
+                  '\n'.join(['{in0}[vgetq_lane_s16({in1}, {i})] = ' \
+                             'nsimd_f32_to_f16(vgetq_lane_f32({in2}.v0, '
+                             '{i}));\n'.format(i=i, **fmtspec) \
+                             for i in range(4)]) + \
+                  '\n'.join(['{in0}[vgetq_lane_s16({in1}, 4 + {i})] = ' \
+                             'nsimd_f32_to_f16(vgetq_lane_f32({in2}.v1, '
+                             '{i}));\n'.format(i=i, **fmtspec) \
+                             for i in range(4)]) + \
+               '''
+                  #endif'''
     if simd_ext == 'neon128' and typ == 'f64':
         return '''i64 offset_buf[2];
                   vst1q_s64(offset_buf, {in1});
