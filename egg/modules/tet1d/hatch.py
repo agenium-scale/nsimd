@@ -134,11 +134,6 @@ def gen_tests_for(opts, t, tt, operator):
     if not common.can_create_filename(opts, filename):
         return
 
-    if operator.params == ['l'] * len(operator.params):
-        random = ['get101', 'get110', 'get101']
-    else:
-        random = ['get123', 'get321', 'get123']
-
     arity = len(operator.params[1:])
     args_tabs = ', '.join(['{typ} *tab{i}'.format(typ=t, i=i) \
                            for i in range(arity)])
@@ -268,6 +263,13 @@ def gen_tests_for(opts, t, tt, operator):
                                               f32_to_f16='__float2half',
                                               f16_to_f32='__half2float')
 
+    if op_name in ['rec11', 'rsqrt11']:
+        comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
+    elif op_name in ['rec8', 'rsqrt8']:
+        comp = '!cmp(ref, out, n, .0078125 /* = 2^-7 */)'
+    else:
+        comp = '!cmp(ref, out, n)'
+
     with common.open_utf8(opts, filename) as out:
         out.write(
         '''#include <nsimd/modules/tet1d.hpp>
@@ -327,7 +329,7 @@ def gen_tests_for(opts, t, tt, operator):
             {typ} *out = nsimd::device_calloc<{typ}>(n);
             compute_result(ref, {args_tabs_call}, n);
             {tet1d_code}
-            if (!cmp(ref, out, n)) {{
+            if ({comp}) {{
               ret = -1;
             }}
             nsimd::device_free(ref);
@@ -341,7 +343,7 @@ def gen_tests_for(opts, t, tt, operator):
         }}
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
                    args_tabs_call=args_tabs_call, gpu_params=gpu_params,
-                   free_tabs=free_tabs, tet1d_code=tet1d_code,
+                   free_tabs=free_tabs, tet1d_code=tet1d_code, comp=comp,
                    cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel))
 
     common.clang_format(opts, filename, cuda=True)

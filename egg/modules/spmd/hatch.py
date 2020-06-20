@@ -441,6 +441,14 @@ def gen_tests_for_shifts(opts, t, operator):
     filename = os.path.join(dirname, '{}.{}.cpp'.format(op_name, t))
     if not common.can_create_filename(opts, filename):
         return
+
+    if op_name in ['rec11', 'rsqrt11']:
+        comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
+    elif op_name in ['rec8', 'rsqrt8']:
+        comp = '!cmp(ref, out, n, .0078125 /* = 2^-7 */)'
+    else:
+        comp = '!cmp(ref, out, n)'
+
     with common.open_utf8(opts, filename) as out:
         out.write(
         '''#include <nsimd/modules/spmd.hpp>
@@ -505,7 +513,7 @@ def gen_tests_for_shifts(opts, t, operator):
               {typ} *out = nsimd::device_calloc<{typ}>(n);
               spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0, s);
               compute_result(ref, a0, n, s);
-              if (!cmp(ref, out, n)) {{
+              if ({comp}) {{
                 ret = -1;
               }}
               nsimd::device_free(a0);
@@ -518,7 +526,7 @@ def gen_tests_for_shifts(opts, t, operator):
           }}
           return 0;
         }}
-        '''.format(typ=t, op_name=op_name, typnbits=t[1:],
+        '''.format(typ=t, op_name=op_name, typnbits=t[1:], comp=comp,
                    gpu_params=gpu_params))
 
     common.clang_format(opts, filename, cuda=True)
@@ -723,6 +731,12 @@ def gen_tests_for(opts, t, operator):
                                      one=get_cte_cpu(t, 1),
                                      zero=get_cte_cpu(t, 0))
 
+    if op_name in ['rec11', 'rsqrt11']:
+        comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
+    elif op_name in ['rec8', 'rsqrt8']:
+        comp = '!cmp(ref, out, n, .0078125 /* = 2^-7 */)'
+    else:
+        comp = '!cmp(ref, out, n)'
 
     with common.open_utf8(opts, filename) as out:
         out.write(
@@ -799,7 +813,7 @@ def gen_tests_for(opts, t, operator):
             spmd_launch_kernel_1d(kernel, {typnbits}, THREADS_PER_BLOCK, n,
                                   out, {k_call_args});
             compute_result(ref, {k_call_args}, n);
-            if (!cmp(ref, out, n)) {{
+            if ({comp}) {{
               ret = -1;
             }}
             nsimd::device_free(ref);
@@ -813,7 +827,7 @@ def gen_tests_for(opts, t, operator):
         }}
         '''.format(typ=t, free_tabs=free_tabs, fill_tabs=fill_tabs,
                    k_code=k_code, k_call_args=k_call_args, k_args=k_args,
-                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
+                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel, comp=comp,
                    gpu_params=gpu_params, typnbits=t[1:]))
 
     common.clang_format(opts, filename, cuda=True)
