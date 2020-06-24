@@ -1920,15 +1920,25 @@ def gen_gather_scatter(opts, op, typ, lang):
     ityp = 'i' + typ[1:]
 
     if lang == 'c_base':
-        gather_scatter = \
-            '''vec({ityp}) offsets = vmul(viota({ityp}), vset1(({ityp})2,
-                                          {ityp}), {ityp});
-               vec({typ}) v = vgather(vin, offsets, {typ});
-               offsets = vadd(offsets, vset1(({ityp})1, {ityp}), {ityp});
-               vscatter(vout, offsets, v, {typ});'''. \
-               format(typ=typ, ityp=ityp)
+        if op.name == 'gather_linear':
+            gather_scatter = '''vscatter_linear(vout + 1, 2, vgather_linear(
+                                    vin, 2, {typ}), {typ});'''.format(typ=typ)
+        else:
+            gather_scatter = \
+                '''vec({ityp}) offsets = vmul(viota({ityp}), vset1(({ityp})2,
+                                              {ityp}), {ityp});
+                   vec({typ}) v = vgather(vin, offsets, {typ});
+                   offsets = vadd(offsets, vset1(({ityp})1, {ityp}), {ityp});
+                   vscatter(vout, offsets, v, {typ});'''. \
+                   format(typ=typ, ityp=ityp)
     elif lang == 'cxx_base':
-        gather_scatter = \
+        if op.name == 'gather_linear':
+            gather_scatter = '''nsimd::scatter_linear(vout + 1, 2,
+                                  nsimd::gather_linear(
+                                    vin, 2, {typ}()), {typ}());'''. \
+                                    format(typ=typ)
+        else:
+            gather_scatter = \
             '''vec({ityp}) offsets = nsimd::mul(nsimd::iota({ityp}()),
                                      nsimd::set1(({ityp})2, {ityp}()),
                                      {ityp}());
@@ -1938,7 +1948,12 @@ def gen_gather_scatter(opts, op, typ, lang):
                nsimd::scatter(vout, offsets, v, {typ}());'''. \
                format(typ=typ, ityp=ityp)
     else:
-        gather_scatter = \
+        if op.name == 'gather_linear':
+            gather_scatter = '''nsimd::scatter_linear(vout + 1, 2,
+                                  nsimd::gather_linear<nsimd::pack<{typ}> >(
+                                      vin, 2));'''.format(typ=typ)
+        else:
+            gather_scatter = \
             '''typedef nsimd::pack<{typ}> pack;
                typedef nsimd::pack<{ityp}> ipack;
                ipack offsets = nsimd::mul(nsimd::iota<ipack>(),
@@ -3242,7 +3257,8 @@ def doit(opts):
                         'len', 'loadlu', 'loadla', 'storelu', 'storela',
                         'set1', 'store2a', 'store2u', 'store3a', 'store3u',
                         'store4a', 'store4u', 'downcvt', 'to_logical',
-                        'mask_for_loop_tail', 'set1l', 'scatter']:
+                        'mask_for_loop_tail', 'set1l', 'scatter',
+                        'scatter_linear']:
             continue
         for typ in operator.types:
             if operator.name in ['notb', 'andb', 'xorb', 'orb', 'andnotb'] and \
@@ -3288,7 +3304,7 @@ def doit(opts):
                 gen_load_store(opts, operator, typ, 'cxx_base')
                 gen_load_store(opts, operator, typ, 'cxx_adv')
                 gen_load_store_ravel(opts, operator, typ, 'c_base')
-            elif operator.name == 'gather':
+            elif operator.name in ['gather', 'gather_linear']:
                 gen_gather_scatter(opts, operator, typ, 'c_base')
                 gen_gather_scatter(opts, operator, typ, 'cxx_base')
                 gen_gather_scatter(opts, operator, typ, 'cxx_adv')

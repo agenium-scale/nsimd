@@ -331,6 +331,12 @@ fmtspec = {}
 LO = 0
 HI = 1
 
+def castsi(simd_ext, typ):
+    if typ in common.ftypes:
+        return ''
+    else:
+        return '(__m{}i *)'.format(nbits(simd_ext))
+
 def extract(simd_ext, typ, lohi, var):
     if simd_ext in avx:
         lohi_arg = '0' if lohi == LO else '1'
@@ -392,6 +398,55 @@ def setr(simd_ext, typ, var1, var2):
             return '''_mm512_inserti64x4(_mm512_castsi256_si512(
                         {}), {}, 1)'''.format(var1, var2)
 
+def set_lane(simd_ext, typ, var_name, scalar, i):
+    if typ in ['u8', 'i8', 'i16', 'u16', 'u32']:
+        cast = '(int)'
+    elif typ in ['i64', 'u64']:
+        cast = '(nsimd_longlong)'
+    else:
+        cast = ''
+    code_for_int = '{v} = {pre}insert{suf}({v}, {cast}({s}), {i});'. \
+                   format(v=var_name, s=scalar, i=i, cast=cast, **fmtspec)
+    pdps = 'ps' if typ == 'f32' else 'pd'
+    code_throu_int = \
+    '''{v} = {pre}castsi{nbits}_{pdps}({pre}insert_epi{typnbits}(
+               {pre}cast{pdps}_si{nbits}({v}),
+                 nsimd_scalar_reinterpret_i{typnbits}_{typ}({s}), {i}));'''. \
+                 format(v=var_name, s=scalar, i=i, pdps=pdps, **fmtspec)
+    if simd_ext == 'sse2' and typ in ['i16', 'u16']:
+        return code_for_int
+    if simd_ext in sse + avx:
+        if typ in common.iutypes:
+            return code_for_int
+        else:
+            return code_throu_int
+
+def get_lane(simd_ext, typ, var_name, i):
+    code_for_int = '({typ}){pre}extract{suf}({v}, {i})'. \
+                   format(v=var_name, i=i, **fmtspec)
+    pdps = 'ps' if typ == 'f32' else 'pd'
+    code_throu_int = \
+    '''nsimd_scalar_reinterpret_{typ}_i{typnbits}(
+         {pre}extract_epi{typnbits}({pre}cast{pdps}_si{nbits}(
+           {v}), {i}))'''.format(pdps=pdps, v=var_name, i=i, **fmtspec)
+    if simd_ext == 'sse2' and typ in ['i16', 'u16']:
+        return code_for_int
+    if simd_ext in sse:
+        if typ in common.iutypes:
+            return code_for_int
+        else:
+            return code_throu_int
+    if simd_ext == 'avx':
+        if typ in ['i32', 'u32', 'i64', 'u64']:
+            return code_for_int
+        elif typ in ['f32', 'f64']:
+            return code_throu_int
+    if simd_ext == 'avx2':
+        if typ in common.iutypes:
+            return code_for_int
+        else:
+            return code_throu_int
+
 def how_it_should_be_op2(func, simd_ext, typ):
     if typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
@@ -427,7 +482,7 @@ def split_op2(func, simd_ext, typ):
     return split_opn(func, simd_ext, typ, 2)
 
 def emulate_op2(opts, op, simd_ext, typ):
-    cast = '(__m{nbits}i *)'.format(**fmtspec) if typ in common.iutypes else ''
+    cast = castsi(simd_ext, typ)
     return '''int i;
               {typ} buf0[{le}], buf1[{le}];
               {pre}storeu{sufsi}({cast}buf0, {in0});
@@ -439,7 +494,7 @@ def emulate_op2(opts, op, simd_ext, typ):
               format(cast=cast, op=op, **fmtspec)
 
 def emulate_op1(opts, func, simd_ext, typ):
-    cast = '(__m{nbits}i *)'.format(**fmtspec) if typ in common.iutypes else ''
+    cast = castsi(simd_ext, typ)
     return '''int i;
               {typ} buf0[{le}];
               {pre}storeu{sufsi}({cast}buf0, {in0});
@@ -525,7 +580,7 @@ def cmp2_with_add(func, simd_ext, typ):
 
 def load(simd_ext, typ, aligned):
     align = '' if aligned else 'u'
-    cast = '(__m{}i*)'.format(nbits(simd_ext)) if typ in common.iutypes else ''
+    cast = castsi(simd_ext, typ)
     if typ == 'f16':
         if simd_ext in sse:
             return \
@@ -627,8 +682,7 @@ def maskoz_load(simd_ext, typ, oz, aligned):
     if (typ in ['i8', 'u8', 'i16', 'u16'] and simd_ext != 'avx512_skylake') \
        or (typ in ['i32', 'u32', 'f32', 'i64', 'u64', 'f64'] and \
            simd_ext in sse):
-        cast = '(__m{nbits}i*)'.format(**fmtspec) if typ in common.iutypes \
-               else ''
+        cast = castsi(simd_ext, typ)
         if simd_ext == 'avx512_knl':
             mask_decl = 'u64 mask;'
             store_mask = 'mask = (u64){in0};'.format(**fmtspec)
@@ -790,7 +844,7 @@ def store_deg234(simd_ext, typ, align, deg):
 
 def store(simd_ext, typ, aligned):
     align = '' if aligned else 'u'
-    cast = '(__m{}i*)'.format(nbits(simd_ext)) if typ in common.iutypes else ''
+    cast = castsi(simd_ext, typ)
     if typ == 'f16':
         if simd_ext in sse:
             return \
@@ -2774,8 +2828,7 @@ def downcvt1(opts, simd_ext, from_typ, to_typ):
         le_1f32 = le_to_typ // 4
         le_2f32 = 2 * le_to_typ // 4
         le_3f32 = 3 * le_to_typ // 4
-        cast = '(__m{nbits}i *)'.format(**fmtspec) \
-               if to_typ in common.iutypes else ''
+        cast = castsi(simd_ext, to_typ)
         return \
         '''{to_typ} dst[{le_to_typ}];
            f32 src[{le_to_typ}];
@@ -3519,10 +3572,7 @@ def scatter(simd_ext, typ):
                     {in0}[offset_buf[i]] = nsimd_f32_to_f16(buf[i]);
                   }}'''.format(leo2=int(fmtspec['le']) // 2, **fmtspec)
     if simd_ext in (sse + avx) or typ in ['i8', 'u8', 'i16', 'u16']:
-        if typ in common.iutypes:
-            cast = '(__m{nbits}i*)'.format(**fmtspec)
-        else:
-            cast = ''
+        cast = castsi(simd_ext, typ)
         return '''int i;
                   {typ} buf[{le}];
                   {ityp} offset_buf[{le}];
@@ -3535,6 +3585,43 @@ def scatter(simd_ext, typ):
     return '''{pre}i{typnbits}scatter{suf}(
                   (void *){in0}, {in1}, {in2}, {scale});'''. \
                   format(scale=int(typ[1:]) // 8, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# linear scatter
+
+def scatter_linear(simd_ext, typ):
+    if typ == 'f16':
+        return '''int i;
+                  f32 buf[{le}];
+                  {pre}storeu_ps(buf, {in2}.v0);
+                  {pre}storeu_ps(buf + {leo2}, {in2}.v1);
+                  for (i = 0; i < {le}; i++) {{
+                    {in0}[i * {in1}] = nsimd_f32_to_f16(buf[i]);
+                  }}'''.format(leo2=int(fmtspec['le']) // 2, **fmtspec)
+    if simd_ext in avx512:
+        return '''nsimd_scatter_linear_avx2_{typ}({in0}, {in1}, {lo});
+                  nsimd_scatter_linear_avx2_{typ}({in0} + ({leo2} * {in1}),
+                                                  {in1}, {hi});'''. \
+                  format(leo2=int(fmtspec['le']) // 2,
+                         lo=extract(simd_ext, typ, LO, fmtspec['in2']),
+                         hi=extract(simd_ext, typ, HI, fmtspec['in2']),
+                         **fmtspec)
+    if (simd_ext == 'sse2' and typ in ['i16', 'u16']) or \
+       (simd_ext == 'avx' and \
+        typ in ['i32', 'u32', 'f32', 'i64', 'u64', 'f64']) or \
+       (simd_ext in ['sse42', 'avx2']):
+        return '\n'.join([
+        '{in0}[{i} * {in1}] = {get_lane};'.format(i=i,
+        get_lane=get_lane(simd_ext, typ, '{in2}'.format(**fmtspec), i),
+        **fmtspec) for i in range(int(fmtspec['le']))])
+    else:
+        cast = castsi(simd_ext, typ)
+        return '''int i;
+                  {typ} buf[{le}];
+                  {pre}storeu{sufsi}({cast}buf, {in2});
+                  for (i = 0; i < {le}; i++) {{
+                    {in0}[i * {in1}] = buf[i];
+                  }}'''.format(cast=cast, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # mask_scatter
@@ -3565,10 +3652,7 @@ def mask_scatter(simd_ext, typ):
                     }}
                   }}'''.format(le2=le2, store_mask=store_mask, **fmtspec)
     if simd_ext in (sse + avx) or typ in ['i8', 'u8', 'i16', 'u16']:
-        if typ in common.iutypes:
-            cast = '(__m{nbits}i*)'.format(**fmtspec)
-        else:
-            cast = ''
+        cast = castsi(simd_ext, typ)
         if simd_ext in avx512:
             mask_decl = 'u64 mask;'
             store_mask = 'mask = (u64){in0};'.format(**fmtspec)
@@ -3616,10 +3700,7 @@ def gather(simd_ext, typ):
                   return ret;'''.format(leo2=int(fmtspec['le']) // 2,
                                         **fmtspec)
     if simd_ext in (sse + ['avx']) or typ in ['i8', 'u8', 'i16', 'u16']:
-        if typ in common.iutypes:
-            cast = '(__m{nbits}i*)'.format(**fmtspec)
-        else:
-            cast = ''
+        cast = castsi(simd_ext, typ)
         return '''int i;
                   {typ} buf[{le}];
                   {ityp} offset_buf[{le}];
@@ -3645,6 +3726,49 @@ def gather(simd_ext, typ):
         return 'return {pre}i{typnbits}gather{suf}({in1}, ' \
                       '(const void *){in0}, {scale});'. \
                       format(scale=int(typ[1:]) // 8, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# linear gather
+
+def gather_linear(simd_ext, typ):
+    le = int(fmtspec['le'])
+    cast = castsi(simd_ext, typ)
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  f32 buf[{le}];
+                  int i;
+                  for (i = 0; i < {le}; i++) {{
+                    buf[i] = nsimd_f16_to_f32({in0}[i * {in1}]);
+                  }}
+                  ret.v0 = {pre}loadu_ps(buf);
+                  ret.v1 = {pre}loadu_ps(buf + {leo2});
+                  return ret;'''.format(leo2=le // 2, **fmtspec)
+    if simd_ext == 'sse2' and typ not in ['i16', 'u16']:
+        return '''{typ} buf[{le}];
+                  int i;
+                  for (i = 0; i < {le}; i++) {{
+                    buf[i] = {in0}[i * {in1}];
+                  }}
+                  return {pre}loadu{sufsi}({cast}buf);'''. \
+                  format(cast=cast, **fmtspec)
+    if simd_ext in sse + avx:
+        return \
+        '''nsimd_{simd_ext}_v{typ} ret;
+           ret = {pre}undefined{sufsi}();
+           '''.format(**fmtspec) + ''.join([
+           set_lane(simd_ext, typ, 'ret', '{in0}[{i} * {in1}]'. \
+                                          format(i=i, **fmtspec), i) + '\n' \
+                                          for i in range(le)]) + \
+        '''return ret;'''
+    # getting here means AVX-512
+    return \
+    '''nsimd_avx2_v{typ} lo = _mm256_undefined{sufsi2}();
+       nsimd_avx2_v{typ} hi = _mm256_undefined{sufsi2}();
+       lo = nsimd_gather_linear_avx2_{typ}({in0}, {in1});
+       hi = nsimd_gather_linear_avx2_{typ}({in0} + ({leo2} * {in1}), {in1});
+       return {merge};'''.format(merge=setr(simd_ext, typ, 'lo', 'hi'),
+                                 sufsi2=suf_si('avx2', typ),
+                                 leo2=le // 2, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # maksed gather
@@ -3687,10 +3811,7 @@ def maskoz_gather(oz, simd_ext, typ):
                   return ret;'''.format(leo2=le2, store_mask=store_mask,
                                         store_oz=store_oz, **fmtspec)
     if simd_ext in (sse + ['avx']) or typ in ['i8', 'u8', 'i16', 'u16']:
-        if typ in common.iutypes:
-            cast = '(__m{nbits}i*)'.format(**fmtspec)
-        else:
-            cast = ''
+        cast = castsi(simd_ext, typ)
         if simd_ext in sse + avx:
             mask_decl = '{typ} mask[{le}];'.format(**fmtspec)
             store_mask = '{pre}storeu{sufsi}({cast}mask, {in0});'. \
@@ -3799,9 +3920,11 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'store3u': lambda: store_deg234(simd_ext, from_typ, False, 3),
         'store4u': lambda: store_deg234(simd_ext, from_typ, False, 4),
         'gather': lambda: gather(simd_ext, from_typ),
+        'gather_linear': lambda: gather_linear(simd_ext, from_typ),
         'masko_gather': lambda: maskoz_gather('o', simd_ext, from_typ),
         'maskz_gather': lambda: maskoz_gather('z', simd_ext, from_typ),
         'scatter': lambda: scatter(simd_ext, from_typ),
+        'scatter_linear': lambda: scatter_linear(simd_ext, from_typ),
         'mask_scatter': lambda: mask_scatter(simd_ext, from_typ),
         'andb': lambda: binop2('andb', simd_ext, from_typ),
         'xorb': lambda: binop2('xorb', simd_ext, from_typ),

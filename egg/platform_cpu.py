@@ -562,6 +562,16 @@ def gather(typ):
 
 # -----------------------------------------------------------------------------
 
+def gather_linear(typ):
+    if typ == 'f16':
+        return func_body(
+               'ret.v{{i}} = nsimd_f16_to_f32({in0}[{{i}} * {in1}]);'. \
+               format(**fmtspec), typ)
+    return func_body('ret.v{{i}} = {in0}[{{i}} * {in1}];'. \
+                     format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
 def maskoz_gather(op, typ):
     if typ == 'f16':
         oz = '0.0f' if op == 'z' else '{in3}.v{{i}}'
@@ -587,6 +597,16 @@ def scatter(typ):
                '{in0}[{in1}.v{{i}}] = nsimd_f32_to_f16({in2}.v{{i}});'. \
                format(**fmtspec), typ)
     return repeat_stmt('{in0}[{in1}.v{{i}}] = {in2}.v{{i}};'. \
+                       format(**fmtspec), typ)
+
+# -----------------------------------------------------------------------------
+
+def scatter_linear(typ):
+    if typ == 'f16':
+        return repeat_stmt(
+               '{in0}[{{i}} * {in1}] = nsimd_f32_to_f16({in2}.v{{i}});'. \
+               format(**fmtspec), typ)
+    return repeat_stmt('{in0}[{{i}} * {in1}] = {in2}.v{{i}};'. \
                        format(**fmtspec), typ)
 
 # -----------------------------------------------------------------------------
@@ -646,9 +666,11 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ=''):
         'loadla': lambda: loadl(from_typ),
         'loadlu': lambda: loadl(from_typ),
         'gather': lambda: gather(from_typ),
+        'gather_linear': lambda: gather_linear(from_typ),
         'maskz_gather': lambda: maskoz_gather('z', from_typ),
         'masko_gather': lambda: maskoz_gather('o', from_typ),
         'scatter': lambda: scatter(from_typ),
+        'scatter_linear': lambda: scatter_linear(from_typ),
         'mask_scatter': lambda: mask_scatter(from_typ),
         'storela': lambda: storel(from_typ),
         'storelu': lambda: storel(from_typ),
