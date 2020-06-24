@@ -2380,17 +2380,40 @@ def gather(simd_ext, typ):
 # linear gather
 
 def gather_linear(simd_ext, typ):
-    if simd_ext == 'sve':
-        return 'svld1_gather_s{typnbits}index_{suf}({svtrue}, {in0}, ' \
-               'svindex_s{typnbits}(0, (i{typnbits}){in1}));'.format(**fmtspec)
+    if simd_ext in sve:
+        if typ in ['i8', 'u8', 'i16', 'u16', 'f16']:
+            le = max_len(simd_ext, typ)
+            real_le = real_len(simd_ext, typ)
+            return '''{typ} buf[{le}];
+                      int i;
+                      for (i = 0; i < {real_le}; i++) {{
+                        buf[i] = {in0}[i * {in1}];
+                      }}
+                      return svld1_{suf}({svtrue}, buf);'''. \
+                      format(le=le, real_le=real_le, **fmtspec)
+        else:
+            return 'return svld1_gather_s{typnbits}index_{suf}({svtrue}, ' \
+                   '{in0}, svindex_s{typnbits}(0, (i{typnbits}){in1}));'. \
+                   format(**fmtspec)
     # getting here means neon128 and aarch64
     intrinsic = '''nsimd_{simd_ext}_v{typ} ret;
-                   (void)ret;
+                   #if defined(NSIMD_IS_GCC)
+                     #pragma GCC diagnostic push
+                     #pragma GCC diagnostic ignored "-Wuninitialized"
+                   #elif defined(NSIMD_IS_CLANG)
+                     #pragma clang diagnostic push
+                     #pragma clang diagnostic ignored "-Wuninitialized"
+                   #endif
                 '''.format(**fmtspec) + ''.join([
                   'ret = vsetq_lane_{suf}({in0}[{i} * {in1}], ret, {i});\n'. \
                   format(i=i, **fmtspec) \
                   for i in range(128 // int(fmtspec['typnbits']))]) + \
-               '''return ret;'''
+               '''#if defined(NSIMD_IS_GCC)
+                    #pragma GCC diagnostic pop
+                  #else
+                    #pragma clang diagnostic pop
+                  #endif
+                  return ret;'''
     if typ == 'f16':
         return '''#ifdef NSIMD_NATIVE_FP16
                     {intrinsic}
@@ -2399,7 +2422,7 @@ def gather_linear(simd_ext, typ):
                     f32 buf[8];
                     int i;
                     for (i = 0; i < 8; i++) {{
-                      ret[i] = nsimd_f16_to_f32({in0}[i * {in1}]);
+                      buf[i] = nsimd_f16_to_f32({in0}[i * {in1}]);
                     }}
                     ret.v0 = vld1q_f32(buf);
                     ret.v1 = vld1q_f32(buf + 4);
@@ -2565,50 +2588,40 @@ def scatter(simd_ext, typ):
 # linear scatter
 
 def scatter_linear(simd_ext, typ):
-    le = max_len(simd_ext, typ)
-    real_le = real_len(simd_ext, typ)
-
     if simd_ext in sve:
-        emul = '''int i;
-                  {typ} buf[{le}];
-                  i{typnbits} offset_buf[{le}];
-                  svst1_s{typnbits}({svtrue}, offset_buf, {in1});
-                  svst1_{suf}({svtrue}, buf, {in2});
-                  for (i = 0; i < {real_le}; i++) {{
-                    {in0}[offset_buf[i]] = buf[i];
-                  }}'''.format(le=le, real_le=real_le, **fmtspec)
-    else:
-        emul = '\n'.join(['{in0}[vgetq_lane_s{typnbits}({in1}, {i})] = ' \
-                          'vgetq_lane_{suf}({in2}, {i});\n'. \
-                          format(i=i, **fmtspec) for i in range(int(le))])
-
+        if typ in ['i8', 'u8', 'i16', 'u16', 'f16']:
+            le = max_len(simd_ext, typ)
+            real_le = real_len(simd_ext, typ)
+            return '''{typ} buf[{le}];
+                      int i;
+                      svst1_{suf}({svtrue}, buf, {in2});
+                      for (i = 0; i < {real_le}; i++) {{
+                        {in0}[i * {in1}] = buf[i];
+                      }}'''.format(le=le, real_le=real_le, **fmtspec)
+        else:
+            return 'svst1_scatter_s{typnbits}index_{suf}({svtrue}, {in0}, ' \
+                   'svindex_s{typnbits}(0, (i{typnbits}){in1}), {in2});'. \
+                   format(**fmtspec)
+    # getting here means neon128 and aarch64
+    intrinsic = '\n'.join([
+      '{in0}[{i} * {in1}] = vgetq_lane_{suf}({in2}, {i});'. \
+      format(i=i, **fmtspec) for i in range(128 // int(fmtspec['typnbits']))])
     if typ == 'f16':
-        if simd_ext in sve:
-            return emul
         return '''#ifdef NSIMD_NATIVE_FP16
-                    {emul}
+                    {intrinsic}
                   #else
-                  '''.format(emul=emul) + \
-                  '\n'.join(['{in0}[vgetq_lane_s16({in1}, {i})] = ' \
-                             'nsimd_f32_to_f16(vgetq_lane_f32({in2}.v0, '
-                             '{i}));\n'.format(i=i, **fmtspec) \
-                             for i in range(4)]) + \
-                  '\n'.join(['{in0}[vgetq_lane_s16({in1}, 4 + {i})] = ' \
-                             'nsimd_f32_to_f16(vgetq_lane_f32({in2}.v1, '
-                             '{i}));\n'.format(i=i, **fmtspec) \
-                             for i in range(4)]) + \
-               '''
-                  #endif'''
-    if simd_ext == 'neon128' and typ == 'f64':
-        return '''i64 offset_buf[2];
-                  vst1q_s64(offset_buf, {in1});
-                  {in0}[offset_buf[0]] = {in2}.v0;
-                  {in0}[offset_buf[1]] = {in2}.v1;'''.format(**fmtspec)
-    if simd_ext in neon or typ in ['i8', 'u8', 'i16', 'u16']:
-        return emul
-    # getting here means SVE
-    return 'svst1_scatter_s{typnbits}index_{suf}({svtrue}, {in0}, ' \
-           '{in1}, {in2});'.format(le=le, **fmtspec)
+                    f32 buf[8];
+                    int i;
+                    vst1q_f32(buf, {in2}.v0);
+                    vst1q_f32(buf + 4, {in2}.v1);
+                    for (i = 0; i < 8; i++) {{
+                      {in0}[i * {in1}] = nsimd_f32_to_f16(buf[i]);
+                    }}
+                  #endif'''.format(intrinsic=intrinsic, **fmtspec)
+    if typ == 'f64' and simd_ext == 'neon128':
+        return '''{in0}[0] = {in2}.v0;
+                  {in0}[{in1}] = {in2}.v1;'''.format(**fmtspec)
+    return intrinsic
 
 # -----------------------------------------------------------------------------
 # mask_scatter
@@ -2729,6 +2742,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'maskz_gather': lambda: maskoz_gather('z', simd_ext, from_typ),
         'masko_gather': lambda: maskoz_gather('o', simd_ext, from_typ),
         'scatter': lambda: scatter(simd_ext, from_typ),
+        'scatter_linear': lambda: scatter_linear(simd_ext, from_typ),
         'mask_scatter': lambda: mask_scatter(simd_ext, from_typ),
         'andb': lambda: binop2("andb", simd_ext2, from_typ),
         'xorb': lambda: binop2("xorb", simd_ext2, from_typ),
