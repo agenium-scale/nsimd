@@ -2338,12 +2338,14 @@ def gather(simd_ext, typ):
                   return svld1_{suf}({svtrue}, buf);'''. \
                   format(le=le, real_le=real_le, **fmtspec)
     else:
-        emul = '{typ} buf[{le}];\n'.format(le=le, **fmtspec)
-        emul += ''.join(['buf[{i}] = {in0}[vgetq_lane_s{typnbits}({in1}, ' \
-                         '{i})];\n'.format(i=i, **fmtspec) \
-                         for i in range(int(le))])
-        emul += 'return vld1q_{suf}(buf);'.format(**fmtspec)
-
+        emul = \
+        '''nsimd_{simd_ext}_v{typ} ret;
+           ret = vdupq_n_{suf}({in0}[vgetq_lane_s{typnbits}({in1}, 0)]);'''. \
+           format(**fmtspec) + ''.join([
+        '''ret = vsetq_lane_{suf}({in0}[
+                     vgetq_lane_s{typnbits}({in1}, {i})], ret, {i});\n'''. \
+                     format(i=i, **fmtspec) for i in range(1, le)]) + \
+          'return ret;'
     if typ == 'f16':
         if simd_ext in sve:
             return emul
