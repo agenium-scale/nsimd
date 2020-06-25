@@ -2397,23 +2397,12 @@ def gather_linear(simd_ext, typ):
                    format(**fmtspec)
     # getting here means neon128 and aarch64
     intrinsic = '''nsimd_{simd_ext}_v{typ} ret;
-                   #if defined(NSIMD_IS_GCC)
-                     #pragma GCC diagnostic push
-                     #pragma GCC diagnostic ignored "-Wuninitialized"
-                   #elif defined(NSIMD_IS_CLANG)
-                     #pragma clang diagnostic push
-                     #pragma clang diagnostic ignored "-Wuninitialized"
-                   #endif
+                   ret = vdupq_n_{suf}({in0}[0]);
                 '''.format(**fmtspec) + ''.join([
                   'ret = vsetq_lane_{suf}({in0}[{i} * {in1}], ret, {i});\n'. \
                   format(i=i, **fmtspec) \
-                  for i in range(128 // int(fmtspec['typnbits']))]) + \
-               '''#if defined(NSIMD_IS_GCC)
-                    #pragma GCC diagnostic pop
-                  #else
-                    #pragma clang diagnostic pop
-                  #endif
-                  return ret;'''
+                  for i in range(1, 128 // int(fmtspec['typnbits']))]) + \
+               '''return ret;'''
     if typ == 'f16':
         return '''#ifdef NSIMD_NATIVE_FP16
                     {intrinsic}
