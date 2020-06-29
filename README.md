@@ -2,12 +2,36 @@
 
 Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
 
-NSIMD
-=====
+# What is NSIMD?
 
-NSIMD is a vectorization library that abstracts [SIMD
+At its core, NSIMD is a vectorization library that abstracts [SIMD
 programming](<https://en.wikipedia.org/wiki/SIMD>). It was designed to exploit
-the maximum power of processors at a low development cost.
+the maximum power of processors at a low development cost. NSIMD comes with
+modules. As of now two of them adds support for GPUs to NSIMD. The
+direction that NSIMD is taking is to provide several programming paradigms
+to address different problems and to allow a wider support of architectures.
+With two of its modules NSIMD provides three programming paradigms:
+
+- Imperative programming provided by NSIMD core that supports a lots of
+  CPU/SIMD extensions.
+- Expressions templates provided by the TET1D module that supports all
+  architectures from NSIMD core and adds support for NVIDIA and AMD GPUs.
+- Single Program Multiple Data provided by the SPMD module that supports all
+  architectures from NSIMD core and adds support for NVIDIA and AMD GPUs.
+
+## Supported architectures
+
+|              | CPU | SSE2 | SSE42 | AVX | AVX2 | AVX512\_KNL | AVX512\_SKYLAKE | NEON128 | AARCH64 | SVE | FIXED\_SVE | CUDA | ROCm |
+|:-------------|:---:|:----:|:-----:|:---:|:----:|:-----------:|:---------------:|:-------:|:-------:|:---:|:----------:|:----:|:----:|
+| NSIMD core   |  Y  |  Y   |   Y   |  Y  |   Y  |      Y      |       Y         |   Y     |    Y    |  Y  |      Y     |  N   |  N   |
+| SPMD module  |  Y  |  Y   |   Y   |  Y  |   Y  |      Y      |       Y         |   Y     |    Y    |  Y  |      Y     |  Y   |  Y   |
+| TET1D module |  Y  |  Y   |   Y   |  Y  |   Y  |      Y      |       Y         |   Y     |    Y    |  Y  |      Y     |  Y   |  Y   |
+
+Note on Arm SIMD extensions: NEON128 means NEON on ARMv7 and earlier, AARCH64
+means NEON on ARMv8 and later. FIXED\_SVE means the support of SVE where
+the size of register is known at compile time such as for GCC.
+
+## How it works?
 
 To achieve maximum performance, NSIMD mainly relies on the inline optimization
 pass of the compiler. Therefore using any mainstream compiler such as GCC,
@@ -30,37 +54,23 @@ APIs add for instance templated type definitions and templated constants.
 Binary compatibility is guaranteed by the fact that only a C ABI is exposed. The
 C++ API only wraps the C calls.
 
-Supported SIMD instruction sets
--------------------------------
+## Supported compilers
 
-- Intel:
-  + SSE2
-  + SSE4.2
-  + AVX
-  + AVX2
-  + AVX-512 as found on KNLs
-  + AVX-512 as found on Xeon Skylake CPUs
-- Arm
-  + NEON 128 bits as found on ARMv7 CPUs
-  + NEON 128 bits as found on Aarch64 CPUs
-  + SVE
+NSIMD is tested with GCC, Clang, MSVC, NVCC, HIPCC and ARMClang. As a C89 and a
+C++98 API are provided, other compilers should work fine. Old compiler versions
+should work as long as they support the targeted SIMD extension. For instance,
+NSIMD can compile on SSE 4.2 code with MSVC 2010.
 
-Supported compilers
--------------------
+# Build the library
 
-NSIMD is tested with GCC, Clang and MSVC. As a C89 and a C++98 API are provided,
-other compilers should work fine. Old compiler versions should work as long as
-they support the targeted SIMD extension. For instance, NSIMD can compile on
-MSVC 2010 SSE4.2 code.
+The support for CMake has been dropped as it has several flaws:
+- too slow especially on Windows,
+- inability to use several compilers at once,
+- inability to have a portable build system,
+- very poor support for portable compilation flags,
+- ...
 
-Build the library
-=================
-
-The library should be built with
-[CMake](<https://gitlab.kitware.com/cmake/cmake>) on Linux and Windows.
-
-Dependencies
-------------
+## Dependencies
 
 Generating C/C++ files is done by the Python3 code contained in the `egg`.
 Python should be installed by default on any Linux distro. On Windows it comes
@@ -68,9 +78,9 @@ with the latest versions of Visual Studio on Windows
 (<https://visualstudio.microsoft.com/vs/community/>), you can also download and
 install it directly from <https://www.python.org/>.
 
-The Python code calls `clang-format` to properly format all generated C/C++
-source. On Linux you can install it via your package manager. On Windows you can
-use the official binary at <https://llvm.org/builds/>.
+The Python code can call `clang-format` to properly format all generated C/C++
+source. On Linux you can install it via your package manager. On Windows you
+can use the official binary at <https://llvm.org/builds/>.
 
 Testing the library requires the Google Test library that can be found at
 <https://github.com/google/googletest> and the MPFR library that can be found at
@@ -88,110 +98,56 @@ end-user are C89, C++98, C++11 compatible. Note that C/C++ files are generated
 by a bunch of Python scripts and they must be executed first before running
 cmake.
 
-```bash
-python3 egg/hatch.py -Af
-mkdir build
-cd build
-cmake ..
-make
-```
-
-You can set the target architecture using the `-DSIMD=<simd>` option for CMake:
+## Build for Linux
 
 ```bash
-# Enable AVX2 support for nsimd
-cmake .. -DSIMD=AVX2
-make
+bash scripts/build.sh for simd_ext1/.../simd_extN with comp1/.../compN
 ```
 
-Some SIMD instructions are optional. FMA (Fused Multiply-Add) can be enabled
-using the option `-DSIMD_OPTIONALS=<simd-optional>...`:
+For each combination a directory `build-simd_ext-comp` will be created and
+will contain the library. Supported SIMD extension are:
 
-```bash
-# Enable AVX2 with FMA support for nsimd
-cmake .. -DSIMD=AVX2 -DSIMD_OPTIONALS=FMA
-make
-```
+- sse2
+- sse42
+- avx
+- avx2
+- avx512\_knl
+- avx512\_skylake
+- neon128
+- aarch64
+- sve
+- sve128
+- sve256
+- sve512
+- sve1024
+- sve2048
+- cuda
+- rocm
 
-The generated sources might be big, using `ninja` over `make` is generally
-better:
+Supported compiler are:
 
-```bash
-cmake .. -GNinja
-ninja
-```
+- gcc
+- clang
+- icc
+- armclang
+- cl
+- nvcc
+- hipcc
 
-Build on Windows
-----------------
+Note that certain combination of SIMD extension/compilers are not supported
+such as aarch64 with icc, or avx512\_skylake with nvcc.
 
-Make sure you are typing in a Visual Studio prompt. We give examples with
-`ninja`. We also explicitely specify the MSVC compiler. Note that you can
-use the latest versions of Visual Studio to build the library using its
-`CMakeLists.txt`.
+## Build on Windows
+
+Make sure you are typing in a Visual Studio prompt. The command is almost the
+same as for Linux with the same constraints on the pairs SIMD
+extension/compilers.
 
 ```batch
-python egg\hatch.py -Af
-md build
-cd build
-cmake .. -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
-ninja
+scripts\build.bat for simd_ext1/.../simd_extN with comp1/.../compN
 ```
 
-You can also set the SIMD instruction using the `-DSIMD=<simd>` option when
-generating with cmake like:
-
-```batch
-REM Enable AVX2 support for nsimd
-cmake .. -DSIMD=AVX2 -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
-ninja
-```
-
-Some SIMD instructions are optional like for FMA (Fused Multiply-Add), you
-can enable them using the option `-DSIMD_OPTIONALS=<simd-optional>...`:
-
-```batch
-REM Enable AVX2 with FMA support for nsimd
-cmake .. -DSIMD=AVX2 -DSIMD_OPTIONALS=FMA -GNinja -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
-ninja
-```
-
-Build benches
--------------
-
-Benches are not built by default when invoking CMake. To enable them define
-the CMake variable `ENABLE_BENCHMARK`.
-
-```bash
-cmake [...] -DENABLE_BENCHMARK=on
-```
-
-Note that third party libraries are required to perform benches as described
-above. If those cannot be found in standard system paths then you can tell
-CMake where they are located using the following CMake variables.
-
-| Dependency       | CMake variable                                        |
-|------------------|-------------------------------------------------------|
-| Sleef            | `cmake [...] -DSleef_ROOT_DIR=/path/to/sleef`         |
-| MIPP             | `cmake [...] -DMIPP_ROOT_DIR=/path/to/MIPP`           |
-| Google benchmark | `cmake [...] -Dbenchmark_ROOT_DIR=/path/to/benchmark` |
-
-You can also use a script that pulls out every required dependencies and build
-them at the top-level git directory:
-
-```
-./scripts/init-benches-deps.sh
-```
-
-Every dependencies will be installed in the `_install` directory.
-
-You can then use the following special command for cmake:
-```
-## Assume your building under a `build` directory
-cmake [...] -DCMAKE_LIBRARY_PATH="$(pwd)/../_install/lib" -DCMAKE_INCLUDE_PATH="$(pwd)/../_install/include" -DENABLE_BENCHMARK=on
-```
-
-Philosophy
-==========
+# Philosophy
 
 The library aims to provide a portable zero-cost abstraction over SIMD vendor
 intrinsics disregarding the underlying SIMD vector length.
@@ -205,18 +161,18 @@ NSIMD was designed following as closely as possible the following guidelines:
 - Use common names as found in common computation libraries.
 - Do not hide SIMD registers, one variable (of a type such as `nsimd::pack`)
   matches one register.
-- Keep the code simple to allow the compiler to perform as many optimizations as
-  possible.
+- Keep the code simple to allow the compiler to perform as many optimizations
+  as possible.
 
 You may wrap intrinsics that require compile time knowledge of the underlying
 vector length but this should be done with caution.
 
-Wrapping intrinsics that do not exist for all types is difficult and may require
-casting or emulation. For instance, 8 bit integer vector multiplication using
-SSE2 does not exist. We can either process each pair of integers individually or
-we can cast the 8 bit vectors to 16 bit vectors, do the multiplication and cast
-them back to 8 bit vectors. In the second case, chaining operations will
-generate many unwanted casts.
+Wrapping intrinsics that do not exist for all types is difficult and may
+require casting or emulation. For instance, 8 bit integer vector multiplication
+using SSE2 does not exist. We can either process each pair of integers
+individually or we can cast the 8 bit vectors to 16 bit vectors, do the
+multiplication and cast them back to 8 bit vectors. In the second case,
+chaining operations will generate many unwanted casts.
 
 To avoid hiding important details to the user, overloads of operators involving
 scalars and SIMD vectors are not provided by default. Those can be included
@@ -229,8 +185,7 @@ included manually. ARM SVE registers can only be stored in sizeless strucs
 ARM compiler. We do not know whether other compilers will use the same keyword
 or paradigm to support SVE intrinsics.
 
-Contributing
-============
+# Contributing
 
 The wrapping of intrinsics, the writing of test and bench files are tedious and
 repetitive tasks. Most of those are generated using Python scripts that can be
@@ -247,10 +202,9 @@ found in `egg`.
 
 Please see [CONTRIBUTE.md](CONTRIBUTE.md) for more details.
 
-LICENSE
-=======
+# LICENSE
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
