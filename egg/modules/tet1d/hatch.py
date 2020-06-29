@@ -31,19 +31,254 @@ import gen_scalar_utilities
 tpb = 128
 gpu_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
 
+def is_not_closed(operator):
+    return (operator.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES \
+            or ('v' not in operator.params[1:] and 'l' not in
+            operator.params[1:]))
+
 # -----------------------------------------------------------------------------
 
-def gen_doc(opts):
-    #for op_name, operator in operators.operators.items():
-    #    if not operator.has_scalar_impl:
-    #        continue
-    #    f.write(
-    #    '''template<{tmpl_args}>
-    #       node<{op_name}_t, {to_node_type}> {op_name}({args})''')
-    #    f.write(operator.desc)
-    #    if opeartor.cxx_operator != None:
-    #        f.wirte('operator+')
-    pass
+def gen_doc_overview(opts):
+    filename = common.get_markdown_file(opts, 'overview', 'tet1d')
+    if not common.can_create_filename(opts, filename):
+        return
+    with common.open_utf8(opts, filename) as fout:
+        fout.write('''# Overview
+
+## What are expression templates?
+
+Expression templates are a C++ template metaprogramming technique that
+essentially allows high level programming for loop fusion. Take the following
+exemple.
+
+```c++
+std::vector<float> operator+(std::vector<float> const &a,
+                             std::vector<float> const &b) {{
+  std::vector<float> ret(a.size());
+  for (size_t i = 0; i < a.size(); i++) {{
+    ret[i] = a[i] + b[i];
+  }}
+  return ret;
+}}
+
+int main() {{
+  std::vector<float> a, b, c, d, sum;
+
+  ...
+
+  sum = a + b + c + d;
+
+  ...
+
+  return 0;
+}}
+```
+
+The expression `a + b + c + d` involves three calls to `operator+` and at least
+nine memory passes are necessary. This can be optimized as follows.
+
+```c++
+int main() {{
+  std::vector<float> a, b, c, d, sum;
+
+  ...
+
+  for (size_t i = 0; i < a.size(); i++) {{
+    ret[i] = a[i] + b[i] + c[i] + d[i];
+  }}
+
+  ...
+
+  return 0;
+}}
+```
+
+The rewriting above requires only four memory passes which is of course better
+but as humans we prefer the writing `a + b + c + d`. Expression templates
+solves exactly this problem and allows the programmer to write `a + b + c + d`
+and the compiler to see the loop written above.
+
+## Expressions templates with NSIMD
+
+This module provides expression templates on top of NSIMD core. As a
+consequence the loops seen by the compiler deduced from the high-level
+expressions are optimized using SIMD instructions. Note also that NVIDIA and
+AMD GPUs are supported through CUDA and ROCm/HIP. The API for expression
+templates in NSIMD is C++98 compatible and is able to work with any container
+as its only requirement for data is that it must be contiguous.
+
+All inputs to an expression must be declared using `tet1d::in` while the
+output must be declared using `tet1d::out`.
+
+```c++
+int main() {{
+  std::vector<float> a, b, c;
+
+  ...
+
+  tet1d::out(a) = tet1d::in(&a[0], a.size()) + tet1d::in(&b[0], b.size());
+
+  ...
+
+  return 0;
+}}
+```
+
+- `template <typename T, typename I> inline node in(const T *data, I sz);`{nl}
+  Construct an input for expression templates starting at address `data` and
+  containing `sz` elements. The return type of this functin `node` can be used
+  with the help of the `TET1D_IN(T)` macro where `T` if the underlying type of
+  data (ints, floats, doubles...).
+
+- `template <typename T> node out(T *data);`{nl}
+  Construct an output for expression templates starting at address `data`. Note
+  that memory must be allocated by the user before passing it to the expression
+  template engine. The output type can be used with the `TET1D_OUT(T)` where
+  `T` is the underlying type (ints, floats, doubles...).
+
+Note that it is possible to pass parameters to the expression template engine
+to specify the number of threads per block for GPUs or the SIMD extension to
+use...
+
+- `template <typename T, typename Pack> node out(T *data, int
+  threads_per_block, void *stream);`{nl}
+  Construct an output for expression templates starting at address `data`. Note
+  that memory must be allocated by the user before passing it to the expression
+  template engine. The `Pack` parameter is useful when compiling for CPUs. The
+  type is `nsimd::pack<...>` allowing the developper to specify all details
+  about the NSIMD packs that will be used by the expression template engine.
+  The `threads_per_block` and `stream` arguments are used only when compiling
+  for GPUs. Their meaning is contained in their names. The output type can be
+  used with the `TET1D_OUT_EX(T, N, SimdExt)` where `T` is the underlying type
+  (ints, floats, doubles...), `N` is the unroll factor and `SimdExt` the SIMD
+  extension.
+
+Moreover a MATLAB-like syntax is provided. One can select a subrange of given
+input. Indexes are understood as for Python: -1 represents the last element.
+The contant `tet1d::end = -1` allows one to write portable code.
+
+```c++
+int main() {{
+  std::vector<float> a, b, c;
+
+  ...
+
+  TET1D_IN(float) va = tet1d::in(&a[0], a.size());
+  TET1D_IN(float) vb = tet1d::in(&b[0], b.size());
+  tet1d::out(c) = va(10, tet1d::end - 10) + vb;
+
+  ...
+
+  return 0;
+}}
+```
+
+One can also specify which elements of the output must be rewritten with
+the following syntax.
+
+```c++
+int main() {{
+  std::vector<float> a, b, c;
+
+  ...
+
+  TET1D_IN(float) va = tet1d::in(&a[0], a.size());
+  TET1D_IN(float) vb = tet1d::in(&b[0], b.size());
+  TET1D_OUT(float) vc = tet1d::out(&c[0]);
+  vc(va >= 10 && va < 20) = vb;
+
+  ...
+
+  return 0;
+}}
+```
+
+In the exemple above, element `i` in `vc` is written only if `va[i] >= 10` and
+`va[i] < 20`. The expression appearing in the parenthesis can contain
+arbitrary expression templates as soon as the underlying type is `bool`.
+
+## Warning using `auto`
+
+Using auto can lead to surprising results. We advice you never to use auto
+when dealing with expression templates. Indeed using `auto` will make the
+variable an obscure type representing the computation tree of the expression
+template. This implies that you won't be able to get data from this variable
+i.e. get the `.data` member for exemple. Again this variable or its type cannot
+be used in template arguments where you need it.
+'''.format(nl='  '))
+
+# -----------------------------------------------------------------------------
+
+def gen_doc_api(opts):
+    filename = common.get_markdown_file(opts, 'api', 'tet1d')
+    if not common.can_create_filename(opts, filename):
+        return
+
+    # Build tree for api.md
+    api = dict()
+    for _, operator in operators.operators.items():
+        if not operator.has_scalar_impl:
+            continue
+        for c in operator.categories:
+            if c not in api:
+                api[c] = [operator]
+            else:
+                api[c].append(operator)
+
+    def get_signature(op):
+        def get_type(typ):
+            if typ == 'p':
+                return 'int'
+            elif typ == 'v':
+                return 'ExprNumber'
+            elif typ == 'l':
+                return 'ExprBool'
+        ret = get_type(op.params[0]) + ' ' + op.name + '('
+        if is_not_closed(op):
+            ret += 'ToType' + (', ' if len(op.params[1:]) > 0 else '')
+        ret += ', '.join(['{{t}} {{in{i}}}'.format(i=i). \
+                          format(t=get_type(op.params[i + 1]), in0=common.in0,
+                          in1=common.in1, in2=common.in2, in3=common.in3) \
+                          for i in range(len(op.params[1:]))])
+        ret += ');'
+        return ret
+
+    with common.open_utf8(opts, filename) as fout:
+        fout.write(
+'''# NSIMD TET1D API reference
+
+This page contains the exhaustive API of the TET1D module. Note that most
+operators names follow their NSIMD counterparts and have the same
+semantics. This page is light, you may use CTRL+F to find the operator you
+are looking for.
+
+Note that all operators accept literals and scalars. For example you may
+write `tet1d::add(a, 1)`. This also applies when using infix operators. Note
+that literals or scalars of different types can be used with expression
+involving other types.
+
+In all signature below the following pseudo types are used for simplification:
+- `ExprNumber` to designate an existing expression template on signed, unsigned
+  integers of floatting point types or a scalar of signed, unsigned integers or
+  floatting point types.
+- `ExprBool` to designate an existing expression template over booleans or
+  a boolean.
+- `ToType` to designate a base type (signed, unsigned integers or floatting
+  point types) and is used when a change in type is requested for example
+  when converting data.
+
+''')
+
+        for c, ops in api.items():
+            if len(ops) == 0:
+                continue
+            fout.write('\n## {}\n\n'.format(c.title))
+            for op in ops:
+                fout.write('- `{}`  \n'.format(get_signature(op)))
+                if op.cxx_operator != None:
+                    fout.write('  Infix operator: `{}`  \n'. \
+                               format(op.cxx_operator[8:]))
+                fout.write('  {}\n\n'.format(op.desc))
 
 # -----------------------------------------------------------------------------
 
@@ -353,10 +588,6 @@ def gen_tests(opts):
         if not operator.has_scalar_impl:
             continue
 
-        not_closed = (operator.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES \
-                      or ('v' not in operator.params[1:] and 'l' not in
-                      operator.params[1:]))
-
         for t in operator.types:
 
             tts = common.get_output_types(t, operator.output_to)
@@ -379,9 +610,7 @@ def gen_functions(opts):
         if not operator.has_scalar_impl:
             continue
 
-        not_closed = (operator.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES \
-                      or ('v' not in operator.params[1:] and 'l' not in
-                      operator.params[1:]))
+        not_closed = is_not_closed(operator)
         not_closed_tmpl_args = 'typename ToType, ' if not_closed else ''
         not_closed_tmpl_params = 'ToType' if not_closed else 'none_t'
 
@@ -598,4 +827,5 @@ def doit(opts):
     if opts.tests:
         gen_tests(opts)
     if opts.doc:
-        gen_doc(opts)
+        gen_doc_api(opts)
+        gen_doc_overview(opts)

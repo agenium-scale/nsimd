@@ -169,7 +169,7 @@ spmd_tmpl_kernel_1d(tmpl_kernel, Op, arguments)
 
   // ...
 
-  spmd_call_tmpl_dev_func(trampoline, Op, a, b));
+  spmd_call_tmpl_dev_func(trampoline, Op, a, b);
 
   // ...
 
