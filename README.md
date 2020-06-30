@@ -252,6 +252,9 @@ following:
 - Provide cross-lane data transfer.
 - Provide a way to abstract shared memory.
 
+Our approach can be roughly compared to ISPC (<https://ispc.github.io/>)
+but from a library point of view.
+
 ## Wrapping intrinsics in NSIMD core
 
 NSIMD was designed following as closely as possible the following guidelines:
