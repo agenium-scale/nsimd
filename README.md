@@ -19,15 +19,21 @@ With two of its modules NSIMD provides three programming paradigms:
 
 ## Supported architectures
 
-|              | CPU | SSE2 | SSE42 | AVX | AVX2 | AVX512\_KNL | AVX512\_SKYLAKE | NEON128 | AARCH64 | SVE | FIXED\_SVE | CUDA | ROCm |
-|:-------------|:---:|:----:|:-----:|:---:|:----:|:-----------:|:---------------:|:-------:|:-------:|:---:|:----------:|:----:|:----:|
-| NSIMD core   |  Y  |  Y   |   Y   |  Y  |   Y  |      Y      |       Y         |   Y     |    Y    |  Y  |      Y     |  N   |  N   |
-| SPMD module  |  Y  |  Y   |   Y   |  Y  |   Y  |      Y      |       Y         |   Y     |    Y    |  Y  |      Y     |  Y   |  Y   |
-| TET1D module |  Y  |  Y   |   Y   |  Y  |   Y  |      Y      |       Y         |   Y     |    Y    |  Y  |      Y     |  Y   |  Y   |
-
-Note on Arm SIMD extensions: NEON128 means NEON on ARMv7 and earlier, AARCH64
-means NEON on ARMv8 and later. FIXED\_SVE means the support of SVE where
-the size of register is known at compile time such as for GCC.
+| Architecture                          | NSIMD core | TET1D module | SPMD module |
+|:--------------------------------------|:----------:|:------------:|:-----------:|
+| CPU (SIMD emulation)                  |     Y      |      Y       |      Y      |
+| Intel SSE 2                           |     Y      |      Y       |      Y      |
+| Intel SSE 4.2                         |     Y      |      Y       |      Y      |
+| Intel AVX                             |     Y      |      Y       |      Y      |
+| Intel AVX2                            |     Y      |      Y       |      Y      |
+| Intel AVX-512 for KNLs                |     Y      |      Y       |      Y      |
+| Intel AVX-512 for Skylake processors  |     Y      |      Y       |      Y      |
+| Arm NEON 128 bits (ARMv7 and earlier) |     Y      |      Y       |      Y      |
+| Arm NEON 128 bits (ARMv8 and later)   |     Y      |      Y       |      Y      |
+| Arm SVE (original sizeless SVE)       |     Y      |      Y       |      Y      |
+| Arm fixed sized SVE                   |     Y      |      Y       |      Y      |
+| NVIDIA CUDA                           |     N      |      Y       |      Y      |
+| AMD ROCm                              |     N      |      Y       |      Y      |
 
 ## How it works?
 
