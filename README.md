@@ -147,6 +147,90 @@ extension/compilers.
 scripts\build.bat for simd_ext1/.../simd_extN with comp1/.../compN
 ```
 
+## More details on building the library
+
+The library uses a tool called nsconfig
+(<https://github.com/agenium-scale/nstools>) which is basically a Makefile
+translator. If you have just built NSIMD following what's described above
+you should have a `nstools` directory which contains `bin/nsconfig`. If not
+you can generate it using on Linux
+
+```bash
+bash scripts/setup.sh
+```
+
+and on Windows
+
+```batch
+scripts\setup.bat
+```
+
+Then you can use `nsconfig` directly it has a syntax similar to CMake at
+command line. Here is a quick tutorial with Linux command line. We first
+go to the NSIMD directory and generate both NSIMD and nsconfig.
+
+```bash
+$ cd nsimd
+$ python3 egg/hatch.py -ltf
+$ bash script/setup.sh
+$ mkdir build
+$ cd build
+```
+
+Help can be displayed using `--help`.
+
+```bash
+$ ../nstools/bin/nsconfig --help
+usage: nsconfig [OPTIONS]... DIRECTORY
+Configure project for compilation.
+
+  -v                   verbose mode
+  -nodev               Build system will never call nsconfig
+  -DVAR=VALUE          Set value of variable VAR to VALUE
+  -list-vars           List project specific variable
+  -GBUILD_SYSTEM       Produce files for build system BUILD_SYSTEM
+  -Ghelp               List supported build systems
+  -oOUTPUT             Output to OUTPUT instead of default
+  -comp=SUITE          Use compiler SUITE for both C and C++
+  -ccomp=SUITE,PATH[,VERSION[,ARCHI]]
+                       Use PATH as default C compiler from suite SUITE
+                       If VERSION and/or ARCHI are given, nsconfig
+                       try to determine those. This is useful for
+                       cross compiling, ARCHI must be in { x86, x86_64,
+                       arm, aarch64 }
+  -ccomp=help          List supported C compilers
+  -cppcomp=SUITE,PATH[,VERSION[,ARCHI]]
+                       Use PATH as default C++ compiler from suite SUITE
+                       If VERSION and/or ARCHI are given, nsconfig
+                       try to determine those. This is useful for
+                       cross compiling, ARCHI must be in { x86, x86_64,
+                       arm, aarch64 }
+  -cppcomp=help        List supported C++ compilers
+  -prefix=PREFIX       Set prefix for installation to PREFIX
+  -h, --help           Print the current text
+```
+
+Each project can defined its own set of variable controlling the generation of
+the ninja file of Makefile.
+
+```bash
+$ ../nstools/bin/nsconfig .. -list-vars
+```
+
+Finally one can choose what to do and compile NSIMD and its tests.
+
+```bash
+$ ../nstools/bin/nsconfig .. -Dsimd=avx2
+$ ninja
+$ ninja tests
+```
+
+Nsconfig comes with nstest a small tool to execute tests.
+
+```bash
+$ ../nstools/bin/nstest -j20
+```
+
 # Philosophy
 
 The library aims to provide a portable zero-cost abstraction over SIMD vendor
