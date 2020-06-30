@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/agenium-scale/nsimd.svg?branch=master)](https://travis-ci.org/agenium-scale/nsimd)
-
 Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
 
 # What is NSIMD?
@@ -231,10 +229,30 @@ Nsconfig comes with nstest a small tool to execute tests.
 $ ../nstools/bin/nstest -j20
 ```
 
-# Philosophy
+# Philosophy of NSIMD
 
-The library aims to provide a portable zero-cost abstraction over SIMD vendor
-intrinsics disregarding the underlying SIMD vector length.
+Originally the library aimed at providing a portable zero-cost abstraction over
+SIMD vendor intrinsics disregarding the underlying SIMD vector length. NSIMD
+will of course continue to wrap SIMD intrinsics from various vendors but
+more efforts will be put into writing NSIMD modules and improving the existing
+ones especially the SPMD module. 
+
+## The SPMD paradigm
+
+It is our belief that SPMD is a good paradigm for writing vectorized code. It
+helps both the developer and the compiler writer. It forces the developers to
+better arrange its data ion memory more suited for vectorization. On the
+compiler side it is more simplier to write a "SPMD compiler" than a standard
+C/C++/Fortran compiler that tries to autovectorize some weird loop with data
+scattered all around the place. Our priority for our SPMD module are the
+following:
+
+- Add oneAPI/SYCL support.
+- Provide a richer API.
+- Provide cross-lane data transfer.
+- Provide a way to abstract shared memory.
+
+## Wrapping intrinsics in NSIMD core
 
 NSIMD was designed following as closely as possible the following guidelines:
 
@@ -269,7 +287,7 @@ included manually. ARM SVE registers can only be stored in sizeless strucs
 ARM compiler. We do not know whether other compilers will use the same keyword
 or paradigm to support SVE intrinsics.
 
-# Contributing
+# Contributing to NSIMD
 
 The wrapping of intrinsics, the writing of test and bench files are tedious and
 repetitive tasks. Most of those are generated using Python scripts that can be
