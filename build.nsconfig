@@ -1,25 +1,45 @@
+# MIT License
+#
+# Copyright (c) 2020 Agenium Scale
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-
-package_name nsimd-1.0
+package_name nsimd-2.0
 
 ## Get OS/Compiler specific file extensions
 
-set o           = @obj_ext
-set exe         = @exe_ext
-set s           = @asm_ext
-set so          = @shared_lib_ext
-set lib         = @shared_link_ext
-set root        = @source_dir
-set make        = @make_command
-set build       = @build_dir
-set root        = @source_dir
+set o     = @obj_ext
+set exe   = @exe_ext
+set s     = @asm_ext
+set so    = @shared_lib_ext
+set lib   = @shared_link_ext
+set root  = @source_dir
+set make  = @make_command
+set build = @build_dir
+set root  = @source_dir
 
 ## Some defaults
 
 ifnot_set "SIMD extension to use" simd = cpu
 ifnot_set "Optional flags like FMA, FP16..." optional_flags = ""
-[L] ifnot_set "MPFR compilation flags" mpfr = -lmpfr
-[W] ifnot_set "MPFR compilation flags" mpfr = ""
+[L] ifnot_set "MPFR compilation flags (for tests only)" mpfr = -lmpfr
+[W] ifnot_set "MPFR compilation flags (for tests only)" mpfr = ""
 ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
 ifnot_set "Google benchmark compilation flags (for benchmarks only)" \
           benchmark = -lbenchmark
@@ -140,7 +160,7 @@ build_file api_sve1024$o autodeps $root$/src/api_sve1024.cpp
 build_file api_sve2048$o autodeps $root$/src/api_sve2048.cpp
 	c++ $cflags$ -c $cflags_for_sve2048 @in -o @out
 
-## Installation
+## Installation and packaging
 
 install_file libnsimd_${simd}$so lib
 [W] install_file libnsimd_${simd}$lib lib

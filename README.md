@@ -219,6 +219,14 @@ the ninja file of Makefile.
 
 ```bash
 $ ../nstools/bin/nsconfig .. -list-vars
+Project variables list:
+name           | description
+---------------|---------------------------------------------------------
+simd           | SIMD extension to use
+optional_flags | Optional flags like FMA, FP16...
+mpfr           | MPFR compilation flags (for tests only)
+sleef          | Sleef compilation flags (for benchmarks only)
+benchmark      | Google benchmark compilation flags (for benchmarks only)
 ```
 
 Finally one can choose what to do and compile NSIMD and its tests.
@@ -229,10 +237,37 @@ $ ninja
 $ ninja tests
 ```
 
+Note that MPFR (<https://www.mpfr.org/>) is needed to compile the tests. If you
+do not have the MPFR header installed on your system or if you want to use a
+custom version of MPFR you can tell nsconfig how where to find it.
+
+```bash
+$ ../nstools/bin/nsconfig .. -Dsimd=avx2 \
+      -Dmpfr="-Iwhere/is/mpfr/include -Lwhere/is/mpfr/lib -lmpfr"
+$ ninja
+$ ninja tests
+```
+
 Nsconfig comes with nstest a small tool to execute tests.
 
 ```bash
 $ ../nstools/bin/nstest -j20
+```
+
+## Cross compilation
+
+It is useful to cross-compile for example when you are on a Intel workstation
+and want to compile for a Raspberry Pi. Nsconfig generate some code, compile
+and run it to obtain informations on the C or C++ compilers. When cross
+compiling, unless you configured your Linux box with binfmt\_misc to
+tranparently execute aarch64 binaries on a x86\_64 host you need to give
+nsconfig all the informations about the compilers so that it does not need to
+run aarch64 code on x86\_64 host.
+
+```bash
+$ ../nstools/bin/nsconfig .. -Dsimd=aarch64 \
+      -ccomp=gcc,aarch64-linux-gnu-gcc,10.0,aarch64 \
+      -cppcomp=gcc,aarch64-linux-gnu-g++,10.0,aarch64
 ```
 
 # Philosophy of NSIMD
