@@ -233,14 +233,14 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                                 for typ in common.types])
     else:
         c_code += '\n'.join(['''
-                             typedef struct nsimd_{simd_ext}_v{typ}x2 {{
+                             typedef NSIMD_STRUCT nsimd_{simd_ext}_v{typ}x2 {{
                                nsimd_{simd_ext}_v{typ} v0;
                                nsimd_{simd_ext}_v{typ} v1;
                              }} nsimd_{simd_ext}_v{typ}x2;
                              '''.format(simd_ext=simd_ext, typ=typ) \
                                         for typ in common.types])
         c_code += '\n'.join(['''
-                             typedef struct nsimd_{simd_ext}_v{typ}x3 {{
+                             typedef NSIMD_STRUCT nsimd_{simd_ext}_v{typ}x3 {{
                                nsimd_{simd_ext}_v{typ} v0;
                                nsimd_{simd_ext}_v{typ} v1;
                                nsimd_{simd_ext}_v{typ} v2;
@@ -248,7 +248,7 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                              '''.format(simd_ext=simd_ext, typ=typ) \
                                         for typ in common.types])
         c_code += '\n'.join(['''
-                             typedef struct nsimd_{simd_ext}_v{typ}x4 {{
+                             typedef NSIMD_STRUCT nsimd_{simd_ext}_v{typ}x4 {{
                                nsimd_{simd_ext}_v{typ} v0;
                                nsimd_{simd_ext}_v{typ} v1;
                                nsimd_{simd_ext}_v{typ} v2;
@@ -257,15 +257,16 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                              '''.format(simd_ext=simd_ext, typ=typ) \
                                         for typ in common.types])
         c_code += '\n\n'
-    cxx_code = '\n\n'.join(['''template <>
-                               struct simd_traits<{typ}, {simd_ext}> {{
-                                 typedef nsimd_{simd_ext}_v{typ} simd_vector;
-                                 typedef nsimd_{simd_ext}_v{typ}x2 simd_vectorx2;
-                                 typedef nsimd_{simd_ext}_v{typ}x3 simd_vectorx3;
-                                 typedef nsimd_{simd_ext}_v{typ}x4 simd_vectorx4;
-                                 typedef nsimd_{simd_ext}_vl{typ} simd_vectorl;
-                               }};'''.format(typ=t, simd_ext=simd_ext)
-                               for t in common.types])
+    cxx_code = \
+        '\n\n'.join(['''template <>
+                        struct simd_traits<{typ}, {simd_ext}> {{
+                          typedef nsimd_{simd_ext}_v{typ} simd_vector;
+                          typedef nsimd_{simd_ext}_v{typ}x2 simd_vectorx2;
+                          typedef nsimd_{simd_ext}_v{typ}x3 simd_vectorx3;
+                          typedef nsimd_{simd_ext}_v{typ}x4 simd_vectorx4;
+                          typedef nsimd_{simd_ext}_vl{typ} simd_vectorl;
+                        }};'''.format(typ=t, simd_ext=simd_ext)
+                        for t in common.types])
     with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_{platform}_{SIMD_EXT}_TYPES_H
                      #define NSIMD_{platform}_{SIMD_EXT}_TYPES_H

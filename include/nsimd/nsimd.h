@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -474,6 +474,15 @@ namespace nsimd {
   #define NSIMD_SIMD cpu
   #define NSIMD_PLATFORM cpu
 
+#endif
+
+// ----------------------------------------------------------------------------
+// For ARM SVE we need a special struct
+
+#ifdef NSIMD_SVE
+  #define NSIMD_STRUCT __sizeless_struct
+#else
+  #define NSIMD_STRUCT struct
 #endif
 
 /* ------------------------------------------------------------------------- */

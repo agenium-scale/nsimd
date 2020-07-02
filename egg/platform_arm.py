@@ -160,10 +160,12 @@ def get_logical_type(opts, simd_ext, typ, nsimd_typ):
     elif simd_ext in sve:
         if opts.sve_emulate_bool:
             return get_type(opts, simd_ext, 'u' + typ[1:], nsimd_typ)
-        else:
+        elif simd_ext in fixed_sized_sve:
             return \
             'typedef svbool_t {} __attribute__((arm_sve_vector_bits({})));'. \
             format(nsimd_typ, simd_ext[3:])
+        else:
+            return 'typedef svbool_t {};'.format(nsimd_typ)
 
 def get_nb_registers(simd_ext):
     if simd_ext in neon:
@@ -192,12 +194,9 @@ def get_SoA_type(simd_ext, typ, deg, nsimd_typ):
 
 
 def has_compatible_SoA_types(simd_ext):
-    if simd_ext in neon + fixed_sized_sve:
-        return False
-    elif simd_ext == 'sve':
-        return True
-    else:
+    if simd_ext not in neon + sve:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+    return False
 
 # -----------------------------------------------------------------------------
 
@@ -530,19 +529,21 @@ def load1234(opts, simd_ext, typ, deg):
                 '\nreturn ret;\n'
             else:
                 return normal
-    elif simd_ext == 'sve' or (simd_ext in fixed_sized_sve and deg == 1):
-        return 'return svld{deg}_{suf}({svtrue}, {in0});'. \
-               format(deg=deg, **fmtspec)
     else:
-        return \
-        '''nsimd_{simd_ext}_v{typ}x{deg} ret;
-           {sve_typ} buf = svld{deg}_{suf}({svtrue}, {in0});
-           {assignment}
-           return ret;'''.format(assignment=\
-           '\n'.join(['ret.v{i} = svget{deg}_{suf}(buf, {i});'. \
-                      format(i=i, deg=deg, **fmtspec) for i in range(deg)]),
-                      sve_typ=get_native_soa_typ('sve', typ, deg), deg=deg,
-                      **fmtspec)
+        if deg == 1:
+            return 'return svld{deg}_{suf}({svtrue}, {in0});'. \
+                   format(deg=deg, **fmtspec)
+        else:
+            return \
+            '''nsimd_{simd_ext}_v{typ}x{deg} ret;
+               {sve_typ} buf = svld{deg}_{suf}({svtrue}, {in0});
+               {assignment}
+               return ret;'''.format(assignment=\
+               '\n'.join(['ret.v{i} = svget{deg}_{suf}(buf, {i});'. \
+                          format(i=i, deg=deg, **fmtspec) \
+                          for i in range(deg)]),
+                          sve_typ=get_native_soa_typ('sve', typ, deg),
+                          deg=deg, **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Mask loads
@@ -697,12 +698,7 @@ def store1234(opts, simd_ext, typ, deg):
         if deg == 1:
             return 'svst{deg}_{suf}({svtrue}, {in0}, {in1});'. \
                    format(deg=deg, **fmtspec)
-        if simd_ext == 'sve':
-            fill_soa_typ = '\n'.join(['tmp.v{im1} = {{in{i}}};'. \
-                  format(im1=i - 1, i=i).format(**fmtspec) \
-                  for i in range(1, deg + 1)])
-        else:
-            fill_soa_typ = \
+        fill_soa_typ = \
             '\n'.join(['tmp = svset{{deg}}_{{suf}}(tmp, {im1}, {{in{i}}});'. \
             format(im1=i - 1, i=i).format(deg=deg, **fmtspec) \
             for i in range(1, deg + 1)])

@@ -31,15 +31,6 @@ SOFTWARE.
 namespace nsimd {
 
 // ----------------------------------------------------------------------------
-// For ARM SVE we need a special struct
-
-#ifdef NSIMD_SVE
-#define NSIMD_STRUCT __sizeless_struct
-#else
-#define NSIMD_STRUCT struct
-#endif
-
-// ----------------------------------------------------------------------------
 // "mimic" static_assert in C++98
 
 template <bool> struct nsimd_static_assert;
