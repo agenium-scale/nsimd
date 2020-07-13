@@ -1246,19 +1246,32 @@ template <typename T, typename S> T to(S value) {
 /* ------------------------------------------------------------------------- */
 /* SIMD-related functions */
 
-#ifdef NSIMD_IS_MSVC
-#pragma warning(push)
-/* We do not want MSVC to warn us about unary minus on an unsigned type.
-   It is well defined in standards: unsigned arithmetic is done modulo
-   2^n. */
-#pragma warning(disable : 4146)
+/* clang-format off */
+
+#if defined(NSIMD_IS_MSVC)
+  /* We do not want MSVC to warn us about unary minus on an unsigned type.
+     It is well defined in standards: unsigned arithmetic is done modulo
+     2^n. */
+  #pragma warning(push)
+  #pragma warning(disable : 4146)
+#elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
+  /* When compiling with Clang with C++98 or C++03, some Intel intrinsics are
+     implemented as macros which contain long long but long long are not
+     standard. To get rid of a lot of warning we push the corresponding
+     warning here. */
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wc++11-long-long"
 #endif
 
 #include <nsimd/functions.h>
 
-#ifdef NSIMD_IS_MSVC
-#pragma warning(pop)
+#if defined(NSIMD_IS_MSVC)
+  #pragma warning(pop)
+#elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
+  #pragma clang diagnostic pop
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 /* If_else cannot be auto-generated */
