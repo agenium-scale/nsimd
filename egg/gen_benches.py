@@ -977,6 +977,8 @@ def gen_code(f, simd, typ, category):
         return TODO(f)
     if f.match_sig('v * s'):
         return TODO(f)
+    if f.match_sig('l * p'):
+        return TODO(f)
     if f.match_sig('p *'):
         return TODO(f)
     if f.match_sig('v * v p'):
