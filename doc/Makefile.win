@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2020 Agenium Scale
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,3 +37,6 @@ md2html.exe: libns2.lib md2html.cpp Makefile.win
 	$(CXX) $(CXX_FLAGS) /I$(NS2_ROOT)\include md2html.cpp libns2.lib \
 	       Shlwapi.lib Dbghelp.lib /Fe$@
 
+what_is_wrapped.exe: libns2.lib what_is_wrapped.cpp Makefile.win
+	$(CXX) $(CXX_FLAGS) /I$(NS2_ROOT)\include what_is_wrapped.cpp \
+	       libns2.lib Shlwapi.lib Dbghelp.lib /Fe$@

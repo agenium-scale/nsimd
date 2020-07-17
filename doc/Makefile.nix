@@ -35,3 +35,6 @@ libns2.a: $(NS2_ROOT)/../.git/logs/HEAD Makefile.nix
 md2html: libns2.a md2html.cpp Makefile.nix
 	$(CXX) $(CXX_FLAGS) md2html.cpp -I$(NS2_ROOT)/include -o $@ -L. -lns2
 
+what_is_wrapped: libns2.a what_is_wrapped.cpp Makefile.nix
+	$(CXX) $(CXX_FLAGS) what_is_wrapped.cpp -I$(NS2_ROOT)/include -o $@ \
+	       -L. -lns2
