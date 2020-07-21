@@ -42,6 +42,7 @@ brakets and finally:
 The produced markdown contains:
 - E for emulation
 - T for trick with other intrinsics
+- NOOP for noop
 - a link to the Intel/Arm documentation about the intrinsic otherwise
 
 Well all that to say that a few hundreds of simple C++ code is more that
@@ -56,21 +57,49 @@ in the AST instead of the documented intrinsics.
 
 #include <ns2.hpp>
 
-#include <stdexcept>
 #include <utility>
 #include <string>
 #include <vector>
 
 // ----------------------------------------------------------------------------
 
+#define MAX_LEN (11 * 11)
+
+typedef std::map<std::string, std::string[MAX_LEN]> table_t;
+
 std::string type_names_str("i8,u8,i16,u16,i32,u32,i64,u64,f16,f32,f64");
-std::vector<std::string> type_names(ns2::split(type_names_str, ","));
-
-#define LEN 11
-
-typedef std::map<std::string, std::string[LEN]> table_t;
 
 const size_t not_found = ~((size_t)0);
+
+// ----------------------------------------------------------------------------
+
+int nbits(std::string const &typ) {
+  if (typ == "i8" || typ == "u8") {
+    return 8;
+  } else {
+    return (16 * (typ[1] - 'a')) + (typ[2] - 'a');
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+std::vector<std::string> get_types_names(std::string const &output) {
+  std::vector<std::string> list(ns2::split(type_names_str, ","));
+  if (output == "same") {
+    return list;
+  }
+  std::vector<std::string> ret;
+  for (size_t i = 0; i < list.size(); i++) {
+    for (size_t j = 0; j < list.size(); j++) {
+      if ((output == "same_size" && nbits(list[j]) == nbits(list[i])) ||
+          (output == "bigger_size" && nbits(list[j]) == 2 * nbits(list[i])) ||
+          (output == "lesser_size" && 2 * nbits(list[j]) == nbits(list[i]))) {
+        ret.push_back(list[j] + "_" + list[i]);
+      }
+    }
+  }
+  return ret;
+}
 
 // ----------------------------------------------------------------------------
 
@@ -86,10 +115,10 @@ size_t find(std::vector<std::string> const &haystack,
 
 // ----------------------------------------------------------------------------
 
-size_t find_by_prefix(std::vector<std::string> const &haystack,
-                      std::string const &needle) {
-  for (size_t i = 0; i < haystack.size(); i++) {
-    if (ns2::startswith(haystack[i], needle)) {
+size_t find_by_prefix(std::vector<std::string> const &needles,
+                      std::string const &haystack) {
+  for (size_t i = 0; i < needles.size(); i++) {
+    if (ns2::startswith(haystack, needles[i])) {
       return i;
     }
   }
@@ -99,6 +128,7 @@ size_t find_by_prefix(std::vector<std::string> const &haystack,
 // ----------------------------------------------------------------------------
 
 void parse_file(std::string const &input_vars, std::string const &simd_ext,
+                std::vector<std::string> const &types_names,
                 std::string const &op_name, std::string const &filename,
                 table_t *table_) {
   table_t &table = *table_;
@@ -145,9 +175,9 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
   }
 
   // finally search for intrinsics
-  for (size_t typ = 0; typ < type_names.size(); typ++) {
+  for (size_t typ = 0; typ < types_names.size(); typ++) {
     std::string func_name("nsimd_" + op_name + "_" + simd_ext + "_" +
-                          type_names[typ]);
+                          types_names[typ]);
     // find func_name
     size_t pos = find(tokens, func_name);
     if (pos == not_found) {
@@ -178,10 +208,13 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
       }
     }
 
+    // if there is no token inside {} then it must be a noop
     // if there is only one token inside {} then it must be the intrinsic
     // if there is a for loop then it must be emulation
     // if there are several tokens but no for then it must be a trick
-    if (i0 + 2 == i1) {
+    if (i0 + 1 == i1) {
+      table[op_name][typ] = "NOOP";
+    } else if (i0 + 2 == i1) {
       table[op_name][typ] = "[" + tokens[i0 + 1] + "]";
       if (simd_ext == "neon128" || simd_ext == "aarch64" ||
           ns2::startswith(simd_ext, "sve")) {
@@ -208,27 +241,51 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
 
 // ----------------------------------------------------------------------------
 
+std::string pp(std::string const &typ) {
+  if (typ.find('_') == std::string::npos) {
+    return typ;
+  } else {
+    std::vector<std::string> typs(ns2::split(typ, '_'));
+    return typs[1] + " --> " + typs[0];
+  }
+}
+
+// ----------------------------------------------------------------------------
+
 int main(int argc, char **argv) {
-  if ((argc % 2) != 1 || argc <= 4) {
-    std::cout << "Usage: " << argv[0]
-              << " a0,a1,a2 simd_ext operator1 file1 operator2 file2 ..."
-              << std::endl;
+  if ((argc % 2) != 0 || argc <= 5) {
+    std::cout
+        << "Usage: " << argv[0]
+        << " a0,a1,a2 simd_ext output_type operator1 file1 operator2 file2 "
+           "...\n"
+        << "where output_type is (same|same_size|bigger_size|lesser_size)"
+        << std::endl;
     return 1;
   }
 
   std::string input_vars(argv[1]);
   std::string simd_ext(argv[2]);
+  std::string output_type(argv[3]);
+  std::vector<std::string> types_names = get_types_names(output_type);
   table_t table;
 
-  for (int i = 3; i < argc; i += 2) {
-    parse_file(input_vars, simd_ext, argv[i], argv[i + 1], &table);
+  for (int i = 4; i < argc; i += 2) {
+    parse_file(input_vars, simd_ext, types_names, argv[i], argv[i + 1],
+               &table);
   }
+
+  std::cout << "| " << ns2::join(types_names, " | ") << " |\n";
+  std::cout << "|";
+  for (size_t i = 0; i < types_names.size(); i++) {
+    std::cout << "---|";
+  }
+  std::cout << "\n";
 
   for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
     std::cout << it->first << ":\n";
-    const std::string (&row)[LEN] = it->second;
-    for (size_t i = 0; i < LEN; i++) {
-      std::cout << "  " << type_names[i] << ": " << row[i] << "\n";
+    const std::string (&row)[MAX_LEN] = it->second;
+    for (size_t i = 0; i < types_names.size(); i++) {
+      std::cout << "  " << pp(types_names[i]) << ": " << row[i] << "\n";
     }
   }
 
