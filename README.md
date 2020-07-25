@@ -1,4 +1,15 @@
-[![Build Status](https://travis-ci.org/agenium-scale/nsimd.svg?branch=master)](https://travis-ci.org/agenium-scale/nsimd)
+New version coming soon
+=======================
+
+Our next release of NSIMD is almost ready! It will add numerous fixes +
+support for NVIDIA and AMD GPUs. We are in the process of installing our
+new CI at Agenium Scale and we will wait until it is done to run all the
+tests of NSIMD on CPUs and GPUs because Travis' 50 minutes are not enough
+now. We apologize for the delay.
+
+In the meantime you can checkout and test the new version by cloning
+the [spmd](https://github.com/agenium-scale/nsimd/tree/spmd) branch of
+NSIMD.
 
 Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
 
