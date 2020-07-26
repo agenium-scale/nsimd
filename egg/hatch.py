@@ -198,6 +198,7 @@ def main():
     opts = parse_args(sys.argv[1:])
     opts.script_dir = script_dir
     opts.modules_list = None
+    opts.platforms_list = None
 
     ## Gather all SIMD dependencies
     opts.simd = common.get_simds_deps_from_opts(opts)

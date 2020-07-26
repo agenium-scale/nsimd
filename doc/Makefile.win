@@ -18,12 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-NS2_ROOT         = ..\nstools\ns2
-CXX              = cl
-CXX_FLAGS        = /nologo /Ox /W3 /EHsc /DNS_NO_DLLSPEC \
-                   /D_CRT_SECURE_NO_WARNINGS
+NS2_ROOT  = ..\nstools\ns2
+CXX       = cl
+CXX_FLAGS = /nologo /Ox /W3 /EHsc /DNS_NO_DLLSPEC /D_CRT_SECURE_NO_WARNINGS
 
-all: md2html.exe
+all: md2html.exe what_is_wrapped.exe
 
 libns2.lib: $(NS2_ROOT)\..\.git\logs\HEAD Makefile.win
 	if exist libns2 rd /Q /S libns2

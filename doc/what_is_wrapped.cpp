@@ -51,6 +51,9 @@ as Clang. Note that using a real parser will be counter productive as some
 intrinsics are implemented as macros to compiler builtin which then appear
 in the AST instead of the documented intrinsics.
 
+This code is completely non-optimized and we don't care because it does not
+take time to execute and it is not our purpose to optimize this code.
+
 */
 
 // ----------------------------------------------------------------------------
@@ -68,6 +71,7 @@ in the AST instead of the documented intrinsics.
 typedef std::map<std::string, std::string[MAX_LEN]> table_t;
 
 std::string type_names_str("i8,u8,i16,u16,i32,u32,i64,u64,f16,f32,f64");
+std::vector<std::string> types_list(ns2::split(type_names_str, ","));
 
 const size_t not_found = ~((size_t)0);
 
@@ -84,7 +88,7 @@ int nbits(std::string const &typ) {
 // ----------------------------------------------------------------------------
 
 std::vector<std::string> get_types_names(std::string const &output) {
-  std::vector<std::string> list(ns2::split(type_names_str, ","));
+  std::vector<std::string> const& list = types_list;
   if (output == "same") {
     return list;
   }
@@ -127,6 +131,18 @@ size_t find_by_prefix(std::vector<std::string> const &needles,
 
 // ----------------------------------------------------------------------------
 
+int is_number(std::string const &s) {
+  for (size_t i = 0; i < s.size(); i++) {
+    if (s[i] != 'x' && s[i] != 'l' && s[i] != 'L' && s[i] != 'u' &&
+        s[i] != 'U' && !(s[i] >= '0' && s[i] <= '9')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// ----------------------------------------------------------------------------
+
 void parse_file(std::string const &input_vars, std::string const &simd_ext,
                 std::vector<std::string> const &types_names,
                 std::string const &op_name, std::string const &filename,
@@ -165,7 +181,7 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
       // We also remove svptrue_* as they are everywhere for SVE and all
       // casts as they incur no opcode and are often used for intrinsics
       // not supporting certain types
-      if (tokens0[i].size() == 0 ||
+      if (tokens0[i].size() == 0 || is_number(tokens0[i]) ||
           find_by_prefix(to_be_removed_by_prefix, tokens0[i]) != not_found ||
           find(to_be_removed, tokens0[i]) != not_found) {
         continue;
@@ -181,7 +197,7 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
     // find func_name
     size_t pos = find(tokens, func_name);
     if (pos == not_found) {
-      std::cout << "WARNING: cannot find function '" << func_name << "' in '"
+      std::cerr << "WARNING: cannot find function '" << func_name << "' in '"
                 << filename << "'\n";
       continue;
     }
@@ -189,7 +205,7 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
     // find opening {
     size_t i0 = find(tokens, "{", pos);
     if (i0 == not_found) {
-      std::cout << "WARNING: cannot find opening '{' for '" << func_name
+      std::cerr << "WARNING: cannot find opening '{' for '" << func_name
                 << "' in '" << filename << "'\n";
       continue;
     }
@@ -214,8 +230,8 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
     // if there are several tokens but no for then it must be a trick
     if (i0 + 1 == i1) {
       table[op_name][typ] = "NOOP";
-    } else if (i0 + 2 == i1) {
-      table[op_name][typ] = "[" + tokens[i0 + 1] + "]";
+    } else if (i0 + 2 == i1 && !ns2::startswith(tokens[i0 + 1], "nsimd_")) {
+      table[op_name][typ] = "[`" + tokens[i0 + 1] + "`]";
       if (simd_ext == "neon128" || simd_ext == "aarch64" ||
           ns2::startswith(simd_ext, "sve")) {
         table[op_name][typ] +=
@@ -241,13 +257,12 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
 
 // ----------------------------------------------------------------------------
 
-std::string pp(std::string const &typ) {
-  if (typ.find('_') == std::string::npos) {
-    return typ;
-  } else {
-    std::vector<std::string> typs(ns2::split(typ, '_'));
-    return typs[1] + " --> " + typs[0];
+std::string md_row(int nb_col, std::string const &cell_content) {
+  std::string ret("|");
+  for (int i = 0; i < nb_col; i++) {
+    ret += cell_content + "|";
   }
+  return ret;
 }
 
 // ----------------------------------------------------------------------------
@@ -274,18 +289,40 @@ int main(int argc, char **argv) {
                &table);
   }
 
-  std::cout << "| " << ns2::join(types_names, " | ") << " |\n";
-  std::cout << "|";
-  for (size_t i = 0; i < types_names.size(); i++) {
-    std::cout << "---|";
-  }
-  std::cout << "\n";
-
-  for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
-    std::cout << it->first << ":\n";
-    const std::string (&row)[MAX_LEN] = it->second;
-    for (size_t i = 0; i < types_names.size(); i++) {
-      std::cout << "  " << pp(types_names[i]) << ": " << row[i] << "\n";
+  if (output_type == "same") {
+    std::cout << "|   | " << ns2::join(types_list, " | ") << " |\n"
+              << md_row(12, "---") << "\n";
+    for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
+      std::cout << "| " << it->first << " |";
+      const std::string(&row)[MAX_LEN] = it->second;
+      for (size_t i = 0; i < types_list.size(); i++) {
+        std::cout << " " << row[i] << " |";
+      }
+      std::cout << "\n";
+    }
+    std::cout << "\n";
+  } else {
+    for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
+      std::cout << "| " << it->first << " " << md_row(11, "   ") << "\n"
+                << md_row(12, "---") << "\n"
+                << "|   | " << ns2::join(types_list, " | ") << " |\n";
+      const std::string(&row)[MAX_LEN] = it->second;
+      for (size_t i = 0; i < types_list.size(); i++) {
+        std::cout << "| " << types_list[i] << " | ";
+        for (size_t j = 0; j < types_list.size(); j++) {
+          std::string cell_content("  ");
+          std::string typ(types_list[j] + "_" + types_list[i]);
+          for (size_t k = 0; k < types_names.size(); k++) {
+            if (typ == types_names[k]) {
+              cell_content = " " + row[k];
+              break;
+            }
+          }
+          std::cout << cell_content << " |";
+        }
+        std::cout << "\n";
+      }
+      std::cout << "\n";
     }
   }
 

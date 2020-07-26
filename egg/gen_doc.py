@@ -372,6 +372,7 @@ def gen_modules_md(opts):
         return
     with common.open_utf8(opts, filename) as fout:
         fout.write('''# Modules
+
 NSIMD comes with several additional modules. A module provides a set of
 functionnalities that are usually not at the same level as SIMD intrinsics
 and/or that do not provide all C and C++ APIs. These functionnalities are
@@ -388,9 +389,263 @@ abstract SIMD intrinsics. Below is the exhaustive list of modules.
 
 # -----------------------------------------------------------------------------
 
+def build_exe_for_doc(opts):
+    if not opts.list_files:
+        doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+        if platform.system() == 'Windows':
+            code = os.system('cd {} && nmake /F Makefile.win'. \
+                             format(os.path.normpath(doc_dir)))
+        else:
+            code = os.system('cd {} && make -f Makefile.nix'. \
+                             format(os.path.normpath(doc_dir)))
+        if code == 0:
+            common.myprint(opts, 'Build successful')
+        else:
+            common.myprint(opts, 'Build failed')
+
+# -----------------------------------------------------------------------------
+
+def gen_what_is_wrapped(opts):
+    common.myprint(opts, 'Generating "which intrinsics are wrapped"')
+    build_exe_for_doc(opts)
+    wrapped = 'what_is_wrapped.exe' if platform.system() == 'Windows' \
+                                    else 'what_is_wrapped'
+    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+    full_path_wrapped = os.path.join(doc_dir, wrapped)
+    if not os.path.isfile(full_path_wrapped):
+        common.myprint(opts, '{} not found'.format(wrapped))
+        return
+
+    # Content for indexing files created in this function
+    index = '# Intrinsics that are wrapped\n'
+
+    # Build command line
+    cmd0 = '{} {},{},{},{},{},{}'.format(full_path_wrapped, common.in0,
+                                         common.in1, common.in2, common.in3,
+                                         common.in4, common.in5)
+
+    # For now we only list Intel and Arm intrinsics
+    simd_exts = common.x86_simds + common.arm_simds
+    for p in common.get_platforms(opts):
+        index += '\n## Platform {}\n\n'.format(p)
+        for simd_ext in opts.platforms_list[p].get_simd_exts():
+            if simd_ext not in simd_exts:
+                continue
+            md = os.path.join(common.get_markdown_dir(opts),
+                              'wrapped_intrinsics_for_{}.md'.format(simd_ext))
+            index += '- [{}](wrapped_intrinsics_for_{}.md)\n'. \
+                     format(simd_ext.upper(), simd_ext)
+            ops = [[], [], [], []]
+            for op_name, operator in operators.items():
+                c_src = os.path.join(opts.include_dir, p, simd_ext,
+                                     '{}.h'.format(op_name))
+                ops[operator.output_to].append('{} "{}"'. \
+                                               format(op_name, c_src))
+            if not common.can_create_filename(opts, md):
+                continue
+            with common.open_utf8(opts, md) as fout:
+                fout.write('# Intrinsics wrapped for {}\n\n'. \
+                           format(simd_ext.upper()))
+                fout.write('Notations are as follows:\n'
+                           '- `T` for trick usually using other intrinsics\n'
+                           '- `E` for scalar emulation\n'
+                           '- `NOOP` for no operation\n'
+                           '- `intrinsic` for the actual wrapped intrinsic\n'
+                           '\n')
+            cmd = '{} {} same {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_SAME_TYPE]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"same"')
+                continue
+
+            cmd = '{} {} same_size {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_SAME_SIZE_TYPES]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"same_size"')
+                continue
+
+            cmd = '{} {} bigger_size {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_UP_TYPES]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"bigger_size"')
+                continue
+
+            cmd = '{} {} lesser_size {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_DOWN_TYPES]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"lesser_size"')
+                continue
+
+    md = os.path.join(common.get_markdown_dir(opts), 'wrapped_intrinsics.md')
+    if common.can_create_filename(opts, md):
+        with common.open_utf8(opts, md) as fout:
+            fout.write(index)
+
+# -----------------------------------------------------------------------------
+
+def get_html_dir(opts):
+    return os.path.join(opts.script_dir, '..', 'doc', 'html')
+
+def get_html_api_file(opts, name, module=''):
+    root = get_html_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, 'api_{}.html'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_api_{}.html'.format(module, op_name))
+
+def get_html_file(opts, name, module=''):
+    root = get_html_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, '{}.html'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
+
+doc_header = '''\
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset=\"utf-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+    <title>{}</title>
+    <style type=\"text/css\">
+      body {{
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding:0 10px
+      }}
+      h1,h2,h3 {{
+        line-height:1.2
+      }}
+      table,th, td {{
+        border: 1px solid gray;
+        border-collapse : collapse;
+        padding: 1px 3px;
+      }}
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src=\"assets/polyfill.min.js\"></script>
+    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\"></script>
+    <!-- Highlight.js -->
+    <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
+    <script src=\"assets/highlight.min.js\"></script>
+    <script src=\"assets/cpp.min.js\"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src=\"img/logo.svg\">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href=\"index.html\">Index</a> |
+  <a href=\"quick_start.html\">Quick Start</a> |
+  <a href=\"tutorials.html\">Tutorials</a> |
+  <a href=\"faq.html\">FAQ</a> |
+  <a href=\"contribute.html\">Contribute</a> |
+  <a href=\"overview.html\">API overview</a> |
+  <a href=\"api.html\">API reference</a> |
+  <a href=\"modules.html\">Modules</a>
+  <hr>
+</div>
+{}
+'''
+
+doc_footer = '''\
+  </body>
+</html>
+'''
+
+def get_html_header(opts, title, filename):
+    # check if filename is part of a module doc
+    for mod in opts.modules_list:
+        if filename.startswith('module_{}_'.format(mod)):
+            links = eval('opts.modules_list[mod].{}.hatch.doc_menu()'. \
+                         format(mod))
+            name = eval('opts.modules_list[mod].{}.hatch.name()'.format(mod))
+            html = '<div style="text-align: center; margin-bottom: 1em;">\n'
+            html += '<b>{} module documentation</b>\n'.format(name)
+            if len(links) > 0:
+                html += '</div>\n'
+                html += \
+                '<div style="text-align: center; margin-bottom: 1em;">\n'
+                html += ' | '.join(['<a href=\"module_{}_{}.html\">{}</a>'. \
+                                    format(mod, href, label) \
+                                    for label, href in links.items()])
+            html += '\n<hr>\n</div>\n'
+            return doc_header.format(title, html)
+    return doc_header.format(title, '')
+
+def get_html_footer():
+    return doc_footer
+
+# -----------------------------------------------------------------------------
+
+def gen_doc_html(opts, title):
+    if not opts.list_files:
+        build_exe_for_doc(opts)
+        md2html = 'md2html.exe' if platform.system() == 'Windows' \
+                                else 'md2html'
+        doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+        full_path_md2html = os.path.join(doc_dir, md2html)
+        if not os.path.isfile(full_path_md2html):
+            common.myprint(opts, '{} not found'.format(md2html))
+            return
+
+    # get all markdown files
+    md_dir = common.get_markdown_dir(opts)
+    html_dir = get_html_dir(opts)
+
+    if not os.path.isdir(html_dir):
+        mkdir_p(html_dir)
+
+    doc_files = []
+    for filename in os.listdir(md_dir):
+        name =  os.path.basename(filename)
+        if name.endswith('.md'):
+            doc_files.append(os.path.splitext(name)[0])
+
+    if opts.list_files:
+        ## list gen files
+        for filename in doc_files:
+            input_name = os.path.join(md_dir, filename + '.md')
+            output_name = os.path.join(html_dir, filename + '.html')
+            print(output_name)
+    else:
+        ## gen html files
+        footer = get_html_footer()
+        tmp_file = os.path.join(doc_dir, 'tmp.html')
+        for filename in doc_files:
+            header = get_html_header(opts, title, filename)
+            input_name = os.path.join(md_dir, filename + '.md')
+            output_name = os.path.join(html_dir, filename + '.html')
+            os.system('{} "{}" "{}"'.format(full_path_md2html, input_name,
+                                            tmp_file))
+            with common.open_utf8(opts, output_name) as fout:
+                fout.write(header)
+                with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                    fout.write(fin.read())
+                fout.write(footer)
+
 def gen_html(opts):
     common.myprint(opts, 'Generating HTML documentation')
-    common.gen_doc_html(opts, 'NSIMD documentation')
+    gen_doc_html(opts, 'NSIMD documentation')
 
 # -----------------------------------------------------------------------------
 
@@ -398,4 +653,5 @@ def doit(opts):
     gen_overview(opts)
     gen_doc(opts)
     gen_modules_md(opts)
+    gen_what_is_wrapped(opts)
     gen_html(opts) # This must be last

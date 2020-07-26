@@ -18,11 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-NS2_ROOT         = ../nstools/ns2
-CXX              = c++
-CXX_FLAGS        = -O2 -Wall -Wextra -pedantic -std=c++11
+NS2_ROOT  = ../nstools/ns2
+CXX       = c++
+CXX_FLAGS = -O2 -Wall -Wextra -pedantic -std=c++11
 
-all: md2html
+all: md2html what_is_wrapped
 
 libns2.a: $(NS2_ROOT)/../.git/logs/HEAD Makefile.nix
 	rm -rf libns2

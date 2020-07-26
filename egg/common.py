@@ -515,6 +515,8 @@ def parse_signature(signature):
 # Load platforms
 
 def get_platforms(opts):
+    if opts.platforms_list != None:
+        return opts.platforms_list
     ret = dict()
     path = opts.script_dir
     myprint(opts, 'Searching platforms in "{}"'.format(path))
@@ -523,6 +525,7 @@ def get_platforms(opts):
             mod_name = mod_file[:-3]
             myprint(opts, 'Found new platform: {}'.format(mod_name[9:]))
             ret[mod_name[9:]] = __import__(mod_name)
+    opts.platforms_list = ret
     return ret
 
 # -----------------------------------------------------------------------------
@@ -1160,101 +1163,12 @@ def nsimd_category(category):
 # ------------------------------------------------------------------------------
 # Doc common
 
-doc_header = '''\
-<!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset=\"utf-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-    <title>{}</title>
-    <style type=\"text/css\">
-      body {{
-        /*margin:40px auto;*/
-        margin:10px auto;
-        /*max-width:650px;*/
-        max-width:800px;
-        /*line-height:1.6;*/
-        line-height:1.4;
-        /*font-size:18px;*/
-        color:#444;
-        padding:0 10px
-      }}
-      h1,h2,h3 {{
-        line-height:1.2
-      }}
-      table,th, td {{
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
-      }}
-    </style>
-    <!-- https://www.mathjax.org/#gettingstarted -->
-    <script src=\"assets/polyfill.min.js\"></script>
-    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\"></script>
-    <!-- Highlight.js -->
-    <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
-    <script src=\"assets/highlight.min.js\"></script>
-    <script src=\"assets/cpp.min.js\"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-  </head>
-<body>
-
-<div style="text-align: center; margin-bottom: 1em;">
-  <img src=\"img/logo.svg\">
-  <hr>
-</div>
-<div style="text-align: center; margin-bottom: 1em;">
-  <b>NSIMD documentation</b>
-</div>
-<div style="text-align: center; margin-bottom: 1em;">
-  <a href=\"index.html\">Index</a> |
-  <a href=\"quick_start.html\">Quick Start</a> |
-  <a href=\"tutorials.html\">Tutorials</a> |
-  <a href=\"faq.html\">FAQ</a> |
-  <a href=\"contribute.html\">Contribute</a> |
-  <a href=\"overview.html\">API overview</a> |
-  <a href=\"api.html\">API reference</a> |
-  <a href=\"modules.html\">Modules</a>
-  <hr>
-</div>
-{}
-'''
-
-doc_footer = '''\
-  </body>
-</html>
-'''
-
 def to_filename(op_name):
     valid = string.ascii_letters + string.digits
     ret = ''
     for c in op_name:
         ret += '-' if c not in valid else c
     return ret
-
-def get_html_header(opts, title, filename):
-    # check if filename is part of a module doc
-    for mod in opts.modules_list:
-        if filename.startswith('module_{}_'.format(mod)):
-            links = eval('opts.modules_list[mod].{}.hatch.doc_menu()'. \
-                         format(mod))
-            name = eval('opts.modules_list[mod].{}.hatch.name()'.format(mod))
-            html = '<div style="text-align: center; margin-bottom: 1em;">\n'
-            html += '<b>{} module documentation</b>\n'.format(name)
-            if len(links) > 0:
-                html += '</div>\n'
-                html += \
-                '<div style="text-align: center; margin-bottom: 1em;">\n'
-                html += ' | '.join(['<a href=\"module_{}_{}.html\">{}</a>'. \
-                                    format(mod, href, label) \
-                                    for label, href in links.items()])
-            html += '\n<hr>\n</div>\n'
-            return doc_header.format(title, html)
-    return doc_header.format(title, '')
-
-def get_html_footer():
-    return doc_footer
 
 def get_markdown_dir(opts):
     return os.path.join(opts.script_dir, '..', 'doc', 'markdown')
@@ -1275,76 +1189,3 @@ def get_markdown_file(opts, name, module=''):
     else:
         return os.path.join(root, 'module_{}_{}.md'.format(module, op_name))
 
-def get_html_dir(opts):
-    return os.path.join(opts.script_dir, '..', 'doc', 'html')
-
-def get_html_api_file(opts, name, module=''):
-    root = get_html_dir(opts)
-    op_name = to_filename(name)
-    if module == '':
-        return os.path.join(root, 'api_{}.html'.format(op_name))
-    else:
-        return os.path.join(root, 'module_{}_api_{}.html'.format(module, op_name))
-
-def get_html_file(opts, name, module=''):
-    root = get_html_dir(opts)
-    op_name = to_filename(name)
-    if module == '':
-        return os.path.join(root, '{}.html'.format(op_name))
-    else:
-        return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
-
-def gen_doc_html(opts, title):
-    if not opts.list_files:
-        # check if md2html exists
-        md2html = 'md2html.exe' if platform.system() == 'Windows' \
-                                else 'md2html'
-        doc_dir = os.path.join(opts.script_dir, '..', 'doc')
-        full_path_md2html = os.path.join(doc_dir, md2html)
-        if not os.path.isfile(full_path_md2html):
-            if platform.system() == 'Windows':
-                code = os.system('cd {} && nmake /F Makefile.win'. \
-                                 format(os.path.normpath(doc_dir)))
-            else:
-                code = os.system('cd {} && make -f Makefile.nix'. \
-                                 format(os.path.normpath(doc_dir)))
-            if code == 0:
-                myprint(opts, '-- Created {}'.format(md2html))
-            else:
-                myprint(opts, '-- Cannot Create {}'.format(md2html))
-                return
-
-    # get all markdown files
-    md_dir = get_markdown_dir(opts)
-    html_dir = get_html_dir(opts)
-
-    if not os.path.isdir(html_dir):
-        mkdir_p(html_dir)
-
-    doc_files = []
-    for filename in os.listdir(md_dir):
-        name =  os.path.basename(filename)
-        if name.endswith('.md'):
-            doc_files.append(os.path.splitext(name)[0])
-
-    if opts.list_files:
-        ## list gen files
-        for filename in doc_files:
-            input_name = os.path.join(md_dir, filename + '.md')
-            output_name = os.path.join(html_dir, filename + '.html')
-            print(output_name)
-    else:
-        ## gen html files
-        footer = get_html_footer()
-        tmp_file = os.path.join(doc_dir, 'tmp.html')
-        for filename in doc_files:
-            header = get_html_header(opts, title, filename)
-            input_name = os.path.join(md_dir, filename + '.md')
-            output_name = os.path.join(html_dir, filename + '.html')
-            os.system('{} "{}" "{}"'.format(full_path_md2html, input_name,
-                                            tmp_file))
-            with open_utf8(opts, output_name) as fout:
-                fout.write(header)
-                with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
-                    fout.write(fin.read())
-                fout.write(footer)
