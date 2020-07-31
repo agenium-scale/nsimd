@@ -35,11 +35,8 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_div(const fpsimd_t<_lf, _rt> &a,
                                          const fpsimd_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
 
-  fpsimd_t<_lf, _rt> res;
+  fpsimd_t<_lf, _rt> res = a * simd_rec( b );
 
-  res._raw = nsimd::shl(a._raw, _rt, raw_t());
-  res._raw = nsimd::div(res._raw, b._raw, raw_t());
-  
   return res;
 }
 
