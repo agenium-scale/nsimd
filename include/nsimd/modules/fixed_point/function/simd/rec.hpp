@@ -31,50 +31,46 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
-  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-  return simd_div<_lf, _rt>(one, a0);
+//template <uint8_t _lf, uint8_t _rt>
+//NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
+//  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
+//  return simd_div<_lf, _rt>(one, a0);
+//}
+
+// Calculate 1/a via newton-raphson
+template <unsigned char _lf, unsigned char _rt>
+inline fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a)
+{
+  typedef typename fp_t<_lf, _rt>::value_type val_t;
+  typedef typename fp_t<_lf, _rt>::simd_logical log_t;
+  typedef typename fp_t<_lf, _rt>::simd_type simd_t;
+
+  fpsimd_t<_lf, _rt> one;
+  one._raw = nsimd::set1( val_t(1) , val_t() );
+  fpsimd_t<_lf, _rt> two(fp_t<_lf, _rt>(2));
+
+  fpsimd_t<_lf, _rt> zero;
+  zero._raw = nsimd::xorb( zero._raw , zero._raw , val_t() );
+  log_t negative = nsimd::lt( a._raw , zero._raw , val_t() );
+  fpsimd_t<_lf, _rt> abs = simd_abs(a);
+
+  fpsimd_t<_lf, _rt> guess;
+  val_t offset = 2*_rt - 8*val_t(sizeof(val_t));
+  simd_t z = nsimd::clz(abs._raw, val_t());
+  z = nsimd::add( z , nsimd::set1( offset , val_t() ) , val_t() );
+  guess._raw = nsimd::shlv( one._raw , z , val_t() );
+
+  int iter = 10;
+  for(int i = 0; i < iter; ++i)
+  {
+    guess = guess * (two - abs * guess);
+  }
+
+  fpsimd_t<_lf,_rt> neg = zero - guess;
+  guess._raw = nsimd::if_else1( negative , neg._raw , guess._raw , val_t() );
+
+  return guess;
 }
-
-// // Calculate 1/a via newton-raphson
-// template <unsigned char _lf, unsigned char _rt>
-// inline fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a)
-// {
-//   using val_t = typename fp_t<_lf, _rt>::value_type;
-//   using log_t = typename fp_t<_lf, _rt>::simd_logical;
-
-//   fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-//   fpsimd_t<_lf, _rt> two(fp_t<_lf, _rt>(2));
-//   fpsimd_t<_lf, _rt> guess(fp_t<_lf, _rt>(1));
-
-//   log_t negative = (a._raw < fpsimd_t<_lf, _rt>(0)._raw);
-//   fpsimd_t<_lf, _rt> abs = simd_abs(a);
-
-//   // fpsimd_t<_lf, _rt> z = nsimd::clz(abs._raw, val_t());
-//   // log_t gt1 = (a._raw > one);
-//   // guess._raw = one << z - _lf
-
-//   int iter = 10;
-//   fpsimd_t<_lf, _rt> res0 = guess;
-//   // fpsimd_t<_lf,_rt> res1 = guess;
-//   // fpsimd_t<_lf,_rt> tmp0;
-//   // fpsimd_t<_lf,_rt> tmp1;
-//   // fpsimd_t<_lf,_rt> tmp2;
-//   // fpsimd_t<_lf,_rt> tmp3;
-//   for(int i = 0; i < iter; ++i)
-//   {
-//     // tmp0 = a * res0;
-//     // tmp1 = one - tmp0;
-//     // tmp2 = tmp1 * res0;
-//     // res1 = tmp2 + res0;
-//     // res0 = res1;
-
-//     res0 = res0 * (one + (one - abs * res0));
-//     // res0 = res0 * (two - abs * res0);
-//   }
-//   return res0;
-// }
 
 } // namespace fixed_point
 } // namespace nsimd
