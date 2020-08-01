@@ -25,15 +25,13 @@ SOFTWARE.
 # Basic Tutorial: The SIMD Pack
 
 In this tutorial we will write and compile a very simple SIMD kernel to become
-familiar with the basics of `nsimd`.
-
+familiar with the basics of NSIMD.
 
 ## Getting Started
 
 All `nsimd` library is available with this include:
+
 @[INCLUDE_CODE:L25:L25](../src/pack.cpp)
-
-
 
 ## Basic Building Block
 
@@ -51,15 +49,18 @@ registers.
 One way to construct a `nsimd::pack<T>` is to simply declare (default-construct)
 it. Such a pack may *not* zero-initialized and thus may *contain arbitrary
 values*.
+
 @[INCLUDE_CODE:L40:L42](../src/pack.cpp)
 
 Another way to construct a `nsimd::pack<T>` is to fill it with a single value.
 This so-called splatting constructor takes one scalar value and replicates it in
 all elements of the pack.
+
 @[INCLUDE_CODE:L49:L51](../src/pack.cpp)
 
 Most common usage to construct a `nsimd::pack<T>` is by passing a pointer to a
 block of contiguous, aligned memory.
+
 @[INCLUDE_CODE:L58:L66](../src/pack.cpp)
 
 If the memory is not aligned, not recommented, you can use `nsimd::loadu`:
@@ -90,19 +91,21 @@ presented in later tutorials.
 
 Once initialized, operations on `nsimd::pack<T>` instances are similar to scalar
 operations as all operators and standard library math functions are provided.
+
 @[INCLUDE_CODE:L87:L93](../src/pack.cpp)
 
 ### Storing the Result In Memory
 
 The result may be saved to memory as follows:
+
 @[INCLUDE_CODE:L100:L111](../src/pack.cpp)
 
 If memory is not aligned which is not recommented, you can use `nsimd::loadu`:
+
 @[INCLUDE_CODE:L118:L129](../src/pack.cpp)
 
 Download full source code:
-- [pack.cpp](../src/pack.cpp)
-
+- [pack.cpp](nsimd/src/pack.cpp)
 
 ## Compiling the Code
 

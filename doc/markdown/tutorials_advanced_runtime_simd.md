@@ -27,18 +27,34 @@ SOFTWARE.
 In this tutorial we will demonstrate the use of SIMD extension selection at
 runtime.
 
-
-##  Introduction
+## Introduction
 
 The selection of SIMD extensions at runtime enables you to release one
 executable which will be of the highest performance possible on many different
 architectures. Without runtime extension selection, an executable released must
 be compiled for the earliest generation of processor targeted, which is often
-`SSE2`. This means that you are artificially restricting the performance of your
-software for your clients which have more modern processors. `nsimd` provides
-everything you need to be able to target multiple architectures with one binary.
+SSE2. This means that you are artificially restricting the performance of your
+software for your clients which have more modern processors. NSIMD provides
+everything you need to be able to target multiple architectures with one
+binary.
 
-## How to select the correct extension at runtime
+The goal is to write the function doing computations once and compile it for
+several architectures. In order to dispatch at runtime the name of the function
+must be different for each architecture.  In C this is achived by using macros
+and in C++ one can also use function overloading.
+
+## How to select the correct extension at runtime in C
+
+Let's consider this function
+
+```C
+void NSIMD_PP_CAT_2(funcname, NSIMD_SIMD)(float *a. float *b, int n) {
+  int i, len;
+  len = vlen(f32);
+  for (i = 0; i + len <= n; i++) {
+  }
+}
+```
 
 In this section, we will demonstrate how to compile your program for several
 different generations of x86 processors and select automatically the correct

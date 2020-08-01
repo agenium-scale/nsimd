@@ -46,7 +46,7 @@ int main() {
   storeu(buf, p);
 
   for (int i = 0; i < n; i++) {
-    fprintf(stdout, "%f vs %f\n", double(buf[i]), double(-i * i));
+    fprintf(stdout, "%f vs %f\n", double(buf[i]), double(-(i * i) + 1));
   }
 
   for (int i = 0; i < n; i++) {
