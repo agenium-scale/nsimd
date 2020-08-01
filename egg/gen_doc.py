@@ -427,14 +427,14 @@ def gen_what_is_wrapped(opts):
     # For now we only list Intel and Arm intrinsics
     simd_exts = common.x86_simds + common.arm_simds
     for p in common.get_platforms(opts):
-        index += '\n## Platform {}\n\n'.format(p)
+        index_simds = ''
         for simd_ext in opts.platforms_list[p].get_simd_exts():
             if simd_ext not in simd_exts:
                 continue
             md = os.path.join(common.get_markdown_dir(opts),
                               'wrapped_intrinsics_for_{}.md'.format(simd_ext))
-            index += '- [{}](wrapped_intrinsics_for_{}.md)\n'. \
-                     format(simd_ext.upper(), simd_ext)
+            index_simds += '- [{}](wrapped_intrinsics_for_{}.md)\n'. \
+                           format(simd_ext.upper(), simd_ext)
             ops = [[], [], [], []]
             for op_name, operator in operators.items():
                 c_src = os.path.join(opts.include_dir, p, simd_ext,
@@ -450,6 +450,8 @@ def gen_what_is_wrapped(opts):
                            '- `T` for trick usually using other intrinsics\n'
                            '- `E` for scalar emulation\n'
                            '- `NOOP` for no operation\n'
+                           '- `NA` means the operator does not exist for '
+                              'the given type\n'
                            '- `intrinsic` for the actual wrapped intrinsic\n'
                            '\n')
             cmd = '{} {} same {} >> "{}"'.format(cmd0, simd_ext,
@@ -479,6 +481,9 @@ def gen_what_is_wrapped(opts):
                 common.myprint(opts, 'Unable to generate markdown for '
                                      '"lesser_size"')
                 continue
+        if index_simds != '':
+            index += '\n## Platform {}\n\n'.format(p)
+            index += index_simds
 
     md = os.path.join(common.get_markdown_dir(opts), 'wrapped_intrinsics.md')
     if common.can_create_filename(opts, md):
@@ -496,7 +501,8 @@ def get_html_api_file(opts, name, module=''):
     if module == '':
         return os.path.join(root, 'api_{}.html'.format(op_name))
     else:
-        return os.path.join(root, 'module_{}_api_{}.html'.format(module, op_name))
+        return os.path.join(root, 'module_{}_api_{}.html'. \
+                                  format(module, op_name))
 
 def get_html_file(opts, name, module=''):
     root = get_html_dir(opts)
@@ -524,20 +530,25 @@ doc_header = '''\
         line-height:1.4;
         /*font-size:18px;*/
         color:#444;
-        padding:0 10px
+        padding: 0 10px;
       }}
       h1,h2,h3 {{
-        line-height:1.2
+        line-height: 1.2;
       }}
-      table,th, td {{
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
+      table {{
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }}
+      th, td {{
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
       }}
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src=\"assets/polyfill.min.js\"></script>
-    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\"></script>
+    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\">
+    </script>
     <!-- Highlight.js -->
     <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
     <script src=\"assets/highlight.min.js\"></script>
@@ -555,12 +566,12 @@ doc_header = '''\
 </div>
 <div style="text-align: center; margin-bottom: 1em;">
   <a href=\"index.html\">Index</a> |
-  <a href=\"quick_start.html\">Quick Start</a> |
   <a href=\"tutorials.html\">Tutorials</a> |
   <a href=\"faq.html\">FAQ</a> |
   <a href=\"contribute.html\">Contribute</a> |
   <a href=\"overview.html\">API overview</a> |
   <a href=\"api.html\">API reference</a> |
+  <a href=\"wrapped_intrinsics.html\">Wrapped intrinsics</a> |
   <a href=\"modules.html\">Modules</a>
   <hr>
 </div>

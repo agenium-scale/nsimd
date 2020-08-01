@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,154 +24,139 @@ SOFTWARE.
 
 # Frequently Asked Questions
 
-<!-- TODO -->
+## Is it good practice to use a `nsimd::pack` as a `std::vector`?
 
-<!--## Is It Good Practice to Use a Pack as an Array?
+No, these are two very different objects. A `nsimd::pack` represent a SIMD
+register whereas a `std::vector` represents a chunk of memory. You should
+separate concerns and use `std::vector` to store data in your structs or
+classes, `nsimd::pack` should only be used in computation kernels and nowhere
+else especially not in structs or classes.
 
-The main element of `nsimd` is the `nsimd::pack` class. `nsimd::pack` is an
-abstraction over a block of `N` elements of type `T`, quite similar to
-`std::array`. The main semantic difference is that `boost::simd::pack` is
-implemented as the best hardware specific type able to store this amount of data
-which may be a simple scalar array, a single SIMD register or a tuple of SIMD
-registers depending on `N` and `T`.
+## Why is the speed-up of my code not as expected?
 
-In general, the good practice is to store data in regular, dynamic allocated
-data block and apply your algorithms over those data using pack and related
-functions.-->
+There are several reasons which can reduce the speed-up:
 
-
-## Why Is the Speed-Up of My Code Not as Expected?
-
-There are several factors which can reduce the speed-up obtained using `nsimd`.
 - Have you enabled compiler optimizations? You must enable all compiler
   optimizations (like `-O3`).
-- Have you compiled in 64 bit mode? There is significant performance increase on
-  architectures supporting 64 bit binaries.
-- Is you algorithm memory bound? Computational problems can often be classed as
-  either compute-bound or memory-bound. Memory bound problems reach the limits
-  of the system bandwidth transfering data between the memory and the processor,
-  while compute-bound problems are limited by the processor's calculation
-  ability.
-  Processors have often several hierarchies of caches. The time taken to
-  transfer data from the cache to a register varies depending on the cache.
-  When the required data is not in the cache, it is referred to as a cache miss.
-  Cache-misses are very expensive. Data is transferred from memory to the cache
-  in cache-lines sized chunks. On modern x86 machines, a cache-line is 64 bytes
-  or twice the size of an `AVX` register. It is therefore highly advantageous to
-  use all data loaded into cache.
-  The following loop is clearly memory bound as all of the time is spent loading
-  and storing the data. The cost of the computation is negligible compared to
-  that of the memory accesses.
-  ```
-  for (int i = 0; i < size; i += pack_t::static_size) {
-    pack_t v0(&data[i]);
-    v0 = v0 * 2;
-    bs::aligned_store(v0, &output[i]);
-  }
-  ```
-  The following loop is compute-bound. As most of the time is spent calculating
-  exp, significant speed-up is observed when this code is vectorized.
-  ```
-  t0 = high_resolution_clock::now();
-  for (int i = 0; i < size; i += pack_t::static_size) {
-    pack_t v0(&data[i]);
-    v0 = bs::exp(bs::exp(v0));
-    bs::aligned_store(v0, &output[i]);
-  }
-  ```
+
+- Have you compiled in 64 bit mode? There is significant performance increase
+  on architectures supporting 64 bit binaries.
+
 - Is your code trivially vectorizable? Modern compilers can vectorize trivial
   code segments automatically. If you benchmark a trivial scalar code versus a
   vectorized code, the compiler may vectorize the scalar code, thereby giving
   similar performance to the vectorized version.
-- Is your algorithm vectorizable?
 
+- Some architectures do not provides certains functionnalities. For example
+  AVX2 chips do not provide a way to convert long to double. So using
+  `nsimd::cvt<f64>` will produce an emulation for-loop in the resulting
+  binary. To know which intrinsics are used by NSIMD you can consult
+  <wrapped_intrinsics.md>.
 
-## Why Did My Code Seg-Faulted or Crashed?
+## Why did my code segfaulted or crashed?
 
-The most common cause of seg-faults in SIMD codes is accessing non-aligned
-memory. For best performance, all memory should be aligned. `nsimd` includes an
+The most common cause of segfaults in SIMD codes is accessing non-aligned
+memory. For best performance, all memory should be aligned. NSIMD includes an
 aligned memory allocation function and an aligned memory allocator to help you
-with this. Please refer to [tutorials](tutorials.md) for details on how to
+with this. Please refer to <tutorials.md> for details on how to
 ensure that you memory is correctly aligned.
 
+Another common cause is to read or write data beyond the allocated memory.
+Do not forget that loading data into a SIMD vector will result in loading
+16 bytes (or 4 floats) from memory. If this read occurs at the last 2 elements
+of allocated memory then a segfault will be generated.
 
-<!--## I Tried to Use a Comparison Operator and My Code Failed to Compile
+## My code compiled for AVX is not twice as fast as for SSE, why?
 
-The most common reason for this is that the two packs being compared are not of
-the same type. Another common reason is that the return type is incorrect. Using
-auto is one way of preventing this error, however, it is best to be aware of the
-types you are using. Comparison operators in `nsimd` are of two types, either
-vectorized comparison, where the results is a vector of logical with the same
-cardinal as the input vectors, or a reduction comparison, where the result is a
-bool.-->
-
-
-## How to Measure the Speed-Up of SIMD code?
-
-There are several ways to measure the speed-up of your code. You may use the
-[`Google Benchmark`](https://github.com/google/benchmark) to benchmark your code
-segment. This allows you to measure the execution time of your code.
-
-Otherwise, you may use standard timing routines. C++11 adds `std::chrono`. You
-can use
-[`std::chrono::high_resolution_clock`](https://en.cppreference.com/w/cpp/chrono/high_resolution_clock)
-if `std::chrono::high_resolution_clock::is_steady` is true. If not, use
-[`std::chrono::steady_clock`](https://en.cppreference.com/w/cpp/chrono/steady_clock) otherwise.
-In C and C++98, use [`clock_gettime`](http://man7.org/linux/man-pages/man2/clock_gettime.2.html)
-with `CLOCK_MONOTONIC` or equivalent for non POSIX.1-2001 system. In order to
-accurately benchmark your code, there are several points to consider.
-- Your input should be sufficiently large. This is to eliminate cache effects.
-- Your code is compiled in release mode, with all optimizations enabled and
-  debug information not included.
-- You should measure several times and use the median (better than the average).
-
-A typical case where a benchmark could give inaccurate results is where the
-input is not large enough to fill the cache and a scalar and SIMD code segment
-are individually benchmarked, one after the other. In this case, all of the data
-will be loaded into the cache during the first bench, and will be available for
-the second bench, therefore decreasing the execution time of the second bench.
-Also, if you measure the code segment multiple times, the data from the first
-execution will already be in the cache.
-
-<!-- TODO Talk about / mention cache warming -->
-
-
-## My Code Compiled for `AVX` Is Not Twice As Fast As for `SSE`
-
-Not all `SSE` instructions have an equivalent `AVX` instruction. Also, the
-cycles required for certain instructions are not equal on both architectures,
-for example, `sqrt` on `SSE` requires 13-14 cycles whereas `sqrt` on `AVX`
-requires 21-28 cycles. Please refer
+Not all SSE instructions have an equivalent AVX instruction. As a consequence
+NSIMD uses two SSE operations to emulate the equivalent AVX operation.  Also,
+the cycles required for certain instructions are not equal on both
+architectures, for example, `sqrt` on `SSE` requires 13-14 cycles whereas
+`sqrt` on `AVX` requires 21-28 cycles. Please refer
 [here](https://www.agner.org/optimize/instruction_tables.pdf) for more
 information.
 
-Very few integer operations are supported on `AVX`, `AVX2` is required for most
-integer operations. If a `nsimd` function is called on an integer `AVX`
-register, this register will be split into two `SSE` registers and the
-equivalent instruction called on both register. In the case, no speed-up will be
-observed compared with `SSE` code. This is true also on `POWER 7`, where
-`double` is not supported.
+Very few integer operations are supported on AVX, AVX2 is required for most
+integer operations. If a NSIMD function is called on an integer AVX register,
+this register will be split into two SSE registers and the equivalent
+instruction called on both register. In the case, no speed-up will be observed
+compared with SSE code. This is true also on POWER 7, where double is not
+supported.
 
-
-## I Disassembled My Code, and the Generated Code Is Less Than Optimal
+## I disassembled my code, and the generated code is less than optimal, why?
 
 - Have you compiled in release mode, with full optimizations options?
+
 - Have you used a 64 bit compiler?
+
 - There are many SIMD related bugs across all compilers, and some compilers
   generate less than optimal code in some cases. Is it possible to update your
   compiler to a more modern compiler?
+
 - We provide workarounds for several compiler bugs, however, we may have
   missed some. You may also have found a bug in `nsimd`. Please report this
   through issues on our github with a minimal code example. We responds quickly
   to bug reports and do our best to patch them as quickly as possible.
 
+## How can I use a certain intrinsic?
 
-## How Can I Use a Certain Intrinsic?
+If you require a certain intrinsic, you may search inside of NSIMD for it and
+then call the relevant function or look at <wrapped_intrinsics.md>.
 
-If you require a certain intrinsic, you may search inside of `nsimd` for it and
-then call the relevant function.
-
-In rare cases, the intrinsic may not be included in `nsimd` as we map the
+In rare cases, the intrinsic may not be included in NSIMD as we map the
 intrinsic wherever it makes sense semantically. If a certain intrinsic does not
 fit inside of this model, if may be excluded. In this case, you may call it
-yourself, however, this will not be portable. 
+yourself, however, note this will not be portable. 
+
+To use a particular intrinsic say `_mm_avg_epu8`, you can write the following.
+
+```c++
+nsimd::pack<u8> a, b, result;
+result = nsimd::pack<u8>(_mm_avg_epu8(a.native_register(),
+                                      b.native_register()));
+```
+
+## How do I convert integers/floats to/from logicals?
+
+Use [`nsimd::to_mask`](api_to-mask.md) and
+[`nsimd::to_logical`](api_to-logical.md).
+
+## How about shuffles?
+
+General shuffles are not provided by NSIMD. You can see
+[issue 8 on github](https://github.com/agenium-scale/nsimd/issues/8). For now
+we provide only some length agnostic shuffles such as zip and unzip, see
+[the shuffle API](api.md) at the Shuffle section.
+
+## Are there C++ STL like algorithms?
+
+No. You are welcome to [contribute](contribute.md) to NSIMD and add them as
+a NSIMD module. You should use
+[expressions templates](module_tet1d_overview.md) instead. Strictly conforment
+STL algorithms do not provide means to control for example the unroll factor
+or the number of threads per block when compiling for GPUs.
+
+## Are there masked operators in NSIMD?
+
+Yes, we provide masked loads and stores, see [the api](api.md) at the
+"Loads & stores" section. We also provide the
+[`nsimd::mask_for_loop_tail`](api_mask-for-loop-tail.md) which computes the
+mask for ending loops. But note that using these is not recommanded as on
+most architectures there are no intrinsic. This will result in slow code. It
+is recommanded to finish loops using a scalar implementation.
+
+## Are there gathers and scatter in NSIMD?
+
+Yes, we provide gathers and scatters, see [the api](api.md) at the
+"Loads & stores" section. Note also that as most architectures do not provide
+such intrinsics and so this could result in slow code.
+
+## Why does not NSIMD recognize the target architecture automatically?
+
+Autodetecting the SIMD extension is compiler/compiler version/cpu/system
+dependant which means a lot of code for a (most likely buggy) feature which can
+be an inconvenience sometimes. Plus some compilers do not permit this feature.
+For example cf.
+<https://www.boost.org/doc/libs/1_71_0/doc/html/predef/reference.html> and
+<https://msdn.microsoft.com/en-us/library/b0084kay.aspx>. Thus a "manual"
+system is always necessary.

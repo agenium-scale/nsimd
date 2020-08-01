@@ -97,7 +97,7 @@ operations as all operators and standard library math functions are provided.
 The result may be saved to memory as follows:
 @[INCLUDE_CODE:L100:L111](../src/pack.cpp)
 
-If the memory is not aligned, not recommented, you can use `nsimd::loadu`:
+If memory is not aligned which is not recommented, you can use `nsimd::loadu`:
 @[INCLUDE_CODE:L118:L129](../src/pack.cpp)
 
 Download full source code:

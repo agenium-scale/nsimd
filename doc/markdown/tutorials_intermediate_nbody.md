@@ -31,16 +31,14 @@ In this tutorial we will show you how to optimize an n-body simulation using
 ## N-Body Problem
 
 This problem is concerned with the calculation of the individual motion of
-celestial objects caused by gravity. This is an example of a problem of
-complexity. The formula to calculate the gravitational force between two objects
-is:
-<!-- \( F = { Gm_{i}m_{i}(q_{i} - q_{j}) \over ||q_{i} - q_{j}||^{3} } \) -->
+celestial objects caused by gravity. The formula to calculate the gravitational
+force between two objects is:
+$F = { Gm_im_j(q_i - q_j) \over ||q_i - q_j||^3 }$
 
 Where:
-- \(q_{i}\) is the position vector of object *i*
-- \(m_{i}\) is the mass of object *i*
-- \(G\) is the gravitational constant
-
+- $q_i$ is the position vector of object $i$
+- $m_i$ is the mass of object $i$
+- $G$ is the gravitational constant
 
 ## Calculation
 

@@ -41,14 +41,14 @@ aligned.
 @[INCLUDE_CODE:L39:L41](../src/loop.cpp)
 
 We now construct our loop. Note how `i` is incremented by `len`. `len` is the
-lenght of the `nsimd::pack<T>`. For each iteration of the loop, we process
+length of the `nsimd::pack<T>`. For each iteration of the loop, we process
 several elements of the input data. You can also note the condition, some
 elements may not be computed.
-@[INCLUDE_CODE:L66:L66](../src/loop.cpp)
+@[INCLUDE_CODE:L64:L66](../src/loop.cpp)
 
 In order to process the input data, we must oad the data from memory using
 `nsimd::loada` (`nsimd::loadu` if the data are not aligned) and then store it
-afterwards back in memory using using `nsimd::storea` (`nsimd::storeu` if the
+afterwards back in memory using `nsimd::storea` (`nsimd::storeu` if the
 data are not aligned).
 @[INCLUDE_CODE:L64:L70](../src/loop.cpp)
 

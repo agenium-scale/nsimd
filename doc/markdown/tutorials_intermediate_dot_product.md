@@ -58,7 +58,7 @@ single vector.
 
 ## Building a SIMD loop
 
-We are now going to use boost::simd::pack to vectorize this loop. The main idea
+We are now going to use `nsimd::pack` to vectorize this loop. The main idea
 is to compute partial sums inside an instance of `nsimd::pack<T>` and then
 perform a final summation. To do so, we will use `nsimd::load` to load data from
 `first0` and `first1`, process these `nsimd::pack<T>` instances using the proper

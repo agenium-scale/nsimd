@@ -38,15 +38,15 @@ be compiled for the earliest generation of processor targeted, which is often
 software for your clients which have more modern processors. `nsimd` provides
 everything you need to be able to target multiple architectures with one binary.
 
-
 ## How to select the correct extension at runtime
 
 In this section, we will demonstrate how to compile your program for several
 different generations of x86 processors and select automatically the correct
 version at runtime. In order to do this, you must add an extra argument to the
 function you wish to call so that the correct function will be found at runtime.
+
 ```C++
-void compute(float* a, float* b, float* res, int size, BOOST_SIMD_DEFAULT_SITE const& arch)
+void compute(float* a, float* b, float* res, int size, NSIMD_SIMD const& arch)
 {
   // ...
 }
@@ -55,6 +55,7 @@ void compute(float* a, float* b, float* res, int size, BOOST_SIMD_DEFAULT_SITE c
 The macro `BOOST_SIMD_DEFAULT_SITE` is set according to the architecture that 
 the currect file is being compiled for. You must also declare a prototype for
 each architecture that you wish to target:
+
 ```C++
 void compute(float *a, float *b, float *res, int size, boost::simd::avx2_ const&);
 void compute(float *a, float *b, float *res, int size, boost::simd::avx_ const&);

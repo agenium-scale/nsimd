@@ -81,7 +81,7 @@ int nbits(std::string const &typ) {
   if (typ == "i8" || typ == "u8") {
     return 8;
   } else {
-    return (16 * (typ[1] - 'a')) + (typ[2] - 'a');
+    return (10 * (typ[1] - '0')) + (typ[2] - '0');
   }
 }
 
@@ -143,6 +143,18 @@ int is_number(std::string const &s) {
 
 // ----------------------------------------------------------------------------
 
+int is_macro(std::string const &s) {
+  for (size_t i = 0; i < s.size(); i++) {
+    if (s[i] != '_' && !(s[i] >= 'A' && s[i] <= 'Z') &&
+        !(s[i] >= 'a' && s[i] <= 'z')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// ----------------------------------------------------------------------------
+
 void parse_file(std::string const &input_vars, std::string const &simd_ext,
                 std::vector<std::string> const &types_names,
                 std::string const &op_name, std::string const &filename,
@@ -182,6 +194,7 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
       // casts as they incur no opcode and are often used for intrinsics
       // not supporting certain types
       if (tokens0[i].size() == 0 || is_number(tokens0[i]) ||
+          is_macro(tokens0[i]) ||
           find_by_prefix(to_be_removed_by_prefix, tokens0[i]) != not_found ||
           find(to_be_removed, tokens0[i]) != not_found) {
         continue;
@@ -194,11 +207,13 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
   for (size_t typ = 0; typ < types_names.size(); typ++) {
     std::string func_name("nsimd_" + op_name + "_" + simd_ext + "_" +
                           types_names[typ]);
+
     // find func_name
     size_t pos = find(tokens, func_name);
     if (pos == not_found) {
       std::cerr << "WARNING: cannot find function '" << func_name << "' in '"
                 << filename << "'\n";
+      table[op_name][typ] = "NA";
       continue;
     }
 
@@ -207,6 +222,7 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
     if (i0 == not_found) {
       std::cerr << "WARNING: cannot find opening '{' for '" << func_name
                 << "' in '" << filename << "'\n";
+      table[op_name][typ] = "NA";
       continue;
     }
 
@@ -232,12 +248,14 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
       table[op_name][typ] = "NOOP";
     } else if (i0 + 2 == i1 && !ns2::startswith(tokens[i0 + 1], "nsimd_")) {
       table[op_name][typ] = "[`" + tokens[i0 + 1] + "`]";
-      if (simd_ext == "neon128" || simd_ext == "aarch64" ||
-          ns2::startswith(simd_ext, "sve")) {
+      if (simd_ext == "neon128" || simd_ext == "aarch64") {
         table[op_name][typ] +=
             "(https://developer.arm.com/architectures/instruction-sets/"
             "simd-isas/neon/intrinsics?search=" +
             tokens[i0 + 1] + ")";
+      } else if (ns2::startswith(simd_ext, "sve")) {
+        table[op_name][typ] +=
+            "(https://developer.arm.com/documentation/100987/0000)";
       } else {
         table[op_name][typ] += "(https://software.intel.com/sites/landingpage/"
                                "IntrinsicsGuide/#text=" +
@@ -289,36 +307,32 @@ int main(int argc, char **argv) {
                &table);
   }
 
-  if (output_type == "same") {
-    std::cout << "|   | " << ns2::join(types_list, " | ") << " |\n"
-              << md_row(12, "---") << "\n";
-    for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
-      std::cout << "| " << it->first << " |";
+  for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
+    std::cout << "## " << it->first << "\n\n";
+    if (output_type == "same") {
       const std::string(&row)[MAX_LEN] = it->second;
       for (size_t i = 0; i < types_list.size(); i++) {
-        std::cout << " " << row[i] << " |";
+        std::cout << "-  " << it->first << " on **" << types_list[i]
+                  << "**: " << row[i] << "\n";
       }
-      std::cout << "\n";
-    }
-    std::cout << "\n";
-  } else {
-    for (table_t::const_iterator it = table.begin(); it != table.end(); it++) {
-      std::cout << "| " << it->first << " " << md_row(11, "   ") << "\n"
-                << md_row(12, "---") << "\n"
-                << "|   | " << ns2::join(types_list, " | ") << " |\n";
+      std::cout << "\n\n";
+    } else {
       const std::string(&row)[MAX_LEN] = it->second;
       for (size_t i = 0; i < types_list.size(); i++) {
-        std::cout << "| " << types_list[i] << " | ";
         for (size_t j = 0; j < types_list.size(); j++) {
-          std::string cell_content("  ");
+          std::string cell_content;
           std::string typ(types_list[j] + "_" + types_list[i]);
           for (size_t k = 0; k < types_names.size(); k++) {
             if (typ == types_names[k]) {
-              cell_content = " " + row[k];
+              cell_content = row[k];
               break;
             }
           }
-          std::cout << cell_content << " |";
+          if (cell_content.size() > 0) {
+            std::cout << "-  " << it->first << " from **" << types_list[i]
+                      << "** to **" << types_list[j] << "**: " << cell_content
+                      << "\n";
+          }
         }
         std::cout << "\n";
       }
