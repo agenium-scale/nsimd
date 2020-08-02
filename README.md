@@ -86,8 +86,7 @@ The Python code can call `clang-format` to properly format all generated C/C++
 source. On Linux you can install it via your package manager. On Windows you
 can use the official binary at <https://llvm.org/builds/>.
 
-Testing the library requires the Google Test library that can be found at
-<https://github.com/google/googletest> and the MPFR library that can be found at
+Testing the library requires the MPFR library that can be found at
 <https://www.mpfr.org/>.
 
 Benchmarking the library requires Google Benchmark version 1.3 that can be
@@ -100,7 +99,7 @@ Compiling the library requires a C++14 compiler. Any recent version of GCC,
 Clang and MSVC will do. Note that the produced library and header files for the
 end-user are C89, C++98, C++11 compatible. Note that C/C++ files are generated
 by a bunch of Python scripts and they must be executed first before running
-cmake.
+building the library.
 
 ## Build for Linux
 
@@ -270,6 +269,17 @@ $ ../nstools/bin/nsconfig .. -Dsimd=aarch64 \
       -cppcomp=gcc,aarch64-linux-gnu-g++,10.0,aarch64
 ```
 
+## Defines that control NSIMD compilation and usage
+
+Several defines control NSIMD.
+
+- `FMA` or `NSIMD_FMA` indicate to NSIMD that fma intrinsics can be used
+  when compiling code. This is useful on Intel SSE2, SSE42, AVX and AVX2.
+
+- `FP16` or `NSIMD_FP16` indicate to NSIMD that the targeted architecture
+  natively (and possibly partially) supports IEEE float16's. This is useful
+  when compiling for Intel SSE2, SSE42, AVX and AVX2, Arm NEON128 and AARCH64.
+
 # Philosophy of NSIMD
 
 Originally the library aimed at providing a portable zero-cost abstraction over
@@ -346,7 +356,7 @@ found in `egg`.
 - The headers files must be compatible with C89 (when possible otherwise
   C99), C++98, C++11 and C++14.
 
-Please see [CONTRIBUTE.md](CONTRIBUTE.md) for more details.
+Please see <doc/markdown/CONTRIBUTE.md> for more details.
 
 # LICENSE
 
