@@ -660,9 +660,32 @@ def gen_html(opts):
 
 # -----------------------------------------------------------------------------
 
+def copy_github_file_to_doc(opts, github_filename, doc_filename):
+    common.myprint(opts, 'Copying {} ---> {}'. \
+                   format(github_filename, doc_filename))
+    if not common.can_create_filename(opts, doc_filename):
+        return
+    with io.open(github_filename, mode='r', encoding='utf-8') as fin:
+        file_content = fin.read()
+    # we replace all links to doc/... by nsimd/...
+    file_content = file_content.replace('doc/markdown/', 'nsimd/')
+    file_content = file_content.replace('doc/', 'nsimd/')
+    # we do not use common.open_utf8 as the copyright is already in content
+    with io.open(doc_filename, mode='w', encoding='utf-8') as fout:
+        fout.write(file_content)
+
+# -----------------------------------------------------------------------------
+
 def doit(opts):
     gen_overview(opts)
     gen_doc(opts)
     gen_modules_md(opts)
     gen_what_is_wrapped(opts)
+    root_dir = os.path.join(opts.script_dir, '..')
+    copy_github_file_to_doc(opts,
+                            os.path.join(root_dir, 'README.md'),
+                            common.get_markdown_file(opts, 'index'))
+    copy_github_file_to_doc(opts,
+                            os.path.join(root_dir, 'CONTRIBUTING.md'),
+                            common.get_markdown_file(opts, 'contribute'))
     gen_html(opts) # This must be last
