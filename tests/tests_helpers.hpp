@@ -49,7 +49,6 @@ namespace nsimd_tests {
 template <typename T>
 int expected_not_equal_computed(const T expected, const T computed) {
   return expected != computed;
-  ;
 }
 
 namespace fprintf_helper {

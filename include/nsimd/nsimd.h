@@ -985,95 +985,13 @@ template <typename T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
 
-template <typename T> class scoped_aligned_mem_helper {
-protected:
-  scoped_aligned_mem_helper(T *const ptr) : m_ptr(ptr) {
-    if (NULL == m_ptr) {
-      throw std::bad_alloc();
-    }
-  }
+template <typename T> struct scoped_aligned_mem_for {
+  std::vector<T, nsimd::allocator<T> > data;
 
-  static void swap(T **lhs, T **rhs) {
-    T *temp = *lhs;
-    *lhs = *rhs;
-    *rhs = temp;
-  }
+  template <typename I> scoped_aligned_mem(I n) : data(size_t(n));
 
-public:
-  T *release() {
-    T *ret_ptr = m_ptr;
-    m_ptr = NULL;
-    return ret_ptr;
-  }
-
-  void reset(T *new_ptr) {
-    T *old_ptr = m_ptr;
-    m_ptr = new_ptr;
-    if (NULL != old_ptr) {
-      aligned_free(old_ptr);
-    }
-  }
-
-  T *get() const { return m_ptr; }
-
-protected:
-  T *m_ptr;
-
-private:
-  scoped_aligned_mem_helper(const scoped_aligned_mem_helper &other) {
-    (void)other;
-  }
-
-  scoped_aligned_mem_helper &operator=(const scoped_aligned_mem_helper &rhs) {
-    (void)rhs;
-  }
-};
-
-template <typename T, nat MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
-class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
-public:
-  scoped_aligned_mem()
-      : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {
-  }
-
-  ~scoped_aligned_mem() {
-    if (NULL != this->m_ptr) {
-      aligned_free(this->m_ptr);
-    }
-  }
-
-  void swap(scoped_aligned_mem<T, MemAlignedSizeBytes> *rhs) {
-    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
-  }
-
-  static void free(T **ptr) {
-    aligned_free(*ptr);
-    *ptr = NULL;
-  }
-  static const nat num_elems = MemAlignedSizeBytes / sizeof(T);
-};
-
-template <typename T, nat NumElems>
-class scoped_aligned_mem_for : public scoped_aligned_mem_helper<T> {
-public:
-  scoped_aligned_mem_for()
-      : scoped_aligned_mem_helper<T>(aligned_alloc_for<T>(NumElems)) {}
-
-  ~scoped_aligned_mem_for() {
-    if (NULL != this->m_ptr) {
-      aligned_free_for<T>(this->m_ptr);
-    }
-  }
-
-  void swap(scoped_aligned_mem_for<T, NumElems> *rhs) {
-    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
-  }
-
-  static void free(T **ptr) {
-    aligned_free_for<T>(*ptr);
-    *ptr = NULL;
-  }
-  static const nat num_elems = NumElems;
+  const T *get() const { return &data[0]; }
+  T *get() { return &data[0]; }
 };
 
 } // namespace nsimd
