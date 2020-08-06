@@ -22,44 +22,19 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FUNCTION_SIMD_REC_HPP
-#define NSIMD_MODULES_FUNCTION_SIMD_REC_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_REC_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_REC_HPP
 
-#include "nsimd/modules/fixed_point/function/simd/div.hpp"
-#include "nsimd/modules/fixed_point/simd.hpp"
-#include <nsimd/nsimd.h>
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/greater.hpp"
+#include "nsimd/modules/fixed_point/function/mul.hpp"
 
 namespace nsimd {
 namespace fixed_point {
-
-//template <uint8_t _lf, uint8_t _rt>
-//NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
-//  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-//  return simd_div<_lf, _rt>(one, a0);
-//}
-
-
-template <uint8_t _lf, uint8_t _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
+template <unsigned char _lf, unsigned char _rt>
+NSIMD_INLINE fp_t<_lf, _rt> rec(const fp_t<_lf, _rt> &a) {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
-  typedef typename fpsimd_t<_lf, _rt>::value_type simd_t;
-
-  simd_t z = nsimd::clz( a0._raw , raw_t() );
-  raw_t total_size = 8 * sizeof(raw_t);
-  z = nsimd::sub( z , nsimd::set1(raw_t(total_size - 2*_rt - 1) , raw_t() ) , raw_t() );
-
-  // Initial seed = ulp << ( total bits - clz )
-  fpsimd_t<_lf,_rt> x;
-  x._raw = nsimd::set1( raw_t(1) , raw_t() );
-  x._raw = nsimd::shlv( x._raw , z , raw_t() );
-
-  // Newton raphson iterations
-  fpsimd_t<_lf,_rt> two( fp_t<_lf,_rt>(2) );
-  for ( int i = 0 ; i < 10 ; ++i ) {
-    x = x * ( two - ( x * a0 ) );
-  }
-
-  return x;
+  return (fp_t<_lf,_rt>(int(1)) / a );
 }
 
 } // namespace fixed_point

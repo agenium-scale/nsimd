@@ -54,6 +54,7 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/mul.hpp"
 #include "nsimd/modules/fixed_point/function/neg.hpp"
 #include "nsimd/modules/fixed_point/function/sub.hpp"
+#include "nsimd/modules/fixed_point/function/rec.hpp"
 
 // More complex math functions
 // #include "nsimd/modules/fixed_point/function/abs.hpp"
