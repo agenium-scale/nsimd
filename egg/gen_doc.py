@@ -265,7 +265,8 @@ Here is the list of functions that act on packs.
                     fout.write('  ({}) ∈ {}\n'.format(param, operator.domain))
 
             if operator.cxx_operator:
-                fout.write('  Available as `{}`\n'.format(operator.cxx_operator))
+                fout.write('  Available as `{}`\n'. \
+                           format(operator.cxx_operator))
 
             if len(operator.types) < len(common.types):
                 typs = ', '.join(['{}'.format(t) for t in operator.types])
@@ -290,7 +291,12 @@ def gen_doc(opts):
     filename = common.get_markdown_file(opts, 'api')
     if common.can_create_filename(opts, filename):
         with common.open_utf8(opts, filename) as fout:
-            fout.write('# API\n')
+            fout.write('# General API\n\n')
+            fout.write('- [Memory function](memory.md)\n')
+            fout.write('- [Float16 related functions](fp16.md)\n')
+            fout.write('- [Defines provided by NSIMD](defines.md)\n')
+            fout.write('- [NSIMD pack related functions](pack.md)\n\n')
+            fout.write('# SIMD operators\n')
             for c, ops in api.items():
                 if len(ops) == 0:
                     continue
