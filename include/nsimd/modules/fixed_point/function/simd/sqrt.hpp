@@ -32,18 +32,25 @@ namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sqrt(const fpsimd_t<_lf, _rt> &a) {
   typedef typename fp_t<_lf, _rt>::value_type val_t;
+  typedef typename fp_t<_lf, _rt>::simd_logical log_t;
   fpsimd_t<_lf, _rt> x0, x1;
   fpsimd_t<_lf, _rt> two;
   two._raw = nsimd::set1(constants::two<_lf, _rt>()._raw, val_t());
   x0 = a;
   // For the few cases tested, 10 iterations is more than enough to converge
+  fpsimd_t<_lf, _rt> zero;
+  zero._raw = nsimd::xorb( zero._raw , zero._raw , val_t() );
+  fpsimdl_t<_lf,_rt> is_zero = simd_eq(x0 , zero );
+  x0._raw = nsimd::if_else1( is_zero._raw , two._raw , x0._raw , val_t() );
+  fpsimd_t<_lf, _rt> res;
   for (int i = 0; i < 10; ++i) {
-    x1 = (x0 + (a / x0)) / two;
-    // if ( x0._raw == 0 || (x0._raw - x1._raw) == 0 ) break;
+    x1 = (x0 + (a / x0));
+    x1._raw = nsimd::shra( x1._raw , 1 , val_t() );
     x0 = x1;
   }
 
-  return x1;
+  x0 = simd_if_else1( is_zero , zero , x0 );
+  return x0;
 }
 
 } // namespace fixed_point
