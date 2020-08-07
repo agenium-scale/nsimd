@@ -467,8 +467,8 @@ namespace nsimd {
   #endif
 
   #ifdef NSIMD_ROCM_COMPILING_FOR_DEVICE
-    #include <hip/hip_runtime.h>
     #include <hip/hip_fp16.h>
+    #include <hip/hip_runtime.h>
   #endif
 
   #define NSIMD_SIMD cpu
@@ -951,6 +951,7 @@ template <typename T> constexpr int max_len = max_len_t<T>::value;
 #if NSIMD_CXX > 0
   #include <cstddef>
   #include <new>
+  #include <vector>
 #endif
 
 /* clang-format on */
@@ -1080,12 +1081,11 @@ bool operator!=(allocator<T> const &, allocator<S> const &) {
 template <typename T> struct scoped_aligned_mem_for {
   std::vector<T, nsimd::allocator<T> > data;
 
-  template <typename I> scoped_aligned_mem(I n) : data(size_t(n));
+  template <typename I> scoped_aligned_mem_for(I n) { data.resize(size_t(n)); }
 
   const T *get() const { return &data[0]; }
   T *get() { return &data[0]; }
 };
-
 
 } // namespace nsimd
 #endif
@@ -1103,14 +1103,10 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
-#elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
-inline f16 nsimd_f32_to_f16(f32 a) {
-  return __float2half(a);
-}
-inline f32 nsimd_f16_to_f32(f16 a) {
-  return __half2float(a);
-}
+#elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                             \
+    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
+inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
@@ -1151,7 +1147,7 @@ template <> struct to_helper<f16, f16> {
   static f16 to(f16, f16 value) { return value; }
 };
 
-template <typename S> struct to_helper<f16, S>{
+template <typename S> struct to_helper<f16, S> {
   static f16 to(f16, S value) { return nsimd_f32_to_f16((f32)value); }
 };
 
