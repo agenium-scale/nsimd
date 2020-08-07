@@ -84,8 +84,8 @@ SOFTWARE.
 //#include "nsimd/modules/fixed_point/function/simd/round.hpp"
 
 // Trigonometric functions
-// #include "nsimd/modules/fixed_point/function/simd/cos.hpp"
-// #include "nsimd/modules/fixed_point/function/simd/sin.hpp"
+#include "nsimd/modules/fixed_point/function/simd/cos.hpp"
+#include "nsimd/modules/fixed_point/function/simd/sin.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/tan.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/csc.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/sec.hpp"

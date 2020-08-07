@@ -398,6 +398,24 @@ NSIMD_INLINE void storela(typename T::value_type *p, T v) {
   simd_storela<T::lf, T::rt>(p, v.val);
 }
 
+// -----------------------------------------------------------------------------
+// -------------------- Trig functions -----------------------------------------
+// -----------------------------------------------------------------------------
+
+template <typename T> NSIMD_INLINE pack<T> sin(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_sin(a0.val);
+  return res;
+}
+
+template <typename T> NSIMD_INLINE pack<T> cos(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_cos(a0.val);
+  return res;
+}
+
+
+
 } // namespace fixed_point
 
 } // namespace nsimd
