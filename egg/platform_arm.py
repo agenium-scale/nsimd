@@ -235,6 +235,21 @@ def get_additional_include(func, platform, simd_ext):
     if func == 'subs':
         ret += '''#include <nsimd/arm/{simd_ext}/sub.h>
                 '''.format(**fmtspec)
+    if func == 'div':
+        ret += '''
+                    # include <nsimd/x86/{simd_ext}/sub.h>
+                    # include <nsimd/x86/{simd_ext}/mul.h>
+                    # include <nsimd/x86/{simd_ext}/upcvt.h>
+                    # include <nsimd/x86/{simd_ext}/downcvt.h>
+                    # include <nsimd/x86/{simd_ext}/shr.h>
+                    # include <nsimd/x86/{simd_ext}/shlv.h>
+                    # include <nsimd/x86/{simd_ext}/shrv.h>
+                    # include <nsimd/x86/{simd_ext}/shl.h>
+                    # include <nsimd/x86/{simd_ext}/clz.h>
+                    # include <nsimd/x86/{simd_ext}/if_else1.h>
+                    # include <nsimd/x86/{simd_ext}/lt.h>
+                    # include <nsimd/x86/{simd_ext}/set1.h>
+               '''.format(**fmtspec)
     return ret
 
 # -----------------------------------------------------------------------------
@@ -622,10 +637,61 @@ def div2(simd_ext, typ):
         return 'return svdiv_{suf}_z({svtrue}, {in0}, {in1});'. \
                format(**fmtspec)
     else:
-        ret = f16f64(simd_ext, typ, 'div', 'div', 2)
-        if ret != '':
-            return ret
+      utyp = 'u' + typ[1:]
+      signed_input = '''\
+      nsimd_{simd_ext}_vl{typ} b_is_neg;
+      b_is_neg = nsimd_lt_{simd_ext}_{typ}( nsimd_set1_{simd_ext}_{typ}(0) , {in1} );
+      nsimd_{simd_ext}_v{typ} b_neg = nsimd_if_else1_{simd_ext}_{typ}( b_is_neg , nsimd_set1_{simd_ext}_{typ}( 1 ) , nsimd_set1_{simd_ext}_{typ}( -1 ) );
+
+      nsimd_{simd_ext}_vl{typ} t_is_neg;
+      t_is_neg = nsimd_lt_{simd_ext}_{typ}( nsimd_set1_{simd_ext}_{typ}(0) , {in0} );
+      nsimd_{simd_ext}_v{typ} t_neg = nsimd_if_else1_{simd_ext}_{typ}( t_is_neg , nsimd_set1_{simd_ext}_{typ}( 1 ) , nsimd_set1_{simd_ext}_{typ}( -1 ) );
+
+      nsimd_{simd_ext}_v{typ} b = nsimd_mul_{simd_ext}_{typ}( {in1} , b_neg );
+      nsimd_{simd_ext}_v{typ} t = nsimd_mul_{simd_ext}_{typ}( {in0} , t_neg );
+
+      '''.format(**fmtspec, utyp=utyp)
+
+      signed_output = '''\
+
+      return nsimd_mul_{simd_ext}_{typ}( nsimd_mul_{simd_ext}_{typ}( res , b_neg ) , t_neg );
+      '''.format(**fmtspec, utyp=utyp)
+
+      unsigned_input = '''\
+      nsimd_{simd_ext}_v{typ} b = {in1};
+      nsimd_{simd_ext}_v{typ} t = {in0};
+
+      '''.format(**fmtspec, utyp=utyp)
+
+      unsigned_output = '''\
+
+      return res;
+      '''.format(**fmtspec, utyp=utyp)
+
+      # TODO: Choose according to architecture as well
+      if typ in [ 'i8' , 'i16' , 'i32' , 'u8' , 'u16' , 'u32' ]:
+        #TODO: Replace the set1(0) with a setzero type instruction
+        if typ in [ 'i8' , 'i16' , 'i32' , 'u8' , 'u16' , 'u32' ]:
+          long_division = '''\
+          nsimd_{simd_ext}_v{typ} ones = nsimd_set1_{simd_ext}_{typ}( 1 );
+          nsimd_{simd_ext}_v{typ} res; // Does not need initialization
+          nsimd_{simd_ext}_v{typ} r = nsimd_set1_{simd_ext}_{typ}( 0 );
+          for ( int i = ({typnbits}-1) ; i >=0 ; --i ) {{
+            res = nsimd_shl_{simd_ext}_{typ}( res , 1 );
+            r = nsimd_shl_{simd_ext}_{typ}( r , 1 );
+            r = nsimd_orb_{simd_ext}_{typ}( r , nsimd_andb_{simd_ext}_{typ}( nsimd_shr_{simd_ext}_{typ}( t , i ) , ones ) );
+            nsimd_{simd_ext}_vl{typ} test = nsimd_gt_{simd_ext}_{typ}( r , nsimd_sub_{simd_ext}_{typ}( b , ones ) );
+            r = nsimd_if_else1_{simd_ext}_{typ}( test , nsimd_sub_{simd_ext}_{typ}( r , b ) , r );
+            res = nsimd_if_else1_{simd_ext}_{typ}( test , nsimd_orb_{simd_ext}_{typ}( res , ones ) , res );
+          }}
+          '''.format(**fmtspec)
+          # if simd_ext in [ ]:
+          if 'i' in typ:
+            return signed_input + long_division + signed_output
+          else:
+            return unsigned_input + long_division + unsigned_output
     return emulate_op2('/', simd_ext, typ)
+
 
 # -----------------------------------------------------------------------------
 # Binary operators: and, or, xor, andnot
