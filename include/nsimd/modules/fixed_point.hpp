@@ -149,6 +149,13 @@ NSIMD_INLINE pack<T> max(const pack<T> &a0, const pack<T> &a1) {
   return res;
 }
 
+template <typename T>
+NSIMD_INLINE pack<T> neg(const pack<T> &a0) {
+  pack<T> res;
+  res.val = simd_neg(a0.val);
+  return res;
+}
+
 // -----------------------------------------------------------------------------
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------

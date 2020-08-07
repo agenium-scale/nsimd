@@ -70,6 +70,7 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/simd/min.hpp"
 #include "nsimd/modules/fixed_point/function/simd/mul.hpp"
 #include "nsimd/modules/fixed_point/function/simd/sub.hpp"
+#include "nsimd/modules/fixed_point/function/simd/neg.hpp"
 
 // Math functions
 #include "nsimd/modules/fixed_point/function/simd/abs.hpp"
