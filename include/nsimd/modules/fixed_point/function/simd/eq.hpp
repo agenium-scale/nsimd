@@ -41,7 +41,10 @@ NSIMD_INLINE fpsimdl_t<_lf, _rt> simd_eq(const fpsimd_t<_lf, _rt> &a0,
   mask._raw = nsimd::set1( s_mask , raw_t() );
 
   fpsimdl_t<_lf, _rt> res;
-  res._raw = nsimd::eq( nsimd::andb(a0._raw,mask._raw,raw_t()), nsimd::andb(a1._raw,mask._raw,raw_t()), raw_t() );
+  res._raw = nsimd::eq(
+                nsimd::andb( a0._raw , mask._raw , raw_t() )
+              , nsimd::andb( a1._raw , mask._raw , raw_t() )
+            , raw_t() );
   return res;
 }
 
