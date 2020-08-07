@@ -985,15 +985,6 @@ template <typename T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
 
-template <typename T> struct scoped_aligned_mem_for {
-  std::vector<T, nsimd::allocator<T> > data;
-
-  template <typename I> scoped_aligned_mem(I n) : data(size_t(n));
-
-  const T *get() const { return &data[0]; }
-  T *get() { return &data[0]; }
-};
-
 } // namespace nsimd
 #endif
 
@@ -1082,6 +1073,19 @@ template <class T, class S>
 bool operator!=(allocator<T> const &, allocator<S> const &) {
   return false;
 }
+
+/* ------------------------------------------------------------------------- */
+/* scoped allocator */
+
+template <typename T> struct scoped_aligned_mem_for {
+  std::vector<T, nsimd::allocator<T> > data;
+
+  template <typename I> scoped_aligned_mem(I n) : data(size_t(n));
+
+  const T *get() const { return &data[0]; }
+  T *get() { return &data[0]; }
+};
+
 
 } // namespace nsimd
 #endif
