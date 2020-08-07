@@ -414,6 +414,12 @@ template <typename T> NSIMD_INLINE pack<T> cos(pack<T> a0) {
   return res;
 }
 
+template <typename T> NSIMD_INLINE pack<T> tan(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_tan(a0.val);
+  return res;
+}
+
 
 
 } // namespace fixed_point

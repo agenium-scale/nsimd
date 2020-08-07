@@ -25,10 +25,10 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_TAN_HPP
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_TAN_HPP
 
-#include "fixed_point/constants.hpp"
-#include "fixed_point/fixed.hpp"
-#include "fixed_point/function/cos.hpp"
-#include "fixed_point/function/sin.hpp"
+#include "nsimd/modules/fixed_point/constants.hpp"
+#include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/cos.hpp"
+#include "nsimd/modules/fixed_point/function/sin.hpp"
 
 namespace nsimd {
 namespace fixed_point {

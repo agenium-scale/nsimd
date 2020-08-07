@@ -86,7 +86,7 @@ SOFTWARE.
 // Trigonometric functions
 #include "nsimd/modules/fixed_point/function/simd/cos.hpp"
 #include "nsimd/modules/fixed_point/function/simd/sin.hpp"
-// #include "nsimd/modules/fixed_point/function/simd/tan.hpp"
+#include "nsimd/modules/fixed_point/function/simd/tan.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/csc.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/sec.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/cot.hpp"
