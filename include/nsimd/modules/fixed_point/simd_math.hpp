@@ -74,7 +74,7 @@ SOFTWARE.
 // Math functions
 #include "nsimd/modules/fixed_point/function/simd/abs.hpp"
 #include "nsimd/modules/fixed_point/function/simd/rec.hpp"
-//#include "nsimd/modules/fixed_point/function/simd/sqrt.hpp"
+#include "nsimd/modules/fixed_point/function/simd/sqrt.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/log.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/rsqrt.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/exp.hpp"

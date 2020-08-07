@@ -321,6 +321,12 @@ template <typename T> NSIMD_INLINE pack<T> rec(pack<T> a0) {
   return res;
 }
 
+template <typename T> NSIMD_INLINE pack<T> sqrt(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_sqrt(a0.val);
+  return res;
+}
+
 // -----------------------------------------------------------------------------
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------

@@ -40,16 +40,18 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sqrt(const fpsimd_t<_lf, _rt> &a) {
   // For the few cases tested, 10 iterations is more than enough to converge
   fpsimd_t<_lf, _rt> zero;
   zero._raw = nsimd::xorb( zero._raw , zero._raw , val_t() );
-  fpsimdl_t<_lf,_rt> is_zero = simd_eq(x0 , zero );
-  x0._raw = nsimd::if_else1( is_zero._raw , two._raw , x0._raw , val_t() );
+  fpsimdl_t<_lf,_rt> zero_output = simd_eq(two , zero );
   fpsimd_t<_lf, _rt> res;
   for (int i = 0; i < 10; ++i) {
+    fpsimdl_t<_lf,_rt> is_zero = simd_eq(x0 , zero );
+    zero_output = simd_orl( zero_output , is_zero );
+    x0 = simd_if_else1( is_zero , two , x0 );
     x1 = (x0 + (a / x0));
     x1._raw = nsimd::shra( x1._raw , 1 , val_t() );
     x0 = x1;
   }
 
-  x0 = simd_if_else1( is_zero , zero , x0 );
+  x0 = simd_if_else1( zero_output , zero , x0 );
   return x0;
 }
 
