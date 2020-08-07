@@ -63,7 +63,7 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/sqrt.hpp"
 #include "nsimd/modules/fixed_point/function/exp.hpp"
 // #include "nsimd/modules/fixed_point/function/ceil.hpp"
-// #include "nsimd/modules/fixed_point/function/floor.hpp"
+#include "nsimd/modules/fixed_point/function/floor.hpp"
 // #include "nsimd/modules/fixed_point/function/round.hpp"
 
 // Trigonometric functions

@@ -80,7 +80,7 @@ SOFTWARE.
 //#include "nsimd/modules/fixed_point/function/simd/rsqrt.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/exp.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/ceil.hpp"
-//#include "nsimd/modules/fixed_point/function/simd/floor.hpp"
+#include "nsimd/modules/fixed_point/function/simd/floor.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/round.hpp"
 
 // Trigonometric functions
