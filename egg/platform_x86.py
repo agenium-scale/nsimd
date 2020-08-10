@@ -281,6 +281,8 @@ def get_additional_include(func, platform, simd_ext):
                     # include <nsimd/x86/{simd_ext}/lt.h>
                     # include <nsimd/x86/{simd_ext}/gt.h>
                     # include <nsimd/x86/{simd_ext}/set1.h>
+                    # include <nsimd/x86/{simd_ext}/neg.h>
+                    # include <nsimd/x86/{simd_ext}/cvt.h>
                '''.format(**fmtspec)
     return ret
 
