@@ -149,6 +149,13 @@ NSIMD_INLINE pack<T> max(const pack<T> &a0, const pack<T> &a1) {
   return res;
 }
 
+template <typename T>
+NSIMD_INLINE pack<T> neg(const pack<T> &a0) {
+  pack<T> res;
+  res.val = simd_neg(a0.val);
+  return res;
+}
+
 // -----------------------------------------------------------------------------
 // ------------------- Comparison operators ------------------------------------
 // -----------------------------------------------------------------------------
@@ -321,6 +328,18 @@ template <typename T> NSIMD_INLINE pack<T> rec(pack<T> a0) {
   return res;
 }
 
+template <typename T> NSIMD_INLINE pack<T> sqrt(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_sqrt(a0.val);
+  return res;
+}
+
+template <typename T> NSIMD_INLINE pack<T> floor(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_floor(a0.val);
+  return res;
+}
+
 // -----------------------------------------------------------------------------
 // -------------------- Load functions -----------------------------------------
 // -----------------------------------------------------------------------------
@@ -378,6 +397,30 @@ template <typename T>
 NSIMD_INLINE void storela(typename T::value_type *p, T v) {
   simd_storela<T::lf, T::rt>(p, v.val);
 }
+
+// -----------------------------------------------------------------------------
+// -------------------- Trig functions -----------------------------------------
+// -----------------------------------------------------------------------------
+
+template <typename T> NSIMD_INLINE pack<T> sin(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_sin(a0.val);
+  return res;
+}
+
+template <typename T> NSIMD_INLINE pack<T> cos(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_cos(a0.val);
+  return res;
+}
+
+template <typename T> NSIMD_INLINE pack<T> tan(pack<T> a0) {
+  pack<T> res;
+  res.val = simd_tan(a0.val);
+  return res;
+}
+
+
 
 } // namespace fixed_point
 

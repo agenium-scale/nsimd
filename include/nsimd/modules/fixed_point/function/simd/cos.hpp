@@ -73,10 +73,10 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_cos(const fpsimd_t<_lf, _rt> &a) {
   b = b - twopi * simd_floor(b / twopi);
 
   // Reduce to range [0,pi]
-  log_t gt_pi = (b._raw > pi._raw);
+  log_t gt_pi = nsimd::gt(b._raw , pi._raw , val_t() );
   fpsimd_t<_lf, _rt> b_gt = b - pi;
   fpsimd_t<_lf, _rt> mul_gt;
-  mul_gt._raw = ~(mul._raw);
+  mul_gt = simd_notb(mul);
   b._raw = nsimd::if_else(gt_pi, b_gt._raw, b._raw, val_t(), val_t());
   mul._raw = nsimd::if_else(gt_pi, mul_gt._raw, mul._raw, val_t(), val_t());
 

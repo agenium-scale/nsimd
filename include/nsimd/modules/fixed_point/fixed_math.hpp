@@ -54,6 +54,7 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/mul.hpp"
 #include "nsimd/modules/fixed_point/function/neg.hpp"
 #include "nsimd/modules/fixed_point/function/sub.hpp"
+#include "nsimd/modules/fixed_point/function/rec.hpp"
 
 // More complex math functions
 // #include "nsimd/modules/fixed_point/function/abs.hpp"
@@ -62,13 +63,13 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/sqrt.hpp"
 #include "nsimd/modules/fixed_point/function/exp.hpp"
 // #include "nsimd/modules/fixed_point/function/ceil.hpp"
-// #include "nsimd/modules/fixed_point/function/floor.hpp"
+#include "nsimd/modules/fixed_point/function/floor.hpp"
 // #include "nsimd/modules/fixed_point/function/round.hpp"
 
 // Trigonometric functions
-// #include "nsimd/modules/fixed_point/function/sin.hpp"
-// #include "nsimd/modules/fixed_point/function/cos.hpp"
-// #include "nsimd/modules/fixed_point/function/tan.hpp"
+#include "nsimd/modules/fixed_point/function/sin.hpp"
+#include "nsimd/modules/fixed_point/function/cos.hpp"
+#include "nsimd/modules/fixed_point/function/tan.hpp"
 // #include "nsimd/modules/fixed_point/function/csc.hpp"
 // #include "nsimd/modules/fixed_point/function/sec.hpp"
 // #include "nsimd/modules/fixed_point/function/cot.hpp"

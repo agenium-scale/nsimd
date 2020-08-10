@@ -31,50 +31,36 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
+
+//template <uint8_t _lf, uint8_t _rt>
+//NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
+//  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
+//  return simd_div<_lf, _rt>(one, a0);
+//}
+
+
 template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
-  fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-  return simd_div<_lf, _rt>(one, a0);
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
+  typedef typename fpsimd_t<_lf, _rt>::value_type simd_t;
+
+  simd_t z = nsimd::clz( a0._raw , raw_t() );
+  raw_t total_size = 8 * sizeof(raw_t);
+  z = nsimd::sub( z , nsimd::set1(raw_t(total_size - 2*_rt - 1) , raw_t() ) , raw_t() );
+
+  // Initial seed = ulp << ( total bits - clz )
+  fpsimd_t<_lf,_rt> x;
+  x._raw = nsimd::set1( raw_t(1) , raw_t() );
+  x._raw = nsimd::shlv( x._raw , z , raw_t() );
+
+  // Newton raphson iterations
+  fpsimd_t<_lf,_rt> two( fp_t<_lf,_rt>(2) );
+  for ( int i = 0 ; i < 10 ; ++i ) {
+    x = x * ( two - ( x * a0 ) );
+  }
+
+  return x;
 }
-
-// // Calculate 1/a via newton-raphson
-// template <unsigned char _lf, unsigned char _rt>
-// inline fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a)
-// {
-//   using val_t = typename fp_t<_lf, _rt>::value_type;
-//   using log_t = typename fp_t<_lf, _rt>::simd_logical;
-
-//   fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
-//   fpsimd_t<_lf, _rt> two(fp_t<_lf, _rt>(2));
-//   fpsimd_t<_lf, _rt> guess(fp_t<_lf, _rt>(1));
-
-//   log_t negative = (a._raw < fpsimd_t<_lf, _rt>(0)._raw);
-//   fpsimd_t<_lf, _rt> abs = simd_abs(a);
-
-//   // fpsimd_t<_lf, _rt> z = nsimd::clz(abs._raw, val_t());
-//   // log_t gt1 = (a._raw > one);
-//   // guess._raw = one << z - _lf
-
-//   int iter = 10;
-//   fpsimd_t<_lf, _rt> res0 = guess;
-//   // fpsimd_t<_lf,_rt> res1 = guess;
-//   // fpsimd_t<_lf,_rt> tmp0;
-//   // fpsimd_t<_lf,_rt> tmp1;
-//   // fpsimd_t<_lf,_rt> tmp2;
-//   // fpsimd_t<_lf,_rt> tmp3;
-//   for(int i = 0; i < iter; ++i)
-//   {
-//     // tmp0 = a * res0;
-//     // tmp1 = one - tmp0;
-//     // tmp2 = tmp1 * res0;
-//     // res1 = tmp2 + res0;
-//     // res0 = res1;
-
-//     res0 = res0 * (one + (one - abs * res0));
-//     // res0 = res0 * (two - abs * res0);
-//   }
-//   return res0;
-// }
 
 } // namespace fixed_point
 } // namespace nsimd

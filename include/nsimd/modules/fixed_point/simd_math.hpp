@@ -70,22 +70,23 @@ SOFTWARE.
 #include "nsimd/modules/fixed_point/function/simd/min.hpp"
 #include "nsimd/modules/fixed_point/function/simd/mul.hpp"
 #include "nsimd/modules/fixed_point/function/simd/sub.hpp"
+#include "nsimd/modules/fixed_point/function/simd/neg.hpp"
 
 // Math functions
 #include "nsimd/modules/fixed_point/function/simd/abs.hpp"
 #include "nsimd/modules/fixed_point/function/simd/rec.hpp"
-//#include "nsimd/modules/fixed_point/function/simd/sqrt.hpp"
+#include "nsimd/modules/fixed_point/function/simd/sqrt.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/log.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/rsqrt.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/exp.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/ceil.hpp"
-//#include "nsimd/modules/fixed_point/function/simd/floor.hpp"
+#include "nsimd/modules/fixed_point/function/simd/floor.hpp"
 //#include "nsimd/modules/fixed_point/function/simd/round.hpp"
 
 // Trigonometric functions
-// #include "nsimd/modules/fixed_point/function/simd/cos.hpp"
-// #include "nsimd/modules/fixed_point/function/simd/sin.hpp"
-// #include "nsimd/modules/fixed_point/function/simd/tan.hpp"
+#include "nsimd/modules/fixed_point/function/simd/cos.hpp"
+#include "nsimd/modules/fixed_point/function/simd/sin.hpp"
+#include "nsimd/modules/fixed_point/function/simd/tan.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/csc.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/sec.hpp"
 // #include "nsimd/modules/fixed_point/function/simd/cot.hpp"

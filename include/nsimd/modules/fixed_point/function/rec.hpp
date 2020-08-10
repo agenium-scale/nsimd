@@ -22,37 +22,19 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SQRT_HPP
-#define NSIMD_MODULES_FIXED_POINT_FUNCTION_SIMD_SQRT_HPP
+#ifndef NSIMD_MODULES_FIXED_POINT_FUNCTION_REC_HPP
+#define NSIMD_MODULES_FIXED_POINT_FUNCTION_REC_HPP
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/greater.hpp"
+#include "nsimd/modules/fixed_point/function/mul.hpp"
 
 namespace nsimd {
 namespace fixed_point {
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sqrt(const fpsimd_t<_lf, _rt> &a) {
-  typedef typename fp_t<_lf, _rt>::value_type val_t;
-  typedef typename fp_t<_lf, _rt>::simd_logical log_t;
-  fpsimd_t<_lf, _rt> x0, x1;
-  fpsimd_t<_lf, _rt> two;
-  two._raw = nsimd::set1(constants::two<_lf, _rt>()._raw, val_t());
-  x0 = a;
-  // For the few cases tested, 10 iterations is more than enough to converge
-  fpsimd_t<_lf, _rt> zero;
-  zero._raw = nsimd::xorb( zero._raw , zero._raw , val_t() );
-  fpsimdl_t<_lf,_rt> zero_output = simd_eq(two , zero );
-  fpsimd_t<_lf, _rt> res;
-  for (int i = 0; i < 10; ++i) {
-    fpsimdl_t<_lf,_rt> is_zero = simd_eq(x0 , zero );
-    zero_output = simd_orl( zero_output , is_zero );
-    x0 = simd_if_else1( is_zero , two , x0 );
-    x1 = (x0 + (a / x0));
-    x1._raw = nsimd::shra( x1._raw , 1 , val_t() );
-    x0 = x1;
-  }
-
-  x0 = simd_if_else1( zero_output , zero , x0 );
-  return x0;
+NSIMD_INLINE fp_t<_lf, _rt> rec(const fp_t<_lf, _rt> &a) {
+  typedef typename fp_t<_lf, _rt>::value_type raw_t;
+  return (fp_t<_lf,_rt>(int(1)) / a );
 }
 
 } // namespace fixed_point

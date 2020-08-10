@@ -34,8 +34,17 @@ template <uint8_t _lf, uint8_t _rt>
 NSIMD_INLINE fpsimdl_t<_lf, _rt> simd_eq(const fpsimd_t<_lf, _rt> &a0,
                                          const fpsimd_t<_lf, _rt> &a1) {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
+  const int shift_size = 8 * sizeof(raw_t) - _lf - _rt;
+  const raw_t max = -1;
+  const raw_t s_mask = (max >> (shift_size));
+  fpsimd_t<_lf,_rt> mask;
+  mask._raw = nsimd::set1( s_mask , raw_t() );
+
   fpsimdl_t<_lf, _rt> res;
-  res._raw = nsimd::eq(a0._raw, a1._raw, raw_t());
+  res._raw = nsimd::eq(
+                nsimd::andb( a0._raw , mask._raw , raw_t() )
+              , nsimd::andb( a1._raw , mask._raw , raw_t() )
+            , raw_t() );
   return res;
 }
 

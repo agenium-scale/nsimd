@@ -34,7 +34,7 @@ bool operator==(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
   const raw_type max = -1;
-  const raw_type mask = (max << (shift_size));
+  const raw_type mask = (max >> (shift_size));
   return ((a._raw & mask) == (b._raw & mask));
 }
 

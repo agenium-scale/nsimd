@@ -35,9 +35,9 @@ NSIMD_INLINE fp_t<_lf, _rt> sqrt(const fp_t<_lf, _rt> &a) {
   x0 = a;
   // For the few cases tested, 10 iterations is more than enough to converge
   for (int i = 0; i < 10; ++i) {
-    x1 = (x0 + (a / x0)) / 2;
-    if (x0._raw == 0 || (x0._raw - x1._raw) == 0)
+    if ( (x0._raw == 0) || (x0._raw - x1._raw) == 0)
       break;
+    x1 = (x0 + (a / x0)) >> 1;
     x0 = x1;
   }
 

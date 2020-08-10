@@ -45,19 +45,19 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_tan(const fpsimd_t<_lf, _rt> &a) {
   fpsimd_t<_lf, _rt> zero(constants::zero<_lf, _rt>());
 
   // Reduce to range [0,inf]
-  log_t lt_0 = (b._raw < zero._raw);
+  log_t gt_0 = nsimd::gt(b._raw , zero._raw , val_t());
   fpsimd_t<_lf, _rt> b_pos;
-  b_pos._raw = ~(b._raw);
+  b_pos = simd_neg(b);
   fpsimd_t<_lf, _rt> mul_pos;
-  mul_pos._raw = ~(mul._raw);
-  b._raw = nsimd::if_else(lt_0, b_pos._raw, b._raw, val_t(), val_t());
-  mul._raw = nsimd::if_else(lt_0, mul_pos._raw, mul._raw, val_t(), val_t());
+  mul_pos = simd_neg(mul);
+  b._raw = nsimd::if_else(gt_0, b._raw, b_pos._raw, val_t(), val_t());
+  mul._raw = nsimd::if_else(gt_0, mul._raw, mul_pos._raw, val_t(), val_t());
 
   // Reduce to range [0,pi]
   b = b - pi * simd_floor(b / pi);
 
   // Reduce to range [-pi/2,pi/2] by shifting the range [pi/2,pi] to [-pi/2,0]
-  log_t gt_pi = (b._raw > halfpi._raw);
+  log_t gt_pi = nsimd::gt(b._raw , halfpi._raw , val_t());
   fpsimd_t<_lf, _rt> b_gt = b - pi;
   b._raw = nsimd::if_else(gt_pi, b_gt._raw, b._raw, val_t(), val_t());
 
