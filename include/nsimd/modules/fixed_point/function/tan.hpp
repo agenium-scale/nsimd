@@ -37,7 +37,10 @@ namespace fixed_point {
 // -- range reduction is not trivially vectorizable though...
 template <unsigned char _lf, unsigned char _rt>
 NSIMD_INLINE fp_t<_lf, _rt> safe_tan(const fp_t<_lf, _rt> &a) {
-  return safe_sin(a) / safe_cos(a);
+  typedef typename fp_t<_lf,_rt>::value_type raw_t;
+  fp_t<_lf,_rt> max; max._raw = raw_t(-1) >> 1;
+  fp_t<_lf,_rt> cos = safe_cos(a);
+  return (cos ? (safe_sin(a) / safe_cos(a)) : fp_t<_lf,_rt>(max) );
 }
 
 template <unsigned char _lf, unsigned char _rt>
