@@ -707,65 +707,63 @@ def div2(simd_ext, typ):
          typ in ['f16', 'f32', 'f64', 'i32', 'u32', 'i64', 'u64']:
         return 'return svdiv_{suf}_z({svtrue}, {in0}, {in1});'. \
                format(**fmtspec)
-    elif typ in [ 'i8' , 'i16' , 'i32' , 'u8' , 'u16' , 'u32' ]:
-      utyp = 'u' + typ[1:]
-      signed_input = '''\
-      nsimd_{simd_ext}_v{typ} one =  nsimd_set1_{simd_ext}_{typ}(1);
-      nsimd_{simd_ext}_v{typ} neg_one =  nsimd_neg_{simd_ext}_{typ}(one);
-      nsimd_{simd_ext}_v{typ} zero = nsimd_xorb_{simd_ext}_{typ}( one , one );
+    elif typ in common.iutypes:
+      # no point on aarch64 - slows things down
+      if ( simd_ext in [ 'neon128' ] and '8' in typ ):
+        utyp = 'u' + typ[1:]
+        signed_input = '''\
+        nsimd_{simd_ext}_v{typ} one =  nsimd_set1_{simd_ext}_{typ}(1);
+        nsimd_{simd_ext}_v{typ} neg_one =  nsimd_neg_{simd_ext}_{typ}(one);
+        nsimd_{simd_ext}_v{typ} zero = nsimd_xorb_{simd_ext}_{typ}( one , one );
 
-      nsimd_{simd_ext}_vl{typ} b_is_neg;
-      b_is_neg = nsimd_lt_{simd_ext}_{typ}( {in1} , zero );
-      nsimd_{simd_ext}_v{typ} b_neg = nsimd_if_else1_{simd_ext}_{typ}( b_is_neg , neg_one , one );
+        nsimd_{simd_ext}_vl{typ} b_is_neg;
+        b_is_neg = nsimd_lt_{simd_ext}_{typ}( {in1} , zero );
+        nsimd_{simd_ext}_v{typ} b_neg = nsimd_if_else1_{simd_ext}_{typ}( b_is_neg , neg_one , one );
 
-      nsimd_{simd_ext}_vl{typ} t_is_neg;
-      t_is_neg = nsimd_lt_{simd_ext}_{typ}( {in0} , zero );
-      nsimd_{simd_ext}_v{typ} t_neg = nsimd_if_else1_{simd_ext}_{typ}( t_is_neg , neg_one , one );
+        nsimd_{simd_ext}_vl{typ} t_is_neg;
+        t_is_neg = nsimd_lt_{simd_ext}_{typ}( {in0} , zero );
+        nsimd_{simd_ext}_v{typ} t_neg = nsimd_if_else1_{simd_ext}_{typ}( t_is_neg , neg_one , one );
 
-      nsimd_{simd_ext}_v{utyp} b = nsimd_cvt_{simd_ext}_{utyp}_{typ}( nsimd_mul_{simd_ext}_{typ}( {in1} , b_neg ) );
-      nsimd_{simd_ext}_v{utyp} t = nsimd_cvt_{simd_ext}_{utyp}_{typ}( nsimd_mul_{simd_ext}_{typ}( {in0} , t_neg ) );
-      nsimd_{simd_ext}_v{typ} bt_neg = nsimd_mul_{simd_ext}_{typ}( b_neg , t_neg );
+        nsimd_{simd_ext}_v{utyp} b = nsimd_cvt_{simd_ext}_{utyp}_{typ}( nsimd_mul_{simd_ext}_{typ}( {in1} , b_neg ) );
+        nsimd_{simd_ext}_v{utyp} t = nsimd_cvt_{simd_ext}_{utyp}_{typ}( nsimd_mul_{simd_ext}_{typ}( {in0} , t_neg ) );
+        nsimd_{simd_ext}_v{typ} bt_neg = nsimd_mul_{simd_ext}_{typ}( b_neg , t_neg );
 
-      '''.format(**fmtspec, utyp=utyp)
+        '''.format(**fmtspec, utyp=utyp)
 
-      signed_output = '''\
+        signed_output = '''\
 
-      return nsimd_mul_{simd_ext}_{typ}( nsimd_cvt_{simd_ext}_{typ}_{utyp}( res ) , bt_neg );
-      '''.format(**fmtspec, utyp=utyp)
+        return nsimd_mul_{simd_ext}_{typ}( nsimd_cvt_{simd_ext}_{typ}_{utyp}( res ) , bt_neg );
+        '''.format(**fmtspec, utyp=utyp)
 
-      unsigned_input = '''\
-      nsimd_{simd_ext}_v{typ} b = {in1};
-      nsimd_{simd_ext}_v{typ} t = {in0};
+        unsigned_input = '''\
+        nsimd_{simd_ext}_v{typ} b = {in1};
+        nsimd_{simd_ext}_v{typ} t = {in0};
 
-      '''.format(**fmtspec, utyp=utyp)
+        '''.format(**fmtspec, utyp=utyp)
 
-      unsigned_output = '''\
+        unsigned_output = '''\
 
-      return res;
-      '''.format(**fmtspec, utyp=utyp)
+        return res;
+        '''.format(**fmtspec, utyp=utyp)
 
-      # TODO: Choose according to architecture as well
-      if typ in [ 'i8' , 'i16' , 'i32' , 'u8' , 'u16' , 'u32' ]:
-        #TODO: Replace the set1(0) with a setzero type instruction
-        if typ in [ 'i8' , 'i16' , 'i32' , 'u8' , 'u16' , 'u32' ]:
-          long_division = '''\
-          nsimd_{simd_ext}_v{utyp} ones = nsimd_set1_{simd_ext}_{utyp}( 1 );
-          nsimd_{simd_ext}_v{utyp} res; // Does not need initialization
-          nsimd_{simd_ext}_v{utyp} r = nsimd_set1_{simd_ext}_{utyp}( 0 );
-          for ( int i = ({typnbits}-1) ; i >=0 ; --i ) {{
-            res = nsimd_shl_{simd_ext}_{utyp}( res , 1 );
-            r = nsimd_shl_{simd_ext}_{utyp}( r , 1 );
-            r = nsimd_orb_{simd_ext}_{utyp}( r , nsimd_andb_{simd_ext}_{utyp}( nsimd_shr_{simd_ext}_{utyp}( t , i ) , ones ) );
-            nsimd_{simd_ext}_vl{utyp} test = nsimd_gt_{simd_ext}_{utyp}( r , nsimd_sub_{simd_ext}_{utyp}( b , ones ) );
-            r = nsimd_if_else1_{simd_ext}_{utyp}( test , nsimd_sub_{simd_ext}_{utyp}( r , b ) , r );
-            res = nsimd_if_else1_{simd_ext}_{utyp}( test , nsimd_orb_{simd_ext}_{utyp}( res , ones ) , res );
-          }}
-          '''.format(**fmtspec,utyp=utyp)
-          # if simd_ext in [ ]:
-          if 'i' in typ:
-            return signed_input + long_division + signed_output
-          else:
-            return unsigned_input + long_division + unsigned_output
+        long_division = '''\
+        nsimd_{simd_ext}_v{utyp} ones = nsimd_set1_{simd_ext}_{utyp}( 1 );
+        nsimd_{simd_ext}_v{utyp} res; // Does not need initialization
+        nsimd_{simd_ext}_v{utyp} r = nsimd_set1_{simd_ext}_{utyp}( 0 );
+        for ( int i = ({typnbits}-1) ; i >=0 ; --i ) {{
+          res = nsimd_shl_{simd_ext}_{utyp}( res , 1 );
+          r = nsimd_shl_{simd_ext}_{utyp}( r , 1 );
+          r = nsimd_orb_{simd_ext}_{utyp}( r , nsimd_andb_{simd_ext}_{utyp}( nsimd_shr_{simd_ext}_{utyp}( t , i ) , ones ) );
+          nsimd_{simd_ext}_vl{utyp} test = nsimd_gt_{simd_ext}_{utyp}( r , nsimd_sub_{simd_ext}_{utyp}( b , ones ) );
+          r = nsimd_if_else1_{simd_ext}_{utyp}( test , nsimd_sub_{simd_ext}_{utyp}( r , b ) , r );
+          res = nsimd_if_else1_{simd_ext}_{utyp}( test , nsimd_orb_{simd_ext}_{utyp}( res , ones ) , res );
+        }}
+        '''.format(**fmtspec,utyp=utyp)
+        # if simd_ext in [ ]:
+        if 'i' in typ:
+          return signed_input + long_division + signed_output
+        else:
+          return unsigned_input + long_division + unsigned_output
     else:
         ret = f16f64(simd_ext, typ, 'div', 'div', 2)
         if ret != '':
