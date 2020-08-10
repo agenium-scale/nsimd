@@ -266,18 +266,14 @@ def get_additional_include(func, platform, simd_ext):
                 '''.format(**fmtspec)
     if func == 'div':
         ret += '''
-                    # include <nsimd/x86/{simd_ext}/sub.h>
-                    # include <nsimd/x86/{simd_ext}/mul.h>
-                    # include <nsimd/x86/{simd_ext}/upcvt.h>
-                    # include <nsimd/x86/{simd_ext}/downcvt.h>
-                    # include <nsimd/x86/{simd_ext}/shr.h>
-                    # include <nsimd/x86/{simd_ext}/shlv.h>
-                    # include <nsimd/x86/{simd_ext}/shrv.h>
-                    # include <nsimd/x86/{simd_ext}/shl.h>
-                    # include <nsimd/x86/{simd_ext}/clz.h>
-                    # include <nsimd/x86/{simd_ext}/if_else1.h>
-                    # include <nsimd/x86/{simd_ext}/lt.h>
-                    # include <nsimd/x86/{simd_ext}/set1.h>
+                    # include <nsimd/arm/{simd_ext}/sub.h>
+                    # include <nsimd/arm/{simd_ext}/mul.h>
+                    # include <nsimd/arm/{simd_ext}/shr.h>
+                    # include <nsimd/arm/{simd_ext}/shl.h>
+                    # include <nsimd/arm/{simd_ext}/if_else1.h>
+                    # include <nsimd/arm/{simd_ext}/lt.h>
+                    # include <nsimd/arm/{simd_ext}/gt.h>
+                    # include <nsimd/arm/{simd_ext}/set1.h>
                '''.format(**fmtspec)
     return ret
 
@@ -709,7 +705,7 @@ def div2(simd_ext, typ):
          typ in ['f16', 'f32', 'f64', 'i32', 'u32', 'i64', 'u64']:
         return 'return svdiv_{suf}_z({svtrue}, {in0}, {in1});'. \
                format(**fmtspec)
-    else:
+    elif typ in [ 'i8' , 'i16' , 'i32' , 'u8' , 'u16' , 'u32' ]:
       utyp = 'u' + typ[1:]
       signed_input = '''\
       nsimd_{simd_ext}_vl{typ} b_is_neg;
@@ -763,6 +759,10 @@ def div2(simd_ext, typ):
             return signed_input + long_division + signed_output
           else:
             return unsigned_input + long_division + unsigned_output
+    else:
+        ret = f16f64(simd_ext, typ, 'div', 'div', 2)
+        if ret != '':
+            return ret
     return emulate_op2('/', simd_ext, typ)
 
 
