@@ -112,6 +112,9 @@ NSIMD_STRUCT packl;
 template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vectorl simd_vectorl;
   simd_vectorl car;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = 1;
 
   // Default ctor
   packl() {}
@@ -149,6 +152,10 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
 
 template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   typename simd_traits<T, SimdExt>::simd_vectorl car;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = N;
+
   packl<T, N - 1, SimdExt> cdr;
 
   // Default ctor
