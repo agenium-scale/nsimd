@@ -946,7 +946,7 @@ def div2(opts, simd_ext, typ):
     # TODO: Choose according to architecture as well
     # AVX2
     if simd_ext in avx + avx512:
-      elif typ in [ 'i8' , 'i16' , 'u8' , 'u16' ]:
+      if typ in [ 'i8' , 'i16' , 'u8' , 'u16' ]:
         utyp = 'u' + typ[1:]
         signed_input = '''\
         nsimd_{simd_ext}_v{typ} one =  nsimd_set1_{simd_ext}_{typ}(1);
