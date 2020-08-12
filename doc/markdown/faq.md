@@ -160,3 +160,36 @@ For example cf.
 <https://www.boost.org/doc/libs/1_71_0/doc/html/predef/reference.html> and
 <https://msdn.microsoft.com/en-us/library/b0084kay.aspx>. Thus a "manual"
 system is always necessary.
+
+## Why some operators have their names ending with an "1"?
+
+This is because of C++ and our will not to use C++-useless-complicated stuff.
+Taking the example with `if_else`, suppose that we have called it "if\_else"
+without the "1". When working with packs, one wants to be able to use `if_else`
+in this manner:
+
+```c++
+int main() {
+  using namespace nsimd;
+  
+  typedef pack<int> pi;
+  typedef pack<float> pf;
+
+  int n;
+  int *a, *b;      // suppose both points to n ints
+  float *fa, *fb;  // suppose both points to n floats
+
+  for (int i = 0; i < n; i += len()) {
+    packl<int> cond = (loada<pi>(&a[i]) < loada<pi>(&b[i]));
+    storea(&fb[i], if_else(cond, load<pf>(&fb[i]), set1<pf>(0.0f)));
+  }
+
+  return 0;
+}
+```
+
+But this causes a compiler error, the overload of `if_else` is ambiguous.
+Sure one can use many C++-ish techniques to tackle this problem but we chose
+not to as the goal is to make the life of the compiler as easy as possible.
+So as we want to favor the C++ advanced API as it is the most human readable,
+users of the C and C++ base APIs will have to use `if_else1`.

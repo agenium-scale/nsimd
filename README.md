@@ -310,15 +310,14 @@ but from a library point of view.
 
 NSIMD was designed following as closely as possible the following guidelines:
 
-- Do not aim for a fully IEEE compliant library, rely on intrinsics, errors
-  induced by non compliance are small and acceptable.
 - Correctness primes over speed.
 - Emulate with tricks and intrinsic integer arithmetic when not available.
 - Use common names as found in common computation libraries.
 - Do not hide SIMD registers, one variable (of a type such as `nsimd::pack`)
   matches one register.
-- Keep the code simple to allow the compiler to perform as many optimizations
-  as possible.
+- Make the life of the compiler as easy as possible: keep the code simple to
+  allow the compiler to perform as many optimizations as possible.
+- Favor the advanced C++ API.
 
 You may wrap intrinsics that require compile time knowledge of the underlying
 vector length but this should be done with caution.
