@@ -250,7 +250,7 @@ def gen_doc(opts):
 # -----------------------------------------------------------------------------
 
 def doit(opts):
-    print('-- Generating doc for module fixed_point')
+    common.myprint(opts, 'Generating doc for module fixed_point')
     gen_overview(opts)
     gen_api(opts)
     gen_doc(opts)

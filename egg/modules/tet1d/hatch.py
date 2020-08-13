@@ -821,7 +821,7 @@ def doc_menu():
 # -----------------------------------------------------------------------------
 
 def doit(opts):
-    print('-- Generating module tet1d')
+    common.myprint(opts, 'Generating module tet1d')
     if opts.library:
         gen_functions(opts)
     if opts.tests:
