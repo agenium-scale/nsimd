@@ -295,7 +295,7 @@ def gen_doc(opts):
             fout.write('- [Memory function](memory.md)\n')
             fout.write('- [Float16 related functions](fp16.md)\n')
             fout.write('- [Defines provided by NSIMD](defines.md)\n')
-            fout.write('- [NSIMD pack related functions](pack.md)\n\n')
+            fout.write('- [NSIMD pack and related functions](pack.md)\n\n')
             fout.write('# SIMD operators\n')
             for c, ops in api.items():
                 if len(ops) == 0:
