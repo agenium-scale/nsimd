@@ -2205,7 +2205,17 @@ def shlv(simd_ext, from_typ):
         '''.format(**fmtspec)
 
 def shrv(opts, simd_ext, from_typ):
-      return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
+      if 'u' in from_typ:
+        suf_i = suf('i'+from_typ[1:])
+        return '''\
+        return vshlq_{suf}( {in0} , vnegq_s{typnbits}(vreinterpretq_{suf_i}_{suf}({in1}) ));
+        '''.format(**fmtspec, suf_i=suf_i)
+      else:
+        return '''\
+        return vshlq_{suf}( {in0} , vnegq_s{typnbits}({in1}) );
+        '''.format(**fmtspec)
+
+      #return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
 
 # -----------------------------------------------------------------------------
 
