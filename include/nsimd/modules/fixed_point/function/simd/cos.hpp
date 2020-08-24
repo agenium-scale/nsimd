@@ -81,9 +81,9 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_cos(const fpsimd_t<_lf, _rt> &a) {
   mul._raw = nsimd::if_else(gt_pi, mul_gt._raw, mul._raw, val_t(), val_t());
 
   // Reduce to range [-pi/2,pi/2] thanks to: cos(x) = sin(x+pi/2)
-  b = b + halfpi;
+  b = b - halfpi;
 
-  return mul * simd_safe_sin(b);
+  return simd_neg(mul) * simd_safe_sin(b);
 }
 
 } // namespace fixed_point

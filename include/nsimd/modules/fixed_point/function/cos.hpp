@@ -69,9 +69,9 @@ NSIMD_INLINE fp_t<_lf, _rt> cos(const fp_t<_lf, _rt> &a) {
     frac = frac - 0.5;
   }
   // Reduce to range [-pi/2,pi/2] thanks to: cos(x) = -sin(x-pi/2)
-  b = b + constants::pi<_lf, _rt>() / 2;
+  b = b - constants::pi<_lf, _rt>() / 2;
 
-  return mul * safe_sin(b);
+  return -(mul * safe_sin(b));
 }
 
 } // namespace fixed_point
