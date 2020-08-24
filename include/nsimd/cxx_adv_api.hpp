@@ -144,10 +144,6 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
     os << " }";
     return os;
   }
-
-  typedef T value_type;
-  typedef SimdExt simd_ext;
-  static const int unroll = 1;
 };
 
 template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
@@ -170,10 +166,6 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
     os << packl<T, 1, SimdExt>(a0.car) << ", " << a0.cdr;
     return os;
   }
-
-  typedef T value_type;
-  typedef SimdExt simd_ext;
-  static const int unroll = N;
 };
 
 // ----------------------------------------------------------------------------
