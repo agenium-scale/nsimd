@@ -32,29 +32,33 @@ def get_impl(operator):
        operator.params == ['l', 'v', 'v']:
         return \
         '''template <typename T, int N, typename SimdExt, typename S>
-        pack{l}<T, N, SimdExt> {cxx_op}(pack<T, N, SimdExt> const &v, S s) {{
+        pack{l}<T, N, SimdExt>
+        operator{cxx_op}(pack<T, N, SimdExt> const &v, S s) {{
           return {op_name}(v, pack<T, N, SimdExt>(T(s)));
         }}
 
         template <typename S, typename T, int N, typename SimdExt>
-        pack{l}<T, N, SimdExt> {cxx_op}(S s, pack<T, N, SimdExt> const &v) {{
+        pack{l}<T, N, SimdExt>
+        operator{cxx_op}(S s, pack<T, N, SimdExt> const &v) {{
           return {op_name}(pack<T, N, SimdExt>(T(s)), v);
         }}'''.format(l='l' if operator.params[0] == 'l' else '',
                      cxx_op=operator.cxx_operator, op_name=operator.name)
     if operator.params == ['l', 'l', 'l']:
         return \
         '''template <typename T, int N, typename SimdExt, typename S>
-        packl<T, N, SimdExt> {cxx_op}(packl<T, N, SimdExt> const &v, S s) {{
+        packl<T, N, SimdExt>
+        operator{cxx_op}(packl<T, N, SimdExt> const &v, S s) {{
           return {op_name}(v, packl<T, N, SimdExt>(bool(s)));
         }}
 
         template <typename S, typename T, int N, typename SimdExt>
-        packl<T, N, SimdExt> {cxx_op}(S s, packl<T, N, SimdExt> const &v) {{
+        packl<T, N, SimdExt>
+        operator{cxx_op}(S s, packl<T, N, SimdExt> const &v) {{
           return {op_name}(pack<T, N, SimdExt>(bool(s)), v);
         }}
 
         template <typename T, typename S, int N, typename SimdExt>
-        packl<T, N, SimdExt> {cxx_op}(packl<T, N, SimdExt> const &v,
+        packl<T, N, SimdExt> operator{cxx_op}(packl<T, N, SimdExt> const &v,
                                       packl<S, N, SimdExt> const &w) {{
           return {op_name}(v, reinterpretl<packl<T, N, SimdExt> >(w));
         }}'''.format(cxx_op=operator.cxx_operator, op_name=operator.name)

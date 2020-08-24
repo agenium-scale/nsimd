@@ -31,7 +31,7 @@ def get_cxx_advanced_generic(operator):
     def get_pack(param):
         return 'pack{}'.format(param[1:]) if param[0] == 'v' else 'packl'
     args_list = common.enum(operator.params[1:])
-    inter = [i for i in ['v', 'l', 'vx2', 'vx3', 'vx4'] \
+    inter = [i for i in ['v', 'l', 'vx1', 'vx2', 'vx3', 'vx4'] \
              if i in operator.params[1:]]
     need_tmpl_pack = get_pack(operator.params[0]) if inter == [] else None
 
@@ -75,7 +75,7 @@ def get_cxx_advanced_generic(operator):
         post_cdr = ''
         pack1_ret = '{} ret;'.format(ret1)
         packN_ret = '{} ret;'.format(retN)
-    elif operator.params[0] in ['vx2', 'vx3', 'vx4']:
+    elif operator.params[0] in ['vx1', 'vx2', 'vx3', 'vx4']:
         num = operator.params[0][-1:]
         return_ret = 'return ret;'
         if operator.closed:
@@ -137,7 +137,7 @@ def get_cxx_advanced_generic(operator):
 
     ret = ''
     if operator.cxx_operator:
-        ret += tmpl.format(cxx_name=operator.cxx_operator,
+        ret += tmpl.format(cxx_name='operator'+operator.cxx_operator,
                            sig1=sig['op1'], sigN=sig['opN']) + '\n\n'
     ret += tmpl.format(cxx_name=operator.name,
                        sig1=sig['1'], sigN=sig['N']) + '\n\n'
@@ -158,6 +158,12 @@ def get_cxx_advanced_generic(operator):
                   format(sig=sig['dispatch'], cxx_name=operator.name,
                          other_varsN=other_varsN)
     return ret
+
+# -----------------------------------------------------------------------------
+# Generate assignments operator (+=, *=, &=, ...)
+def gen_assignment_operators(op):
+    #return '''{sig} {{ }}'''
+    return ''
 
 # -----------------------------------------------------------------------------
 # Generate advanced C++ API
@@ -185,6 +191,12 @@ def doit(opts):
 
                          '''.format(hbar=common.hbar,
                                     code=get_cxx_advanced_generic(operator)))
+
+            if operator.cxx_operator and \
+                (operator.args in [['v', 'v'], ['v', 'p']]):
+              out.write('{hbar}\n{code}'. \
+                      format(hbar=common.hbar,
+                             code=gen_assignment_operators(operator)))
 
 
         out.write('''{hbar}

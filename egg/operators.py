@@ -247,11 +247,6 @@ class Operator(object, metaclass=MAddToOperators):
     def args(self):
         return self.params[1:]
 
-    @property
-    def cxx_operator_symbol(self):
-        assert self.cxx_operator is not None
-        return self.cxx_operator.replace('operator', '')
-
     def __init__(self):
         (self.name, self.params) = common.parse_signature(self.signature)
         super(Operator, self).__init__()
@@ -412,11 +407,13 @@ class Operator(object, metaclass=MAddToOperators):
             if self.cxx_operator:
                 ret.update({ \
                     'op1':
-                    'template <{tmpl_args1}> {ret1} {cxx_name}({args1});'. \
+                    '''template <{tmpl_args1}>
+                    {ret1} operator{cxx_name}({args1});'''. \
                     format(tmpl_args1=tmpl_args1, ret1=ret1, args1=args1,
                            cxx_name=self.cxx_operator),
                     'opN':
-                    'template <{tmpl_argsN}> {retN} {cxx_name}({argsN});'. \
+                    '''template <{tmpl_argsN}>
+                    {retN} operator{cxx_name}({argsN});'''. \
                     format(tmpl_argsN=tmpl_argsN, retN=retN, argsN=argsN,
                            cxx_name=self.cxx_operator)
                 })
@@ -696,7 +693,7 @@ class Storela(Operator):
 class Orb(Operator):
     full_name = 'bitwise or'
     signature = 'v orb v v'
-    cxx_operator = 'operator|'
+    cxx_operator = '|'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -705,7 +702,7 @@ class Orb(Operator):
 class Andb(Operator):
     full_name = 'bitwise and'
     signature = 'v andb v v'
-    cxx_operator = 'operator&'
+    cxx_operator = '&'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -724,7 +721,7 @@ class Andnotb(Operator):
 class Notb(Operator):
     full_name = 'bitwise not'
     signature = 'v notb v'
-    cxx_operator = 'operator~'
+    cxx_operator = '~'
     domain = Domain('R')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -733,7 +730,7 @@ class Notb(Operator):
 class Xorb(Operator):
     full_name = 'bitwise xor'
     signature = 'v xorb v v'
-    cxx_operator = 'operator^'
+    cxx_operator = '^'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -742,7 +739,7 @@ class Xorb(Operator):
 class Orl(Operator):
     full_name = 'logical or'
     signature = 'l orl l l'
-    cxx_operator = 'operator||'
+    cxx_operator = '||'
     domain = Domain('BxB')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
@@ -750,7 +747,7 @@ class Orl(Operator):
 class Andl(Operator):
     full_name = 'logical and'
     signature = 'l andl l l'
-    cxx_operator = 'operator&&'
+    cxx_operator = '&&'
     domain = Domain('BxB')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
@@ -770,7 +767,7 @@ class Xorl(Operator):
 class Notl(Operator):
     full_name = 'logical not'
     signature = 'l notl l'
-    cxx_operator = 'operator!'
+    cxx_operator = '!'
     domain = Domain('B')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
@@ -778,7 +775,7 @@ class Notl(Operator):
 class Add(Operator):
     full_name = 'addition'
     signature = 'v add v v'
-    cxx_operator = 'operator+'
+    cxx_operator = '+'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -787,7 +784,7 @@ class Add(Operator):
 class Sub(Operator):
     full_name = 'subtraction'
     signature = 'v sub v v'
-    cxx_operator = 'operator-'
+    cxx_operator = '-'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -805,7 +802,7 @@ class Addv(Operator):
 class Mul(Operator):
     full_name = 'multiplication'
     signature = 'v mul v v'
-    cxx_operator = 'operator*'
+    cxx_operator = '*'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -814,7 +811,7 @@ class Mul(Operator):
 class Div(Operator):
     full_name = 'division'
     signature = 'v div v v'
-    cxx_operator = 'operator/'
+    cxx_operator = '/'
     domain = Domain('RxR\{0}')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -823,7 +820,7 @@ class Div(Operator):
 class Neg(Operator):
     full_name = 'opposite'
     signature = 'v neg v'
-    cxx_operator = 'operator-'
+    cxx_operator = '-'
     domain = Domain('R')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -845,7 +842,7 @@ class Shr(Operator):
     full_name = 'right shift in zeros'
     signature = 'v shr v p'
     types = common.iutypes
-    cxx_operator = 'operator>>'
+    cxx_operator = '>>'
     domain = Domain('RxN')
     categories = [DocBitsOperators]
     bench_auto_against_mipp = True
@@ -857,7 +854,7 @@ class Shl(Operator):
     full_name = 'left shift'
     signature = 'v shl v p'
     types = common.iutypes
-    cxx_operator = 'operator<<'
+    cxx_operator = '<<'
     domain = Domain('RxN')
     categories = [DocBitsOperators]
     bench_auto_against_mipp = True
@@ -876,7 +873,7 @@ class Shra(Operator):
 class Eq(Operator):
     full_name = 'compare for equality'
     signature = 'l eq v v'
-    cxx_operator = 'operator=='
+    cxx_operator = '=='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -889,7 +886,7 @@ class Eq(Operator):
 class Ne(Operator):
     full_name = 'compare for inequality'
     signature = 'l ne v v'
-    cxx_operator = 'operator!='
+    cxx_operator = '!='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -902,7 +899,7 @@ class Ne(Operator):
 class Gt(Operator):
     full_name = 'compare for greater-than'
     signature = 'l gt v v'
-    cxx_operator = 'operator>'
+    cxx_operator = '>'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -915,7 +912,7 @@ class Gt(Operator):
 class Ge(Operator):
     full_name = 'compare for greater-or-equal-than'
     signature = 'l ge v v'
-    cxx_operator = 'operator>='
+    cxx_operator = '>='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -928,7 +925,7 @@ class Ge(Operator):
 class Lt(Operator):
     full_name = 'compare for lesser-than'
     signature = 'l lt v v'
-    cxx_operator = 'operator<'
+    cxx_operator = '<'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -941,7 +938,7 @@ class Lt(Operator):
 class Le(Operator):
     full_name = 'compare for lesser-or-equal-than'
     signature = 'l le v v'
-    cxx_operator = 'operator<='
+    cxx_operator = '<='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True

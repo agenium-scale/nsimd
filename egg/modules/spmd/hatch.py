@@ -429,7 +429,7 @@ same type as the other operands.
                 if op.cxx_operator != None:
                     fout.write('  Infix operator: `{}` ' \
                                '(*for certain types only*)  \n'.\
-                               format(op.cxx_operator[8:]))
+                               format(op.cxx_operator))
                 fout.write('  {}\n\n'.format(op.desc))
 
 # -----------------------------------------------------------------------------

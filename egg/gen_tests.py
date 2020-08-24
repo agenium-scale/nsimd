@@ -403,10 +403,10 @@ def get_content(op, typ, lang):
             if op.cxx_operator:
                 if len(op.params[1:]) == 1:
                     code += ['vc = {}va1;'.
-                             format(op.cxx_operator[8:])]
+                             format(op.cxx_operator)]
                 if len(op.params[1:]) == 2:
                     code += ['vc = va1 {} va2;'.
-                             format(op.cxx_operator[8:])]
+                             format(op.cxx_operator)]
             else:
                 code += ['vc = nsimd::{}({});'.format(op.name, args)]
             code += ['nsimd::store{}u(&vout_nsimd[i], vc);'. \
@@ -448,7 +448,7 @@ def get_content(op, typ, lang):
         if lang == 'cxx_adv':
             if op.cxx_operator:
                 do_computation = 'vc = va1 {} va2;'. \
-                                 format(op.cxx_operator[8:])
+                                 format(op.cxx_operator)
             else:
                 do_computation = 'vc = nsimd::{}(va1, va2, {}());'. \
                                  format(op.name, typ)
@@ -488,7 +488,7 @@ def get_content(op, typ, lang):
         if lang == 'cxx_adv':
             if op.cxx_operator:
                 do_computation = 'vc = va1 {} ((i / step) % {typnbytes});'. \
-                        format(op.cxx_operator[8:], typnbytes=typ[1:])
+                        format(op.cxx_operator, typnbytes=typ[1:])
             else:
                 do_computation = 'vc = nsimd::{}(va1, (i / step) % {typnbytes});'. \
                         format(op.name, typnbytes=typ[1:])
