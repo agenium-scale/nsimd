@@ -65,7 +65,8 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sin(const fpsimd_t<_lf, _rt> &a) {
   fpsimd_t<_lf, _rt> pi(constants::pi<_lf, _rt>());
   fpsimd_t<_lf, _rt> halfpi(constants::halfpi<_lf, _rt>());
   fpsimd_t<_lf, _rt> twopi(constants::twopi<_lf, _rt>());
-  fpsimd_t<_lf, _rt> zero(constants::zero<_lf, _rt>());
+  fpsimd_t<_lf, _rt> zero;
+  zero = simd_xorb(zero,zero);
 
   // Reduce to range [0,inf]
   log_t gt_0 = nsimd::gt(b._raw , zero._raw , val_t() );
@@ -89,7 +90,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sin(const fpsimd_t<_lf, _rt> &a) {
   // Reduce to range [-pi/2,pi/2] thanks to: sin(x) = cos(x-pi/2)
   b = b - halfpi;
 
-  return b;
+  return mul * simd_safe_cos(b);
 }
 
 } // namespace fixed_point
