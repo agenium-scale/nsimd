@@ -266,7 +266,7 @@ Here is the list of functions that act on packs.
 
             if operator.cxx_operator:
                 fout.write('  Available as `{}`\n'. \
-                           format(operator.cxx_operator))
+                    format('operator'+operator.cxx_operator))
 
             if len(operator.types) < len(common.types):
                 typs = ', '.join(['{}'.format(t) for t in operator.types])

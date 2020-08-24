@@ -427,18 +427,18 @@ def gen_tests_for(opts, t, tt, operator):
         if operator.cxx_operator != None:
             if len(operator.params[1:]) == 1:
                 tet1d_code = 'tet1d::out(out) = {cxx_op}tet1d::in(tab0, n);'. \
-                             format(cxx_op=operator.cxx_operator[8:])
+                             format(cxx_op=operator.cxx_operator)
             else:
                 tet1d_code = 'tet1d::out(out) = tet1d::in(tab0, n) {cxx_op} ' \
                              'tet1d::in(tab1, n);'. \
-                             format(cxx_op=operator.cxx_operator[8:])
+                             format(cxx_op=operator.cxx_operator)
         else:
             tet1d_code = \
                 'tet1d::out(out) = tet1d::{op_name}({args_in_tabs_call});'. \
                 format(op_name=op_name, args_in_tabs_call=args_in_tabs_call)
     elif operator.params == ['l', 'v', 'v']:
         if operator.cxx_operator != None:
-            cond = 'A {} B'.format(operator.cxx_operator[8:])
+            cond = 'A {} B'.format(operator.cxx_operator)
         else:
             cond = 'tet1d::{}(A, B)'.format(op_name)
         tet1d_code = \
@@ -455,7 +455,7 @@ def gen_tests_for(opts, t, tt, operator):
     elif operator.params == ['l'] * len(operator.params):
         if len(operator.params[1:]) == 1:
             if operator.cxx_operator != None:
-                cond = '{}(A == 1)'.format(operator.cxx_operator[8:])
+                cond = '{}(A == 1)'.format(operator.cxx_operator)
             else:
                 cond = 'tet1d::{}(A == 1)'.format(op_name)
             tet1d_code = \
@@ -471,7 +471,7 @@ def gen_tests_for(opts, t, tt, operator):
                                   comp_tab0_to_1=comp_tab0_to_1)
         if len(operator.params[1:]) == 2:
             if operator.cxx_operator != None:
-                cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator[8:])
+                cond = '(A == 1) {} (B == 1)'.format(operator.cxx_operator)
             else:
                 cond = 'tet1d::{}(A == 1, B == 1)'.format(op_name)
             tet1d_code = \
@@ -744,7 +744,7 @@ def gen_functions(opts):
             template <typename Op, typename Left, typename Right,
                       typename Extra>
             node<{op_name}_t, node<Op, Left, Right, Extra>, none_t, none_t>
-            {cxx_operator}(node<Op, Left, Right, Extra> const &node) {{
+            operator{cxx_operator}(node<Op, Left, Right, Extra> const &node) {{
               return tet1d::{op_name}(node);
             }}'''.format(op_name=op_name,
                          cxx_operator=operator.cxx_operator);
@@ -756,7 +756,7 @@ def gen_functions(opts):
             node<{op_name}_t, node<Op, Left, Right, Extra>,
                  node<scalar_t, none_t, none_t,
                       typename node<Op, Left, Right, Extra>::in_type>, none_t>
-            {cxx_operator}(node<Op, Left, Right, Extra> const &node, T a) {{
+            operator{cxx_operator}(node<Op, Left, Right, Extra> const &node, T a) {{
               typedef typename tet1d::node<Op, Left, Right, Extra>::in_type S;
               return tet1d::{op_name}(node, literal_to<S>::impl(a));
             }}
@@ -766,7 +766,7 @@ def gen_functions(opts):
             node<{op_name}_t, node<scalar_t, none_t, none_t,
                               typename node<Op, Left, Right, Extra>::in_type>,
                  node<Op, Left, Right, Extra>, none_t>
-            {cxx_operator}(T a, node<Op, Left, Right, Extra> const &node) {{
+            operator{cxx_operator}(T a, node<Op, Left, Right, Extra> const &node) {{
               typedef typename tet1d::node<Op, Left, Right, Extra>::in_type S;
               return tet1d::{op_name}(literal_to<S>::impl(a), node);
             }}
@@ -777,7 +777,7 @@ def gen_functions(opts):
             node<{op_name}_t, node<LeftOp, LeftLeft, LeftRight, LeftExtra>,
                               node<RightOp, RightLeft, RightRight, RightExtra>,
                  none_t>
-            {cxx_operator}(node<LeftOp, LeftLeft, LeftRight,
+            operator{cxx_operator}(node<LeftOp, LeftLeft, LeftRight,
                                 LeftExtra> const &left,
                            node<RightOp, RightLeft, RightRight,
                                 RightExtra> const &right) {{

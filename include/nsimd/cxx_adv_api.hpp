@@ -169,6 +169,44 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
 };
 
 // ----------------------------------------------------------------------------
+// Definition of SOA of degree 1
+
+template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+NSIMD_STRUCT packx1;
+
+template <typename T, typename SimdExt> NSIMD_STRUCT packx1<T, 1, SimdExt> {
+  typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = 1;
+  static const int soa_num_packs = 1;
+
+  pack<T, 1, SimdExt> v0;
+
+  void set_car(simd_vector v0_) {
+    v0.car = v0_;
+  }
+};
+
+template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx1 {
+  typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = N;
+  static const int soa_num_packs = 1;
+
+  pack<T, N, SimdExt> v0;
+
+  void set_car(simd_vector v0_) {
+    v0.car = v0_;
+  }
+
+  void set_cdr(pack<T, N - 1, SimdExt> const &v0_) {
+    v0.cdr = v0_;
+  }
+};
+
+// ----------------------------------------------------------------------------
 // Definition of SOA of degree 2
 
 template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
@@ -329,6 +367,11 @@ int len(pack<T, N, SimdExt> const &) {
 
 template <typename T, int N, typename SimdExt>
 int len(packl<T, N, SimdExt> const &) {
+  return N * len(T(), SimdExt());
+}
+
+template <typename T, int N, typename SimdExt>
+int len(packx1<T, N, SimdExt> const &) {
   return N * len(T(), SimdExt());
 }
 
@@ -693,6 +736,20 @@ template <typename T, int N, typename SimdExt,
 struct get_pack_helper {};
 
 // ----------------------------------------------------------------------------
+// get_pack_helper - packx1
+
+template <typename T, int N, typename SimdExt, int Ix>
+struct get_pack_helper<T, N, SimdExt, packx1, Ix> {};
+
+template <typename T, int N, typename SimdExt>
+struct get_pack_helper<T, N, SimdExt, packx1, 0> {
+  const nsimd::pack<T, N, SimdExt> &
+  operator()(const packx1<T, N, SimdExt> &packx_) const {
+    return packx_.v0;
+  }
+};
+
+// ----------------------------------------------------------------------------
 // get_pack_helper - packx2
 
 template <typename T, int N, typename SimdExt, int Ix>
@@ -833,6 +890,15 @@ pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
 // to_pack for packx[Y]<T, N = 1, SimdExt> with Y in {2, 3, 4}
 
 template <typename T, typename SimdExt>
+pack<T, 1, SimdExt> to_pack(const packx1<T, 1, SimdExt> &packx_) {
+
+  nsimd::pack<T, 1, SimdExt> pack_;
+  pack_.car = packx_.v0.car;
+
+  return pack_;
+}
+
+template <typename T, typename SimdExt>
 pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 2, SimdExt> pack_;
@@ -954,6 +1020,25 @@ pack<T, 1, SimdExt> to_pack_interleave(const pack<T, 1, SimdExt> &pack_) {
 template <typename T, int N, typename SimdExt>
 pack<T, N, SimdExt> to_pack_interleave(const pack<T, N, SimdExt> &pack_) {
   return pack_;
+}
+
+// ----------------------------------------------------------------------------
+
+template <typename T, typename SimdExt>
+pack<T, 1, SimdExt> to_pack_interleave(const packx1<T, 1, SimdExt> &packx1_) {
+  pack<T, 1, SimdExt> pack_1;
+  pack_1.car = packx1_.v0.car;
+  pack_1.cdr = packx1_.v0.cdr;
+  return pack_1;
+}
+
+template <typename T, int N, typename SimdExt>
+pack<T, N, SimdExt>
+to_pack_interleave(const packx1<T, N, SimdExt> &packx1_N) {
+  pack<T, N, SimdExt> pack_1;
+  pack_1.car = packx1_N.v0.car;
+  pack_1.cdr = packx1_N.v0.cdr;
+  return pack_1;
 }
 
 // ----------------------------------------------------------------------------

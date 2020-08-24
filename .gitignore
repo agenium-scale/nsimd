@@ -32,6 +32,8 @@ tests/cxx_base
 tests/cxx_adv
 tests/modules/tet1d/
 tests/modules/fixed_point/
+tests/modules/rand/*.cpp
+tests/modules/spmd/
 
 ## Benches
 benches/cxx_adv

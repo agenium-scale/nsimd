@@ -556,7 +556,7 @@ class BenchOperator(object, metaclass=type):
                     if signature:
                         if self.cxx_operator:
                             bench[simd][typ]['std'] = std_operator_from_sig(signature,
-                                    self.cxx_operator_symbol)
+                                    self.cxx_operator)
                         else:
                             bench[simd][typ]['std'] = std_fun_from_sig(signature)
         return bench
