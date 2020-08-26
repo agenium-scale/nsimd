@@ -35,7 +35,7 @@ load_odd_acc_src = '''\
 v_acc##I##{j} = _vld_n_##T(output + I * h_out * w_out + {j} * vlen(T), n)'''
 
 update_acc_src = '''\
-v_acc##I##{j} = vfma(v_acc##I##{j}, v_coeff, v_input##{j}, T)'''
+v_acc##I##{j} = vfma(v_input##{j}, v_coeff, v_acc##I##{j}, T)'''
 
 store_acc_src = '''\
 vstoreu(output + I * h_out * w_out + {j} * vlen(T), v_acc##I##{j}, T)'''
@@ -224,10 +224,11 @@ def gen_nsimd_convolution_header(typ, files):
     
 # -----------------------------------------------------------------------------
 
-regs_ch = 5
-regs_w = 2
+regs_ch = 4
+regs_w = 3
 kernel_sizes = [1, 3]
 types = ['u8', 'i8', 'u16', 'i16', 'u32', 'i32', 'u64', 'i64', 'f32', 'f64']
+# types = ['f32']
 
 if __name__ == '__main__':
     os.system('mkdir -p include/nsimd/modules/convolution')

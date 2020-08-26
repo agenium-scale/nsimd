@@ -64,7 +64,7 @@ static void nsimd_conv_compute_ref_{typ}(
             for(size_t t = 0; t < k_w; t++)
             {{
               val += kernel_ptr[s * k_w + t] 
-                * in_ptr[stride_h * i + s * w_in + stride_w * j + t];
+                * in_ptr[(stride_h * i + s) * w_in + stride_w * j + t];
             }}
           }}
           out_ptr[i * w_out +j] += val;
@@ -91,8 +91,10 @@ int main()
   size_t s_h = {s_h};
   size_t s_w = {s_w};
 
-  size_t p_h = h_in + (k_h >> 1) << 1;
-  size_t p_w = w_in + (k_w >> 1) << 1;
+  size_t p_h = h_in + ((k_h >> 1) << 1);
+  size_t p_w = w_in + ((k_w >> 1) << 1);
+
+  fprintf(stdout, \"Running tests for {name} with {typ}...\\n\");
 
   {typ} *kernel = ({typ} *)malloc(c_in * c_out * k_h * k_w * sizeof({typ}));
 
@@ -103,17 +105,17 @@ int main()
   {typ} *output_comp = ({typ} *)malloc(c_out * h_out * w_out * sizeof({typ}));
 
   /* Kernel initialization */
-  for(int i = 0; i < c_in * c_out * k_h * k_w; i++)
+  for(size_t i = 0; i < c_in * c_out * k_h * k_w; i++)
   {{
     kernel[i] = {rand};
   }}
 
   /* Images initialization. The image is supposed to have a zero border, but
   for the tests, we don't care. */
-  for(int i = 0; i < c_in * p_h * p_w; i++)
+  for(size_t i = 0; i < c_in * p_h * p_w; i++)
   {{
     {typ} val = {rand};
-    input_ref[i = val;
+    input_ref[i] = val;
     input_comp[i] = val;
   }}
 
@@ -123,14 +125,17 @@ int main()
     h_out, w_out, k_h, k_w, s_h, s_w);
 
   nsimd_conv_compute_{typ}(
-    input_ref, output_ref, kernel, c_in, p_h, p_w, c_out,
+    input_comp, output_comp, kernel, c_in, p_h, p_w, c_out,
     h_out, w_out, k_h, k_w, s_h, s_w);
 
   /* Compare results */
+  double cmp;
   for(size_t i = 0; i < c_out * h_out * w_out; i++)
   {{
     {test}
   }}
+
+  fprintf(stdout, \"Tests with {name} : OK\\n\");
 
   return EXIT_SUCCESS;
 }}
@@ -198,7 +203,7 @@ double relative_distance(double a, double b) {
   return (ma - mi) / ma;
 }
 
-/* ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 ''' + get_2th_power
 
 ## -----------------------------------------------------------------------------
@@ -217,15 +222,17 @@ def get_src(typ, params):
         ({typ})(1 << (rand() % 4))'''.format(typ=typ)
         if typ == 'f32':
             test = '''\
-            if (relative_distance((double)ref,
-            (double)res) > get_2th_power(-32)) {{
-            fprintf(stdout, \"Tests failed for {name}\\n\");
+            cmp = relative_distance((double)output_ref[i],
+                     (double)output_comp[i]);
+            if (cmp > get_2th_power(-32)) {{
+            fprintf(stdout, \"Tests failed for {name} : %f\\n\", cmp);
             return EXIT_FAILURE;}}'''.format(name=name)
         else:
             test = '''\
-            if (relative_distance((double)ref,
-            (double)res) > get_2th_power(-64)) {{
-            fprintf(stdout, \"Tests failed for {name}\\n\");
+            cmp = relative_distance((double)output_ref[i],
+                     (double)output_comp[i]);            
+            if (cmp > get_2th_power(-64)) {{
+            fprintf(stdout, \"Tests failed for {name} : %f\\n\", cmp);
             return EXIT_FAILURE;}}'''.format(name=name)
 
     elif typ == 'f16':
@@ -233,20 +240,22 @@ def get_src(typ, params):
         nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
         (f32)(1 << (rand() % 4)) / (f32)(1 << (rand() % 4)))'''
         test = '''\
-        if (relative_distance((double) nsimd_f16_to_f32(output_ref[i]), 
-        (double) nsimd_f16_to_f32(output_comp[i])) > get_2th_power(-{nbits})){{
-        fprintf(stdout, \"Tests failed for {name}\\n\");
+        cmp = relative_distance((double) nsimd_f16_to_f32(output_ref[i]), 
+                (double) nsimd_f16_to_f32(output_comp[i]));
+        if (cmp > get_2th_power(-{nbits})){{
+        fprintf(stdout, \"Tests failed for {name} : %f\\n\", cmp);
         return EXIT_FAILURE;
         }}'''.format(name=name)
     else:
         rand = '({})(rand() % 4)'.format(typ)
         test = '''\
-        if(output_ref[i] - output_comp[] != 0){{
-        fprintf(stdout, \"Tests failed for {name}\\n\");
+        cmp = (double)(output_ref[i] - output_comp[i]);
+        if(cmp != (double)0){{
+        fprintf(stdout, \"Tests failed for {name} : %f\\n\", cmp);
             return EXIT_FAILURE;}}'''.format(name=name)
     return c_src_template.format(
         typ=typ, relative_distance=relative_distance_c,
-        test=test, rand=rand,
+        test=test, rand=rand, name=name,
         c_in=params['c_in'], h_in=params['h_in'], w_in=params['w_in'],
         c_out=params['c_out'], h_out=params['h_out'], w_out=params['w_out'],
         k_h=params['k_h'], k_w=params['k_w'],
@@ -265,4 +274,19 @@ if __name__ == '__main__':
                 filename = gen_filename(params, typ)
                 content = get_src(typ, params)
                 write_src(filename, content)
-                
+
+# if __name__ =='__main__':
+#     print('Generating tests...')
+#     os.system('mkdir -p tests')
+#     typ = 'f32'
+#     stride = 1
+#     k = 3
+#     params = {
+#         'c_in':128, 'c_out':128,
+#         'h_in':128, 'h_out':128 // stride,
+#         'w_in':24, 'w_out':24 // stride,
+#         'k_h':k, 'k_w':k, 's_h':stride, 's_w':stride}
+#     filename = gen_filename(params, typ)
+#     content = get_src(typ, params)
+#     write_src(filename, content)
+    

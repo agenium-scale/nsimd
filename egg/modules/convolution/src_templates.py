@@ -114,7 +114,7 @@ static void nsimd_conv_compute_scalar_{typ}(
             for(size_t t = 0; t < k_w; t++)
             {{
               val += kernel_ptr[s * k_w + t] 
-                * in_ptr[stride_h * i + s * w_in + stride_w * j + t];
+                * in_ptr[(stride_h * i + s) * w_in + stride_w * j + t];
             }}
           }}
           out_ptr[i * w_out +j] += val;
@@ -153,7 +153,7 @@ void convolution_compute(
             for(size_t t = 0; t < k_w; t++)
             {{
               val += kernel_ptr[s * k_w + t] 
-                * in_ptr[stride_h * i + s * w_in + stride_w * j + t];
+                * in_ptr[(stride_h * i + s) * w_in + stride_w * j + t];
             }}
           }}
           out_ptr[i * w_out +j] += val;
@@ -316,12 +316,12 @@ conv_specific_src = '''
     for(size_t i = 0; i < h_out; i++)
     {{
       size_t j = 0;
-      for(; j < (w_out / {regs_w} * vlen({typ})) * {regs_w} * vlen({typ}); j += {regs_w} * vlen({typ}))
+      for(; j < (w_out / ({regs_w} * vlen({typ}))) * {regs_w} * vlen({typ}); j += {regs_w} * vlen({typ}))
       {{
         for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
         {{
           {typ} *__restrict in_ptr =
-              input_img + n_ic * h_in * w_in + i * w_in + j;
+              input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
           {typ} *__restrict out_ptr =
               output_img + n_oc * h_out * w_out + i * w_out + j;
           {typ} *__restrict kernel_ptr =
@@ -332,7 +332,7 @@ conv_specific_src = '''
 
         const size_t n_oc = (c_out / {regs_ch}) * {regs_ch};
         {typ} *__restrict in_ptr =
-            input_img + n_ic * h_in * w_in + i * w_in + j;
+            input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
         {typ} *__restrict out_ptr =
             output_img + n_oc * h_out * w_out + i * w_out + j;
         {typ} *__restrict kernel_ptr = packed_kernel
@@ -349,7 +349,7 @@ conv_specific_src = '''
         for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
         {{
           {typ} *__restrict in_ptr =
-              input_img + n_ic * h_in * w_in + i * w_in + j;
+              input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
           {typ} *__restrict out_ptr =
               output_img + n_oc * h_out * w_out + i * w_out + j;
           {typ} *__restrict kernel_ptr =
@@ -360,7 +360,7 @@ conv_specific_src = '''
 
         const size_t n_oc = (c_out / {regs_ch}) * {regs_ch};
         {typ} *__restrict in_ptr =
-            input_img + n_ic * h_in * w_in + i * w_in + j;
+            input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
         {typ} *__restrict out_ptr =
             output_img + n_oc * h_out * w_out + i * w_out + j;
         {typ} *__restrict kernel_ptr = packed_kernel
@@ -378,7 +378,7 @@ conv_specific_src = '''
         for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
         {{
           {typ} *__restrict in_ptr =
-              input_img + n_ic * h_in * w_in + i * w_in + j;
+              input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
           {typ} *__restrict out_ptr =
               output_img + n_oc * h_out * w_out + i * w_out + j;
           {typ} *__restrict kernel_ptr =
@@ -389,7 +389,7 @@ conv_specific_src = '''
         }}
 
         {typ} *__restrict in_ptr =
-            input_img + n_ic * h_in * w_in + i * w_in + j;
+            input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
         {typ} *__restrict out_ptr =
             output_img + n_oc * h_out * w_out + i * w_out + j;
         {typ} *__restrict kernel_ptr = packed_kernel
@@ -432,12 +432,12 @@ conv_generic_src = '''
     for(size_t i = 0; i < h_out; i++)
     {{
       size_t j = 0;
-      for(; j < (w_out / {regs_w} * vlen({typ})) * {regs_w} * vlen({typ}); j += {regs_w} * vlen({typ}))
+      for(; j < (w_out / ({regs_w} * vlen({typ}))) * {regs_w} * vlen({typ}); j += {regs_w} * vlen({typ}))
       {{
         for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
         {{
           {typ} *__restrict in_ptr =
-              input_img + n_ic * h_in * w_in + i * w_in + j;
+              input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
           {typ} *__restrict out_ptr =
               output_img + n_oc * h_out * w_out + i * w_out + j;
           {typ} *__restrict kernel_ptr =
@@ -448,7 +448,7 @@ conv_generic_src = '''
 
         const size_t n_oc = (c_out / {regs_ch}) * {regs_ch};
         {typ} *__restrict in_ptr =
-            input_img + n_ic * h_in * w_in + i * w_in + j;
+            input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
         {typ} *__restrict out_ptr =
             output_img + n_oc * h_out * w_out + i * w_out + j;
         {typ} *__restrict kernel_ptr = packed_kernel
@@ -465,7 +465,7 @@ conv_generic_src = '''
         for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
         {{
           {typ} *__restrict in_ptr =
-              input_img + n_ic * h_in * w_in + i * w_in + j;
+              input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
           {typ} *__restrict out_ptr =
               output_img + n_oc * h_out * w_out + i * w_out + j;
           {typ} *__restrict kernel_ptr =
@@ -476,7 +476,7 @@ conv_generic_src = '''
 
         const size_t n_oc = (c_out / {regs_ch}) * {regs_ch};
         {typ} *__restrict in_ptr =
-            input_img + n_ic * h_in * w_in + i * w_in + j;
+            input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
         {typ} *__restrict out_ptr =
             output_img + n_oc * h_out * w_out + i * w_out + j;
         {typ} *__restrict kernel_ptr = packed_kernel
@@ -494,7 +494,7 @@ conv_generic_src = '''
         for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
         {{
           {typ} *__restrict in_ptr =
-              input_img + n_ic * h_in * w_in + i * w_in + j;
+              input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
           {typ} *__restrict out_ptr =
               output_img + n_oc * h_out * w_out + i * w_out + j;
           {typ} *__restrict kernel_ptr =
@@ -505,7 +505,7 @@ conv_generic_src = '''
         }}
 
         {typ} *__restrict in_ptr =
-            input_img + n_ic * h_in * w_in + i * w_in + j;
+            input_img + n_ic * h_in * w_in + {stride} * i * w_in + {stride} * j;
         {typ} *__restrict out_ptr =
             output_img + n_oc * h_out * w_out + i * w_out + j;
         {typ} *__restrict kernel_ptr = packed_kernel
