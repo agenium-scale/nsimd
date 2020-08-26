@@ -105,14 +105,14 @@ def load_input_block(regs_w, reg_name, op_name, img, typ, stride,
     else:
         if use_t:
             return '\n'.join(
-                '{reg_name}{i} = {op_name}({img} + {t} + {i} * vlen({typ}), {typ}).v0;'.\
+                '{reg_name}{i} = {op_name}({img} + {t} + {i} * {stride} * vlen({typ}), {typ}).v0;'.\
                 format(reg_name=reg_name, t=t_value, i=i, op_name=op_name, img=img,
-                       typ=typ) for i in range(0, regs_w)) + '\n'
+                       stride=stride, typ=typ) for i in range(0, regs_w)) + '\n'
         else:
             return '\n'.join(
-                '{reg_name}{i} = {op_name}({img} + {i} * vlen({typ}), {typ}).v0;'.\
-                format(reg_name=reg_name, i=i, op_name=op_name, img=img,
-                       typ=typ) for i in range(0, regs_w)) + '\n' 
+                '{reg_name}{i} = {op_name}({img} + {i} * {stride} * vlen({typ}), {typ}).v0;'.\
+                format(reg_name=reg_name, i=i, op_name=op_name, img=img, 
+                       stride=stride, typ=typ) for i in range(0, regs_w)) + '\n' 
 
 def load_odd_input_block(regs_w, reg_name, op_name, img, typ, stride,
                      use_t=True, t_value='t'):
