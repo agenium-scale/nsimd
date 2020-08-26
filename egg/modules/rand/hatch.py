@@ -634,10 +634,9 @@ def doc_menu():
 def doit(opts):
     common.myprint(opts, 'Generating module rand')
 
-    #if opts.library:
-    gen_functions(opts)
-    #if opts.tests:
-    gen_tests(opts)
-    #if opts.doc:
-    gen_doc(opts)
-    #gen_doc_overview(opts)
+    if opts.library:
+        gen_functions(opts)
+    if opts.tests:
+        gen_tests(opts)
+    if opts.doc:
+        gen_doc(opts)
