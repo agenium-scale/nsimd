@@ -787,6 +787,8 @@ template <> struct max_len_t<f64> {
 
 #if NSIMD_CXX >= 2014
 template <typename T> constexpr int max_len = max_len_t<T>::value;
+#else
+template <typename T> int max_len = max_len_t<T>::value;
 #endif
 
 } // namespace nsimd
