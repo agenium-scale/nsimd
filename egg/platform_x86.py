@@ -3313,7 +3313,7 @@ def clz(opts, simd_ext, from_typ):
   if simd_ext in avx512:
     if from_typ in [ 'i32' , 'u32' , 'i64' , 'u64' ]:
       return '''\
-      return _mm{nbits}_lzcnt_epi_{typnbits}( {in0} );
+      return _mm{nbits}_lzcnt_epi{typnbits}( {in0} );
       '''.format(**fmtspec)
     else:
       return emulate_op1(opts, 'clz', simd_ext, from_typ)
