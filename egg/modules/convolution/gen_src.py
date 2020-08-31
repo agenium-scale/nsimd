@@ -206,7 +206,6 @@ def get_odd_kernel_signature(regs_ch, kernel_size, typ, stride):
             format(typ=typ, stride=stride,
                    regs_ch=regs_ch) +';\n'
  
-    
 def get_kernel_def(typ, regs_ch, regs_w, kernel_size, stride):
     # Variables
     acc_load_op = 'vloadu'
@@ -229,8 +228,6 @@ def get_kernel_def(typ, regs_ch, regs_w, kernel_size, stride):
     input_decl = decl_reg_line('v_input', typ, regs_w)
     acc_load = load_acc_block(regs_ch, regs_w, 'v_acc', acc_load_op, 'output',
                               typ)
-    # acc_load = 'LOAD_ACC_BLOCK_{}x{}({});\n'.format(regs_w, regs_ch, typ)
-    # update_func = 'UPDATE_ACC_BLOCK_{}x{}({});\n\n'.format(regs_w, regs_ch, typ)
     
     # Loop
     if kernel_size == 1:
@@ -239,7 +236,6 @@ def get_kernel_def(typ, regs_ch, regs_w, kernel_size, stride):
                                       typ, stride, False)
         update_block = input_load \
             + '\n' + gen_update_block(regs_ch, regs_w, set1_op, fma_op, typ)
-        # update_block += update_func
         kernel_end_loop = ''
     elif kernel_size == 3:
         kernel_begin_loop = ''
@@ -254,7 +250,6 @@ def get_kernel_def(typ, regs_ch, regs_w, kernel_size, stride):
                 update_block += '\n'
                 update_block += gen_update_block(regs_ch, regs_w, set1_op,
                                                  fma_op, typ)
-                # update_block += update_func
             update_block += 'input_ptr += w_in;\n\n'
         kernel_end_loop = ''
     else:
@@ -264,13 +259,11 @@ def get_kernel_def(typ, regs_ch, regs_w, kernel_size, stride):
                                       typ, stride, True)
         update_block = input_load \
             + '\n' + gen_update_block(regs_ch, regs_w, set1_op, fma_op, typ)
-        # update_block += update_func
         kernel_end_loop = '}\n input_ptr += w_in;\n }\n'
 
     # Store
     acc_store = store_acc_block(regs_ch, regs_w, 'v_acc', store_op, 'output',
                                 typ)
-    # acc_store = 'STORE_ACC_BLOCK_{}x{}({});\n'.format(regs_w, regs_ch, typ)
 
     return kernel_def.\
         format(signature=signature, acc_decl=acc_decl, input_decl=input_decl,
@@ -302,8 +295,6 @@ def get_odd_kernel_def(typ, regs_ch, kernel_size, stride):
     input_decl = decl_reg_line('v_input', typ, 1)
     acc_load = load_odd_acc_block(regs_ch, 1, 'v_acc', acc_load_op, 'output',
                               typ)
-    # acc_load = 'LOAD_ODD_ACC_BLOCK_1x{}({});\n'.format(regs_ch, typ)
-    # update_func = 'UPDATE_ACC_BLOCK_1x{}({});\n\n'.format(regs_ch, typ)
 
     # Loop
     if kernel_size == 1:
@@ -312,7 +303,6 @@ def get_odd_kernel_def(typ, regs_ch, kernel_size, stride):
                                           typ, stride, False)
         update_block = input_load \
             + '\n' + gen_update_block(regs_ch, 1, set1_op, fma_op, typ)
-        # update_block += update_func
         kernel_end_loop = ''
     elif kernel_size == 3:
         kernel_begin_loop = ''
@@ -327,7 +317,6 @@ def get_odd_kernel_def(typ, regs_ch, kernel_size, stride):
                 update_block += '\n'
                 update_block += gen_update_block(regs_ch, 1, set1_op,
                                                  fma_op, typ)
-                # update_block += update_func
             update_block += 'input_ptr += w_in;\n\n'
         kernel_end_loop = ''
     else:
@@ -337,13 +326,11 @@ def get_odd_kernel_def(typ, regs_ch, kernel_size, stride):
                                           typ, stride, True)
         update_block = input_load \
             + '\n' + gen_update_block(regs_ch, 1, set1_op, fma_op, typ)
-        # update_block += update_func
         kernel_end_loop = '}\n input_ptr += w_in;\n }\n'
 
     # Store
     acc_store = store_odd_acc_block(regs_ch, 1, 'v_acc', store_op, 'output',
                                 typ)
-    # acc_store = 'STORE_ODD_ACC_BLOCK_1x{}({})\n;'.format(regs_ch, typ)
     return kernel_def.\
         format(signature=signature, acc_decl=acc_decl, input_decl=input_decl,
                acc_load=acc_load, kernel_begin_loop=kernel_begin_loop,
@@ -366,11 +353,15 @@ def gen_src_file(typ, size, stride):
 
     # Generate filename
     if size == 0:
-        filename = get_src_filename('kernels/conv_nxn_{}.{}.c'.format(stride, typ))
-        content = get_head_include('kernels/conv_nxn_{}.{}.h'.format(stride, typ)) + '\n'
+        filename = get_src_filename(
+            'kernels/conv_nxn_{}.{}.c'.format(stride, typ))
+        content = get_head_include(
+            'kernels/conv_nxn_{}.{}.h'.format(stride, typ)) + '\n'
     else:
-        filename = get_src_filename('kernels/conv_{0}x{0}_{1}.{2}.c'.format(size, stride, typ))
-        content = get_head_include('kernels/conv_{0}x{0}_{1}.{2}.h'.format(size, stride, typ)) + '\n'
+        filename = get_src_filename(
+            'kernels/conv_{0}x{0}_{1}.{2}.c'.format(size, stride, typ))
+        content = get_head_include(
+            'kernels/conv_{0}x{0}_{1}.{2}.h'.format(size, stride, typ)) + '\n'
 
     # Generate src
     for regs_ch in regs_ch_vals:
@@ -465,7 +456,9 @@ def gen_nsimd_convolution(typ):
         format(typ=typ, signature=conv_signature.format(typ=typ)),
         scalar_conv_def=scalar_conv_src.format(typ=typ))
     write_src(filename, content)
-    
+
+## -----------------------------------------------------------------------------
+
 if __name__ == '__main__':
     os.system('mkdir -p src/modules/convolution/')
     os.system('mkdir -p src/modules/convolution/packing/')

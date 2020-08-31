@@ -19,9 +19,12 @@
 # SOFTWARE.
 
 CC := clang -W -Wall -Wno-unused-parameter -pedantic
+CXX := clang++ -W -Wall -Wno-unused-parameter -pedantic
+
 IFLAGS := -I/home/adrien/Projets/nsimd/include \
 	-I./include/
 CFLAGS := -std=c99 -g -O3 -DNSIMD_AVX2 -mavx2 -mfma -ffast-math
+CXXFLAGS := -std=c++14 -g -O3 -DNSIMD_AVX2 -ffast-math -ffp-contract=fast
 
 SRC_PATH := ./src/modules/convolution
 OBJ_PATH := ./obj
@@ -35,6 +38,12 @@ TESTS := $(shell find $(TESTS_PATH) -type f -name *.c)
 OBJS := $(patsubst $(SRC_PATH)/%,$(OBJ_PATH)/%,$(SRCS:.c=.o))
 TESTS :=$(patsubst $(TESTS_PATH)/%,$(BIN_PATH)/%,$(TESTS:.c=))
 
+DNN_IFLAGS := -I/home/adrien/intel/oneapi/dnnl/2021.1-beta08/cpu_gomp/include \
+	-I/home/adrien/intel/oneapi/dnnl/2021.1-beta08/cpu_gomp/examples 
+DNN_LFLAGS := -L/home/adrien/intel/oneapi/dnnl/2021.1-beta08/cpu_gomp/lib \
+	-Wl,-rpath,/home/adrien/intel/oneapi/dnnl/2021.1-beta08/cpu_gomp/lib \
+	-ldnnl
+
 ## -----------------------------------------------------------------------------
 
 all: clean dir lib tests
@@ -42,6 +51,9 @@ all: clean dir lib tests
 all_tests: $(TESTS)
 
 lib: $(LIB_PATH)/libnsimd_conv.so
+
+bin/example: src/example.cpp
+	$(CXX) $(CXXFLAGS) $(DNN_IFLAGS) -o $@ $< $(DNN_LFLAGS)
 
 $(LIB_PATH)/libnsimd_conv.so: $(OBJS)
 	$(CC) $(CFLAGS) $(IFLAGS) -shared -o $@ $(OBJS)

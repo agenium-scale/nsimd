@@ -199,6 +199,7 @@ kernel_def = '''\
 {input_decl}
 {v_typ} v_coeff;
 
+{begin_h_loop}
 {typ} *__restrict kernel_ptr = kernel;
 
 {acc_load}
@@ -212,6 +213,7 @@ for(size_t n_ic = 0; n_ic < c_in; n_ic++)
 }} /* End of c_in loop */
 
 {acc_store}
+{end_h_loop}
 }}
 
 '''
@@ -275,6 +277,41 @@ NSIMD_INLINE void _vst_n_{typ}({typ} *ptr, {v_type} v0, const size_t n)
 '''
 
 # -----------------------------------------------------------------------------
+# Pack input
+
+conv_pack_input_signature = '''\
+void conv_pack_input_{typ}(
+    {typ} *input, {typ} *packed_input, const size_t tile_h, const size_t tile_w,
+    const size_t c_in, const size_t h_in, const size_t w_in, const size_t k_h,
+    const size_t k_w, const size_t i0, const size_t j0, const size_t stride_h,
+    const size_t stride_w)'''
+
+conv_pack_input_src = '''\
+{typ} *__restrict packed_input_ptr = packed_input;
+for(size_t i = 0; i < tile_h; i++)
+{{
+  for(size_t cci = 0; cci < c_in; cci++)
+  {{
+    {typ} *__restrict input_ptr = input + cci * h_in * w_in;
+    for(size_t s = 0; s < k_h; s++)
+    {{
+      for(size_t t = 0; t < k_w; t++)
+      {{
+        {typ} *in_ptr =
+            input_ptr + (stride_h * (i0 + i) + s) * w_in + stride_w * j0 + t;
+        for(size_t j = 0; j < tile_w; j++)
+        {{
+          *packed_input_ptr = *in_ptr;
+          packed_input_ptr += 1;
+          in_ptr += stride_w;
+        }}
+      }}
+    }}
+  }}
+}}
+'''
+
+# -----------------------------------------------------------------------------
 # Conv generation
 
 conv_specific_signature = '''
@@ -304,7 +341,8 @@ conv_specific_src = '''
     {{
       nsimd_conv_pack_kernel_{typ}_{regs_ch}(
           kernel + (n_oc * c_in + n_ic) * {size} * {size},
-          packed_kernel + (n_oc / {regs_ch}) * ci * {regs_ch} * {size} * {size}, c_in, c_out, {size}, {size}, ci);
+          packed_kernel + (n_oc / {regs_ch}) * ci * {regs_ch} * {size} * {size}, 
+            c_in, c_out, {size}, {size}, ci);
     }}
 
     const size_t n_oc = (c_out / {regs_ch}) * {regs_ch};
@@ -602,7 +640,103 @@ kernel_packing_src = '''\
 '''
 
 # -----------------------------------------------------------------------------
+# Generic function
+conv_base_signature = '''\
+void _convolution_compute_vect_{typ}(
+    {typ} *input_img, {typ} *output_img, {typ} *kernel, const size_t c_in,
+    const size_t h_in, const size_t w_in, const size_t c_out,
+    const size_t h_out, const size_t w_out, const size_t k_h, const size_t k_w,
+    const size_t stride_h, const size_t stride_w)'''
 
+conv_base_src = '''\
+  const size_t pad_w = k_w / 2;
+  const size_t tile_w = vlen({typ}) * {regs_w};
+
+  {typ} *packed_input = ({typ} *) aligned_alloc(
+      32, 128 * {regs_ch} * k_h * k_w * tile_w * sizeof({typ}));
+  {typ} *packed_kernel =
+      ({typ} *) nsimd_aligned_alloc(32, {regs_ch} * c_out * k_h * k_w * sizeof({typ}));
+
+  for(size_t n_ic = 0; n_ic < c_in; n_ic += {regs_ch})
+  {
+    const size_t ci = NS_MIN({regs_ch}, c_in - n_ic);
+
+    // Kernel packing
+    for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
+    {
+      conv_pack_kernel_{typ}_{regs_ch}(
+          kernel + (n_oc * c_in + n_ic) * k_h * k_w,
+          packed_kernel + (n_oc / {regs_ch}) * ci * {regs_ch} * k_h * k_w, c_in, c_out, k_h,
+          k_w, ci);
+    }
+    for(size_t n_oc = (c_out / {regs_ch}) * {regs_ch}; n_oc < c_out; n_oc++)
+    {
+      conv_pack_kernel_{typ}_1(
+          kernel + (n_oc * c_in + n_ic) * k_h * k_w,
+          packed_kernel + (c_out / {regs_ch}) * ci * {regs_ch} * k_h * k_w
+              + (n_oc % {regs_ch}) * ci * k_h * k_w,
+          c_in, c_out, k_h, k_w, ci);
+    }
+
+    for(size_t i = 0; i < h_out; i += 128)
+    {
+      const size_t hi = NS_MIN(128, h_out - i);
+      for(size_t j = 0; j < (w_out / tile_w) * tile_w; j += tile_w)
+      {
+        conv_pack_input_scalar_{typ}(
+            input_img + n_ic * h_in * w_in, packed_input, hi, tile_w, ci, h_in,
+            w_in, k_h, k_w, i, j, stride_h, stride_w);
+
+        for(size_t n_oc = 0; n_oc < (c_out / 4) * 4; n_oc += 4)
+        {
+          conv_add_dot_{typ}_{regs_w}x{regs_ch}(
+              packed_input, output_img + n_oc * h_out * w_out + i * w_out + j,
+              packed_kernel + (n_oc / {regs_ch}) * ci * {regs_ch} * k_h * k_w, 
+              h_out, w_out, k_h, k_w, hi, ci);
+        }
+
+        for(size_t n_oc = (c_out / {regs_ch}) * {regs_ch}; n_oc < c_out; n_oc++)
+        {
+          conv_add_dot_{typ}_{regs_w}x1(
+              packed_input, output_img + n_oc * h_out * w_out + i * w_out + j,
+              packed_kernel + (c_out / {regs_ch}) * ci * {regs_ch} * k_h * k_w
+                  + (n_oc % {regs_ch}) * ci * k_h * k_w,
+              h_out, w_out, k_h, k_w, hi, ci);
+        }
+      }
+
+      // Odd values
+      if((w_out % tile_w) > 0)
+      {
+        const size_t j = (w_out / tile_w) * tile_w;
+        conv_pack_input_scalar_{typ}(
+            input_img + n_ic * h_in * w_in, packed_input, hi, w_out - j, ci,
+            h_in, w_in, k_h, k_w, i, j, stride_h, stride_w);
+
+        for(size_t n_oc = 0; n_oc < (c_out / {regs_ch}) * {regs_ch}; n_oc += {regs_ch})
+        {
+          conv_add_dot_scalar_{typ}_{regs_ch}(
+              packed_input, output_img + n_oc * h_out * w_out + i * w_out + j,
+              packed_kernel + (n_oc / {regs_ch}) * ci * {regs_ch} * k_h * k_w, h_out, w_out,
+              k_h, k_w, hi, w_out - j, ci);
+        }
+
+        for(size_t n_oc = (c_out / {regs_ch}) * {regs_ch}; n_oc < c_out; n_oc++)
+        {
+          conv_add_dot_scalar_{typ}_1(
+              packed_input, output_img + n_oc * h_out * w_out + i * w_out + j,
+              packed_kernel + (c_out / {regs_ch}) * ci * {regs_ch} * k_h * k_w
+                  + (n_oc % {regs_ch}) * ci * k_h * k_w,
+              h_out, w_out, k_h, k_w, hi, w_out - j, ci);
+        }
+      }
+    }
+  }
+  free(packed_input);
+  free(packed_kernel);
+'''
+
+# -----------------------------------------------------------------------------
 # Convolution API
 conv_signature = '''\
 void nsimd_conv_compute_{typ}(
