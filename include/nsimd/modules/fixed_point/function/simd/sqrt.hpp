@@ -47,7 +47,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_sqrt(const fpsimd_t<_lf, _rt> &a) {
     zero_output = simd_orl( zero_output , is_zero );
     x0 = simd_if_else1( is_zero , two , x0 );
     x1 = (x0 + (a / x0));
-    x1._raw = nsimd::shra( x1._raw , 1 , val_t() );
+    x1._raw = nsimd::shr( x1._raw , 1 , val_t() );
     x0 = x1;
   }
 

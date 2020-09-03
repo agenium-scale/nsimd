@@ -63,11 +63,10 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_tan(const fpsimd_t<_lf, _rt> &a) {
 
   fpsimd_t<_lf,_rt> raw_cos = simd_safe_cos(b);
   fpsimdl_t<_lf,_rt> cos_zero = simd_eq( raw_cos , zero );
+  fpsimd_t<_lf,_rt> safe_cos = simd_if_else1( cos_zero , mul_pos , raw_cos );
 
-  mul_pos._raw = nsimd::shr( mul_pos._raw , 1 , val_t() );
-  fpsimd_t<_lf,_rt> res = mul * simd_safe_sin(b) / raw_cos;
-
-  res = simd_if_else1( cos_zero , mul_pos , res );
+  mul_pos._raw = nsimd::shr( mul_pos._raw , (sizeof(val_t)-1) , val_t() );
+  fpsimd_t<_lf,_rt> res = mul * simd_safe_sin(b) / safe_cos;
 
   return res;
 }
