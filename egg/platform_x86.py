@@ -3415,6 +3415,18 @@ def shlv(opts, simd_ext, from_typ):
       return '''\
       return _mm{nbits}_sllv_epi{typnbits}( {in0} , {in1} );
       '''.format(**fmtspec)
+    elif '8' in from_typ:
+      utyp = from_typ[0] + '16'
+      return '''\
+        nsimd_{simd_ext}_v{utyp}x2 tmp1
+            = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in0} );
+        nsimd_{simd_ext}_v{utyp}x2 tmp2
+            = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in1} );
+        return nsimd_downcvt_{simd_ext}_{typ}_{utyp}(
+                    _mm{nbits}_sllv_epi16( tmp1.v0 , tmp2.v0)
+                  , _mm{nbits}_sllv_epi16( tmp1.v1 , tmp2.v1)
+               );
+      '''.format(**fmtspec, utyp=utyp)
     else:
       return emulate_arg2(opts, 'shlv', simd_ext, from_typ)
   else:
@@ -3433,6 +3445,18 @@ def shrv(opts, simd_ext, from_typ):
       return '''\
       return _mm{nbits}_srav_epi{typnbits}( {in0} , {in1} );
       '''.format(**fmtspec)
+    elif '8' in from_typ:
+      utyp = from_typ[0] + '16'
+      return '''\
+        nsimd_{simd_ext}_v{utyp}x2 tmp1
+            = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in0} );
+        nsimd_{simd_ext}_v{utyp}x2 tmp2
+            = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in1} );
+        return nsimd_downcvt_{simd_ext}_{typ}_{utyp}(
+                    _mm{nbits}_srav_epi16( tmp1.v0 , tmp2.v0 )
+                  , _mm{nbits}_srav_epi16( tmp1.v1 , tmp2.v1 )
+               );
+      '''.format(**fmtspec, utyp=utyp)
     else:
       return emulate_arg2(opts, 'shrv', simd_ext, from_typ)
   else:
