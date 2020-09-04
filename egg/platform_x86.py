@@ -3315,6 +3315,82 @@ def clz(opts, simd_ext, from_typ):
       return '''\
       return _mm{nbits}_lzcnt_epi{typnbits}( {in0} );
       '''.format(**fmtspec)
+    elif from_typ in [ 'i16' , 'u16' ]:
+      utyp = from_typ[0] + '32'
+      if 'u' in from_typ:
+        return '''\
+          nsimd_{simd_ext}_v{utyp}x2 tmp
+              = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in0} );
+          return nsimd_sub_{simd_ext}_{typ}(
+                   nsimd_downcvt_{simd_ext}_{typ}_{utyp}(
+                        _mm{nbits}_lzcnt_epi32( tmp.v0 )
+                      , _mm{nbits}_lzcnt_epi32( tmp.v1 )
+                      )
+                   , nsimd_set1_{simd_ext}_{typ}( 16 )
+                 );
+        '''.format(**fmtspec, utyp=utyp)
+      elif 'i' in from_typ:
+        return '''\
+          nsimd_{simd_ext}_v{utyp}x2 tmp
+              = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in0} );
+          return nsimd_sub_{simd_ext}_{typ}(
+                   nsimd_downcvt_{simd_ext}_{typ}_{utyp}(
+                        _mm{nbits}_lzcnt_epi32( tmp.v0 )
+                      , _mm{nbits}_lzcnt_epi32( tmp.v1 )
+                      )
+                   , nsimd_set1_{simd_ext}_{typ}( 16 )
+                 );
+        '''.format(**fmtspec, utyp=utyp)
+    elif from_typ in [ 'i8' , 'u8' ]:
+      utyp = from_typ[0] + '16'
+      uutyp = from_typ[0] + '32'
+      if 'u' in from_typ:
+        # Treat as signed integer types to avoid u8 -> u16 emulation
+        # The first upcvt is the only place where we need to be sure
+        #    to be treating an unsigned type anyway.
+        return '''\
+          nsimd_{simd_ext}_v{iityp}x2 tmp
+              = nsimd_upcvt_{simd_ext}_{iityp}_{typ}( {in0} );
+          nsimd_{simd_ext}_v{iiityp}x2 tmp0
+              = nsimd_upcvt_{simd_ext}_{iiityp}_{iityp}( tmp.v0 );
+          nsimd_{simd_ext}_v{iiityp}x2 tmp1
+              = nsimd_upcvt_{simd_ext}_{iiityp}_{iityp}( tmp.v1 );
+          return nsimd_sub_{simd_ext}_{typ}(
+                     nsimd_downcvt_{simd_ext}_{ityp}_{iityp}(
+                         nsimd_downcvt_{simd_ext}_{iityp}_{iiityp}(
+                              _mm{nbits}_lzcnt_epi32( tmp0.v0 )
+                            , _mm{nbits}_lzcnt_epi32( tmp0.v1 )
+                            )
+                       , nsimd_downcvt_{simd_ext}_{iityp}_{iiityp}(
+                              _mm{nbits}_lzcnt_epi32( tmp1.v0 )
+                            , _mm{nbits}_lzcnt_epi32( tmp1.v1 )
+                            )
+                     )
+                   , nsimd_set1_{simd_ext}_{ityp}( 24 )
+                 );
+        '''.format(**fmtspec, utyp=utyp, uutyp=uutyp, ityp='i8', iityp='i16', iiityp='i32')
+      elif 'i' in from_typ:
+        return '''\
+          nsimd_{simd_ext}_v{utyp}x2 tmp
+              = nsimd_upcvt_{simd_ext}_{utyp}_{typ}( {in0} );
+          nsimd_{simd_ext}_v{uutyp}x2 tmp0
+              = nsimd_upcvt_{simd_ext}_{uutyp}_{utyp}( tmp.v0 );
+          nsimd_{simd_ext}_v{uutyp}x2 tmp1
+              = nsimd_upcvt_{simd_ext}_{uutyp}_{utyp}( tmp.v1 );
+          return nsimd_sub_{simd_ext}_{typ}(
+                     nsimd_downcvt_{simd_ext}_{typ}_{utyp}(
+                         nsimd_downcvt_{simd_ext}_{utyp}_{uutyp}(
+                              _mm{nbits}_lzcnt_epi32( tmp0.v0 )
+                            , _mm{nbits}_lzcnt_epi32( tmp0.v1 )
+                            )
+                       , nsimd_downcvt_{simd_ext}_{utyp}_{uutyp}(
+                              _mm{nbits}_lzcnt_epi32( tmp1.v0 )
+                            , _mm{nbits}_lzcnt_epi32( tmp1.v1 )
+                            )
+                     )
+                   , nsimd_set1_{simd_ext}_{typ}( 24 )
+                 );
+        '''.format(**fmtspec, utyp=utyp, uutyp=uutyp)
     else:
       return emulate_op1(opts, 'clz', simd_ext, from_typ)
   else:
