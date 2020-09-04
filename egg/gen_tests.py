@@ -308,7 +308,7 @@ def get_content(op, typ, lang):
             vin_rand = 'vin1[i] = rand();\nvin2[i] = rand() % {};\nvin2[i] = vin2[i] > 0 ? vin2[i] : -vin2[i];'.format(typ[1:])
 
         if op.name == 'clz':
-            vin_rand = 'vin1[i] = rand();\nwhile ( !vin1[i] ) vin1[i] = rand();'
+            vin_rand = 'vin1[i] = rand();\nwhile ( vin1[i] <= 0 ) vin1[i] = rand();'
 
         if op.name == 'powi':
             vin_rand = 'vin1[i] = rand();\nvin2[i] = rand() % {};\nvin2[i] = vin2[i] > 0 ? vin2[i] : -vin2[i];'.format(typ[1:])
