@@ -36,7 +36,7 @@ class MAddToRands(type):
 
 class Rand(object, metaclass=MAddToRands):
     def gen_function_name(self, nwords, word_size, nrounds):
-        return f'{self.name}_{nwords}x{word_size}_{nrounds}'
+        return '{self.name}_{nwords}x{word_size}_{nrounds}'
 
     def gen_headers(self, opts):
         res = ''
@@ -52,9 +52,9 @@ class Rand(object, metaclass=MAddToRands):
 
         key_size = self.get_key_size(nwords)
 
-        key_initialization = f'nsimd::packx{key_size}<u{word_size}> key_pack;'
+        key_initialization = 'nsimd::packx{key_size}<u{word_size}> key_pack;'
         for i in range (0, key_size):
-            key_initialization += f'''
+            key_initialization += '''
             i = {i};
             for (int j = 0; j < len; j++) {{
               key[j + i * len] = (u{word_size})(j + i * len);
@@ -63,13 +63,13 @@ class Rand(object, metaclass=MAddToRands):
             '''
 
         input_initilization = \
-                f'memset(in, 0, sizeof(u{word_size}) * {nwords} * (u64)len);\n'
+                'memset(in, 0, sizeof(u{word_size}) * {nwords} * (u64)len);\n'
         for i in range (0, nwords):
-            input_initilization += f'in_pack.v{i} = nsimd::pack<u{word_size}>(0);'
+            input_initilization += 'in_pack.v{i} = nsimd::pack<u{word_size}>(0);'
 
         compare = ''
         for i in range (0, nwords):
-            compare += f'''
+            compare += '''
                 if (i=={i}) {{
                     nsimd::storeu(out_nsimd, out_pack.v{i});
                 }}
@@ -77,7 +77,7 @@ class Rand(object, metaclass=MAddToRands):
 
         l = 'l' if word_size==64 else ''
 
-        res = f'''
+        res = '''
         #include <nsimd/modules/rand/functions.hpp>
         #include "reference.hpp"
 
@@ -272,7 +272,7 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
     '''
 
     def gen_signature(self, nwords, word_size, nrounds):
-        return f'''nsimd::packx{nwords}<u{word_size}> {self.gen_function_name(nwords, word_size, nrounds)}(nsimd::packx{nwords}<u{word_size}> in, nsimd::packx{self.get_key_size(nwords)}<u{word_size}> key)'''
+        return '''nsimd::packx{nwords}<u{word_size}> {self.gen_function_name(nwords, word_size, nrounds)}(nsimd::packx{nwords}<u{word_size}> in, nsimd::packx{self.get_key_size(nwords)}<u{word_size}> key)'''
 
     def get_key_size(self, nwords):
         return int(nwords/2)
@@ -439,7 +439,7 @@ class ThreeFry(Rand):
                                     4: [12, 20, 72]}}
 
     def gen_signature(self, nwords, word_size, nrounds):
-        return f'''nsimd::packx{nwords}<u{word_size}> \
+        return '''nsimd::packx{nwords}<u{word_size}> \
 {self.gen_function_name(nwords, word_size, nrounds)} \
 (nsimd::packx{nwords}<u{word_size}> in, \
 nsimd::packx{nwords}<u{word_size}> key)'''
@@ -598,9 +598,9 @@ def gen_doc(opts):
             for nwords, list_nrounds in nwords_nrounds.items():
                 for nrounds in list_nrounds:
                     api += '- `' + func.gen_signature(nwords, word_size, nrounds) + '`\n'
-                    api += f'''\tReturns a random number using the {func.name} generator\n\n'''
+                    api += '''\tReturns a random number using the {func.name} generator\n\n'''
 
-    res = f'''
+    res = '''
 # NSIMD RAND module overview
 
 {desc()}
