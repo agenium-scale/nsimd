@@ -164,8 +164,8 @@ build_file api_sve2048$o autodeps $root$/src/api_sve2048.cpp
 
 install_file libnsimd_${simd}$so lib
 [W] install_file libnsimd_${simd}$lib lib
-install_dir $root$/nsimd/include/nsimd include
-install_dir $root$/nsimd/doc/html doc
+install_dir $root$/include/nsimd include
+install_dir $root$/doc/html doc
 
 ## Tests
 
