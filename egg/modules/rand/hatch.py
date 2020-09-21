@@ -36,7 +36,7 @@ class MAddToRands(type):
 
 class Rand(object, metaclass=MAddToRands):
     def gen_function_name(self, nwords, word_size, nrounds):
-        return '{self.name}_{nwords}x{word_size}_{nrounds}'
+        return '{}_{}x{}_{}'.format(self.name, nwords, word_size, nrounds)
 
     def gen_headers(self, opts):
         res = ''
@@ -82,81 +82,91 @@ class Rand(object, metaclass=MAddToRands):
         #include "reference.hpp"
 
         int main() {{
-            int res = EXIT_SUCCESS;
-            printf("Test of {self.gen_function_name(nwords, word_size, nrounds)} ...\\n");
+          int res = EXIT_SUCCESS;
+          printf("Test of {function_name} ...\\n");
 
-            nsimd::packx{nwords}<u{word_size}> in_pack;
-            nsimd::packx{nwords}<u{word_size}> out_pack;
+          nsimd::packx{nwords}<u{word_size}> in_pack;
+          nsimd::packx{nwords}<u{word_size}> out_pack;
 
-            const i64 len = nsimd::len(u{word_size}());
+          const i64 len = nsimd::len(u{word_size}());
 
-            u{word_size} *key = (u{word_size}*)malloc((u64)len * sizeof(u{word_size}) * {key_size});
-            u{word_size} *in = (u{word_size}*)malloc((u64)len * sizeof(u{word_size}) * {nwords});
-            u{word_size} *out = (u{word_size}*)malloc((u64)len * sizeof(u{word_size}) * {nwords});
-            u{word_size} *out_nsimd = (u{word_size}*)malloc((u64)len * sizeof(u{word_size}));
+          u{word_size} *key = (u{word_size}*)malloc((u64)len *
+                                sizeof(u{word_size}) * {key_size});
+          u{word_size} *in = (u{word_size}*)malloc((u64)len *
+                               sizeof(u{word_size}) * {nwords});
+          u{word_size} *out = (u{word_size}*)malloc((u64)len *
+                                sizeof(u{word_size}) * {nwords});
+          u{word_size} *out_nsimd = (u{word_size}*)malloc((u64)len *
+                                      sizeof(u{word_size}));
 
-            tab{word_size}x{nwords}_t in_ref;
-            tab{word_size}x{key_size}_t key_ref;
-            tab{word_size}x{nwords}_t out_ref;
+          tab{word_size}x{nwords}_t in_ref;
+          tab{word_size}x{key_size}_t key_ref;
+          tab{word_size}x{nwords}_t out_ref;
 
-            int i;
+          int i;
 
-            // Keys
-            {key_initialization}
+          // Keys
+          {key_initialization}
 
-            {input_initilization}
+          {input_initilization}
 
-            for (int cpt=0; cpt < 100000; ++cpt) {{
-                out_pack = nsimd::rand::{self.gen_function_name(nwords, word_size, nrounds)}(in_pack, key_pack);
+          for (int cpt=0; cpt < 100000; ++cpt) {{
+            out_pack = nsimd::rand::{function_name}(in_pack, key_pack);
 
-                for (int i=0; i<len; ++i) {{
-                    for (int j=0; j<{nwords}; ++j) {{
-                        in_ref.v[j] = in[i + j * len];
-                    }}
+            for (int i=0; i<len; ++i) {{
+              for (int j=0; j<{nwords}; ++j) {{
+                  in_ref.v[j] = in[i + j * len];
+              }}
 
-                    for (int j=0; j<{key_size}; ++j) {{
-                        key_ref.v[j] = key[i + j*len];
-                    }}
+              for (int j=0; j<{key_size}; ++j) {{
+                  key_ref.v[j] = key[i + j*len];
+              }}
 
-                    out_ref = branson_{self.name}{nwords}x{word_size}_R({nrounds}, in_ref, key_ref);
+              out_ref = branson_{nwords}x{word_size}_R({nrounds},
+                          in_ref, key_ref);
 
-                    for (int j=0; j<{nwords}; ++j) {{
-                        out[i + j * len] = out_ref.v[j];
-                    }}
-                }}
-
-                for (int i=0; i<{nwords}; ++i) {{
-                    {compare}
-
-                    if (memcmp(out_nsimd, &out[i*len], (u64){nwords} * sizeof(u{word_size}))) {{
-                        printf ("%i\\n", i);
-                        for (int j=0; j<len; ++j) {{
-                            printf ("%{l}u\\t(0x%{l}x)\\t\\t%{l}u\\t(0x%{l}x)\\n",
-                                out[j+i*len], out[j+i*len],
-                                out_nsimd[j], out_nsimd[j]);
-                        }}
-
-                        res = EXIT_FAILURE;
-                        printf("... FAILED\\n");
-                        goto cleanup;
-                    }}
-                }}
-
-                in_pack = out_pack;
-                memcpy(in, out, sizeof(u{word_size}) * {nwords} * (u64)len);
+              for (int j=0; j<{nwords}; ++j) {{
+                  out[i + j * len] = out_ref.v[j];
+              }}
             }}
 
-            fprintf(stdout, "... OK\\n");
+            for (int i=0; i<{nwords}; ++i) {{
+              {compare}
+
+              if (memcmp(out_nsimd, &out[i*len],
+                       (u64){nwords} * sizeof(u{word_size}))) {{
+                printf ("%i\\n", i);
+                for (int j=0; j<len; ++j) {{
+                  printf ("%{l}u\\t(0x%{l}x)\\t\\t%{l}u\\t(0x%{l}x)\\n",
+                          out[j+i*len], out[j+i*len],
+                          out_nsimd[j], out_nsimd[j]);
+                }}
+
+                res = EXIT_FAILURE;
+                printf("... FAILED\\n");
+                goto cleanup;
+              }}
+            }}
+
+            in_pack = out_pack;
+            memcpy(in, out, sizeof(u{word_size}) * {nwords} * (u64)len);
+          }}
+
+          fprintf(stdout, "... OK\\n");
 
         cleanup:
-            free(key);
-            free(in);
-            free(out);
-            free(out_nsimd);
+          free(key);
+          free(in);
+          free(out);
+          free(out_nsimd);
 
-            return res;
+          return res;
         }}
-        '''
+        '''.format(function_name=self.gen_function_name(nwords, word_size,
+                   nrounds), word_size=word_size, key_size=key_size,
+                   nwords=nwords, key_initialization=key_initialization,
+                   nrounds=nrounds, input_initilization=input_initilization,
+                   compare=compare, l=l)
 
         # Write file
         return res
