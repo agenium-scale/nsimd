@@ -209,13 +209,13 @@ NSIMD_DLLEXPORT u16 nsimd_f32_to_u16(f32 a) {
     return (u16)(0xffff);
   }
 
-  const f32_u32 biggest_f16{0x477ff000};
+  const f32_u32 biggest_f16 = {0x477ff000};
   if (in.f >= biggest_f16.f || in.f <= -biggest_f16.f) {
     /* Number is too big to be representable in half => return infinity */
     return (u16)(sign >> 16 | 0x1f << 10);
   }
 
-  const f32_u32 smallest_f16{0x33000000};
+  const f32_u32 smallest_f16 = {0x33000000};
   if (in.f <= smallest_f16.f && in.f >= -smallest_f16.f) {
     /* Number is too small to be representable in half => return ±0 */
     return (u16)(sign >> 16);
@@ -226,10 +226,10 @@ NSIMD_DLLEXPORT u16 nsimd_f32_to_u16(f32 a) {
 
   /* Following algorithm taken from:
    * https://fgiesen.wordpress.com/2012/03/28/half-to-float-done-quic/ */
-  const f32_u32 denormal_f16{0x38800000};
+  const f32_u32 denormal_f16 = {0x38800000};
   if (in.f < denormal_f16.f && in.f > -denormal_f16.f) {
     /* Denormalized half */
-    const f32_u32 magic {((127 - 15) + (23 - 10) + 1) << 23};
+    const f32_u32 magic = {((127 - 15) + (23 - 10) + 1) << 23};
 
     in.u &= ~0x80000000U;
     in.f += magic.f;

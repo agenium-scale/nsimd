@@ -90,7 +90,7 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 ## Some defaults
 
 set flags   = -Wall -fPIC -O3 -I$root$/include -DNDEBUG
-set cflags  = -std=c++14 $flags$
+set cflags  = -std=c++98 $flags$
 
 ## Default building rules
 

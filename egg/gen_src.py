@@ -65,7 +65,7 @@ def get_put_impl(simd_ext):
            int nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
                                           nsimd_{simd_ext}_v{l}{typ} v) {{
              using namespace nsimd;
-             {typ} buf[max_len<{typ}>];
+             {typ} buf[NSIMD_MAX_LEN({typ})];
 
              int n = len({typ}(), {simd_ext}());
              store{l}u(buf, v, {typ}(), {simd_ext}());
@@ -218,8 +218,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
         else:
             if t == 'f16':
                 inputs = \
-                '\n'.join(['''f16 buf{i}_f16[max_len<f16>];
-                              f32 buf{i}_f32[max_len<f16>];
+                '\n'.join(['''f16 buf{i}_f16[NSIMD_MAX_LEN(f16)];
+                              f32 buf{i}_f32[NSIMD_MAX_LEN(f16)];
                               storeu(buf{i}_f16, a{i}, f16(), {simd_ext}());
                               for (int i = 0; i < len_f16; i++) {{
                                 buf{i}_f32[i] = (f32)buf{i}_f16[i];
