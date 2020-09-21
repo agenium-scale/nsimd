@@ -351,9 +351,9 @@ found in `egg`.
 - Intrinsics that do require the vector length at compile time can be wrapped
   but it is up to the maintainer to accept it.
 - Use `clang-format` when writing C or C++ code.
-- The `.cpp` files are written in C++14.
+- The `.cpp` files are written in C++98.
 - The headers files must be compatible with C89 (when possible otherwise
-  C99), C++98, C++11 and C++14.
+  C99), C++98, C++11, C++14 up to and including C++20.
 
 Please see <doc/markdown/CONTRIBUTE.md> for more details.
 
