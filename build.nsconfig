@@ -43,6 +43,7 @@ ifnot_set "Optional flags like FMA, FP16..." optional_flags = ""
 ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
 ifnot_set "Google benchmark compilation flags (for benchmarks only)" \
           benchmark = -lbenchmark
+ifnot_set "Turn off tests/bench/ulps" build_library_only = false
 
 ## Targets for compilation
 
@@ -90,7 +91,7 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 ## Some defaults
 
 set flags   = -Wall -fPIC -O3 -I$root$/include -DNDEBUG
-set cflags  = -std=c++98 $flags$
+set cflags  = -std=c++14 $flags$
 
 ## Default building rules
 
@@ -166,6 +167,8 @@ install_file libnsimd_${simd}$so lib
 [W] install_file libnsimd_${simd}$lib lib
 install_dir $root$/include/nsimd include
 install_dir $root$/doc/html doc
+
+begin_translate_if $build_library_only == false
 
 ## Tests
 
@@ -252,3 +255,4 @@ build_files optional benches \
 
 phony benches deps $benches.files$
 
+end_translate
