@@ -218,15 +218,21 @@ build_files cpp98 foreach glob:$root$/tests/*.cpp \
 	$tests_comp -std=c++98 @item $tests_flags -o @out
 
 build_files cpp11 foreach glob:$root$/tests/*.cpp \
-                  as tests.%b$exe \
+                  as tests.%b.cpp11$exe \
                   autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++11 @item $tests_flags -o @out
+
+build_files cpp20 foreach glob:$root$/tests/*.cpp \
+                  as tests.%b.cpp20$exe \
+                  autodeps @item libnsimd_$simd$$so$
+	$tests_comp -std=c++20 @item $tests_flags -o @out
 
 phony tests.c89 deps $c89.files
 phony tests.c99 deps $c99.files
 phony tests.c11 deps $c11.files
 phony tests.cpp98 deps $cpp98.files
 phony tests.cpp11 deps $cpp11.files
+phony tests.cpp20 deps $cpp20.files
 
 #phony tests deps $c89.files$ $c99.files$ $cpp98.files$ $cpp11.files$
 phony tests deps $c11.files$ $cpp98.files$ $cpp11.files$

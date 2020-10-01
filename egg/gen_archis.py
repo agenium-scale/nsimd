@@ -278,7 +278,8 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                      #if NSIMD_CXX > 0
                      namespace nsimd {{
 
-                     struct {simd_ext} {{}};
+                     // defined in nsimd.h for C++20 concepts
+                     // struct {simd_ext} {{}};
 
                      {cxx_code}
 
