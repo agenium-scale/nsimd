@@ -28,30 +28,35 @@ SOFTWARE.
 #include <nsimd/nsimd-all.hpp>
 
 #include <cassert>
-#include <vector>
 #include <cstring>
+#include <vector>
+
+#if defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+#include <CL/sycl.hpp>
+#endif
 
 namespace spmd {
 
 #if NSIMD_CXX < 2011 && NSIMD_C < 1999
-  #define NSIMD_VARIADIC_MACROS_IS_EXTENSION
+#define NSIMD_VARIADIC_MACROS_IS_EXTENSION
 #endif
 
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
-  #if defined(NSIMD_IS_GCC)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wvariadic-macros"
-  #elif defined(NSIMD_IS_CLANG)
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wvariadic-macros"
-  #endif
+#if defined(NSIMD_IS_GCC)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
+#elif defined(NSIMD_IS_CLANG)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvariadic-macros"
+#endif
 #endif
 
 // ----------------------------------------------------------------------------
-// CUDA and ROCm
+// CUDA, ROCm ans SYCL
 
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE) ||                               \
+    defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
 
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
 
@@ -68,7 +73,7 @@ namespace spmd {
     int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
     if (spmd_i_ < n) {
 
-#else
+#elif defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
@@ -84,11 +89,30 @@ namespace spmd {
     unsigned int spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;    \
     if (spmd_i_ < n) {
 
+#else
+
+// 1d kernel definition
+#define spmd_kernel_1d(name, ...)                                             \
+  template <int spmd_ScalarBits_>                                             \
+  inline void name(__VA_ARGS__, int n, int dimx, sycl::id<2> idx) {           \
+    int spmd_i_ = idx[0] * dimx + idx[1];                                     \
+    if (spmd_i_ < n) {
+
+// templated kernel definition
+#define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
+  template <typename template_argument, int spmd_scalarBits_>                 \
+  inline void name(__VA_ARGS__, unsigned int n, int dimx, sycl::id<2> idx) {  \
+    unsigned int spmd_i_ = idx[0] * dimx + idx[1];                            \
+    if (spmd_i_ < n) {
+
 #endif
 
 #define spmd_kernel_end                                                       \
   }                                                                           \
   }
+
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
+    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
 // device function
 #define spmd_dev_func(type_name, ...)                                         \
@@ -98,6 +122,19 @@ namespace spmd {
 #define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
   template <typename template_argument, int spmd_ScalarBits_>                 \
   __device__ type_name(__VA_ARGS__) {
+
+#else
+
+// device function
+#define spmd_dev_func(type_name, ...)                                         \
+  template <int spmd_ScalarBits_> type_name(__VA_ARGS__) {
+
+// templated device function
+#define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  type_name(__VA_ARGS__) {
+
+#endif
 
 #define spmd_dev_func_end }
 
@@ -115,9 +152,9 @@ namespace spmd {
                               ...)                                            \
   name<spmd_scalar_bits_>                                                     \
       <<<(unsigned int)((n + threads_per_block - 1) / threads_per_block),     \
-         (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
+         (unsigned int)(threads_per_block)> > >(__VA_ARGS__, (int)n)
 
-#else
+#elif defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
 // launch 1d kernel ROCm
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
@@ -127,6 +164,22 @@ namespace spmd {
       (unsigned int)((n + threads_per_block - 1) / threads_per_block),        \
       (unsigned int)(threads_per_block), 0, NULL, __VA_ARGS__,                \
       (unsigned int)n)
+
+#else
+
+// launch 1d kernel
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits, treads_per_blocks, n,   \
+                              ...)                                            \
+  sycl::queue(sycl::default_selector())                                       \
+      .parallel_for(                                                          \
+          sycl::id<2>((n + threads_per_block - 1) / threads_per_block,        \
+                      threads_per_block),                                    \
+          [=](sycl::id<2> idx) {                                              \
+            const int DIM_X =                                                 \
+                (n + threads_per_block - 1) / threads_per_block;              \
+            name<spmd_scalar_bits>(__VA_ARGS__, (int)n, DIM_X, id_x);         \
+          })                                                                  \
+      .wait();
 
 #endif
 
@@ -332,7 +385,7 @@ struct KernelSIMD {};
   }
 
 // launch 1d templated kernel
-#define spmd_launch_tmpl_kernel_1d(                                      \
+#define spmd_launch_tmpl_kernel_1d(                                           \
     name, template_argument, spmd_scalar_bits_, spmd_unroll_, spmd_n_, ...)   \
   {                                                                           \
     typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_,                \
@@ -473,8 +526,7 @@ template <> struct store_helper<KernelSIMD> {
   }
 
   template <typename T, typename S, typename U, int N, typename SimdExt>
-  static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr,
-                   U value) {
+  static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr, U value) {
     nsimd::mask_storeu(mask, addr,
                        nsimd::pack<S, N, SimdExt>(nsimd::to<S>(value)));
   }
@@ -663,11 +715,11 @@ inline bool any(bool a) { return a; }
 #endif
 
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
-  #if defined(NSIMD_IS_GCC)
-    #pragma GCC diagnostic pop
-  #elif defined(NSIMD_IS_CLANG)
-    #pragma clang diagnostic pop
-  #endif
+#if defined(NSIMD_IS_GCC)
+#pragma GCC diagnostic pop
+#elif defined(NSIMD_IS_CLANG)
+#pragma clang diagnostic pop
+#endif
 #endif
 
 } // namespace spmd

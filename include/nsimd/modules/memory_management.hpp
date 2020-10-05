@@ -81,7 +81,7 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   }                                                                           \
                                                                               \
   template <typename T> void func_name(T *ptr, size_t sz) {                   \
-    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128>>>(         \
+    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128> > >(       \
         ptr, int(sz));                                                        \
   }
 
@@ -118,24 +118,74 @@ void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
             hipMemcpyHostToDevice);
 }
 
-template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
+template <typename T>
+void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   hipMemcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T),
             hipMemcpyDeviceToHost);
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                               \
-  template <typename T>                                                        \
-  __global__ void kernel_##func_name##_(T *ptr, unsigned int n) {              \
-    unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;           \
-    if (i < n) {                                                               \
-      ptr[i] = (T)(expr);                                                      \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  template <typename T> void func_name(T *ptr, size_t sz) {                    \
-    hipLaunchKernelGGL((kernel_##func_name##_<T>),                             \
-                       (unsigned int)((sz + 127) / 128), 128, 0, NULL, ptr,    \
-                       (unsigned int)sz);                                      \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  __global__ void kernel_##func_name##_(T *ptr, unsigned int n) {             \
+    unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;          \
+    if (i < n) {                                                              \
+      ptr[i] = (T)(expr);                                                     \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *ptr, size_t sz) {                   \
+    hipLaunchKernelGGL((kernel_##func_name##_<T>),                            \
+                       (unsigned int)((sz + 127) / 128), 128, 0, NULL, ptr,   \
+                       (unsigned int)sz);                                     \
+  }
+
+// -----------------------------------------------------------------------------
+// SYCL
+
+#elif defined(NSIMD_ONEAPIL_COMPILING_FOR_DEVICE)
+
+template <typename T> T *device_malloc(size_t sz) {
+  return sycl::malloc_shared<T>(sz, sycl::queue(sycl::default_selector()));
+}
+
+template <typename T> T *device_calloc(size_t sz) {
+  T *ret = sycl::malloc_shared<T>(sz, sycl::queue(sycl::default_selector()));
+  if (ret == NULL) {
+    return NULL;
+  }
+  memset((void *)ret, sz * sizeof(T));
+  return ret;
+}
+
+template <typename T> void device_free(T *ptr) { free((void *)ptr); }
+
+template <typename T>
+void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
+  memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
+}
+
+template <typename T>
+void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
+  memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
+}
+
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  inline void kernel_##func_name##_(T *ptr, unsigned int n, int dimx,         \
+                                    sycl::id<2> idx) {                        \
+    int i = idx[0] * dimx + idx[1];                                           \
+    if (i < n) {                                                              \
+      ptr[i] = (T)(expr);                                                     \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *ptr, size_t sz) {                   \
+    sycl::queue(sycl::default_selector())                                     \
+        .parallel_for(sycl::id<1>((sz + 127) / 128, 128),                     \
+                      [=](sycl::id<2> idx) {                                  \
+                        const ind dimx = (sz + 127) / 128;                    \
+                        kernel_##func_name##_<T>(ptr, (int)sz);               \
+                      });                                                     \
   }
 
 // ----------------------------------------------------------------------------
@@ -175,8 +225,7 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 // ----------------------------------------------------------------------------
 // Pair of pointers
 
-template <typename T>
-struct paired_pointers_t {
+template <typename T> struct paired_pointers_t {
   T *device_ptr, *host_ptr;
   size_t sz;
 };
@@ -184,7 +233,7 @@ struct paired_pointers_t {
 template <typename T> paired_pointers_t<T> pair_malloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   ret.device_ptr = device_malloc<T>(sz);
   if (ret.device_ptr == NULL) {
@@ -198,6 +247,7 @@ template <typename T> paired_pointers_t<T> pair_malloc(size_t sz) {
     return ret;
   }
 #else
+  // Works with OneAPI unified memory too
   ret.device_ptr = device_malloc<T>(sz);
   ret.host_ptr = ret.device_ptr;
 #endif
@@ -218,7 +268,7 @@ template <typename T> paired_pointers_t<T> pair_malloc_or_exit(size_t sz) {
 template <typename T> paired_pointers_t<T> pair_calloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   ret.device_ptr = device_calloc<T>(sz);
   if (ret.device_ptr == NULL) {
@@ -232,6 +282,7 @@ template <typename T> paired_pointers_t<T> pair_calloc(size_t sz) {
     return ret;
   }
 #else
+  // Works with OneAPi unified momory too
   ret.device_ptr = device_calloc<T>(sz);
   ret.host_ptr = ret.device_ptr;
 #endif
@@ -250,29 +301,32 @@ template <typename T> paired_pointers_t<T> pair_calloc_or_exit(size_t sz) {
 }
 
 template <typename T> void pair_free(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   device_free(p.device_free);
   free((void *)p.host_ptr);
 #else
+  // Works for unified memory OneAPI too
   free((void *)p.host_ptr);
 #endif
 }
 
 template <typename T> void copy_to_device(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   copy_to_device(p.device_ptr, p.host_ptr, p.sz);
 #else
+  // Works for unified memory OneAPI too
   (void)p;
 #endif
 }
 
 template <typename T> void copy_to_host(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   copy_to_host(p.host_ptr, p.device_ptr, p.sz);
 #else
+  // Works for unified memory OneAPI too
   (void)p;
 #endif
 }
