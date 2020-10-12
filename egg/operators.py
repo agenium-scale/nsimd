@@ -315,94 +315,172 @@ class Operator(object, metaclass=MAddToOperators):
                     '#define v{name}_e({args}, simd_ext)'. \
                     format(name=self.name, args=args)]
         elif lang == 'cxx_base':
-            return_typ = common.get_one_type_generic(self.params[0], 'T')
-            if return_typ.startswith('vT'):
-                return_typ = \
-                'typename simd_traits<T, NSIMD_SIMD>::simd_vector{}'. \
-                format(return_typ[2:])
-            elif return_typ == 'vlT':
-                return_typ = \
-                'typename simd_traits<T, NSIMD_SIMD>::simd_vectorl'
+            def get_type(param, typename):
+                if param == '_':
+                    return 'void'
+                elif param == 'p':
+                    return 'int'
+                elif param == 's':
+                    return typename
+                elif param == '*':
+                    return '{}*'.format(typename)
+                elif param == 'c*':
+                    return '{} const*'.format(typename)
+                elif param == 'vi':
+                    return 'typename simd_traits<typename traits<{}>::itype,' \
+                           ' NSIMD_SIMD>::simd_vector'.format(typename)
+                elif param == 'l':
+                    return \
+                    'typename simd_traits<{}, NSIMD_SIMD>::simd_vectorl'. \
+                    format(typename)
+                elif param.startswith('v'):
+                    return \
+                    'typename simd_traits<{}, NSIMD_SIMD>::simd_vector{}'. \
+                    format(typename, param[2:])
+                else:
+                    raise ValueError("Unknown param '{}'".format(param))
+            return_typ = get_type(self.params[0], 'T')
             args_list = common.enum(self.params[1:])
 
-            temp = ', '.join(['typename A{}'.format(a[0]) for a in args_list])
-            temp += ', ' if temp != '' else ''
             if not self.closed :
-                tmpl_args = temp + 'typename F, typename T'
+                tmpl_args = 'NSIMD_CONCEPT_VALUE_TYPE F, ' \
+                            'NSIMD_CONCEPT_VALUE_TYPE T'
+                typename = 'F'
             else:
-                tmpl_args = temp + 'typename T'
+                tmpl_args = 'NSIMD_CONCEPT_VALUE_TYPE T'
+                typename = 'T'
 
-            temp = ', '.join(['A{i} a{i}'.format(i=a[0]) for a in args_list])
+            temp = ', '.join(['{} a{}'.format(get_type(a[1], typename),
+                              a[0]) for a in args_list])
             temp += ', ' if temp != '' else ''
             if not self.closed :
                 func_args = temp + 'F, T'
+                if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
+                    cxx20_require = \
+                        'NSIMD_REQUIRES(sizeof_v<F> == sizeof_v<T>) '
+                elif self.output_to == common.OUTPUT_TO_UP_TYPES:
+                    cxx20_require = \
+                        'NSIMD_REQUIRES(2 * sizeof_v<F> == sizeof_v<T>) '
+                else:
+                    cxx20_require = \
+                        'NSIMD_REQUIRES(sizeof_v<F> == 2 * sizeof_v<T>) '
             else:
                 func_args = temp + 'T'
+                cxx20_require = ''
 
-            return \
-            'template <{tmpl_args}> {return_typ} {name}({func_args});'. \
-            format(return_typ=return_typ, tmpl_args=tmpl_args,
-                   func_args=func_args, name=self.name)
+            return 'template <{tmpl_args}> {cxx20_require}{return_typ} ' \
+                   '{name}({func_args});'. \
+                   format(return_typ=return_typ, tmpl_args=tmpl_args,
+                          func_args=func_args, name=self.name,
+                          cxx20_require=cxx20_require)
         elif lang == 'cxx_adv':
-            def get_pack(param):
-                return 'pack{}'.format(param[1:]) if param[0] == 'v' \
-                                                  else 'packl'
+            def get_type(param, typename, N):
+                if param == '_':
+                    return 'void'
+                elif param == 'p':
+                    return 'int'
+                elif param == 's':
+                    return typename
+                elif param == '*':
+                    return '{}*'.format(typename)
+                elif param == 'c*':
+                    return '{} const*'.format(typename)
+                elif param == 'vi':
+                    return 'pack<typename traits<{}>::itype, {}, SimdExt> >'. \
+                           format(typename, N)
+                elif param == 'l':
+                    return 'packl<{}, {}, SimdExt>'.format(typename, N)
+                elif param.startswith('v'):
+                    return 'pack{}<{}, {}, SimdExt>'. \
+                    format(param[2:], typename, N)
+                else:
+                    raise ValueError("Unknown param '{}'".format(param))
             args_list = common.enum(self.params[1:])
+            # Do we need tag dispatching on pack<>? e.g. len, set1 and load*
             inter = [i for i in ['v', 'l', 'vx2', 'vx3', 'vx4'] \
                      if i in self.params[1:]]
-            # Do we need tag dispatching on pack<>? e.g. len, set1 and load*
-            need_tmpl_pack = get_pack(self.params[0]) if inter == [] else None
+            tag_dispatching = (inter == [])
 
             # Compute template arguments
-            tmpl_args = []
+            tmpl_args1 = ['NSIMD_CONCEPT_VALUE_TYPE T',
+                          'NSIMD_CONCEPT_SIMD_EXT SimdExt']
+            tmpl_argsN = ['NSIMD_CONCEPT_VALUE_TYPE T', 'int N',
+                          'NSIMD_CONCEPT_SIMD_EXT SimdExt']
+            def get_PACK(arg):
+                if arg == 'l':
+                    return 'PACKL'
+                elif arg == 'v':
+                    return 'PACK'
+                else:
+                    return 'PACK{}'.format(arg[1:].upper())
             if not self.closed:
-                tmpl_args += ['typename ToPackType']
-            tmpl_args1 = tmpl_args + ['typename T', 'typename SimdExt']
-            tmpl_argsN = tmpl_args + ['typename T', 'int N', 'typename SimdExt']
-            other_tmpl_args = ['typename A{}'.format(i[0]) for i in args_list \
-                               if i[1] not in ['v', 'l']]
-            tmpl_args1 += other_tmpl_args
-            tmpl_argsN += other_tmpl_args
+                tmpl = 'NSIMD_CONCEPT_{} ToPackType'. \
+                       format(get_PACK(self.params[0]))
+                tmpl_args1 = [tmpl] + tmpl_args1
+                tmpl_argsN = [tmpl] + tmpl_argsN
             tmpl_args1 = ', '.join(tmpl_args1)
             tmpl_argsN = ', '.join(tmpl_argsN)
 
             # Compute function arguments
-            def arg_type(arg, N):
-                if arg[1] in ['v', 'l']:
-                    pack_typ = 'pack' if arg[1] == 'v' else 'packl'
-                    return '{}<T, {}, SimdExt> const&'.format(pack_typ, N)
+            def arg_type(arg, typename, N):
+                if arg in ['v', 'vi', 'vx2', 'vx3', 'vx4', 'l']:
+                    return '{} const&'.format(get_type(arg, typename, N))
                 else:
-                    return 'A{}'.format(arg[0])
-            args1 = ['{} a{}'.format(arg_type(i, '1'), i[0]) for i in args_list]
-            argsN = ['{} a{}'.format(arg_type(i, 'N'), i[0]) for i in args_list]
+                    return get_type(arg, typename, N)
+            args1 = ['{} a{}'.format(arg_type(i[1], 'T', '1'), i[0]) \
+                     for i in args_list]
+            argsN = ['{} a{}'.format(arg_type(i[1], 'T', 'N'), i[0]) \
+                     for i in args_list]
+
             # Arguments without tag dispatching on pack
             other_argsN = ', '.join(argsN)
+
+            # If we need tag dispatching, then the first argument type
+            # is the output type:
+            #   1. If not closed, then the output type is ToPackType
+            #   2. If closed, then the output type is pack<T, N, SimdExt>
             if not self.closed:
-                args1 = ['ToPackType'] + args1
-                argsN = ['ToPackType'] + argsN
-            if need_tmpl_pack != None:
-                args1 = ['{}<T, 1, SimdExt> const&'.format(need_tmpl_pack)] + \
-                        args1
-                argsN = ['{}<T, N, SimdExt> const&'.format(need_tmpl_pack)] + \
-                        argsN
+                args1 = ['ToPackType const&'] + args1
+                argsN = ['ToPackType const&'] + argsN
+            elif tag_dispatching:
+                args1 = [arg_type(self.params[0], 'T', '1')] + args1
+                argsN = [arg_type(self.params[0], 'T', 'N')] + argsN
             args1 = ', '.join(args1)
             argsN = ', '.join(argsN)
 
             # Compute return type
-            ret1 = 'ToPackType' if not self.closed \
-                   else common.get_one_type_generic_adv_cxx(self.params[0],
-                                                            'T', '1')
-            retN = 'ToPackType' if not self.closed \
-                   else common.get_one_type_generic_adv_cxx(self.params[0],
-                                                            'T', 'N')
+            if not self.closed:
+                ret1 = 'ToPackType'
+                retN = 'ToPackType'
+            else:
+                ret1 = get_type(self.params[0], 'T', '1')
+                retN = get_type(self.params[0], 'T', 'N')
+
+            # For non closed operators that need tag dispatching we have a
+            # require clause
+            cxx20_require = ''
+            if not self.closed:
+                tmpl = 'NSIMD_REQUIRES(' \
+                    '{}sizeof_v<typename ToPackType::value_type> == ' \
+                        '{}sizeof_v<T> && ' \
+                    'ToPackType::unroll == N && '\
+                    'std::is_same_v<typename ToPackType::simd_ext, SimdExt>)'
+                if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
+                    cxx20_require = tmpl.format('', '')
+                elif self.output_to == common.OUTPUT_TO_UP_TYPES:
+                    cxx20_require = tmpl.format('', '2 * ')
+                else:
+                    cxx20_require = tmpl.format('2 * ', '')
 
             ret = { \
-                '1': 'template <{tmpl_args1}> {ret1} {cxx_name}({args1});'. \
-                     format(tmpl_args1=tmpl_args1, ret1=ret1, args1=args1,
-                            cxx_name=self.name),
-                'N': 'template <{tmpl_argsN}> {retN} {cxx_name}({argsN});'. \
-                     format(tmpl_argsN=tmpl_argsN, retN=retN, argsN=argsN,
-                            cxx_name=self.name)
+                '1': 'template <{tmpl_args1}> {cxx20_require}{ret1} ' \
+                     '{cxx_name}({args1});'. \
+                     format(tmpl_args1=tmpl_args1, cxx20_require=cxx20_require,
+                            ret1=ret1, args1=args1, cxx_name=self.name),
+                'N': 'template <{tmpl_argsN}> {cxx20_require}{retN} ' \
+                     '{cxx_name}({argsN});'. \
+                     format(tmpl_argsN=tmpl_argsN, cxx20_require=cxx20_require,
+                            retN=retN, argsN=argsN, cxx_name=self.name)
             }
             if self.cxx_operator:
                 ret.update({ \
@@ -419,16 +497,18 @@ class Operator(object, metaclass=MAddToOperators):
                 })
             if not self.closed:
                 ret['dispatch'] = \
-                'template <{tmpl_argsN}> {retN} {cxx_name}({other_argsN});'. \
-                format(tmpl_argsN=tmpl_argsN, other_argsN=other_argsN,
-                       retN=retN, cxx_name=self.name)
-            elif need_tmpl_pack != None:
-                other_tmpl_args = ', '.join(['typename SimdVector'] + \
-                                            other_tmpl_args)
+                'template <{tmpl_argsN}> {cxx20_require}{retN} ' \
+                '{cxx_name}({other_argsN});'. \
+                format(tmpl_argsN=tmpl_argsN, cxx20_require=cxx20_require,
+                       other_argsN=other_argsN, retN=retN, cxx_name=self.name)
+            elif tag_dispatching:
                 ret['dispatch'] = \
-                '''template <{other_tmpl_args}>
+                '''template <NSIMD_CONCEPT_{PACK} SimdVector,
+                             NSIMD_CONCEPT_VALUE_TYPE T>
+                   NSIMD_REQUIRES(
+                       std::is_same_v<typename SimdVector::value_type, T>)
                    SimdVector {cxx_name}({other_argsN});'''. \
-                   format(other_tmpl_args=other_tmpl_args,
+                   format(PACK=get_PACK(self.params[0]),
                           other_argsN=other_argsN, cxx_name=self.name)
             return ret
         else:

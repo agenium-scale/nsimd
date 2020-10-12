@@ -872,11 +872,18 @@ namespace nsimd {
       simd_value_type<T> || std::is_same_v<T, bool>;
   #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool
 
-  #define NSIMD_REQUIRES_SAME_SIZEOF(L, T) requires (sizeof(L) == sizeof(T))
+  // We need our own sizeof because of f16 which can be 4 bytes (i.e. a
+  // float) on systems where there is no support for native f16's.
+  template <typename T> struct sizeof_t { const size_t value = sizeof(T); };
+  template <> struct sizeof_t<f16> { const size_t value = 2; };
+
+  template <typename T> const sizeof_v = sizeof_t<T>::value;
+
+  #define NSIMD_REQUIRES(cond) requires(cond)
 #else
   #define NSIMD_CONCEPT_VALUE_TYPE typename
   #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL typename
-  #define NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+  #define NSIMD_REQUIRES(cond)
 #endif
 
 template <NSIMD_CONCEPT_VALUE_TYPE T> struct traits {};
@@ -1518,7 +1525,7 @@ T to(S value) {
 namespace nsimd {
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 NSIMD_NSV(T, NSIMD_SIMD)
 if_else(NSIMD_NSVL(L, NSIMD_SIMD) a0, NSIMD_NSV(T, NSIMD_SIMD) a1,
         NSIMD_NSV(T, NSIMD_SIMD) a2, L, T) {
@@ -1528,7 +1535,7 @@ if_else(NSIMD_NSVL(L, NSIMD_SIMD) a0, NSIMD_NSV(T, NSIMD_SIMD) a1,
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 NSIMD_NSV(T, SimdExt)
 if_else(NSIMD_NSVL(L, SimdExt) a0, NSIMD_NSV(T, SimdExt) a1,
         NSIMD_NSV(T, SimdExt) a2, L, T, SimdExt) {
@@ -1610,12 +1617,6 @@ if_else(NSIMD_NSVL(L, SimdExt) a0, NSIMD_NSV(T, SimdExt) a1,
 
 #if NSIMD_CXX > 0
 namespace nsimd {
-
-#if NSIMD_CXX >= 2020
-#define NSIMD_REQUIRES requires std::is_same_v<std::remove_cv_t<A0>, T *>
-#else
-#define NSIMD_REQUIRES
-#endif
 
 template <NSIMD_CONCEPT_VALUE_TYPE T>
 NSIMD_NSV(T, NSIMD_SIMD)
