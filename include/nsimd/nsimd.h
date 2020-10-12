@@ -321,6 +321,16 @@ namespace nsimd {
   #define NSIMD_ROCM_COMPILING_FOR_DEVICE
 #endif
 
+/* SYCL */
+
+#if defined(SYCL) && !defined(NSIMD_SYCL)
+  #define NSIMD_SYCL
+#endif
+
+#if defined(NSIMD_SYCL)
+  #define NSIMD_SYCL_COMPILING_FOR_DEVICE
+#endif
+
 /* ------------------------------------------------------------------------- */
 /* Set NSIMD_SIMD and NSIMD_PLATFORM macro, include the correct header. */
 

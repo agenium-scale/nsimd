@@ -31,7 +31,7 @@ SOFTWARE.
 #include <cstring>
 #include <vector>
 
-#if defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 #include <CL/sycl.hpp>
 #endif
 
@@ -56,7 +56,7 @@ namespace spmd {
 
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
     defined(NSIMD_ROCM_COMPILING_FOR_DEVICE) ||                               \
-    defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+    defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
 
@@ -89,20 +89,20 @@ namespace spmd {
     unsigned int spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;    \
     if (spmd_i_ < n) {
 
-#else
+#elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
-  inline void name(__VA_ARGS__, int n, int dimx, sycl::id<2> idx) {           \
-    int spmd_i_ = idx[0] * dimx + idx[1];                                     \
+  inline void name(__VA_ARGS__, int n, sycl::id<2> id) {                      \
+    int spmd_i_ = id.get_id(0) * id.get_range()[0] + id.get_id(1);            \
     if (spmd_i_ < n) {
 
 // templated kernel definition
 #define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
   template <typename template_argument, int spmd_scalarBits_>                 \
-  inline void name(__VA_ARGS__, unsigned int n, int dimx, sycl::id<2> idx) {  \
-    unsigned int spmd_i_ = idx[0] * dimx + idx[1];                            \
+  inline void name(__VA_ARGS__, unsigned int n, int dimx, sycl::id<2> id) {   \
+    int spmd_i_ = id.get_id(0) * id.get_range()[0] + id.get_id(1);            \
     if (spmd_i_ < n) {
 
 #endif
@@ -165,19 +165,17 @@ namespace spmd {
       (unsigned int)(threads_per_block), 0, NULL, __VA_ARGS__,                \
       (unsigned int)n)
 
-#else
+#elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 
-// launch 1d kernel
+// launch 1d kernel SYCL
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits, treads_per_blocks, n,   \
                               ...)                                            \
   sycl::queue(sycl::default_selector())                                       \
       .parallel_for(                                                          \
           sycl::id<2>((n + threads_per_block - 1) / threads_per_block,        \
-                      threads_per_block),                                    \
-          [=](sycl::id<2> idx) {                                              \
-            const int DIM_X =                                                 \
-                (n + threads_per_block - 1) / threads_per_block;              \
-            name<spmd_scalar_bits>(__VA_ARGS__, (int)n, DIM_X, id_x);         \
+                      threads_per_block),                                     \
+          [=](sycl::id<2> id) {                                               \
+            name<spmd_scalar_bits>(__VA_ARGS__, (int)n, id);                  \
           })                                                                  \
       .wait();
 

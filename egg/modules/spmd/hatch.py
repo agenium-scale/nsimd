@@ -482,6 +482,24 @@ def gen_tests_for_shifts(opts, t, operator):
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n, s);
         }}
 
+        #elif defined(NSIMD_SYCL)
+
+        inline void kernel({typ} *dst, {typ} *a0, unsigned int n, int s, 
+                           sycl::id<2> id) {{
+          int i = id.get_id(0) * id.get_range()[0] + id.get_id(1);
+          if (i < n) {{
+            dst[i] = nsimd::scalar_{op_name}(a0[i], s);
+          }}
+        }}   
+
+        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+          sycl::queue(sycl::default_selector()).parallel_for(
+            sycl::id<2>({gpu_params}), [=](sycl::id<2> id){{
+                kernel(dst, a0, n, s, id);
+            }}       
+          );
+        }}
+
         #else
 
         void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
@@ -574,6 +592,25 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 
         void compute_result({typ} *dst, {typ} *a0, unsigned int n) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n);
+        }}
+
+        #elif defined(NSIMD_SYCL)
+
+        inline void kernel({typ} *dst, {typ} *a0, unsigned int n, 
+                           sycl::id<2> id) {{
+          int i = id.get_id(0) * id.get_range()[0] + id.get_id(1); 
+          if (i < n) {{
+            dst[i] = nsimd::scalar_{op_name}({typ}(), nsimd::gpu_{op_name}(
+                         {totyp}(), a0[i]));
+          }}
+        }}
+
+        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+          sycl::queue(sycl::default_selector()).parallel_for(
+            sycl::id<2>({gpu_params}), [=](sycl::id<2> id){{
+                kernel(dst, a0, n, id);
+            }}       
+          );
         }}
 
         #else
@@ -772,6 +809,24 @@ def gen_tests_for(opts, t, operator):
                              n);
         }}
 
+        #elif defined(NSIMD_SYCL)
+
+        inline void kernel({typ} *dst, {k_args}, unsigned int n, 
+                           sycl::id<2> id) {{
+          int i = id.get_id(0) * id.get_range()[0] + id.get_id(1); 
+          if (i < n) {{
+            {cpu_kernel}
+          }}
+        }}
+
+        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+          sycl::queue(sycl::default_selector()).parallel_for(
+            sycl::id<2>({gpu_params}), [=](sycl::id<2> id){{
+                kernel(dst, {k_call_args}, n, id);
+            }}       
+          );
+        }}
+
         #else
 
         void compute_result({typ} *dst, {k_args}, unsigned int n) {{
@@ -798,7 +853,8 @@ def gen_tests_for(opts, t, operator):
         // clang-format on
 
         #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-            defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+            defined(NSIMD_ROCM_COMPILING_FOR_DEVICE) || \
+            defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
         #define THREADS_PER_BLOCK 128
         #else
         #define THREADS_PER_BLOCK 1
