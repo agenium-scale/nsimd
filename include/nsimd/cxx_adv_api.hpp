@@ -28,6 +28,8 @@ SOFTWARE.
 #include <nsimd/nsimd.h>
 #include <ostream>
 
+// ----------------------------------------------------------------------------
+
 namespace nsimd {
 
 // ----------------------------------------------------------------------------
@@ -39,10 +41,12 @@ template <> struct nsimd_static_assert<true> {};
 // ----------------------------------------------------------------------------
 // Definition of pack
 
-template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N = 1,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT pack;
 
-template <typename T, typename SimdExt> NSIMD_STRUCT pack<T, 1, SimdExt> {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT pack<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -55,7 +59,9 @@ template <typename T, typename SimdExt> NSIMD_STRUCT pack<T, 1, SimdExt> {
   pack() {}
 
   // Ctor that splats
-  template <typename S> pack(S const &s) { car = set1(T(s), T(), SimdExt()); }
+  template <NSIMD_CONCEPT_VALUE_TYPE S> pack(S const &s) {
+    car = set1(T(s), T(), SimdExt());
+  }
 
   // Ctor taking a SIMD vector
   pack(simd_vector v) { car = v; }
@@ -79,7 +85,8 @@ template <typename T, typename SimdExt> NSIMD_STRUCT pack<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt> NSIMD_STRUCT pack {
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT pack {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -93,7 +100,7 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT pack {
   pack() {}
 
   // Ctor that splats
-  template <typename S> pack(S const &s) : cdr(s) {
+  template <NSIMD_CONCEPT_VALUE_TYPE S> pack(S const &s) : cdr(s) {
     car = set1(T(s), T(), SimdExt());
   }
 
@@ -103,13 +110,27 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT pack {
   }
 };
 
+#if NSIMD_CXX >= 2020
+template <typename T> struct is_pack_t : public std::false_type {};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct is_pack_t<pack<T, N, SimdExt> > : public std::true_type {};
+
+template <typename T> concept is_pack_c = is_pack_t<T>::value;
+#define NSIMD_CONCEPT_PACK nsimd::is_pack_c
+#else
+#define NSIMD_CONCEPT_PACK typename
+#endif
+
 // ----------------------------------------------------------------------------
 // Definition of logical
 
-template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N = 1,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT packl;
 
-template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packl<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vectorl simd_vectorl;
   simd_vectorl car;
   typedef T value_type;
@@ -123,7 +144,7 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
   packl(simd_vectorl v) { car = v; }
 
   // Ctor that splats
-  template <typename S> packl(S const &s) {
+  template <NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL S> packl(S const &s) {
     car = set1l(int(s), T(), SimdExt());
   }
 
@@ -146,7 +167,8 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packl<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packl {
   typename simd_traits<T, SimdExt>::simd_vectorl car;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -158,7 +180,7 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   packl() {}
 
   // Ctor that splats
-  template <typename S> packl(S const &s) : cdr(s) {
+  template <NSIMD_CONCEPT_VALUE_TYPE S> packl(S const &s) : cdr(s) {
     car = set1l(int(s), T(), SimdExt());
   }
 
@@ -168,13 +190,27 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packl {
   }
 };
 
+#if NSIMD_CXX >= 2020
+template <typename T> struct is_packl_t : public std::false_type {};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct is_packl_t<packl<T, N, SimdExt> > : public std::true_type {};
+
+template <typename T> concept is_packl_c = is_packl_t<T>::value;
+#define NSIMD_CONCEPT_PACKL nsimd::is_packl_c
+#else
+#define NSIMD_CONCEPT_PACKL typename
+#endif
+
 // ----------------------------------------------------------------------------
 // Definition of SOA of degree 1
 
-template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N = 1,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT packx1;
 
-template <typename T, typename SimdExt> NSIMD_STRUCT packx1<T, 1, SimdExt> {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx1<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -188,7 +224,8 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx1<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx1 {
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx1 {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -206,13 +243,27 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx1 {
   }
 };
 
+#if NSIMD_CXX >= 2020
+template <typename T> struct is_packx1_t : public std::false_type {};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct is_packx1_t<packx1<T, N, SimdExt> > : public std::true_type {};
+
+template <typename T> concept is_packx1_c = is_packx1_t<T>::value;
+#define NSIMD_CONCEPT_PACKX1 nsimd::is_packx1_c
+#else
+#define NSIMD_CONCEPT_PACKX1 typename
+#endif
+
 // ----------------------------------------------------------------------------
 // Definition of SOA of degree 2
 
-template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N = 1,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT packx2;
 
-template <typename T, typename SimdExt> NSIMD_STRUCT packx2<T, 1, SimdExt> {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx2<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -228,7 +279,8 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx2<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx2 {
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx2 {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -250,13 +302,27 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx2 {
   }
 };
 
+#if NSIMD_CXX >= 2020
+template <typename T> struct is_packx2_t : public std::false_type {};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct is_packx2_t<packx2<T, N, SimdExt> > : public std::true_type {};
+
+template <typename T> concept is_packx2_c = is_packx2_t<T>::value;
+#define NSIMD_CONCEPT_PACKX2 nsimd::is_packx2_c
+#else
+#define NSIMD_CONCEPT_PACKX2 typename
+#endif
+
 // ----------------------------------------------------------------------------
 // Definition of SOA of degree 3
 
-template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N = 1,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT packx3;
 
-template <typename T, typename SimdExt> NSIMD_STRUCT packx3<T, 1, SimdExt> {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx3<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -274,7 +340,8 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx3<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx3 {
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx3 {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -300,13 +367,27 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx3 {
   }
 };
 
+#if NSIMD_CXX >= 2020
+template <typename T> struct is_packx3_t : public std::false_type {};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct is_packx3_t<packx3<T, N, SimdExt> > : public std::true_type {};
+
+template <typename T> concept is_packx3_c = is_packx3_t<T>::value;
+#define NSIMD_CONCEPT_PACKX3 nsimd::is_packx3_c
+#else
+#define NSIMD_CONCEPT_PACKX3 typename
+#endif
+
 // ----------------------------------------------------------------------------
 // Definition of SOA of degree 4
 
-template <typename T, int N = 1, typename SimdExt = NSIMD_SIMD>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N = 1,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt = NSIMD_SIMD>
 NSIMD_STRUCT packx4;
 
-template <typename T, typename SimdExt> NSIMD_STRUCT packx4<T, 1, SimdExt> {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx4<T, 1, SimdExt> {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -327,7 +408,8 @@ template <typename T, typename SimdExt> NSIMD_STRUCT packx4<T, 1, SimdExt> {
   }
 };
 
-template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx4 {
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_STRUCT packx4 {
   typedef typename simd_traits<T, SimdExt>::simd_vector simd_vector;
   typedef T value_type;
   typedef SimdExt simd_ext;
@@ -357,35 +439,59 @@ template <typename T, int N, typename SimdExt> NSIMD_STRUCT packx4 {
   }
 };
 
+#if NSIMD_CXX >= 2020
+template <typename T> struct is_packx4_t : public std::false_type {};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct is_packx4_t<packx4<T, N, SimdExt> > : public std::true_type {};
+
+template <typename T> concept is_packx4_c = is_packx4_t<T>::value;
+#define NSIMD_CONCEPT_PACKX4 nsimd::is_packx4_c
+#else
+#define NSIMD_CONCEPT_PACKX4 typename
+#endif
+
+// ----------------------------------------------------------------------------
+// A C++20 concept
+
+#if NSIMD_CXX >=2020
+template <typename T>
+concept any_pack_c = is_pack_c<T> || is_packl_c<T> || is_packx1_c<T> ||
+                     is_packx2_c<T> || is_packx3_c<T> || is_packx4_c<T>;
+#define NSIMD_CONCEPT_ANY_PACK nsimd::any_pack_c
+#else
+#define NSIMD_CONCEPT_ANY_PACK typename
+#endif
+
 // ----------------------------------------------------------------------------
 // The len function cannot be auto-generated
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int len(pack<T, N, SimdExt> const &) {
   return N * len(T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int len(packl<T, N, SimdExt> const &) {
   return N * len(T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int len(packx1<T, N, SimdExt> const &) {
   return N * len(T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int len(packx2<T, N, SimdExt> const &) {
   return 2 * N * len(T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int len(packx3<T, N, SimdExt> const &) {
   return 3 * N * len(T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int len(packx4<T, N, SimdExt> const &) {
   return 4 * N * len(T(), SimdExt());
 }
@@ -393,11 +499,12 @@ int len(packx4<T, N, SimdExt> const &) {
 // ----------------------------------------------------------------------------
 // The addv function cannot be auto-generated
 
-template <typename T, typename SimdExt> T addv(pack<T, 1, SimdExt> const &a0) {
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+T addv(pack<T, 1, SimdExt> const &a0) {
   return addv(a0.car, T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 T addv(pack<T, N, SimdExt> const &a0) {
   return addv(a0.car, T(), SimdExt()) + addv(a0.cdr);
 }
@@ -405,12 +512,12 @@ T addv(pack<T, N, SimdExt> const &a0) {
 // ----------------------------------------------------------------------------
 // The all function cannot be auto-generated
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int all(packl<T, 1, SimdExt> const &a0) {
   return all(a0.car, T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int all(packl<T, N, SimdExt> const &a0) {
   return all(a0.car, T(), SimdExt()) && all(a0.cdr);
 }
@@ -418,12 +525,12 @@ int all(packl<T, N, SimdExt> const &a0) {
 // ----------------------------------------------------------------------------
 // The any function cannot be auto-generated
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int any(packl<T, 1, SimdExt> const &a0) {
   return any(a0.car, T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int any(packl<T, N, SimdExt> const &a0) {
   return any(a0.car, T(), SimdExt()) || any(a0.cdr);
 }
@@ -431,12 +538,12 @@ int any(packl<T, N, SimdExt> const &a0) {
 // ----------------------------------------------------------------------------
 // The nbtrue function cannot be auto-generated
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int nbtrue(packl<T, 1, SimdExt> const &a0) {
   return nbtrue(a0.car, T(), SimdExt());
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 int nbtrue(packl<T, N, SimdExt> const &a0) {
   return nbtrue(a0.car, T(), SimdExt()) + nbtrue(a0.cdr);
 }
@@ -453,19 +560,23 @@ namespace nsimd {
 // ----------------------------------------------------------------------------
 // The if_else function cannot be auto-generated
 
-template <typename L, typename T, typename SimdExt>
-pack<T, 1, SimdExt> if_else(packl<L, 1, SimdExt> const &a0,
-                            pack<T, 1, SimdExt> const &a1,
-                            pack<T, 1, SimdExt> const &a2) {
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+pack<T, 1, SimdExt>
+if_else(packl<L, 1, SimdExt> const &a0, pack<T, 1, SimdExt> const &a1,
+        pack<T, 1, SimdExt> const &a2) {
   pack<T, 1, SimdExt> ret;
   ret.car = if_else(a0.car, a1.car, a2.car, L(), T(), SimdExt());
   return ret;
 }
 
-template <typename L, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> if_else(packl<L, N, SimdExt> const &a0,
-                            pack<T, N, SimdExt> const &a1,
-                            pack<T, N, SimdExt> const &a2) {
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+pack<T, N, SimdExt>
+if_else(packl<L, N, SimdExt> const &a0, pack<T, N, SimdExt> const &a1,
+        pack<T, N, SimdExt> const &a2) {
   pack<T, N, SimdExt> ret;
   ret.car = if_else(a0.car, a1.car, a2.car, L(), T(), SimdExt());
   ret.cdr = if_else(a0.cdr, a1.cdr, a2.cdr);
@@ -475,36 +586,48 @@ pack<T, N, SimdExt> if_else(packl<L, N, SimdExt> const &a0,
 // ----------------------------------------------------------------------------
 // Mask loads and stores cannot be auto-generated
 
-template <typename L, typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 void mask_storea(packl<L, N, SimdExt> const &a0, T *a1,
                  pack<T, N, SimdExt> const &a2) {
   mask_storea1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
 }
 
-template <typename L, typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 void mask_storeu(packl<L, N, SimdExt> const &a0, T *a1,
                  pack<T, N, SimdExt> const &a2) {
   mask_storeu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
 }
 
-template <typename L, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> maskz_loada(packl<L, N, SimdExt> const &a0, T *a1) {
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+pack<T, N, SimdExt> maskz_loada(packl<L, N, SimdExt> const &a0, const T *a1) {
   return maskz_loada1(reinterpretl<packl<T, N, SimdExt> >(a0), a1);
 }
 
-template <typename L, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> maskz_loadu(packl<L, N, SimdExt> const &a0, T *a1) {
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+pack<T, N, SimdExt> maskz_loadu(packl<L, N, SimdExt> const &a0, const T *a1) {
   return maskz_loadu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1);
 }
 
-template <typename L, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> masko_loada(packl<L, N, SimdExt> const &a0, T *a1,
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+pack<T, N, SimdExt> masko_loada(packl<L, N, SimdExt> const &a0, const T *a1,
                                 pack<T, N, SimdExt> const &a2) {
   return masko_loada1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
 }
 
-template <typename L, typename T, int N, typename SimdExt>
-pack<T, N, SimdExt> masko_loadu(packl<L, N, SimdExt> const &a0, T *a1,
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+pack<T, N, SimdExt> masko_loadu(packl<L, N, SimdExt> const &a0, const T *a1,
                                 pack<T, N, SimdExt> const &a2) {
   return masko_loadu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
 }
@@ -514,215 +637,214 @@ pack<T, N, SimdExt> masko_loadu(packl<L, N, SimdExt> const &a0, T *a1,
 
 namespace detail {
 
-template <typename P> struct loadz_return_t {};
-
-template <typename T, int N, typename SimdExt>
-struct loadz_return_t<packl<T, N, SimdExt> > {
-  typedef nsimd::pack<T, N, SimdExt> type;
+template <NSIMD_CONCEPT_PACKL P> struct loadz_return_t {
+  typedef nsimd::pack<typename P::value_type, P::unroll, typename P::simd_ext>
+      type;
 };
 
-template <typename SimdVector, typename Alignment> struct load_helper {};
+template <NSIMD_CONCEPT_ANY_PACK SimdVector, NSIMD_CONCEPT_ALIGNMENT Alignment>
+struct load_helper {};
 
-template <typename SimdVector> struct load_helper<SimdVector, aligned> {
-  template <typename A0> static SimdVector load(A0 a0) {
-    return loada<SimdVector>(a0);
-  }
+template <NSIMD_CONCEPT_ANY_PACK SimdVector>
+struct load_helper<SimdVector, aligned> {
+  typedef typename SimdVector::value_type T;
+  typedef typename SimdVector::simd_ext simd_ext;
+  static const int N = SimdVector::unroll;
 
-  template <typename A0, typename A1>
-  static typename loadz_return_t<A0>::type maskz_load(A0 a0, A1 a1) {
+  static SimdVector load(const T *a0) { return loada<SimdVector>(a0); }
+  static SimdVector loadl(const T *a0) { return loadla<SimdVector>(a0); }
+  static SimdVector load2(const T *a0) { return load2a<SimdVector>(a0); }
+  static SimdVector load3(const T *a0) { return load3a<SimdVector>(a0); }
+  static SimdVector load4(const T *a0) { return load4a<SimdVector>(a0); }
+
+  static SimdVector maskz_load(packl<T, N, simd_ext> const &a0, const T *a1) {
     return maskz_loada(a0, a1);
   }
 
-  template <typename A0, typename A1, typename A2>
-  static A2 masko_load(A0 a0, A1 a1, A2 a2) {
+  static pack<T, N, simd_ext> masko_load(packl<T, N, simd_ext> const &a0,
+                                         const T *a1,
+                                         pack<T, N, simd_ext> const &a2) {
     return masko_loada(a0, a1, a2);
-  }
-
-  template <typename A0> static SimdVector loadl(A0 a0) {
-    return loadla<SimdVector, A0>(a0);
-  }
-
-  template <typename A0> static SimdVector load2(A0 a0) {
-    return load2a<SimdVector, A0>(a0);
-  }
-
-  template <typename A0> static SimdVector load3(A0 a0) {
-    return load3a<SimdVector, A0>(a0);
-  }
-
-  template <typename A0> static SimdVector load4(A0 a0) {
-    return load4a<SimdVector, A0>(a0);
   }
 };
 
 template <typename SimdVector> struct load_helper<SimdVector, unaligned> {
-  template <typename A0> static SimdVector load(A0 a0) {
-    return loadu<SimdVector>(a0);
-  }
+  typedef typename SimdVector::value_type T;
+  typedef typename SimdVector::simd_ext simd_ext;
+  static const int N = SimdVector::unroll;
 
-  template <typename A0, typename A1>
-  static typename loadz_return_t<A0>::type maskz_load(A0 a0, A1 a1) {
+  static SimdVector load(const T *a0) { return loadu<SimdVector>(a0); }
+  static SimdVector loadl(const T *a0) { return loadlu<SimdVector>(a0); }
+  static SimdVector load2(const T *a0) { return load2u<SimdVector>(a0); }
+  static SimdVector load3(const T *a0) { return load3u<SimdVector>(a0); }
+  static SimdVector load4(const T *a0) { return load4u<SimdVector>(a0); }
+
+  static SimdVector maskz_load(packl<T, N, simd_ext> const &a0, const T *a1) {
     return maskz_loadu(a0, a1);
   }
 
-  template <typename A0, typename A1, typename A2>
-  static A2 masko_load(A0 a0, A1 a1, A2 a2) {
+  static pack<T, N, simd_ext> masko_load(packl<T, N, simd_ext> const &a0,
+                                         const T *a1,
+                                         pack<T, N, simd_ext> const &a2) {
     return masko_loadu(a0, a1, a2);
-  }
-
-  template <typename A0> static SimdVector loadl(A0 a0) {
-    return loadlu<SimdVector, A0>(a0);
-  }
-
-  template <typename A0> static SimdVector load2(A0 a0) {
-    return load2u<SimdVector, A0>(a0);
-  }
-
-  template <typename A0> static SimdVector load3(A0 a0) {
-    return load3u<SimdVector, A0>(a0);
-  }
-
-  template <typename A0> static SimdVector load4(A0 a0) {
-    return load4u<SimdVector, A0>(a0);
   }
 };
 
-template <typename Alignment> struct store_helper {};
+template <NSIMD_CONCEPT_ALIGNMENT Alignment> struct store_helper {};
+
+#define NSIMD_T typename P::value_type
 
 template <> struct store_helper<aligned> {
-  template <typename A0, typename A1> static void store(A0 a0, A1 a1) {
+  template <NSIMD_CONCEPT_PACK P> static void store(NSIMD_T *a0, P const &a1) {
     storea(a0, a1);
   }
 
-  template <typename A0, typename A1, typename A2>
-  static void mask_store(A0 a0, A1 a1, A2 a2) {
+  template <NSIMD_CONCEPT_PACKL PL, NSIMD_CONCEPT_PACK P>
+#if NSIMD_CXX >= 2020
+  requires std::is_same_v<typename PL::value_type, typename P::value_type>
+#endif
+  static void mask_store(PL const &a0, NSIMD_T *a1, P const &a2) {
     mask_storea(a0, a1, a2);
   }
 
-  template <typename A0, typename A1> static void storel(A0 a0, A1 a1) {
+  template <NSIMD_CONCEPT_PACK P> static void storel(NSIMD_T *a0, P const &a1) {
     storela(a0, a1);
   }
 
-  template <typename A0, typename A1, typename A2>
-  static void store2(A0 a0, A1 a1, A2 a2) {
+  template <NSIMD_CONCEPT_PACK P>
+  static void store2(NSIMD_T *a0, P const &a1, P const &a2) {
     store2a(a0, a1, a2);
   }
 
-  template <typename A0, typename A1, typename A2, typename A3>
-  static void store3(A0 a0, A1 a1, A2 a2, A3 a3) {
+  template <NSIMD_CONCEPT_PACK P>
+  static void store3(NSIMD_T *a0, P const &a1, P const &a2, P const &a3) {
     store3a(a0, a1, a2, a3);
   }
 
-  template <typename A0, typename A1, typename A2, typename A3, typename A4>
-  static void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+  template <NSIMD_CONCEPT_PACK P>
+  static void store4(NSIMD_T *a0, P const &a1, P const &a2, P const &a3,
+                     P const &a4) {
     store4a(a0, a1, a2, a3, a4);
   }
 };
 
 template <> struct store_helper<unaligned> {
-  template <typename A0, typename A1> static void store(A0 a0, A1 a1) {
+  template <NSIMD_CONCEPT_PACK P> static void store(NSIMD_T *a0, P const &a1) {
     storeu(a0, a1);
   }
 
-  template <typename A0, typename A1, typename A2>
-  static void mask_store(A0 a0, A1 a1, A2 a2) {
+  template <NSIMD_CONCEPT_PACKL PL, NSIMD_CONCEPT_PACK P>
+#if NSIMD_CXX >= 2020
+  requires std::is_same_v<typename PL::value_type, typename P::value_type>
+#endif
+  static void mask_store(PL const &a0, NSIMD_T *a1, P const &a2) {
     mask_storeu(a0, a1, a2);
   }
 
-  template <typename A0, typename A1> static void storel(A0 a0, A1 a1) {
+  template <NSIMD_CONCEPT_PACK P> static void storel(NSIMD_T *a0, P const &a1) {
     storelu(a0, a1);
   }
 
-  template <typename A0, typename A1, typename A2>
-  static void store2(A0 a0, A1 a1, A2 a2) {
+  template <NSIMD_CONCEPT_PACK P>
+  static void store2(NSIMD_T *a0, P const &a1, P const &a2) {
     store2u(a0, a1, a2);
   }
 
-  template <typename A0, typename A1, typename A2, typename A3>
-  static void store3(A0 a0, A1 a1, A2 a2, A3 a3) {
+  template <NSIMD_CONCEPT_PACK P>
+  static void store3(NSIMD_T *a0, P const &a1, P const &a2, P const &a3) {
     store3u(a0, a1, a2, a3);
   }
 
-  template <typename A0, typename A1, typename A2, typename A3, typename A4>
-  static void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
+  template <NSIMD_CONCEPT_PACK P>
+  static void store4(NSIMD_T *a0, P const &a1, P const &a2, P const &a3,
+                     P const &a4) {
     store4u(a0, a1, a2, a3, a4);
   }
 };
 
+#undef NSIMD_T
+
 } // namespace detail
 
-template <typename SimdVector, typename Alignment, typename A0>
-SimdVector load(A0 a0) {
-  return detail::load_helper<SimdVector, Alignment>::load(a0);
+template <NSIMD_CONCEPT_PACK SimdVector, NSIMD_CONCEPT_ALIGNMENT Alignment>
+SimdVector load(const typename SimdVector::value_type *ptr) {
+  return detail::load_helper<SimdVector, Alignment>::load(ptr);
 }
 
-template <typename Alignment, typename A0, typename A1>
-typename detail::loadz_return_t<A0>::type maskz_load(A0 a0, A1 a1) {
-  return detail::load_helper<int, Alignment>::maskz_load(a0, a1);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACKL Packl>
+pack<typename Packl::value_type, Packl::unroll, typename Packl::simd_ext>
+maskz_load(Packl const &pl, const typename Packl::value_type *ptr) {
+  return detail::load_helper<pack<typename Packl::value_type, Packl::unroll,
+                                  typename Packl::simd_ext>,
+                             Alignment>::maskz_load(pl, ptr);
 }
 
-template <typename Alignment, typename A0, typename A1, typename A2>
-A2 masko_load(A0 a0, A1 a1, A2 a2) {
-  return detail::load_helper<int, Alignment>::masko_load(a0, a1, a2);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACKL Packl,
+          NSIMD_CONCEPT_PACK Pack>
+Pack masko_load(Packl const &pl, const typename Pack::value_type *ptr,
+                Pack const &p) {
+  return detail::load_helper<Pack, Alignment>::masko_load(pl, ptr, p);
 }
 
-template <typename SimdVector, typename Alignment, typename A0>
-SimdVector loadl(A0 a0) {
-  return detail::load_helper<SimdVector, Alignment>::loadl(a0);
+template <NSIMD_CONCEPT_PACK SimdVector, NSIMD_CONCEPT_ALIGNMENT Alignment>
+SimdVector loadl(const typename SimdVector::value_type *ptr) {
+  return detail::load_helper<SimdVector, Alignment>::loadl(ptr);
 }
 
-template <typename SimdVector, typename Alignment, typename A0>
-SimdVector load2(A0 a0) {
-  return detail::load_helper<SimdVector, Alignment>::load2(a0);
+template <NSIMD_CONCEPT_PACKX2 SimdVector, NSIMD_CONCEPT_ALIGNMENT Alignment>
+SimdVector load2(const typename SimdVector::value_type *ptr) {
+  return detail::load_helper<SimdVector, Alignment>::load2(ptr);
 }
 
-template <typename SimdVector, typename Alignment, typename A0>
-SimdVector load3(A0 a0) {
-  return detail::load_helper<SimdVector, Alignment>::load3(a0);
+template <NSIMD_CONCEPT_PACKX3 SimdVector, NSIMD_CONCEPT_ALIGNMENT Alignment>
+SimdVector load3(const typename SimdVector::value_type *ptr) {
+  return detail::load_helper<SimdVector, Alignment>::load3(ptr);
 }
 
-template <typename SimdVector, typename Alignment, typename A0>
-SimdVector load4(A0 a0) {
-  return detail::load_helper<SimdVector, Alignment>::load4(a0);
+template <NSIMD_CONCEPT_PACKX4 SimdVector, NSIMD_CONCEPT_ALIGNMENT Alignment>
+SimdVector load4(const typename SimdVector::value_type *ptr) {
+  return detail::load_helper<SimdVector, Alignment>::load4(ptr);
 }
 
-template <typename Alignment, typename A0, typename A1>
-void store(A0 a0, A1 a1) {
-  detail::store_helper<Alignment>::store(a0, a1);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACK Pack>
+void store(typename Pack::value_type *ptr, Pack const &p) {
+  detail::store_helper<Alignment>::store(ptr, p);
 }
 
-template <typename Alignment, typename A0, typename A1, typename A2>
-void mask_store(A0 a0, A1 a1, A2 a2) {
-  detail::store_helper<Alignment>::mask_store(a0, a1, a2);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACKL Packl,
+          NSIMD_CONCEPT_PACK Pack>
+void mask_store(Packl const &pl, typename Pack::value_type *ptr,
+                Pack const &p) {
+  detail::store_helper<Alignment>::mask_store(pl, ptr, p);
 }
 
-template <typename Alignment, typename A0, typename A1>
-void storel(A0 a0, A1 a1) {
-  return detail::store_helper<Alignment>::storel(a0, a1);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACKL Packl>
+void storel(typename Packl::value_type *ptr, Packl const &pl) {
+  return detail::store_helper<Alignment>::storel(ptr, pl);
 }
 
-template <typename Alignment, typename A0, typename A1, typename A2>
-void store2(A0 a0, A1 a1, A2 a2) {
-  return detail::store_helper<Alignment>::store2(a0, a1, a2);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACK Pack>
+void store2(typename Pack::value_type *ptr, Pack const &p1, Pack const &p2) {
+  return detail::store_helper<Alignment>::store2(ptr, p1, p2);
 }
 
-template <typename Alignment, typename A0, typename A1, typename A2,
-          typename A3>
-void store3(A0 a0, A1 a1, A2 a2, A3 a3) {
-  return detail::store_helper<Alignment>::store3(a0, a1, a2, a3);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACK Pack>
+void store3(typename Pack::value_type *ptr, Pack const &p1, Pack const &p2,
+            Pack const &p3) {
+  return detail::store_helper<Alignment>::store3(ptr, p1, p2, p3);
 }
 
-template <typename Alignment, typename A0, typename A1, typename A2,
-          typename A3, typename A4>
-void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4) {
-  return detail::store_helper<Alignment>::store4(a0, a1, a2, a3, a4);
+template <NSIMD_CONCEPT_ALIGNMENT Alignment, NSIMD_CONCEPT_PACK Pack>
+void store4(typename Pack::value_type *ptr, Pack const &p1, Pack const &p2,
+            Pack const &p3, Pack const &p4) {
+  return detail::store_helper<Alignment>::store4(ptr, p1, p2, p3, p4);
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T> T native_register(T a) { return a; }
+template <NSIMD_CONCEPT_VALUE_TYPE T> T native_register(T a) { return a; }
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 typename pack<T, 1, SimdExt>::simd_vector
 native_register(pack<T, 1, SimdExt> const &a) {
   return a.car;
@@ -731,17 +853,18 @@ native_register(pack<T, 1, SimdExt> const &a) {
 // ----------------------------------------------------------------------------
 // get_pack
 
-template <typename T, int N, typename SimdExt,
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
           template <typename, int, typename> class packx, int Ix>
 struct get_pack_helper {};
 
 // ----------------------------------------------------------------------------
 // get_pack_helper - packx1
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
+          int Ix>
 struct get_pack_helper<T, N, SimdExt, packx1, Ix> {};
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx1, 0> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx1<T, N, SimdExt> &packx_) const {
@@ -752,10 +875,11 @@ struct get_pack_helper<T, N, SimdExt, packx1, 0> {
 // ----------------------------------------------------------------------------
 // get_pack_helper - packx2
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
+          int Ix>
 struct get_pack_helper<T, N, SimdExt, packx2, Ix> {};
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx2, 0> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx2<T, N, SimdExt> &packx_) const {
@@ -763,7 +887,7 @@ struct get_pack_helper<T, N, SimdExt, packx2, 0> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx2, 1> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx2<T, N, SimdExt> &packx_) const {
@@ -774,10 +898,11 @@ struct get_pack_helper<T, N, SimdExt, packx2, 1> {
 // ----------------------------------------------------------------------------
 // get_pack_helper - packx3
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
+          int Ix>
 struct get_pack_helper<T, N, SimdExt, packx3, Ix> {};
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx3, 0> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx3<T, N, SimdExt> &packx_) const {
@@ -785,7 +910,7 @@ struct get_pack_helper<T, N, SimdExt, packx3, 0> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx3, 1> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx3<T, N, SimdExt> &packx_) const {
@@ -793,7 +918,7 @@ struct get_pack_helper<T, N, SimdExt, packx3, 1> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx3, 2> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx3<T, N, SimdExt> &packx_) const {
@@ -804,10 +929,11 @@ struct get_pack_helper<T, N, SimdExt, packx3, 2> {
 // ----------------------------------------------------------------------------
 // get_pack_helper - packx4
 
-template <typename T, int N, typename SimdExt, int Ix>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
+          int Ix>
 struct get_pack_helper<T, N, SimdExt, packx4, Ix> {};
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx4, 0> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx4<T, N, SimdExt> &packx_) const {
@@ -815,7 +941,7 @@ struct get_pack_helper<T, N, SimdExt, packx4, 0> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx4, 1> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx4<T, N, SimdExt> &packx_) const {
@@ -823,7 +949,7 @@ struct get_pack_helper<T, N, SimdExt, packx4, 1> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx4, 2> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx4<T, N, SimdExt> &packx_) const {
@@ -831,7 +957,7 @@ struct get_pack_helper<T, N, SimdExt, packx4, 2> {
   }
 };
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 struct get_pack_helper<T, N, SimdExt, packx4, 3> {
   const nsimd::pack<T, N, SimdExt> &
   operator()(const packx4<T, N, SimdExt> &packx_) const {
@@ -843,7 +969,8 @@ struct get_pack_helper<T, N, SimdExt, packx4, 3> {
 // get_pack
 // get_pack for packx[Y]<T, 1..N, SimdExt> with Y = 1
 
-template <int Ix, typename T, int N, typename SimdExt>
+template <int Ix, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, N, SimdExt> get_pack(const pack<T, N, SimdExt> &pack_) {
   nsimd_static_assert<0 == Ix>();
   return pack_;
@@ -853,7 +980,8 @@ pack<T, N, SimdExt> get_pack(const pack<T, N, SimdExt> &pack_) {
 // get_pack
 // get_pack for packx[Y]<T, 1..N, SimdExt> with Y in {2, 3, 4}
 
-template <int Ix, typename T, int N, typename SimdExt,
+template <int Ix, NSIMD_CONCEPT_VALUE_TYPE T, int N,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt,
           template <typename, int, typename> class packx>
 pack<T, N, SimdExt> get_pack(const packx<T, N, SimdExt> &packx_) {
   return get_pack_helper<T, N, SimdExt, packx, Ix>()(packx_);
@@ -864,7 +992,7 @@ pack<T, N, SimdExt> get_pack(const packx<T, N, SimdExt> &packx_) {
 
 template <class _packx> struct to_pack_trait {};
 
-template <typename T, int N, typename SimdExt,
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
           template <typename, int, typename> class _packx>
 struct to_pack_trait<_packx<T, N, SimdExt> > {
   typedef pack<T, _packx<T, N, SimdExt>::soa_num_packs * N, SimdExt>
@@ -875,12 +1003,12 @@ struct to_pack_trait<_packx<T, N, SimdExt> > {
 // to_pack
 // to_pack for packx[Y]<T, 1..N, SimdExt> with Y = 1
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 1, SimdExt> to_pack(const pack<T, 1, SimdExt> &pack_) {
   return pack_;
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
@@ -889,7 +1017,7 @@ pack<T, N, SimdExt> to_pack(const pack<T, N, SimdExt> &pack_) {
 // to_pack
 // to_pack for packx[Y]<T, N = 1, SimdExt> with Y in {2, 3, 4}
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 1, SimdExt> to_pack(const packx1<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 1, SimdExt> pack_;
@@ -898,7 +1026,7 @@ pack<T, 1, SimdExt> to_pack(const packx1<T, 1, SimdExt> &packx_) {
   return pack_;
 }
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 2, SimdExt> pack_;
@@ -908,7 +1036,7 @@ pack<T, 2, SimdExt> to_pack(const packx2<T, 1, SimdExt> &packx_) {
   return pack_;
 }
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 3, SimdExt> pack_;
@@ -918,7 +1046,7 @@ pack<T, 3, SimdExt> to_pack(const packx3<T, 1, SimdExt> &packx_) {
   return pack_;
 }
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt> &packx_) {
 
   nsimd::pack<T, 4, SimdExt> pack_;
@@ -934,8 +1062,9 @@ pack<T, 4, SimdExt> to_pack(const packx4<T, 1, SimdExt> &packx_) {
 // to_pack for packx[Y]<T, (N > 1), SimdExt> with Y in {2, 3, 4}
 
 // Advance
-template <typename T, int from_pack_init_N, int from_pack_unroll_ix,
-          int to_pack_unroll_ix, int which_from_pack_ix, typename SimdExt,
+template <NSIMD_CONCEPT_VALUE_TYPE T, int from_pack_init_N,
+          int from_pack_unroll_ix, int to_pack_unroll_ix,
+          int which_from_pack_ix, NSIMD_CONCEPT_SIMD_EXT SimdExt,
           template <typename, int, typename> class packx>
 struct to_pack_recurs_helper {
   static pack<T, to_pack_unroll_ix, SimdExt>
@@ -954,8 +1083,9 @@ struct to_pack_recurs_helper {
 
 // Base case
 // Base case condition: to_pack_unroll_ix == 1
-template <typename T, int from_pack_init_N, int which_from_pack_ix,
-          typename SimdExt, template <typename, int, typename> class packx>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int from_pack_init_N,
+          int which_from_pack_ix, NSIMD_CONCEPT_SIMD_EXT SimdExt,
+          template <typename, int, typename> class packx>
 struct to_pack_recurs_helper<T, from_pack_init_N, 1 /* from_pack_unroll_ix */,
                              1 /* to_pack_unroll_ix */, which_from_pack_ix,
                              SimdExt, packx> {
@@ -971,8 +1101,8 @@ struct to_pack_recurs_helper<T, from_pack_init_N, 1 /* from_pack_unroll_ix */,
 
 // Switch: from_packx[i] --> from_packx[i+1]
 // Switch condition: from_pack_unroll_ix == 1 && to_pack_unroll_ix > 1
-template <typename T, int from_pack_init_N, int to_pack_unroll_ix,
-          int which_from_pack_ix, typename SimdExt,
+template <NSIMD_CONCEPT_VALUE_TYPE T, int from_pack_init_N, int to_pack_unroll_ix,
+          int which_from_pack_ix, NSIMD_CONCEPT_SIMD_EXT SimdExt,
           template <typename, int, typename> class packx>
 struct to_pack_recurs_helper<T, from_pack_init_N, 1 /* from_pack_unroll_ix */,
                              to_pack_unroll_ix, which_from_pack_ix, SimdExt,
@@ -994,7 +1124,7 @@ struct to_pack_recurs_helper<T, from_pack_init_N, 1 /* from_pack_unroll_ix */,
   }
 };
 
-template <typename T, int N, typename SimdExt,
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt,
           template <typename, int, typename> class packx>
 typename to_pack_trait<packx<T, N, SimdExt> >::value_type
 to_pack(const packx<T, N, SimdExt> &from_packx) {
@@ -1012,19 +1142,19 @@ to_pack(const packx<T, N, SimdExt> &from_packx) {
 // ----------------------------------------------------------------------------
 // to_pack_interleave
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 1, SimdExt> to_pack_interleave(const pack<T, 1, SimdExt> &pack_) {
   return pack_;
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, N, SimdExt> to_pack_interleave(const pack<T, N, SimdExt> &pack_) {
   return pack_;
 }
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 1, SimdExt> to_pack_interleave(const packx1<T, 1, SimdExt> &packx1_) {
   pack<T, 1, SimdExt> pack_1;
   pack_1.car = packx1_.v0.car;
@@ -1032,7 +1162,7 @@ pack<T, 1, SimdExt> to_pack_interleave(const packx1<T, 1, SimdExt> &packx1_) {
   return pack_1;
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, N, SimdExt>
 to_pack_interleave(const packx1<T, N, SimdExt> &packx1_N) {
   pack<T, N, SimdExt> pack_1;
@@ -1043,7 +1173,7 @@ to_pack_interleave(const packx1<T, N, SimdExt> &packx1_N) {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 2, SimdExt> to_pack_interleave(const packx2<T, 1, SimdExt> &packx2_) {
 
   nsimd::pack<T, 2, SimdExt> pack_2;
@@ -1053,7 +1183,7 @@ pack<T, 2, SimdExt> to_pack_interleave(const packx2<T, 1, SimdExt> &packx2_) {
   return pack_2;
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 2 * N, SimdExt>
 to_pack_interleave(const packx2<T, N, SimdExt> &packx2_N) {
 
@@ -1072,7 +1202,7 @@ to_pack_interleave(const packx2<T, N, SimdExt> &packx2_N) {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 3, SimdExt> to_pack_interleave(const packx3<T, 1, SimdExt> &packx3_) {
 
   nsimd::pack<T, 3, SimdExt> pack_3;
@@ -1083,7 +1213,7 @@ pack<T, 3, SimdExt> to_pack_interleave(const packx3<T, 1, SimdExt> &packx3_) {
   return pack_3;
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 3 * N, SimdExt>
 to_pack_interleave(const packx3<T, N, SimdExt> &packx3_n) {
 
@@ -1104,7 +1234,7 @@ to_pack_interleave(const packx3<T, N, SimdExt> &packx3_n) {
 
 // ----------------------------------------------------------------------------
 
-template <typename T, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 4, SimdExt> to_pack_interleave(const packx4<T, 1, SimdExt> &packx4_) {
 
   nsimd::pack<T, 4, SimdExt> pack_4;
@@ -1116,7 +1246,7 @@ pack<T, 4, SimdExt> to_pack_interleave(const packx4<T, 1, SimdExt> &packx4_) {
   return pack_4;
 }
 
-template <typename T, int N, typename SimdExt>
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 pack<T, 4 * N, SimdExt>
 to_pack_interleave(const packx4<T, N, SimdExt> &packx4_n) {
 

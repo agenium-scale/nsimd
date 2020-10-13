@@ -29,9 +29,14 @@ import sys
 
 def get_cxx_advanced_generic(operator):
     def get_pack(param):
-        return 'pack{}'.format(param[1:]) if param[0] == 'v' else 'packl'
+        if param in ['v', 'vi']:
+            return 'pack'
+        elif param == 'l':
+            return 'pack'
+        else:
+            return 'pack{}'.format(param[1:])
     args_list = common.enum(operator.params[1:])
-    inter = [i for i in ['v', 'l', 'vx1', 'vx2', 'vx3', 'vx4'] \
+    inter = [i for i in ['v', 'vi', 'l', 'vx1', 'vx2', 'vx3', 'vx4'] \
              if i in operator.params[1:]]
     need_tmpl_pack = get_pack(operator.params[0]) if inter == [] else None
 

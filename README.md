@@ -47,13 +47,14 @@ such as addition, multiplication, square root, etc, are all present in header
 files whereas big functions such as I/O are put in source files that are
 compiled as a `.so`/`.dll` library.
 
-NSIMD provides C89, C++98, C++11 and C++14 APIs. All APIs allow writing generic
-code. For the C API this is achieved through a thin layer of macros; for the
-C++ APIs it is achieved using templates and function overloading. The C++ API
-is split in two. The first part is a C-like API with only function calls and
-direct type definitions for SIMD types while the second one provides operator
-overloading, higher level type definitions that allows unrolling. C++11, C++14
-APIs add for instance templated type definitions and templated constants.
+NSIMD provides C89, C++98, C++11, C++14 and C++20 APIs. All APIs allow writing
+generic code. For the C API this is achieved through a thin layer of macros;
+for the C++ APIs it is achieved using templates and function overloading. The
+C++ APIs are split into two. The first part is a C-like API with only function
+calls and direct type definitions for SIMD types while the second one provides
+operator overloading, higher level type definitions that allows unrolling.
+C++11, C++14 APIs add for instance templated type definitions and templated
+constants while the C++20 API uses concepts for better error reporting.
 
 Binary compatibility is guaranteed by the fact that only a C ABI is exposed.
 The C++ API only wraps the C calls.

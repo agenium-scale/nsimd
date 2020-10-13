@@ -27,7 +27,7 @@ all: md2html what_is_wrapped
 libns2.a: $(NS2_ROOT)/../.git/logs/HEAD Makefile.nix
 	rm -rf libns2
 	mkdir -p libns2
-	cp $(NS2_ROOT)/src/*.cpp libns2
+	cp $(NS2_ROOT)/lib/*.cpp libns2
 	(cd libns2 && $(CXX) $(CXX_FLAGS) -I../$(NS2_ROOT)/include -c *.cpp)
 	ar rcs $@ libns2/*.o
 	rm -rf libns2

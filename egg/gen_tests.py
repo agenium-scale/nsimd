@@ -1958,7 +1958,7 @@ def gen_gather_scatter(opts, op, typ, lang):
                typedef nsimd::pack<{ityp}> ipack;
                ipack offsets = nsimd::mul(nsimd::iota<ipack>(),
                                nsimd::set1<ipack>(({ityp})2));
-               pack v = nsimd::gather<pack>(vin, offsets);
+               pack v = nsimd::gather(vin, offsets);
                offsets = nsimd::add(offsets, nsimd::set1<ipack>(({ityp})1));
                nsimd::scatter(vout, offsets, v);'''. \
                format(typ=typ, ityp=ityp)
