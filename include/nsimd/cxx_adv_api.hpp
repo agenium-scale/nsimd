@@ -562,7 +562,7 @@ namespace nsimd {
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 pack<T, 1, SimdExt>
 if_else(packl<L, 1, SimdExt> const &a0, pack<T, 1, SimdExt> const &a1,
         pack<T, 1, SimdExt> const &a2) {
@@ -573,7 +573,7 @@ if_else(packl<L, 1, SimdExt> const &a0, pack<T, 1, SimdExt> const &a1,
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 pack<T, N, SimdExt>
 if_else(packl<L, N, SimdExt> const &a0, pack<T, N, SimdExt> const &a1,
         pack<T, N, SimdExt> const &a2) {
@@ -588,7 +588,7 @@ if_else(packl<L, N, SimdExt> const &a0, pack<T, N, SimdExt> const &a1,
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 void mask_storea(packl<L, N, SimdExt> const &a0, T *a1,
                  pack<T, N, SimdExt> const &a2) {
   mask_storea1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
@@ -596,7 +596,7 @@ void mask_storea(packl<L, N, SimdExt> const &a0, T *a1,
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 void mask_storeu(packl<L, N, SimdExt> const &a0, T *a1,
                  pack<T, N, SimdExt> const &a2) {
   mask_storeu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
@@ -604,21 +604,21 @@ void mask_storeu(packl<L, N, SimdExt> const &a0, T *a1,
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 pack<T, N, SimdExt> maskz_loada(packl<L, N, SimdExt> const &a0, const T *a1) {
   return maskz_loada1(reinterpretl<packl<T, N, SimdExt> >(a0), a1);
 }
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 pack<T, N, SimdExt> maskz_loadu(packl<L, N, SimdExt> const &a0, const T *a1) {
   return maskz_loadu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1);
 }
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 pack<T, N, SimdExt> masko_loada(packl<L, N, SimdExt> const &a0, const T *a1,
                                 pack<T, N, SimdExt> const &a2) {
   return masko_loada1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);
@@ -626,7 +626,7 @@ pack<T, N, SimdExt> masko_loada(packl<L, N, SimdExt> const &a0, const T *a1,
 
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T, int N,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
-NSIMD_REQUIRES_SAME_SIZEOF(L, T)
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 pack<T, N, SimdExt> masko_loadu(packl<L, N, SimdExt> const &a0, const T *a1,
                                 pack<T, N, SimdExt> const &a2) {
   return masko_loadu1(reinterpretl<packl<T, N, SimdExt> >(a0), a1, a2);

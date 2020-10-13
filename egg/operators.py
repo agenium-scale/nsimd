@@ -336,7 +336,7 @@ class Operator(object, metaclass=MAddToOperators):
                 elif param.startswith('v'):
                     return \
                     'typename simd_traits<{}, NSIMD_SIMD>::simd_vector{}'. \
-                    format(typename, param[2:])
+                    format(typename, param[1:])
                 else:
                     raise ValueError("Unknown param '{}'".format(param))
             return_typ = get_type(self.params[0], 'T')
@@ -386,18 +386,18 @@ class Operator(object, metaclass=MAddToOperators):
                 elif param == 'c*':
                     return '{} const*'.format(typename)
                 elif param == 'vi':
-                    return 'pack<typename traits<{}>::itype, {}, SimdExt> >'. \
+                    return 'pack<typename traits<{}>::itype, {}, SimdExt>'. \
                            format(typename, N)
                 elif param == 'l':
                     return 'packl<{}, {}, SimdExt>'.format(typename, N)
                 elif param.startswith('v'):
                     return 'pack{}<{}, {}, SimdExt>'. \
-                    format(param[2:], typename, N)
+                    format(param[1:], typename, N)
                 else:
                     raise ValueError("Unknown param '{}'".format(param))
             args_list = common.enum(self.params[1:])
             # Do we need tag dispatching on pack<>? e.g. len, set1 and load*
-            inter = [i for i in ['v', 'l', 'vx2', 'vx3', 'vx4'] \
+            inter = [i for i in ['v', 'l', 'vi', 'vx2', 'vx3', 'vx4'] \
                      if i in self.params[1:]]
             tag_dispatching = (inter == [])
 
@@ -460,11 +460,11 @@ class Operator(object, metaclass=MAddToOperators):
             # require clause
             cxx20_require = ''
             if not self.closed:
-                tmpl = 'NSIMD_REQUIRES(' \
+                tmpl = 'NSIMD_REQUIRES((' \
                     '{}sizeof_v<typename ToPackType::value_type> == ' \
                         '{}sizeof_v<T> && ' \
                     'ToPackType::unroll == N && '\
-                    'std::is_same_v<typename ToPackType::simd_ext, SimdExt>)'
+                    'std::is_same_v<typename ToPackType::simd_ext, SimdExt>))'
                 if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
                     cxx20_require = tmpl.format('', '')
                 elif self.output_to == common.OUTPUT_TO_UP_TYPES:
@@ -505,11 +505,11 @@ class Operator(object, metaclass=MAddToOperators):
                 ret['dispatch'] = \
                 '''template <NSIMD_CONCEPT_{PACK} SimdVector,
                              NSIMD_CONCEPT_VALUE_TYPE T>
-                   NSIMD_REQUIRES(
-                       std::is_same_v<typename SimdVector::value_type, T>)
-                   SimdVector {cxx_name}({other_argsN});'''. \
-                   format(PACK=get_PACK(self.params[0]),
-                          other_argsN=other_argsN, cxx_name=self.name)
+                   NSIMD_REQUIRES((
+                       std::is_same_v<typename SimdVector::value_type, T>))
+                   SimdVector {cxx_name}({other_argsN});'''.format(
+                   PACK=get_PACK(self.params[0]),
+                   other_argsN=other_argsN, cxx_name=self.name)
             return ret
         else:
             raise Exception('Lang must be one of c_base, cxx_base, cxx_adv')
@@ -754,7 +754,7 @@ class Store4a(Operator):
 
 class Gather(Operator):
     full_name = 'gather elements from memory into a SIMD vector'
-    signature = 'v gather * vi'
+    signature = 'v gather c* vi'
     load_store = True
     categories = [DocLoadStore]
     types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
@@ -763,7 +763,7 @@ class Gather(Operator):
 
 class GatherLinear(Operator):
     full_name = 'gather elements from memory into a SIMD vector'
-    signature = 'v gather_linear * p'
+    signature = 'v gather_linear c* p'
     load_store = True
     categories = [DocLoadStore]
     types = common.types
