@@ -34,6 +34,8 @@ SOFTWARE.
   #define NSIMD_IS_MSVC
 #elif defined(__HIPCC__)
   #define NSIMD_IS_HIPCC
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  #define NSIMD_IS_DPCPP
 #elif defined(__NVCC__) || defined(__CUDACC__)
   #define NSIMD_IS_NVCC
 #elif defined(__INTEL_COMPILER)
@@ -325,6 +327,16 @@ namespace nsimd {
 
 #if defined(NSIMD_ROCM) && defined(NSIMD_IS_HIPCC)
   #define NSIMD_ROCM_COMPILING_FOR_DEVICE
+#endif
+
+/* oneAPI */
+
+#if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
+  #define NSIMD_ONEAPI
+#endif
+
+#if defined(NSIMD_ONEAPI) && defined(NSIMD_IS_DPCPP)
+  #define NSIMD_ONEAPI_COMPILING_FOR_DEVICE
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -712,6 +724,10 @@ namespace nsimd {
     #include <hip/hip_runtime.h>
   #endif
 
+  #ifdef NSIMD_ONEAPI_COMPILING_FOR_DEVICE
+    #include <CL/sycl.hpp>
+  #endif
+
   #define NSIMD_SIMD cpu
   #define NSIMD_PLATFORM cpu
 
@@ -827,6 +843,8 @@ namespace nsimd {
 #elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
       defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   typedef __half f16;
+#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+  typedef half f16;
 #else
   typedef struct { u16 u; } f16;
 #endif
@@ -1418,9 +1436,12 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
 #elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                             \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
+#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
+inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
