@@ -34,6 +34,8 @@ SOFTWARE.
   #define NSIMD_IS_MSVC
 #elif defined(__HIPCC__)
   #define NSIMD_IS_HIPCC
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  #define NSIMD_IS_DPCPP
 #elif defined(__NVCC__) || defined(__CUDACC__)
   #define NSIMD_IS_NVCC
 #elif defined(__INTEL_COMPILER)
@@ -335,6 +337,7 @@ namespace nsimd {
 
 #if defined(NSIMD_SYCL)
   #define NSIMD_SYCL_COMPILING_FOR_DEVICE
+
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -722,6 +725,10 @@ namespace nsimd {
     #include <hip/hip_runtime.h>
   #endif
 
+  #ifdef NSIMD_ONEAPI_COMPILING_FOR_DEVICE
+    #include <CL/sycl.hpp>
+  #endif
+
   #define NSIMD_SIMD cpu
   #define NSIMD_PLATFORM cpu
 
@@ -837,6 +844,8 @@ namespace nsimd {
 #elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
       defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   typedef __half f16;
+#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+  typedef half f16;
 #else
   typedef struct { u16 u; } f16;
 #endif
@@ -869,18 +878,18 @@ namespace nsimd {
 // Some C++20 concepts first
 
 #if NSIMD_CXX >= 2020
-  template <typename T> concept simd_value_type =
+  template <typename T> concept simd_value_type_c =
       std::is_same_v<T, u8> || std::is_same_v<T, i8> ||
       std::is_same_v<T, u16> || std::is_same_v<T, i16> ||
       std::is_same_v<T, u32> || std::is_same_v<T, i32> ||
       std::is_same_v<T, u64> || std::is_same_v<T, i64> ||
       std::is_same_v<T, f16> || std::is_same_v<T, f32> ||
       std::is_same_v<T, f64>;
-  #define NSIMD_CONCEPT_VALUE_TYPE nsimd::simd_value_type
+  #define NSIMD_CONCEPT_VALUE_TYPE nsimd::simd_value_type_c
 
-  template <typename T> concept simd_value_type_or_bool =
+  template <typename T> concept simd_value_type_or_bool_c =
       simd_value_type<T> || std::is_same_v<T, bool>;
-  #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool
+  #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool_c
 
   // We need our own sizeof because of f16 which can be 4 bytes (i.e. a
   // float) on systems where there is no support for native f16's.
@@ -1161,8 +1170,9 @@ struct unaligned {};
 
 #if NSIMD_CXX >= 2020
 template <typename T>
-concept alignment = std::is_same_v<T, aligned> || std::is_same_v<T, unaligned>;
-#define NSIMD_CONCEPT_ALIGNMENT nsimd::alignment
+concept alignment_c = std::is_same_v<T, aligned> ||
+                      std::is_same_v<T, unaligned>;
+#define NSIMD_CONCEPT_ALIGNMENT nsimd::alignment_c
 #else
 #define NSIMD_CONCEPT_ALIGNMENT typename
 #endif
@@ -1428,9 +1438,12 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
 #elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                             \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
+#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
+inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);

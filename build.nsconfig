@@ -51,6 +51,7 @@ set o_for_               = fp16$o memory$o api_cpu$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_
 set o_for_rocm           = $o_for_
+set o_for_oneapi         = $o_for_
 set o_for_sse2           = $o_for_cpu api_sse2$o
 set o_for_sse42          = $o_for_sse2 api_sse42$o
 set o_for_avx            = $o_for_sse42 api_avx$o
@@ -72,6 +73,7 @@ set cflags_for_               = -DCPU
 set cflags_for_cpu            = -DCPU
 set cflags_for_cuda           = -DCUDA
 set cflags_for_rocm           = -DROCM
+set cflags_for_oneapi         = -DONEAPI
 set cflags_for_sse2           = -DSSE2 -msse2
 set cflags_for_sse42          = -DSSE42 -msse42
 set cflags_for_avx            = -DAVX -mavx
@@ -176,6 +178,7 @@ set tests_comp_for_               = c++
 set tests_comp_for_cpu            = c++
 set tests_comp_for_cuda           = nvcc
 set tests_comp_for_rocm           = hipcc
+set tests_comp_for_dpcpp          = dpcpp
 set tests_comp_for_sse2           = c++
 set tests_comp_for_sse42          = c++
 set tests_comp_for_avx            = c++
@@ -198,32 +201,32 @@ set tests_flags = $flags$ $mpfr ${cflags_for_$simd$} -lm $ldflags
 echo Test compilation flags: $tests_flags$
 
 build_files c89 foreach glob:$root$/tests/*.c \
-                as tests.%b.c89$exe \
+                as tests.%r.c89$exe \
                 autodeps @item libnsimd_$simd$$so$
 	cc -std=c89 @item $tests_flags -o @out
 
 build_files c99 foreach glob:$root$/tests/*.c \
-                as tests.%b.c99$exe \
+                as tests.%r.c99$exe \
                 autodeps @item libnsimd_$simd$$so$
 	cc -std=c99 @item $tests_flags -o @out
 
 build_files c11 foreach glob:$root$/tests/*.c \
-                as tests.%b.c11$exe \
+                as tests.%r.c11$exe \
                 autodeps @item libnsimd_$simd$$so$
 	cc -std=c11 @item $tests_flags -o @out
 
 build_files cpp98 foreach glob:$root$/tests/*.cpp \
-                  as tests.%b.cpp98$exe \
+                  as tests.%r.cpp98$exe \
                   autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++98 @item $tests_flags -o @out
 
 build_files cpp11 foreach glob:$root$/tests/*.cpp \
-                  as tests.%b.cpp11$exe \
+                  as tests.%r.cpp11$exe \
                   autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++11 @item $tests_flags -o @out
 
 build_files cpp20 foreach glob:$root$/tests/*.cpp \
-                  as tests.%b.cpp20$exe \
+                  as tests.%r.cpp20$exe \
                   autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++20 @item $tests_flags -o @out
 
