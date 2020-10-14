@@ -52,7 +52,8 @@ class Rand(object, metaclass=MAddToRands):
 
         key_size = self.get_key_size(nwords)
 
-        key_initialization = 'nsimd::packx{key_size}<u{word_size}> key_pack;'
+        key_initialization = 'nsimd::packx{}<u{}> key_pack;'. \
+                format(key_size, word_size)
         for i in range (0, key_size):
             key_initialization += '''
             i = {i};
@@ -60,12 +61,14 @@ class Rand(object, metaclass=MAddToRands):
               key[j + i * len] = (u{word_size})(j + i * len);
             }}
             key_pack.v{i} = nsimd::loadu(&key[i*len], u{word_size}());
-            '''
+            '''.format(i=i, word_size=word_size)
 
         input_initilization = \
-                'memset(in, 0, sizeof(u{word_size}) * {nwords} * (u64)len);\n'
+                'memset(in, 0, sizeof(u{}) * {} * (u64)len);\n'. \
+                format(word_size, nwords)
         for i in range (0, nwords):
-            input_initilization += 'in_pack.v{i} = nsimd::pack<u{word_size}>(0);'
+            input_initilization += 'in_pack.v{} = nsimd::pack<u{}>(0);'. \
+                    format(i, word_size)
 
         compare = ''
         for i in range (0, nwords):
@@ -73,7 +76,7 @@ class Rand(object, metaclass=MAddToRands):
                 if (i=={i}) {{
                     nsimd::storeu(out_nsimd, out_pack.v{i});
                 }}
-                '''
+                '''.format(i=i)
 
         l = 'l' if word_size==64 else ''
 
@@ -122,7 +125,7 @@ class Rand(object, metaclass=MAddToRands):
                   key_ref.v[j] = key[i + j*len];
               }}
 
-              out_ref = branson_{nwords}x{word_size}_R({nrounds},
+              out_ref = branson_{name}{nwords}x{word_size}_R({nrounds},
                           in_ref, key_ref);
 
               for (int j=0; j<{nwords}; ++j) {{
@@ -166,7 +169,7 @@ class Rand(object, metaclass=MAddToRands):
                    nrounds), word_size=word_size, key_size=key_size,
                    nwords=nwords, key_initialization=key_initialization,
                    nrounds=nrounds, input_initilization=input_initilization,
-                   compare=compare, l=l)
+                   compare=compare, l=l, name = self.name)
 
         # Write file
         return res
@@ -282,7 +285,12 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
     '''
 
     def gen_signature(self, nwords, word_size, nrounds):
-        return '''nsimd::packx{nwords}<u{word_size}> {self.gen_function_name(nwords, word_size, nrounds)}(nsimd::packx{nwords}<u{word_size}> in, nsimd::packx{self.get_key_size(nwords)}<u{word_size}> key)'''
+        return '''nsimd::packx{nwords}<u{word_size}> {fun_name}
+    (nsimd::packx{nwords}<u{word_size}> in,
+    nsimd::packx{key_size}<u{word_size}> key)'''. \
+                format(nwords = nwords, word_size = word_size,
+                        fun_name = self.gen_function_name(nwords, word_size, nrounds),
+                        key_size = self.get_key_size(nwords))
 
     def get_key_size(self, nwords):
         return int(nwords/2)
@@ -450,9 +458,11 @@ class ThreeFry(Rand):
 
     def gen_signature(self, nwords, word_size, nrounds):
         return '''nsimd::packx{nwords}<u{word_size}> \
-{self.gen_function_name(nwords, word_size, nrounds)} \
-(nsimd::packx{nwords}<u{word_size}> in, \
-nsimd::packx{nwords}<u{word_size}> key)'''
+            {fun_name} \
+            (nsimd::packx{nwords}<u{word_size}> in, \
+            nsimd::packx{nwords}<u{word_size}> key)'''. \
+            format (nwords = nwords, word_size = word_size,
+                    fun_name = self.gen_function_name(nwords, word_size, nrounds))
 
     def get_key_size(self, nwords):
         return nwords
@@ -480,6 +490,7 @@ nsimd::packx{nwords}<u{word_size}> key)'''
         ks{nwords} = ks{nwords} ^ key.v{i};
         out.v{i} = out.v{i} + key.v{i};
         '''
+
         for i in range(0,nwords):
             res += initialisation_keys.format(i=i, nwords=nwords, word_size=word_size)
 
@@ -608,12 +619,13 @@ def gen_doc(opts):
             for nwords, list_nrounds in nwords_nrounds.items():
                 for nrounds in list_nrounds:
                     api += '- `' + func.gen_signature(nwords, word_size, nrounds) + '`\n'
-                    api += '''\tReturns a random number using the {func.name} generator\n\n'''
+                    api += '''\tReturns a random number using the {func_name} generator\n\n'''. \
+                            format(func_name = func.name)
 
     res = '''
 # NSIMD RAND module overview
 
-{desc()}
+{desc}
 
 Two different algorithms are proposed : threefry and philox. Both should give
 high quality random number.
@@ -627,7 +639,7 @@ they need two parameters:
 # NSIMD RAND API reference
 
 {api}
-'''
+'''.format(desc = desc(), api=api)
 
 
     filename = common.get_markdown_file(opts, 'overview', 'rand')
