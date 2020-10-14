@@ -877,18 +877,18 @@ namespace nsimd {
 // Some C++20 concepts first
 
 #if NSIMD_CXX >= 2020
-  template <typename T> concept simd_value_type =
+  template <typename T> concept simd_value_type_c =
       std::is_same_v<T, u8> || std::is_same_v<T, i8> ||
       std::is_same_v<T, u16> || std::is_same_v<T, i16> ||
       std::is_same_v<T, u32> || std::is_same_v<T, i32> ||
       std::is_same_v<T, u64> || std::is_same_v<T, i64> ||
       std::is_same_v<T, f16> || std::is_same_v<T, f32> ||
       std::is_same_v<T, f64>;
-  #define NSIMD_CONCEPT_VALUE_TYPE nsimd::simd_value_type
+  #define NSIMD_CONCEPT_VALUE_TYPE nsimd::simd_value_type_c
 
-  template <typename T> concept simd_value_type_or_bool =
+  template <typename T> concept simd_value_type_or_bool_c =
       simd_value_type<T> || std::is_same_v<T, bool>;
-  #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool
+  #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool_c
 
   // We need our own sizeof because of f16 which can be 4 bytes (i.e. a
   // float) on systems where there is no support for native f16's.
@@ -1169,8 +1169,9 @@ struct unaligned {};
 
 #if NSIMD_CXX >= 2020
 template <typename T>
-concept alignment = std::is_same_v<T, aligned> || std::is_same_v<T, unaligned>;
-#define NSIMD_CONCEPT_ALIGNMENT nsimd::alignment
+concept alignment_c = std::is_same_v<T, aligned> ||
+                      std::is_same_v<T, unaligned>;
+#define NSIMD_CONCEPT_ALIGNMENT nsimd::alignment_c
 #else
 #define NSIMD_CONCEPT_ALIGNMENT typename
 #endif
