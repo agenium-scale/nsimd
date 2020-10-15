@@ -30,6 +30,10 @@ SOFTWARE.
 #include <iostream>
 #include <nsimd/nsimd.h>
 
+#if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+#include <CL/sycl.hpp>
+#endif
+
 namespace nsimd {
 
 // ----------------------------------------------------------------------------
@@ -142,14 +146,14 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 // -----------------------------------------------------------------------------
 // SYCL
 
-#elif defined(NSIMD_ONEAPIL_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_SYCLL_COMPILING_FOR_DEVICE)
 
 template <typename T> T *device_malloc(size_t sz) {
-  return sycl::malloc_shared<T>(sz, sycl::queue(sycl::default_selector()));
+  return sycl::malloc_device<T>(sz, sycl::queue(sycl::default_selector()));
 }
 
 template <typename T> T *device_calloc(size_t sz) {
-  T *ret = sycl::malloc_shared<T>(sz, sycl::queue(sycl::default_selector()));
+  T *ret = sycl::malloc_device<T>(sz, sycl::queue(sycl::default_selector()));
   if (ret == NULL) {
     return NULL;
   }
@@ -161,12 +165,14 @@ template <typename T> void device_free(T *ptr) { free((void *)ptr); }
 
 template <typename T>
 void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
-  memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
+  sycl::queue(sycl::default_selector()) q;
+  q.memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
 }
 
 template <typename T>
 void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
-  memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
+  sycl::queue(sycl::default_selector()) q;
+  q.memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
 }
 
 #define nsimd_fill_dev_mem_func(func_name, expr)                              \

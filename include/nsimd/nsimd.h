@@ -1090,75 +1090,75 @@ struct simd_traits {};
 /* ------------------------------------------------------------------------- */
 /* Macro/typedefs for SIMD infos */
 
-#define vec(T) NSIMD_PP_CAT_4(nsimd_, NSIMD_SIMD, _v, T)
-#define vecl(T) NSIMD_PP_CAT_4(nsimd_, NSIMD_SIMD, _vl, T)
+#define nsimd_vec(T) NSIMD_PP_CAT_4(nsimd_, NSIMD_SIMD, _v, T)
+#define nsimd_vecl(T) NSIMD_PP_CAT_4(nsimd_, NSIMD_SIMD, _vl, T)
 
-#define vecx2(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x2)
-#define vecx3(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x3)
-#define vecx4(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x4)
+#define nsimd_vecx2(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x2)
+#define nsimd_vecx3(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x3)
+#define nsimd_vecx4(T) NSIMD_PP_CAT_5(nsimd_, NSIMD_SIMD, _v, T, x4)
 
-typedef vec(i8) vi8;
-typedef vec(u8) vu8;
-typedef vec(i16) vi16;
-typedef vec(u16) vu16;
-typedef vec(i32) vi32;
-typedef vec(u32) vu32;
-typedef vec(i64) vi64;
-typedef vec(u64) vu64;
-typedef vec(f16) vf16;
-typedef vec(f32) vf32;
-typedef vec(f64) vf64;
+typedef nsimd_vec(i8) vi8;
+typedef nsimd_vec(u8) vu8;
+typedef nsimd_vec(i16) vi16;
+typedef nsimd_vec(u16) vu16;
+typedef nsimd_vec(i32) vi32;
+typedef nsimd_vec(u32) vu32;
+typedef nsimd_vec(i64) vi64;
+typedef nsimd_vec(u64) vu64;
+typedef nsimd_vec(f16) vf16;
+typedef nsimd_vec(f32) vf32;
+typedef nsimd_vec(f64) vf64;
 
-typedef vecx2(i8) vi8x2;
-typedef vecx2(u8) vu8x2;
-typedef vecx2(i16) vi16x2;
-typedef vecx2(u16) vu16x2;
-typedef vecx2(i32) vi32x2;
-typedef vecx2(u32) vu32x2;
-typedef vecx2(i64) vi64x2;
-typedef vecx2(u64) vu64x2;
-typedef vecx2(f16) vf16x2;
-typedef vecx2(f32) vf32x2;
-typedef vecx2(f64) vf64x2;
+typedef nsimd_vecx2(i8) vi8x2;
+typedef nsimd_vecx2(u8) vu8x2;
+typedef nsimd_vecx2(i16) vi16x2;
+typedef nsimd_vecx2(u16) vu16x2;
+typedef nsimd_vecx2(i32) vi32x2;
+typedef nsimd_vecx2(u32) vu32x2;
+typedef nsimd_vecx2(i64) vi64x2;
+typedef nsimd_vecx2(u64) vu64x2;
+typedef nsimd_vecx2(f16) vf16x2;
+typedef nsimd_vecx2(f32) vf32x2;
+typedef nsimd_vecx2(f64) vf64x2;
 
-typedef vecx3(i8) vi8x3;
-typedef vecx3(u8) vu8x3;
-typedef vecx3(i16) vi16x3;
-typedef vecx3(u16) vu16x3;
-typedef vecx3(i32) vi32x3;
-typedef vecx3(u32) vu32x3;
-typedef vecx3(i64) vi64x3;
-typedef vecx3(u64) vu64x3;
-typedef vecx3(f16) vf16x3;
-typedef vecx3(f32) vf32x3;
-typedef vecx3(f64) vf64x3;
+typedef nsimd_vecx3(i8) vi8x3;
+typedef nsimd_vecx3(u8) vu8x3;
+typedef nsimd_vecx3(i16) vi16x3;
+typedef nsimd_vecx3(u16) vu16x3;
+typedef nsimd_vecx3(i32) vi32x3;
+typedef nsimd_vecx3(u32) vu32x3;
+typedef nsimd_vecx3(i64) vi64x3;
+typedef nsimd_vecx3(u64) vu64x3;
+typedef nsimd_vecx3(f16) vf16x3;
+typedef nsimd_vecx3(f32) vf32x3;
+typedef nsimd_vecx3(f64) vf64x3;
 
-typedef vecx4(i8) vi8x4;
-typedef vecx4(u8) vu8x4;
-typedef vecx4(i16) vi16x4;
-typedef vecx4(u16) vu16x4;
-typedef vecx4(i32) vi32x4;
-typedef vecx4(u32) vu32x4;
-typedef vecx4(i64) vi64x4;
-typedef vecx4(u64) vu64x4;
-typedef vecx4(f16) vf16x4;
-typedef vecx4(f32) vf32x4;
-typedef vecx4(f64) vf64x4;
+typedef nsimd_vecx4(i8) vi8x4;
+typedef nsimd_vecx4(u8) vu8x4;
+typedef nsimd_vecx4(i16) vi16x4;
+typedef nsimd_vecx4(u16) vu16x4;
+typedef nsimd_vecx4(i32) vi32x4;
+typedef nsimd_vecx4(u32) vu32x4;
+typedef nsimd_vecx4(i64) vi64x4;
+typedef nsimd_vecx4(u64) vu64x4;
+typedef nsimd_vecx4(f16) vf16x4;
+typedef nsimd_vecx4(f32) vf32x4;
+typedef nsimd_vecx4(f64) vf64x4;
 
-typedef vecl(i8) vli8;
-typedef vecl(u8) vlu8;
-typedef vecl(i16) vli16;
-typedef vecl(u16) vlu16;
-typedef vecl(i32) vli32;
-typedef vecl(u32) vlu32;
-typedef vecl(i64) vli64;
-typedef vecl(u64) vlu64;
-typedef vecl(f16) vlf16;
-typedef vecl(f32) vlf32;
-typedef vecl(f64) vlf64;
+typedef nsimd_vecl(i8) vli8;
+typedef nsimd_vecl(u8) vlu8;
+typedef nsimd_vecl(i16) vli16;
+typedef nsimd_vecl(u16) vlu16;
+typedef nsimd_vecl(i32) vli32;
+typedef nsimd_vecl(u32) vlu32;
+typedef nsimd_vecl(i64) vli64;
+typedef nsimd_vecl(u64) vlu64;
+typedef nsimd_vecl(f16) vlf16;
+typedef nsimd_vecl(f32) vlf32;
+typedef nsimd_vecl(f64) vlf64;
 
-#define vec_a(T, simd_ext) NSIMD_PP_CAT_4(nsimd_, simd_ext, _v, T)
-#define vecl_a(T, simd_ext) NSIMD_PP_CAT_4(nsimd_, simd_ext, _vl, T)
+#define nsimd_vec_a(T, simd_ext) NSIMD_PP_CAT_4(nsimd_, simd_ext, _v, T)
+#define nsimd_vecl_a(T, simd_ext) NSIMD_PP_CAT_4(nsimd_, simd_ext, _vl, T)
 
 #if NSIMD_CXX > 0
 

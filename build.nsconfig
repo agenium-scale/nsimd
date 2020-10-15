@@ -51,7 +51,7 @@ set o_for_               = fp16$o memory$o api_cpu$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_
 set o_for_rocm           = $o_for_
-set o_for_oneapi         = $o_for_
+set o_for_sycl           = $o_for_
 set o_for_sse2           = $o_for_cpu api_sse2$o
 set o_for_sse42          = $o_for_sse2 api_sse42$o
 set o_for_avx            = $o_for_sse42 api_avx$o
@@ -73,7 +73,7 @@ set cflags_for_               = -DCPU
 set cflags_for_cpu            = -DCPU
 set cflags_for_cuda           = -DCUDA
 set cflags_for_rocm           = -DROCM
-set cflags_for_oneapi         = -DONEAPI
+set cflags_for_sycl           = -DSYCL
 set cflags_for_sse2           = -DSSE2 -msse2
 set cflags_for_sse42          = -DSSE42 -msse42
 set cflags_for_avx            = -DAVX -mavx
@@ -178,7 +178,7 @@ set tests_comp_for_               = c++
 set tests_comp_for_cpu            = c++
 set tests_comp_for_cuda           = nvcc
 set tests_comp_for_rocm           = hipcc
-set tests_comp_for_dpcpp          = dpcpp
+set tests_comp_for_sycl           = dpcpp
 set tests_comp_for_sse2           = c++
 set tests_comp_for_sse42          = c++
 set tests_comp_for_avx            = c++
@@ -237,8 +237,7 @@ phony tests.cpp98 deps $cpp98.files
 phony tests.cpp11 deps $cpp11.files
 phony tests.cpp20 deps $cpp20.files
 
-#phony tests deps $c89.files$ $c99.files$ $cpp98.files$ $cpp11.files$
-phony tests deps $c11.files$ $cpp98.files$ $cpp11.files$
+phony tests deps $c89.files$ $c99.files$ $cpp98.files$ $cpp11.files$
 
 ## Ulps
 

@@ -1008,6 +1008,10 @@ def gen_functions(opts):
 
            {signature} nsimd::gpu_{s_op_name}({m_call_args_gpu})
 
+           #elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+
+           {signature} nsimd::scalar_{s_op_name}({s_call_args});
+
            #else
 
            template <typename KernelType, int N> struct {op_name}_helper {{}};
