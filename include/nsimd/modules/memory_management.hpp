@@ -85,7 +85,7 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   }                                                                           \
                                                                               \
   template <typename T> void func_name(T *ptr, size_t sz) {                   \
-    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128> > >(       \
+    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128>>>(         \
         ptr, int(sz));                                                        \
   }
 

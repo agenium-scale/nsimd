@@ -94,14 +94,14 @@ namespace spmd {
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
-  inline void name(__VA_ARGS__, int n, sycl::id<2> id) {                      \
+  inline void name(__VA_ARGS__, int n, sycl::item<2> id) {                    \
     int spmd_i_ = id.get_id(0) * id.get_range()[0] + id.get_id(1);            \
     if (spmd_i_ < n) {
 
 // templated kernel definition
 #define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
   template <typename template_argument, int spmd_scalarBits_>                 \
-  inline void name(__VA_ARGS__, unsigned int n, int dimx, sycl::id<2> id) {   \
+  inline void name(__VA_ARGS__, int n, sycl::item<2> id) { \
     int spmd_i_ = id.get_id(0) * id.get_range()[0] + id.get_id(1);            \
     if (spmd_i_ < n) {
 
@@ -152,7 +152,7 @@ namespace spmd {
                               ...)                                            \
   name<spmd_scalar_bits_>                                                     \
       <<<(unsigned int)((n + threads_per_block - 1) / threads_per_block),     \
-         (unsigned int)(threads_per_block)> > >(__VA_ARGS__, (int)n)
+         (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
 
 #elif defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 
@@ -168,13 +168,13 @@ namespace spmd {
 #elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 
 // launch 1d kernel SYCL
-#define spmd_launch_kernel_1d(name, spmd_scalar_bits, treads_per_blocks, n,   \
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits, threads_per_block, n,   \
                               ...)                                            \
   sycl::queue(sycl::default_selector())                                       \
       .parallel_for(                                                          \
-          sycl::id<2>((n + threads_per_block - 1) / threads_per_block,        \
-                      threads_per_block),                                     \
-          [=](sycl::id<2> id) {                                               \
+          sycl::range<2>((n + threads_per_block - 1) / threads_per_block,     \
+                         threads_per_block),                                  \
+          [=](sycl::item<2> id) {                                             \
             name<spmd_scalar_bits>(__VA_ARGS__, (int)n, id);                  \
           })                                                                  \
       .wait();
