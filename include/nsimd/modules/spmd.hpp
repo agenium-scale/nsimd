@@ -33,6 +33,25 @@ SOFTWARE.
 
 #if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 #include <CL/sycl.hpp>
+
+class _sycl_ctx
+{
+private:
+  _sycl_ctx(){}
+
+  _sycl_ctx(_sycl_ctx const&);
+  void operator=(_sycl_ctx const&);
+
+public:
+  _sycl_ctx(_sycl_ctx const&) = delete;
+  void operator=(_sycl_ctx const&) = delete;
+
+  static sycl::queue& get_queue()
+  {
+    static sycl::queue q(sycl::default_selector());
+    return q;
+  }
+}
 #endif
 
 namespace spmd {
@@ -170,7 +189,7 @@ namespace spmd {
 // launch 1d kernel SYCL
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits, threads_per_block, n,   \
                               ...)                                            \
-  sycl::queue(sycl::default_selector())                                       \
+  _sycl_ctx::get_queue())                                                     \
       .parallel_for(                                                          \
           sycl::range<2>((n + threads_per_block - 1) / threads_per_block,     \
                          threads_per_block),                                  \
