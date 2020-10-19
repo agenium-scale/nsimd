@@ -34,23 +34,40 @@ SOFTWARE.
 #if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 #include <CL/sycl.hpp>
 
+/* 
+
+Singleton class that handles a global sycl::queue variable to use with SYCL.
+If we only have te deal woth contexts for SYCL, we can keep it as is.
+Otherwise, we can create a kinf od context_init and context_destroy macros
+to handle contexts with all SPMD implementations.
+
+*/
+
 class _sycl_ctx
 {
 private:
-  _sycl_ctx(){}
+  sycl::queue _q;
 
-  _sycl_ctx(_sycl_ctx const&);
-  void operator=(_sycl_ctx const&);
+  _sycl_ctx() : _q(sycl::default_selector()) {}
 
 public:
-  _sycl_ctx(_sycl_ctx const&) = delete;
-  void operator=(_sycl_ctx const&) = delete;
-
-  static sycl::queue& get_queue()
+  static _sycl_ctx& get_instance()
   {
-    static sycl::queue q(sycl::default_selector());
-    return q;
+    static _sycl_ctx instance;
+    return instance;
   }
+
+  sycl::queue &get_queue(){return this->_q;}
+
+  _sycl_ctx(_sycl_ctx const&) = delete;
+  
+  void operator=(_sycl_ctx const&) = delete;
+};
+
+/* Get the global_queue */
+static inline sycl::queue _get_global_queue()
+{
+  return _sycl_ctx::get_instance().get_queue();
 }
 #endif
 
@@ -189,7 +206,7 @@ namespace spmd {
 // launch 1d kernel SYCL
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits, threads_per_block, n,   \
                               ...)                                            \
-  _sycl_ctx::get_queue())                                                     \
+  _get_global_queue()                                                         \
       .parallel_for(                                                          \
           sycl::range<2>((n + threads_per_block - 1) / threads_per_block,     \
                          threads_per_block),                                  \

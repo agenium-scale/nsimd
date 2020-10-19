@@ -153,29 +153,29 @@ template <typename T> T *device_malloc(size_t sz) {
 }
 
 template <typename T> T *device_calloc(size_t sz) {
-  T *ret = sycl::malloc_device<T>(sz, _sycl_ctx::get_queue());
+  T *ret = sycl::malloc_device<T>(sz, _get_global_queue());
   if (ret == NULL) {
     return NULL;
   }
-  _sycl_ctx::get_queue() q;
+  _get_global_queue() q;
   q.memset((void *)ret, sz * sizeof(T));
   return ret;
 }
 
 template <typename T> void device_free(T *ptr) {
-  _sycl_ctx::get_queue() q;
+  _get_global_queue() q;
   sycl::free((void *)ptr, q);
 }
 
 template <typename T>
 void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
-  _sycl_ctx::get_queue() q;
+  _get_global_queue() q;
   q.memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
 }
 
 template <typename T>
 void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
-  _sycl_ctx::get_queue() q;
+  _get_global_queue() q;
   q.memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
 }
 
@@ -189,7 +189,7 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   }                                                                           \
                                                                               \
   template <typename T> void func_name(T *ptr, size_t sz) {                   \
-    _sycl_ctx::get_queue()                                                    \
+    _get_global_queue()                                                       \
         .parallel_for(sycl::range<2>((sz + 127) / 128, 128),                  \
                       [=](sycl::item<2> item) {                               \
                         kernel_##func_name##_<T>(ptr, (int)sz, item);         \
