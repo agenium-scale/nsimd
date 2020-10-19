@@ -162,7 +162,10 @@ template <typename T> T *device_calloc(size_t sz) {
   return ret;
 }
 
-template <typename T> void device_free(T *ptr) { free((void *)ptr); }
+template <typename T> void device_free(T *ptr) {
+  sycl::queue(sycl::default_selector()) q;
+  sycl::free((void *)ptr, q);
+}
 
 template <typename T>
 void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
