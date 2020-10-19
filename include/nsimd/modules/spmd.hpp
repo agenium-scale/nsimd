@@ -95,14 +95,14 @@ namespace spmd {
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
   inline void name(__VA_ARGS__, int n, sycl::id<2> id) {                      \
-    int spmd_i_ = id.get_id(0) * id.get_range()[0] + id.get_id(1);            \
+    int spmd_i_ = id.get_id(1) * id.get_range()[0] + id.get_id(0);            \
     if (spmd_i_ < n) {
 
 // templated kernel definition
 #define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
   template <typename template_argument, int spmd_scalarBits_>                 \
   inline void name(__VA_ARGS__, unsigned int n, int dimx, sycl::id<2> id) {   \
-    int spmd_i_ = id.get_id(0) * id.get_range()[0] + id.get_id(1);            \
+    int spmd_i_ = id.get_id(1) * id.get_range()[0] + id.get_id(0);            \
     if (spmd_i_ < n) {
 
 #endif

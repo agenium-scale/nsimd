@@ -157,7 +157,8 @@ template <typename T> T *device_calloc(size_t sz) {
   if (ret == NULL) {
     return NULL;
   }
-  memset((void *)ret, sz * sizeof(T));
+  sycl::queue(sycl::default_selector()) q;
+  q.memset((void *)ret, sz * sizeof(T));
   return ret;
 }
 
@@ -177,9 +178,8 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 
 #define nsimd_fill_dev_mem_func(func_name, expr)                              \
   template <typename T>                                                       \
-  inline void kernel_##func_name##_(T *ptr, unsigned int n, int dimx,         \
-                                    sycl::id<2> idx) {                        \
-    int i = idx[0] * dimx + idx[1];                                           \
+  inline void kernel_##func_name##_(T *ptr, int n, sycl::id<2> idx) {         \
+    int i = id.get_id(1) * id.get_range()[0] + id.get_id(0);                  \
     if (i < n) {                                                              \
       ptr[i] = (T)(expr);                                                     \
     }                                                                         \
@@ -187,10 +187,9 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
                                                                               \
   template <typename T> void func_name(T *ptr, size_t sz) {                   \
     sycl::queue(sycl::default_selector())                                     \
-        .parallel_for(sycl::id<1>((sz + 127) / 128, 128),                     \
-                      [=](sycl::id<2> idx) {                                  \
-                        const ind dimx = (sz + 127) / 128;                    \
-                        kernel_##func_name##_<T>(ptr, (int)sz);               \
+        .parallel_for(sycl::range<2>((sz + 127) / 128, 128),                  \
+                      [=](sycl::item<2> id) {                                 \
+                        kernel_##func_name##_<T>(ptr, (int)sz, id);           \
                       });                                                     \
   }
 
