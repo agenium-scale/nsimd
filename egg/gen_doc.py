@@ -573,7 +573,7 @@ doc_header = '''\
 </div>
 <div style="text-align: center; margin-bottom: 1em;">
   <a href=\"index.html\">Index</a> |
-  <a href=\"tutorials.html\">Tutorials</a> |
+  <a href=\"tutorial.html\">Tutorial</a> |
   <a href=\"faq.html\">FAQ</a> |
   <a href=\"contribute.html\">Contribute</a> |
   <a href=\"overview.html\">API overview</a> |

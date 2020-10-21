@@ -24,6 +24,7 @@ import collections
 
 
 # -----------------------------------------------------------------------------
+
 rand_functions = list()
 
 
@@ -81,7 +82,7 @@ class Rand(object, metaclass=MAddToRands):
         l = 'l' if word_size==64 else ''
 
         res = '''
-        #include <nsimd/modules/rand/functions.hpp>
+        #include <nsimd/modules/random/functions.hpp>
         #include "reference.hpp"
 
         int main() {{
@@ -114,7 +115,7 @@ class Rand(object, metaclass=MAddToRands):
           {input_initilization}
 
           for (int cpt=0; cpt < 100000; ++cpt) {{
-            out_pack = nsimd::rand::{function_name}(in_pack, key_pack);
+            out_pack = nsimd::random::{function_name}(in_pack, key_pack);
 
             for (int i=0; i<len; ++i) {{
               for (int j=0; j<{nwords}; ++j) {{
@@ -285,12 +286,13 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
     '''
 
     def gen_signature(self, nwords, word_size, nrounds):
-        return '''nsimd::packx{nwords}<u{word_size}> {fun_name}
-    (nsimd::packx{nwords}<u{word_size}> in,
-    nsimd::packx{key_size}<u{word_size}> key)'''. \
+        return ('nsimd::packx{nwords}<u{word_size}> {fun_name}' \
+                '(nsimd::packx{nwords}<u{word_size}> in, ' \
+                'nsimd::packx{key_size}<u{word_size}> key)'). \
                 format(nwords = nwords, word_size = word_size,
-                        fun_name = self.gen_function_name(nwords, word_size, nrounds),
-                        key_size = self.get_key_size(nwords))
+                       fun_name = self.gen_function_name(nwords, word_size,
+                                                         nrounds),
+                       key_size = self.get_key_size(nwords))
 
     def get_key_size(self, nwords):
         return int(nwords/2)
@@ -550,7 +552,7 @@ class ThreeFry(Rand):
 
 def gen_functions(opts):
     ## Write source files
-    #dirname = os.path.join(opts.include_dir, 'modules', 'rand')
+    #dirname = os.path.join(opts.include_dir, 'modules', 'random')
     #common.mkdir_p(dirname)
     #filename = os.path.join(dirname, 'functions.cpp')
     #print(filename)
@@ -562,19 +564,19 @@ def gen_functions(opts):
     #common.clang_format(opts, filename)
 
     # Write headers
-    dirname = os.path.join(opts.include_dir, 'modules', 'rand')
+    dirname = os.path.join(opts.include_dir, 'modules', 'random')
     common.mkdir_p(dirname)
     filename = os.path.join(dirname, 'functions.hpp')
     with common.open_utf8(opts, filename) as out:
-        out.write('#ifndef NSIMD_MODULES_RAND_FUNCTIONS_HPP\n')
-        out.write('#define NSIMD_MODULES_RAND_FUNCTIONS_HPP\n\n')
+        out.write('#ifndef NSIMD_MODULES_RANDOM_FUNCTIONS_HPP\n')
+        out.write('#define NSIMD_MODULES_RANDOM_FUNCTIONS_HPP\n\n')
 
         out.write('#include <nsimd/nsimd.h>\n')
         out.write('#include <nsimd/cxx_adv_api.hpp>\n')
         out.write('#include <nsimd/cxx_adv_api_functions.hpp>\n')
 
         out.write('namespace nsimd {\n')
-        out.write('namespace rand {\n')
+        out.write('namespace random {\n')
 
         out.write('{}\n\n'.format(common.hbar))
         for func in rand_functions:
@@ -582,7 +584,7 @@ def gen_functions(opts):
             out.write(func.generate(opts))
 
         out.write('} // namespace nsimd\n')
-        out.write('} // namespace rand\n')
+        out.write('} // namespace random\n')
         out.write('#endif\n')
     common.clang_format(opts, filename)
 
@@ -592,7 +594,7 @@ def gen_tests(opts):
             for nwords, list_nrounds in nwords_nrounds.items():
                 for nrounds in list_nrounds:
                     # Write headers
-                    dirname = os.path.join(opts.tests_dir, 'modules', 'rand')
+                    dirname = os.path.join(opts.tests_dir, 'modules', 'random')
                     common.mkdir_p(dirname)
                     filename = os.path.join(dirname, '{}.cpp'. \
                                 format(func.gen_function_name(nwords, word_size, nrounds)))
@@ -605,12 +607,13 @@ def gen_tests(opts):
 # -----------------------------------------------------------------------------
 
 def name():
-    return 'Rand'
+    return 'Random number generators'
 
 def desc():
-    return '''This module define functions that generate pseudorandom numbers using
-algorithms described in Parallel Random Numbers: As Easy as 1,2,3, by John K.
-Salmon, Mark A. Moraes, Ron O. Dror and David E.Shaw.'''
+    return \
+    'This module define functions that generate pseudorandom numbers using' \
+    'algorithms described in Parallel Random Numbers: As Easy as 1,2,3, by' \
+    'John K. Salmon, Mark A. Moraes, Ron O. Dror and David E.Shaw.'
 
 def gen_doc(opts):
     api =  ''
@@ -618,12 +621,14 @@ def gen_doc(opts):
         for word_size, nwords_nrounds in func.wordsize_nwords_nrounds.items():
             for nwords, list_nrounds in nwords_nrounds.items():
                 for nrounds in list_nrounds:
-                    api += '- `' + func.gen_signature(nwords, word_size, nrounds) + '`\n'
-                    api += '''\tReturns a random number using the {func_name} generator\n\n'''. \
-                            format(func_name = func.name)
+                    api += '- `' + func.gen_signature(nwords, word_size,
+                                                      nrounds) + '`;  \n'
+                    api += '  Returns a random number using the ' \
+                           '{func_name} generator\n\n'. \
+                           format(func_name=func.name)
 
     res = '''
-# NSIMD RAND module overview
+# NSIMD Random module overview
 
 {desc}
 
@@ -636,13 +641,13 @@ they need two parameters:
 - a key, each key will generate an unique sequence,
 - a counter, which will give the different numbers in the sequence.
 
-# NSIMD RAND API reference
+# NSIMD Random API reference
 
 {api}
 '''.format(desc = desc(), api=api)
 
 
-    filename = common.get_markdown_file(opts, 'overview', 'rand')
+    filename = common.get_markdown_file(opts, 'overview', 'random')
     if not common.can_create_filename(opts, filename):
         return
     with common.open_utf8(opts, filename) as fout:
@@ -654,7 +659,7 @@ def doc_menu():
 # -----------------------------------------------------------------------------
 
 def doit(opts):
-    common.myprint(opts, 'Generating module rand')
+    common.myprint(opts, 'Generating module random')
 
     if opts.library:
         gen_functions(opts)

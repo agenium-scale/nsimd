@@ -55,24 +55,24 @@ def gen_overview(opts):
 ## Description
 
 This module implements a fixed-point numbers support for the `nsimd` library.
-Fixed-point numbers are integer types used to represent decimal numbers. A number `lf`
-of bits are used to encode its integer part, and `rt` bits are used to encode its
-fractional part.
+Fixed-point numbers are integer types used to represent decimal numbers. A
+number `lf` of bits are used to encode its integer part, and `rt` bits are used
+to encode its fractional part.
 
-The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf, rt>` to
-represent a fixed_point number. All the basic floating-point arithmetic operaors have
-been defined, therefore fp_t elements can be manipulated as normal numbers.
-The fixed_point module will use a `int8_t`, `int16_t`, or `int32_t` integer type for
-storage, depending on the value of `lf + 2 * rt`.
+The fixed_point module uses the templated type `nsimd::fixed_point::fp_t<lf,
+rt>` to represent a fixed_point number. All the basic floating-point arithmetic
+operaors have been defined, therefore fp_t elements can be manipulated as
+normal numbers.  The fixed_point module will use a `int8_t`, `int16_t`, or
+`int32_t` integer type for storage, depending on the value of `lf + 2 * rt`.
 
 All the functions of the module are under the namespace `nsimd::fixed_point`,
 and match the same interface than `nsimd` C++ .
 
-The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd `fpsimd_t`
-struct type are defined in `simd.hpp`.
+The `fp_t` struct type is defined in `fixed.hpp`, and the associated simd
+`fpsimd_t` struct type are defined in `simd.hpp`.
 
-The modules redefines the `nsimd` pack type for fixed-point numbers, templated with `lf`
-and `rt` :
+The modules redefines the `nsimd` pack type for fixed-point numbers, templated
+with `lf` and `rt` :
 
 ```C++
 namespace nsimd {
@@ -93,8 +93,9 @@ It has the same compilers and hardware support than the main `nsimd` API
 
 ## Example
 
-Here is a minimal example([main.cpp](../src/module_fixed_point_example.cpp)) :
-@[INCLUDE_CODE:L21:L61](../src/module_fixed_point_example.cpp)
+Here is a minimal example([main.cpp](../../examples/module_fixed_point.cpp)):
+
+@[INCLUDE_CODE:L21:L61](../../examples/module_fixed_point.cpp)
 
 To test with avx2 run :
 ```bash

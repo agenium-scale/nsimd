@@ -496,6 +496,8 @@ int len(packx4<T, N, SimdExt> const &) {
   return 4 * N * len(T(), SimdExt());
 }
 
+template <NSIMD_CONCEPT_ANY_PACK Pack> int len() { return len(Pack()); }
+
 // ----------------------------------------------------------------------------
 // The addv function cannot be auto-generated
 

@@ -240,6 +240,15 @@ phony tests.cpp20 deps $cpp20.files
 #phony tests deps $c89.files$ $c99.files$ $cpp98.files$ $cpp11.files$
 phony tests deps $c11.files$ $cpp98.files$ $cpp11.files$
 
+## Examples
+
+build_files examples_cpp98 foreach glob:$root$/examples/*.cpp \
+                           as examples.%r.cpp98$exe \
+                           autodeps @item libnsimd_$simd$$so$
+	c++ -std=c++98 @item $tests_flags -o @out
+
+phony examples.cpp98 deps $examples_cpp98.files
+
 ## Ulps
 
 build_files optional ulps foreach glob:$root$/ulps/*.cpp \

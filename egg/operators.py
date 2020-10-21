@@ -502,14 +502,18 @@ class Operator(object, metaclass=MAddToOperators):
                 format(tmpl_argsN=tmpl_argsN, cxx20_require=cxx20_require,
                        other_argsN=other_argsN, retN=retN, cxx_name=self.name)
             elif tag_dispatching:
+                if [i for i in ['s', '*', 'c*'] if i in self.params[1:]] == []:
+                    tmpl_T = ''
+                    requires = ''
+                else:
+                    tmpl_T = ', NSIMD_CONCEPT_VALUE_TYPE T'
+                    requires = 'NSIMD_REQUIRES((' \
+                        'std::is_same_v<typename SimdVector::value_type, T>))'
                 ret['dispatch'] = \
-                '''template <NSIMD_CONCEPT_{PACK} SimdVector,
-                             NSIMD_CONCEPT_VALUE_TYPE T>
-                   NSIMD_REQUIRES((
-                       std::is_same_v<typename SimdVector::value_type, T>))
+                '''template <NSIMD_CONCEPT_{PACK} SimdVector{tmpl_T}>{requires}
                    SimdVector {cxx_name}({other_argsN});'''.format(
-                   PACK=get_PACK(self.params[0]),
-                   other_argsN=other_argsN, cxx_name=self.name)
+                   PACK=get_PACK(self.params[0]), requires=requires,
+                   other_argsN=other_argsN, cxx_name=self.name, tmpl_T=tmpl_T)
             return ret
         else:
             raise Exception('Lang must be one of c_base, cxx_base, cxx_adv')
