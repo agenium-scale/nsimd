@@ -654,7 +654,7 @@ they need two parameters:
         fout.write(res)
 
 def doc_menu():
-    return {'Overview': 'overview', 'API reference': 'api'}
+    return dict()
 
 # -----------------------------------------------------------------------------
 
