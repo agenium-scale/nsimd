@@ -1402,8 +1402,14 @@ bool operator!=(allocator<T> const &, allocator<S> const &) {
   return false;
 }
 
+} // namespace nsimd
+#endif
+
 /* ------------------------------------------------------------------------- */
 /* scoped allocator */
+
+#if NSIMD_CXX > 0
+namespace nsimd {
 
 template <NSIMD_CONCEPT_VALUE_TYPE T> struct scoped_aligned_mem_for {
   std::vector<T, nsimd::allocator<T> > data;
