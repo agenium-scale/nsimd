@@ -29,6 +29,7 @@ SOFTWARE.
 #include <cstring>
 #include <iostream>
 #include <nsimd/nsimd.h>
+#include <nsimd/modules/spmd.hpp>
 
 #if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 #include <CL/sycl.hpp>
@@ -146,53 +147,53 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 // -----------------------------------------------------------------------------
 // SYCL
 
-#elif defined(NSIMD_SYCLL_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 
 template <typename T> T *device_malloc(size_t sz) {
-  return sycl::malloc_device<T>(sz, _sycl_ctx::());
+  return sycl::malloc_device<T>(sz, spmd::_get_global_queue());
 }
 
 template <typename T> T *device_calloc(size_t sz) {
-  T *ret = sycl::malloc_device<T>(sz, _get_global_queue());
+  sycl::queue q = spmd::_get_global_queue();
+  T *ret = sycl::malloc_device<T>(sz, q);
   if (ret == NULL) {
     return NULL;
   }
-  _get_global_queue() q;
-  q.memset((void *)ret, sz * sizeof(T));
+  q.memset((void *)ret, 0, sz * sizeof(T));
   return ret;
 }
 
 template <typename T> void device_free(T *ptr) {
-  _get_global_queue() q;
+  sycl::queue q = spmd::_get_global_queue();
   sycl::free((void *)ptr, q);
 }
 
 template <typename T>
 void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
-  _get_global_queue() q;
+  sycl::queue q = spmd::_get_global_queue();
   q.memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
 }
 
 template <typename T>
 void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
-  _get_global_queue() q;
+  sycl::queue q = spmd::_get_global_queue();
   q.memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
 }
 
 #define nsimd_fill_dev_mem_func(func_name, expr)                              \
   template <typename T>                                                       \
-  inline void kernel_##func_name##_(T *ptr, int n, sycl::id<2> item) {        \
-    int i = item.get_id(1) * item.get_range()[0] + item.get_id(0);            \
+  inline void kernel_##func_name##_(T *ptr, size_t n, sycl::item<2> item) {   \
+    size_t i = item.get_id(1) * item.get_range()[0] + item.get_id(0);         \
     if (i < n) {                                                              \
       ptr[i] = (T)(expr);                                                     \
     }                                                                         \
   }                                                                           \
                                                                               \
   template <typename T> void func_name(T *ptr, size_t sz) {                   \
-    _get_global_queue()                                                       \
+    spmd::_get_global_queue()                                                 \
         .parallel_for(sycl::range<2>((sz + 127) / 128, 128),                  \
                       [=](sycl::item<2> item) {                               \
-                        kernel_##func_name##_<T>(ptr, (int)sz, item);         \
+                        kernel_##func_name##_<T>(ptr, sz, item);              \
                       });                                                     \
   }
 

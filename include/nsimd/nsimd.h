@@ -844,8 +844,8 @@ namespace nsimd {
 #elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
       defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
   typedef __half f16;
-#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
-  typedef half f16;
+/* #elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE) */
+/*  typedef half f16; */
 #else
   typedef struct { u16 u; } f16;
 #endif
@@ -1441,9 +1441,9 @@ NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
       defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
-#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
-inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
-inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
+  /* #elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE) */
+  /* inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }*/
+  /* inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); } */
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);

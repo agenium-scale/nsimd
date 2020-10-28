@@ -484,18 +484,18 @@ def gen_tests_for_shifts(opts, t, operator):
 
         #elif defined(NSIMD_SYCL)
 
-        inline void kernel({typ} *dst, {typ} *a0, unsigned int n, int s, 
-                           sycl::id<2> id) {{
-          int i = id.get_id(0) * id.get_range()[0] + id.get_id(1);
+        inline void kernel({typ} *dst, {typ} *a0, size_t n, int s, 
+                           sycl::tem<2> item) {{
+          size_t i = item.get_id(1) * item.get_range()[0] + item.get_id(0);
           if (i < n) {{
             dst[i] = nsimd::scalar_{op_name}(a0[i], s);
           }}
         }}   
 
-        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+        void compute_result({typ} *dst, {typ} *a0, size_t n, int s) {{
           sycl::queue(sycl::default_selector()).parallel_for(
-            sycl::id<2>({gpu_params}), [=](sycl::id<2> id){{
-                kernel(dst, a0, n, s, id);
+            sycl::range<2>({gpu_params}), [=](sycl::item<2> item){{
+                kernel(dst, a0, n, s, item);
             }}       
           );
         }}
@@ -596,19 +596,19 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 
         #elif defined(NSIMD_SYCL)
 
-        inline void kernel({typ} *dst, {typ} *a0, unsigned int n, 
-                           sycl::id<2> id) {{
-          int i = id.get_id(0) * id.get_range()[0] + id.get_id(1); 
+        inline void kernel({typ} *dst, {typ} *a0, size_t n, 
+                           sycl::item<2> item) {{
+          size_t i = item.get_id(1) * item.get_range()[0] + item.get_id(0); 
           if (i < n) {{
-            dst[i] = nsimd::scalar_{op_name}({typ}(), nsimd::gpu_{op_name}(
+            dst[i] = nsimd::scalar_{op_name}({typ}(), nsimd::scalar_{op_name}(
                          {totyp}(), a0[i]));
           }}
         }}
 
-        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+        void compute_result({typ} *dst, {typ} *a0, size_t n) {{
           sycl::queue(sycl::default_selector()).parallel_for(
-            sycl::id<2>({gpu_params}), [=](sycl::id<2> id){{
-                kernel(dst, a0, n, id);
+            sycl::range<2>({gpu_params}), [=](sycl::item<2> item){{
+                kernel(dst, a0, n, item);
             }}       
           );
         }}
@@ -811,18 +811,18 @@ def gen_tests_for(opts, t, operator):
 
         #elif defined(NSIMD_SYCL)
 
-        inline void kernel({typ} *dst, {k_args}, unsigned int n, 
-                           sycl::id<2> id) {{
-          int i = id.get_id(0) * id.get_range()[0] + id.get_id(1); 
+        inline void kernel({typ} *dst, {k_args}, size_t n, 
+                           sycl::item<2> item) {{
+          size_t i = item.get_id(1) * item.get_range()[0] + item.get_id(0); 
           if (i < n) {{
             {cpu_kernel}
           }}
         }}
 
-        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+        void compute_result({typ} *dst, {k_args}, size_t n) {{
           sycl::queue(sycl::default_selector()).parallel_for(
-            sycl::id<2>({gpu_params}), [=](sycl::id<2> id){{
-                kernel(dst, {k_call_args}, n, id);
+            sycl::range<2>({gpu_params}), [=](sycl::item<2> item){{
+                kernel(dst, {k_call_args}, n, item);
             }}       
           );
         }}
@@ -973,6 +973,7 @@ def gen_functions(opts):
 
         m_call_args_cpu = s_call_args
         m_call_args_gpu = s_call_args
+        m_call_args_sycl = s_call_args
         to_type = ''
         ToType = ''
         v_op_name = op_name
@@ -985,6 +986,7 @@ def gen_functions(opts):
             s_ret_typ = 'ToType'
             s_tmpl = append('typename ToType', s_tmpl)
             m_call_args_gpu = append('to_type()', s_call_args)
+            m_call_args_sycl = append('to_type()', s_call_args)
             s_call_args = append('ToType()', s_call_args)
             v_tmpl = append('typename ToType', v_tmpl)
             to_type = '<to_type>'
@@ -1010,7 +1012,7 @@ def gen_functions(opts):
 
            #elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 
-           {signature} nsimd::scalar_{s_op_name}({s_call_args});
+           {signature} nsimd::scalar_{s_op_name}({m_call_args_sycl})
 
            #else
 
@@ -1045,6 +1047,7 @@ def gen_functions(opts):
                       m_call_args_cpu=m_call_args_cpu, to_type=to_type,
                       v_op_name=v_op_name, op_name=op_name, template=template,
                       m_call_args_gpu=m_call_args_gpu,
+                      m_call_args_sycl=m_call_args_sycl,
                       signature=get_signature(operator))
 
     # Write the code to file

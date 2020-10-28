@@ -34,41 +34,29 @@ SOFTWARE.
 #if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
 #include <CL/sycl.hpp>
 
-/* 
+namespace spmd {
 
-Singleton class that handles a global sycl::queue variable to use with SYCL.
-If we only have te deal woth contexts for SYCL, we can keep it as is.
-Otherwise, we can create a kinf od context_init and context_destroy macros
-to handle contexts with all SPMD implementations.
-
-*/
-
+// Singleton class that handles a global sycl::queue variable to use with SYCL.
+// If we only have te deal with contexts for SYCL, we can keep it as is.
+// Otherwise, we can create a kind of context_init and context_destroy macros
+// to handle contexts with all SPMD implementations.
 class _sycl_ctx
 {
 private:
-  sycl::queue _q;
-
-  _sycl_ctx() : _q(sycl::default_selector()) {}
-
-public:
-  static _sycl_ctx& get_instance()
-  {
-    static _sycl_ctx instance;
-    return instance;
-  }
-
-  sycl::queue &get_queue(){return this->_q;}
-
-  _sycl_ctx(_sycl_ctx const&) = delete;
-  
-  void operator=(_sycl_ctx const&) = delete;
+  static sycl::queue _q;
+public:  
+  static sycl::queue &get_queue(){ return _q; }
 };
 
-/* Get the global_queue */
+sycl::queue _sycl_ctx::_q = sycl::queue(sycl::default_selector());
+
+// Get the global_queue
 static inline sycl::queue _get_global_queue()
 {
-  return _sycl_ctx::get_instance().get_queue();
+  return _sycl_ctx::get_queue();
 }
+
+} // namespace spmd 
 #endif
 
 namespace spmd {
@@ -130,15 +118,15 @@ namespace spmd {
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
-  inline void name(__VA_ARGS__, int n, sycl::item<2> item) {                  \
-    int spmd_i_ = item.get_id(1) * item.get_range()[0] + item.get_id(0);      \
+  inline void name(__VA_ARGS__, size_t n, sycl::item<2> item) {               \
+    size_t spmd_i_ = item.get_id(1) * item.get_range()[0] + item.get_id(0);   \
     if (spmd_i_ < n) {
 
 // templated kernel definition
 #define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
   template <typename template_argument, int spmd_scalarBits_>                 \
-  inline void name(__VA_ARGS__, unsigned int n, sycl::item<2> item) {         \
-    int spmd_i_ = item.get_id(1) * item.get_range()[0] + item.get_id(0);      \
+  inline void name(__VA_ARGS__, size_t n, sycl::item<2> item) {               \
+    size_t spmd_i_ = item.get_id(1) * item.get_range()[0] + item.get_id(0);   \
     if (spmd_i_ < n) {
 
 #endif
@@ -206,12 +194,12 @@ namespace spmd {
 // launch 1d kernel SYCL
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits, threads_per_block, n,   \
                               ...)                                            \
-  _get_global_queue()                                                         \
+  spmd::_get_global_queue()                                                   \
       .parallel_for(                                                          \
           sycl::range<2>((n + threads_per_block - 1) / threads_per_block,     \
                          threads_per_block),                                  \
           [=](sycl::item<2> item) {                                           \
-            name<spmd_scalar_bits>(__VA_ARGS__, (int)n, item);                \
+            name<spmd_scalar_bits>(__VA_ARGS__, (size_t)n, item);             \
           })                                                                  \
       .wait();
 
@@ -265,8 +253,14 @@ template <> struct type_t<64> {
 #define k_unmasked_load(base_addr) k_load(base_addr)
 
 // f32 <--> f16 conversions
+#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
+  defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 #define k_f32_to_f16(a) __float2half(a)
 #define k_f16_to_f32(a) __half2float(a)
+#else
+#define k_f32_to_f16(a) nsimd_f32_to_f16(a)
+#define k_f16_to_f32(a) nsimd_f16_to_f32(a)
+#endif
 
 // assignment statement
 #define k_set(var, value)                                                     \
