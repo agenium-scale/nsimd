@@ -237,8 +237,30 @@ phony tests.cpp98 deps $cpp98.files
 phony tests.cpp11 deps $cpp11.files
 phony tests.cpp20 deps $cpp20.files
 
-#phony tests deps $c89.files$ $c99.files$ $cpp98.files$ $cpp11.files$
-phony tests deps $c11.files$ $cpp98.files$ $cpp11.files$
+# Phony target for tests
+
+set phony_tests_for_               = tests.c89 tests.c99 tests.cpp98 \
+                                     tests.cpp11
+set phony_tests_for_cpu            = $phony_tests_for_
+set phony_tests_for_cuda           = tests.cpp98 tests.cpp11
+set phony_tests_for_rocm           = tests.cpp11
+set phony_tests_for_dpcpp          = tests.cpp11
+set phony_tests_for_sse2           = $phony_tests_for_
+set phony_tests_for_sse42          = $phony_tests_for_
+set phony_tests_for_avx            = $phony_tests_for_
+set phony_tests_for_avx2           = $phony_tests_for_
+set phony_tests_for_avx512_knl     = $phony_tests_for_
+set phony_tests_for_avx512_skylake = $phony_tests_for_
+set phony_tests_for_neon128        = $phony_tests_for_
+set phony_tests_for_aarch64        = $phony_tests_for_
+set phony_tests_for_sve            = $phony_tests_for_
+set phony_tests_for_sve128         = $phony_tests_for_
+set phony_tests_for_sve256         = $phony_tests_for_
+set phony_tests_for_sve512         = $phony_tests_for_
+set phony_tests_for_sve1024        = $phony_tests_for_
+set phony_tests_for_sve2048        = $phony_tests_for_
+
+phony tests deps ${phony_tests_for_$simd$}
 
 ## Examples
 
