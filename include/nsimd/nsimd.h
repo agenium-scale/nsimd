@@ -750,8 +750,8 @@ namespace nsimd {
   #define NSIMD_CONCEPT_SIMD_EXT typename
 #endif
 
-// ----------------------------------------------------------------------------
-// For ARM SVE we need a special struct
+/* ------------------------------------------------------------------------- */
+/* For ARM SVE we need a special struct */
 
 #ifdef NSIMD_SVE
   #define NSIMD_STRUCT __sizeless_struct
@@ -1073,14 +1073,16 @@ struct simd_traits {};
 } // namespace nsimd
 
 // Those are for writing shorter code
-#define NSIMD_NSV(T, SIMD_EXT) typename simd_traits<T, SIMD_EXT>::simd_vector
+#define NSIMD_NSV(T, SIMD_EXT)                                                \
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vector
 #define NSIMD_NSVX2(T, SIMD_EXT)                                              \
-  typename simd_traits<T, SIMD_EXT>::simd_vectorx2
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vectorx2
 #define NSIMD_NSVX3(T, SIMD_EXT)                                              \
-  typename simd_traits<T, SIMD_EXT>::simd_vectorx3
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vectorx3
 #define NSIMD_NSVX4(T, SIMD_EXT)                                              \
-  typename simd_traits<T, SIMD_EXT>::simd_vectorx4
-#define NSIMD_NSVL(L, SIMD_EXT) typename simd_traits<L, SIMD_EXT>::simd_vectorl
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vectorx4
+#define NSIMD_NSVL(L, SIMD_EXT)                                               \
+  typename nsimd::simd_traits<L, SIMD_EXT>::simd_vectorl
 
 #endif
 
@@ -1889,6 +1891,17 @@ void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
 /* Scalar utilisties */
 
 #include <nsimd/scalar_utilities.h>
+
+/* ------------------------------------------------------------------------- */
+/* Some undefs */
+
+#if NSIMD_CXX > 0
+#undef NSIMD_NSV
+#undef NSIMD_NSVX2
+#undef NSIMD_NSVX3
+#undef NSIMD_NSVX4
+#undef NSIMD_NSVL
+#endif
 
 /* ------------------------------------------------------------------------- */
 
