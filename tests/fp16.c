@@ -121,18 +121,18 @@ int main(void) {
   if (test_f16_to_f32(0x3C00, 0x3f800000)) {
     return EXIT_FAILURE;
   }
-  if (test_f16_to_f32(0x13e, 0x379F0000)) { // 1.8954277E-5
+  if (test_f16_to_f32(0x13e, 0x379F0000)) { /* 1.8954277E-5 */
     return EXIT_FAILURE;
   }
-  if (test_f16_to_f32(0x977e, 0xBAEFC000)) { // -1.8291473E-3
-    return EXIT_FAILURE;
-  }
-
-  if (test_f32_to_f16(0xC7BDC4FC, 0xFC00)) { // -97161.97
+  if (test_f16_to_f32(0x977e, 0xBAEFC000)) { /* -1.8291473E-3 */
     return EXIT_FAILURE;
   }
 
-  if (test_f32_to_f16(0x37c3642c, 0x187)) { // 2.329246e-05
+  if (test_f32_to_f16(0xC7BDC4FC, 0xFC00)) { /* -97161.97 */
+    return EXIT_FAILURE;
+  }
+
+  if (test_f32_to_f16(0x37c3642c, 0x187)) { /* 2.329246e-05 */
     return EXIT_FAILURE;
   }
 
@@ -140,7 +140,7 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
-  /* Test rounding when the input f32 is perfectly between 2 f16*/
+  /* Test rounding when the input f32 is perfectly between 2 f16 */
   if (test_f32_to_f16(0xC66AD000, 0xf356)) {
     return EXIT_FAILURE;
   }

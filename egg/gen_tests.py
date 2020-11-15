@@ -105,23 +105,24 @@ double get_2th_power(int a) {
 '''
 
 relative_distance_cpp = \
-    '''
+'''
 double relative_distance(double a, double b) {
   double ma, mi;
 
-  if (std::isnan(a) && std::isnan(b)) {
+  if (nsimd::isnan(a) && nsimd::isnan(b)) {
     return 0.0;
   }
 
-  if (std::isnan(a) || std::isnan(b)) {
+  if (nsimd::isnan(a) || nsimd::isnan(b)) {
     return -1.;
   }
 
-  if (std::isinf(a) && std::isinf(b) && ((a > 0 && b > 0) || (a<0&&b<0))) {
+  if (nsimd::isinf(a) && nsimd::isinf(b) &&
+      ((a > 0 && b > 0) || (a < 0 && b < 0))) {
     return 0.0;
   }
 
-  if (std::isinf(a) || std::isinf(b)) {
+  if (nsimd::isinf(a) || nsimd::isinf(b)) {
     return -1.;
   }
 
@@ -141,26 +142,26 @@ double relative_distance(double a, double b) {
 ''' + get_2th_power
 
 relative_distance_c = \
-    '''
+'''
 double relative_distance(double a, double b) {
   double ma, mi;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
-  if (isnan(a) && isnan(b)) {
+  if (nsimd_isnan_f64(a) && nsimd_isnan_f64(b)) {
     return 0.0;
   }
 
-  if (isnan(a) || isnan(b)) {
+  if (nsimd_isnan_f64(a) || nsimd_isnan_f64(b)) {
     return -1.;
   }
 
-  if (isinf(a) * isinf(b) > 0) {
+  if (nsimd_isinf_f64(a) * nsimd_isinf_f64(b) > 0) {
     return 0.0;
   }
 
-  if (isinf(a) || isinf(b)) {
+  if (nsimd_isinf_f64(a) || nsimd_isinf_f64(b)) {
     return -1.;
   }
 #pragma GCC diagnostic pop
@@ -546,17 +547,17 @@ def gen_test(opts, op, typ, lang, ulps):
                   #pragma GCC diagnostic ignored "-Wconversion"
                   #pragma GCC diagnostic ignored "-Wdouble-promotion"
 
-                  // None of the architecture correctly manage NaN with the
-                  // function min and max. According to IEEE754, min(a, NaN)
-                  // should return a but every architecture returns NaN.
-                  if({isnan}({right})) {{
+                  /* None of the architecture correctly manage NaN with the  */
+                  /* function min and max. According to IEEE754, min(a, NaN) */
+                  /* should return a but every architecture returns NaN.     */
+                  if (nsimd_isnan_f64({right})) {{
                     return 0;
                   }}
 
-                  // PPC doesn't correctly manage +Inf and -Inf in relation
-                  // with NaN either (min(NaN, -Inf) returns -Inf).
+                  /* PPC doesn't correctly manage +Inf and -Inf in relation */
+                  /* with NaN either (min(NaN, -Inf) returns -Inf).         */
                   #ifdef NSIMD_POWERPC
-                  if({isinf}({right})) {{
+                  if (nsimd_isinf_f64({right})) {{
                     return 0;
                   }}
                   #endif
@@ -564,9 +565,7 @@ def gen_test(opts, op, typ, lang, ulps):
                   return {left} != {right};
                   #pragma GCC diagnostic pop
                   '''.format(left=left, right=right,
-                          uT=common.bitfield_type[typ],
-                          isnan='isnan' if lang=='c_base' else 'std::isnan',
-                          isinf='isinf' if lang=='c_base' else 'std::isinf')
+                             uT=common.bitfield_type[typ])
     else:
         if typ == 'f16':
             left = 'nsimd_f16_to_f32(mpfr_out)'
@@ -598,26 +597,27 @@ def gen_test(opts, op, typ, lang, ulps):
                 if nan_error:
                     # Ignore error with NaN output, we know we will encounter
                     # some
-                    comp += 'if ({isnan}({left})) return 0;\n'
+                    comp += 'if (nsimd_isnan_f64({left})) return 0;\n'
                 else:
                     # Return false if one is NaN and not the other
-                    comp += 'if ({isnan}({left}) ^ isnan({rigth})) return 1;\n'
+                    comp += 'if (nsimd_isnan_f64({left}) ^ ' \
+                                'nsimd_isnan_f64({rigth})) return 1;\n'
 
                 if inf_error:
                     # Ignore error with infinite output, we know we will
                     # encounter some
-                    comp += 'if ({isinf}({left})) return 0;\n'
+                    comp += 'if (nsimd_isinf_f64({left})) return 0;\n'
                 else:
                     # One is infinite and not the other
-                    comp += \
-                    'if ({isinf}({left}) ^ {isinf}({rigth})) return 1;\n'
+                    comp += 'if (nsimd_isinf_f64({left}) ^ ' \
+                                'nsimd_isinf_f64({rigth})) return 1;\n'
                     # Wrong sign for infinite
-                    comp += 'if ({isinf}({left}) && {isinf}({rigth}) ' \
-                                   '&& ({right}*{left} < 0)) ' \
-                                       'return 1;\n'
+                    comp += 'if (nsimd_isinf_f64({left}) && ' \
+                                'nsimd_isinf_f64({rigth}) && ' \
+                                '({right} * {left} < 0)) return 1;\n'
 
                 comp += '''
-                if ({isnormal}({left})) {{
+                if (nsimd_isnormal_f32({left})) {{
                     return relative_distance((double){left}, (double){right})
                              > get_2th_power(-({nbits}));
                 }} else {{
@@ -628,21 +628,11 @@ def gen_test(opts, op, typ, lang, ulps):
                 '''
 
                 if lang == 'c_base':
-                    comp = comp.format(left=left,
-                                       right=right,
-                                       nbits=nbits,
-                                       nbits_dnz=nbits_dnz,
-                                       isnormal='isnormal',
-                                       isinf='isinf',
-                                       isnan='isnan')
+                    comp = comp.format(left=left, right=right, nbits=nbits,
+                                       nbits_dnz=nbits_dnz)
                 else:
-                    comp = comp.format(left=left,
-                                       right=right,
-                                       nbits=nbits,
-                                       nbits_dnz=nbits_dnz,
-                                       isnormal='std::isnormal',
-                                       isinf='std::isinf',
-                                       isnan='std::isnan')
+                    comp = comp.format(left=left, right=right, nbits=nbits,
+                                       nbits_dnz=nbits_dnz)
 
             else:
                 nbits = {'f16': '10', 'f32': 21, 'f64': '48'}
@@ -657,11 +647,11 @@ def gen_test(opts, op, typ, lang, ulps):
                 '''#pragma GCC diagnostic push
                    #pragma GCC diagnostic ignored "-Wconversion"
                    #pragma GCC diagnostic ignored "-Wdouble-promotion"
-                   return {left} != {right}
-                        && (!{isnan}({left}) || !{isnan}({right}));
-                   #pragma GCC diagnostic pop
-                 '''.format(left=left, right=right,
-                            isnan='isnan' if lang=='c_base' else 'std::isnan')
+                   return {left} != {right} &&
+                          (!nsimd_isnan_f64({left}) ||
+                           !nsimd_isnan_f64({right}));
+                   #pragma GCC diagnostic pop'''. \
+                   format(left=left, right=right)
             else:
                 comp = 'return {} != {};'.format(left, right)
 
@@ -1827,19 +1817,19 @@ def gen_load_store(opts, op, typ, lang):
     if lang == 'c_base':
         load_store = \
             '''vecx{deg}({typ}) v = vload{deg}{align}(&vin[i], {typ});
-           vstore{deg}{align}(&vout[i], {variables}, {typ});'''. \
-            format(deg=deg, typ=typ, align=align, variables=variables)
+               vstore{deg}{align}(&vout[i], {variables}, {typ});'''. \
+               format(deg=deg, typ=typ, align=align, variables=variables)
     elif lang == 'cxx_base':
         load_store = \
             '''vecx{deg}({typ}) v = nsimd::load{deg}{align}(&vin[i], {typ}());
-           nsimd::store{deg}{align}(&vout[i], {variables}, {typ}());'''. \
-            format(deg=deg, typ=typ, align=align, variables=variables)
+               nsimd::store{deg}{align}(&vout[i], {variables}, {typ}());'''. \
+               format(deg=deg, typ=typ, align=align, variables=variables)
     else:
         load_store = \
             '''nsimd::packx{deg}<{typ}> v = nsimd::load{deg}{align}<
                                           nsimd::packx{deg}<{typ}> >(&vin[i]);
-           nsimd::store{deg}{align}(&vout[i], {variables});'''. \
-            format(deg=deg, typ=typ, align=align, variables=variables)
+               nsimd::store{deg}{align}(&vout[i], {variables});'''. \
+               format(deg=deg, typ=typ, align=align, variables=variables)
     if typ == 'f16':
         rand = '*((u16*)vin + i) = nsimd_f32_to_u16((float)(rand() % 10));'
         comp = '*((u16*)vin + i) != *((u16 *)vout + i)'
@@ -1853,60 +1843,61 @@ def gen_load_store(opts, op, typ, lang):
         unalign = ''
 
     with common.open_utf8(opts, filename) as out:
-        out.write(
-            '''{includes}
+        out.write('''{includes}
 
-           #define SIZE (2048 / {sizeof})
+        #define SIZE (2048 / {sizeof})
 
-           #define STATUS "test of {op_name} over {typ}"
+        #define STATUS "test of {op_name} over {typ}"
 
-           #define CHECK(a) {{ \\
-             errno = 0; \\
-             if (!(a)) {{ \\
-               fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
-                       __LINE__, strerror(errno)); \\
-               fflush(stderr); \\
-               exit(EXIT_FAILURE); \\
-             }} \\
-           }}
+        #define CHECK(a) {{ \\
+          errno = 0; \\
+          if (!(a)) {{ \\
+            fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                    __LINE__, strerror(errno)); \\
+            fflush(stderr); \\
+            exit(EXIT_FAILURE); \\
+          }} \\
+        }}
 
-           int main(void) {{
-             int i, vi;
-             {typ} *vin, *vout;
-             int len = vlen({typ});
-             int n = SIZE * {deg} * len;
+        int main(void) {{
+          int i, vi;
+          {typ} *vin, *vout;
+          int len = vlen({typ});
+          int n = SIZE * {deg} * len;
 
-             fprintf(stdout, "test of {op_name} over {typ}...\\n");
-             CHECK(vin = ({typ}*)nsimd_aligned_alloc(n * {sizeof} {unalign}) {unalign});
-             CHECK(vout = ({typ}*)nsimd_aligned_alloc(n * {sizeof} {unalign}) {unalign});
+          fprintf(stdout, "test of {op_name} over {typ}...\\n");
+          CHECK(vin = ({typ}*)nsimd_aligned_alloc(
+                                n * {sizeof} {unalign}) {unalign});
+          CHECK(vout = ({typ}*)nsimd_aligned_alloc(
+                                   n * {sizeof} {unalign}) {unalign});
 
-             /* Fill with random data */
-             for (i = 0; i < n; i++) {{
-               {rand}
-             }}
+          /* Fill with random data */
+          for (i = 0; i < n; i++) {{
+            {rand}
+          }}
 
-             /* Load and put back data into vout */
-             for (i = 0; i < n; i += {deg} * len) {{
-               {load_store}
-             }}
+          /* Load and put back data into vout */
+          for (i = 0; i < n; i += {deg} * len) {{
+            {load_store}
+          }}
 
-             /* Compare results */
-             for (vi = 0; vi < SIZE; vi += len) {{
-               for (i = vi; i < vi + len; i++) {{
-                 if ({comp}) {{
-                   fprintf(stdout, STATUS "... FAIL\\n");
-                   fflush(stdout);
-                   return -1;
-                 }}
-               }}
-             }}
+          /* Compare results */
+          for (vi = 0; vi < SIZE; vi += len) {{
+            for (i = vi; i < vi + len; i++) {{
+              if ({comp}) {{
+                fprintf(stdout, STATUS "... FAIL\\n");
+                fflush(stdout);
+                return -1;
+              }}
+            }}
+          }}
 
-             fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
-             return EXIT_SUCCESS;
-           }}'''.format(includes=get_includes(lang), op_name=op.name,
-                        typ=typ, rand=rand, year=date.today().year, deg=deg,
-                        sizeof=common.sizeof(typ), load_store=load_store,
-                        comp=comp, unalign=unalign))
+          fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
+          return EXIT_SUCCESS;
+        }}'''.format(includes=get_includes(lang), op_name=op.name,
+                     typ=typ, rand=rand, year=date.today().year, deg=deg,
+                     sizeof=common.sizeof(typ), load_store=load_store,
+                     comp=comp, unalign=unalign))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
@@ -2522,13 +2513,16 @@ def gen_load_store_ravel(opts, op, typ, lang):
            }}
 
            int main(void) {{
-             fprintf(stdout, "test raveling of {op_name} over {typ}...\\n");
-
              {typ}* vin;
              {typ}* vout;
              int i;
              int len = vlen({typ});
              int n = {deg} * len;
+             int err=0;
+             vec({typ}) comp;
+             vecx{deg}({typ}) v;
+
+             fprintf(stdout, "test raveling of {op_name} over {typ}...\\n");
 
              CHECK(vin = ({typ}*)nsimd_aligned_alloc(n * {sizeof}));
              CHECK(vout = ({typ}*)nsimd_aligned_alloc(n * {sizeof}));
@@ -2539,10 +2533,7 @@ def gen_load_store_ravel(opts, op, typ, lang):
              }}
 
              /* Load data and check that each vector is correctly filled */
-             vecx{deg}({typ}) v = v{op_name}(vin, {typ});
-
-             int err=0;
-             vec({typ}) comp;
+             v = v{op_name}(vin, {typ});
 
              {check}
 
@@ -2998,7 +2989,7 @@ def gen_unpack_half(opts, op, typ, lang):
 
               {extra_code}
 
-              // {simd}
+              /* {simd} */
             ''' .format(year=date.today().year, typ=typ,
                         posix_c_source=posix_c_source,
                         includes=get_includes(lang),
@@ -3134,18 +3125,18 @@ def gen_unpack(opts, op, typ, lang):
     #define SIZE (2048 / {sizeof})
 
     #define CHECK(a) {{ \\
-    errno = 0; \\
-    if (!(a)) {{ \\
-    fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
-    __LINE__, strerror(errno)); \\
-    fflush(stderr); \\
-    exit(EXIT_FAILURE); \\
-    }} \\
+      errno = 0; \\
+      if (!(a)) {{ \\
+        fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                __LINE__, strerror(errno)); \\
+        fflush(stderr); \\
+        exit(EXIT_FAILURE); \\
+      }} \\
     }}
 
     {extra_code}
 
-    // {simd}
+    /* {simd} */
     ''' .format(year=date.today().year, typ=typ,
                 posix_c_source=posix_c_source,
                 includes=get_includes(lang),
@@ -3153,30 +3144,28 @@ def gen_unpack(opts, op, typ, lang):
                 sizeof=common.sizeof(typ), simd= opts.simd)
 
     if typ == 'f16':
-        rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
-        (f32)(1 << (rand() % 4)) /
-        (f32)(1 << (rand() % 4)))'''
+        rand = 'nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) * ' \
+               '(f32)(1 << (rand() % 4)) / (f32)(1 << (rand() % 4)))'
     else:
-        rand = '''({typ})(({typ})(2 * (rand() % 2) - 1) * ({typ})(1 << (rand() % 4))
-        / ({typ})(1 << (rand() % 4)))'''.format(typ=typ)
+        rand = '({typ})(({typ})(2 * (rand() % 2) - 1) * ' \
+               '({typ})(1 << (rand() % 4)) / ({typ})(1 << (rand() % 4)))'. \
+               format(typ=typ)
 
     if op.name == 'zip':
-        scalar_code = '''\
-        for(i = 0; i < step; i ++)
-        {{
-        out_ptr[2 * i] = vin1_ptr[i];
-        out_ptr[2 * i + 1] = vin2_ptr[i];
-        }}
-        '''
+        scalar_code = '''for(i = 0; i < step; i ++) {{
+                           out_ptr[2 * i] = vin1_ptr[i];
+                           out_ptr[2 * i + 1] = vin2_ptr[i];
+                         }}
+                         '''
     else:
-        scalar_code = '''\
-        for(i = 0; i < step / 2; i++)
-        {{
-        out_ptr[i] = vin1_ptr[2 * i];
-        out_ptr[step / 2 + i] = vin2_ptr[2 * i];
-        out_ptr[step + i] = vin1_ptr[2 * i + 1];
-        out_ptr[step + step / 2 + i] = vin2_ptr[2 * i + 1];
-        }}'''
+        scalar_code = \
+        '''for(i = 0; i < step / 2; i++) {{
+             out_ptr[i] = vin1_ptr[2 * i];
+             out_ptr[step / 2 + i] = vin2_ptr[2 * i];
+             out_ptr[step + i] = vin1_ptr[2 * i + 1];
+             out_ptr[step + step / 2 + i] = vin2_ptr[2 * i + 1];
+           }}
+           '''
 
     if typ == 'f16':
         comp = 'nsimd_f16_to_f32(vout[vi]) !=  nsimd_f16_to_f32(vout_ref[vi])'

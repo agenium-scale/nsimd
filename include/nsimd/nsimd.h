@@ -891,7 +891,7 @@ namespace nsimd {
   #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool_c
 
   // We need our own sizeof because of f16 which can be 4 bytes (i.e. a
-  // float) on systems where there is no support for native f16's.
+  // float) on systems where there is no support for native f16.
   template <typename T> struct sizeof_t { const size_t value = sizeof(T); };
   template <> struct sizeof_t<f16> { const size_t value = 2; };
 
@@ -1901,6 +1901,92 @@ void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
 #undef NSIMD_NSVX3
 #undef NSIMD_NSVX4
 #undef NSIMD_NSVL
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* isnan and isinf functions */
+
+NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
+#if NSIMD_C >= 1999
+  return isnan(a);
+#elif NSIMD_CXX >= 2011
+  return std::isnan(a);
+#else
+  /* We assume IEEE representation for f32's */
+  u32 b = nsimd_scalar_reinterpret_u32_f32(a);
+  return (((b >> 23) & 0xFF) == 0xFF) && ((b << 9) != 0u);
+#endif
+}
+
+NSIMD_INLINE int nsimd_isnan_f64(f64 a) {
+#if NSIMD_C >= 1999
+  return isnan(a);
+#elif NSIMD_CXX >= 2011
+  return std::isnan(a);
+#else
+  /* We assume IEEE representation for f64's */
+  u64 b = nsimd_scalar_reinterpret_u64_f64(a);
+  return (((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u);
+#endif
+}
+
+NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
+#if NSIMD_C >= 1999
+  return isinf(a);
+#elif NSIMD_CXX >= 2011
+  return std::isinf(a);
+#else
+  /* We assume IEEE representation for f32's */
+  u32 b = nsimd_scalar_reinterpret_u32_f32(a);
+  return (((b >> 23) & 0xFF) == 0xFF) && ((b << 9) == 0u);
+#endif
+}
+
+NSIMD_INLINE int nsimd_isinf_f64(f64 a) {
+#if NSIMD_C >= 1999
+  return isinf(a);
+#elif NSIMD_CXX >= 2011
+  return std::isinf(a);
+#else
+  /* We assume IEEE representation for f64's */
+  u64 b = nsimd_scalar_reinterpret_u64_f64(a);
+  return (((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) == 0u);
+#endif
+}
+
+NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
+#if NSIMD_C >= 1999
+  return isnormal(a);
+#elif NSIMD_CXX >= 2011
+  return std::isnormal(a);
+#else
+  /* We assume IEEE representation for f32's */
+  u32 b = nsimd_scalar_reinterpret_u32_f32(a);
+  return (((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u);
+#endif
+}
+
+NSIMD_INLINE int nsimd_isnormal_f64(f64 a) {
+#if NSIMD_C >= 1999
+  return isnormal(a);
+#elif NSIMD_CXX >= 2011
+  return std::isnormal(a);
+#else
+  /* We assume IEEE representation for f64's */
+  u64 b = nsimd_scalar_reinterpret_u64_f64(a);
+  return (((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u);
+#endif
+}
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+NSIMD_INLINE int isnan(f32 a) { return nsimd_isnan_f32(a); }
+NSIMD_INLINE int isnan(f64 a) { return nsimd_isnan_f64(a); }
+NSIMD_INLINE int isinf(f32 a) { return nsimd_isinf_f32(a); }
+NSIMD_INLINE int isinf(f64 a) { return nsimd_isinf_f64(a); }
+NSIMD_INLINE int isnormal(f32 a) { return nsimd_isnormal_f32(a); }
+NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
+} // namespace nsimd
 #endif
 
 /* ------------------------------------------------------------------------- */

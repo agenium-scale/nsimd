@@ -950,12 +950,12 @@ class Domain(object):
                     cases.append('case {n}: {{ {code} }};'. \
                                  format(n=j, code=union.code(typ)))
                 nested_code = '''
-                // Branch to one of the nested interval (union)
+                /* Branch to one of the nested interval (union) */
                 switch (rand() % {nunions}) {{
-                    {cases}
-                    default:
-                        // SHOULD NEVER HAPPEN! This removes compiler warning!
-                        return {type}();
+                  {cases}
+                  default:
+                    /* SHOULD NEVER HAPPEN! This removes compiler warning! */
+                    return {type}();
                 }}
                 '''.format(cases='\n'.join(cases), nunions=nunions, type=typ)
             code += '''
@@ -1004,7 +1004,7 @@ class Domain(object):
                                     alias[i] = 0u;
                                 }}
                             }} while ({test});
-                            '''.format(test=test, it=int(typlen)//8)
+                            '''.format(test=test, it=int(typlen) // 8)
 
                 ret += 'return ret;}'
         elif typ in ftypes:
@@ -1022,9 +1022,8 @@ class Domain(object):
                 for i, interval in enumerate(union):
                     if interval.logical_:
                         if typ == 'f16':
-                            ret += '''u16 tmp = ((u16)rand()%2);
-                                      memcpy((void *)&ret, (void *)&tmp,
-                                             sizeof(ret));'''
+                            ret += 'ret = nsimd_scalar_reinterpret_f16_u16(' \
+                                   '(u16)(rand() % 2));'
                         else:
                             ret += 'ret = ({})(rand()%2);'.format(typ)
                     else:
@@ -1033,7 +1032,7 @@ class Domain(object):
                             for(i=0; i<{it}; ++i) {{
                                 alias[i] = (u8)(rand() & 0xFF);
                             }}
-                            '''.format(it=int(typlen)//8)
+                            '''.format(it=int(typlen) // 8)
 
                 ret += 'return ret;}'
 
