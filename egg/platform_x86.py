@@ -1141,7 +1141,7 @@ def binlop2(func, simd_ext, typ):
             return binop2(func, simd_ext, typ, True)
         else:
             return binop2(func, simd_ext, typ)
-    else: # avx512
+    elif simd_ext == 'avx512_knl':
         if typ == 'f16':
             return '''nsimd_{simd_ext}_vlf16 ret;
                       ret.v0 = _{op_fct}_mask16({in0}.v0, {in1}.v0);
@@ -1149,15 +1149,30 @@ def binlop2(func, simd_ext, typ):
                       return ret;'''. \
                       format(op_fct=op_fct[func], **fmtspec)
         elif typ in ['f32', 'u32', 'i32']:
-            return 'return _{op_fct}_mask{le}({in0}, {in1});'. \
+            return 'return _{op_fct}_mask16({in0}, {in1});'. \
                    format(op_fct=op_fct[func], **fmtspec)
         else:
-            if simd_ext == 'avx512_knl':
-                return 'return (__mmask{le})({in0} {op} {in1});'. \
-                       format(op=op[func], **fmtspec)
-            else:
-                return 'return _{op_fct}_mask{le}({in0}, {in1});'. \
-                       format(op_fct=op_fct[func], **fmtspec)
+            return 'return (__mmask{le})({in0} {op} {in1});'. \
+                   format(op=op[func], **fmtspec)
+    elif simd_ext == 'avx512_skylake':
+        if typ == 'f16':
+            return '''nsimd_{simd_ext}_vlf16 ret;
+                      #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+                        ret.v0 = (__mmask16)({in0}.v0 {op} {in1}.v0);
+                        ret.v1 = (__mmask16)({in0}.v1 {op} {in1}.v1);
+                      #else
+                        ret.v0 = _{op_fct}_mask16({in0}.v0, {in1}.v0);
+                        ret.v1 = _{op_fct}_mask16({in0}.v1, {in1}.v1);
+                      #endif
+                      return ret;'''. \
+                      format(op_fct=op_fct[func], op=op[func], **fmtspec)
+        else:
+            return '''#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+                        return (__mmask{le})({in0} {op} {in1});
+                      #else
+                        return _{op_fct}_mask{le}({in0}, {in1});
+                      #endif'''.format(op_fct=op_fct[func], op=op[func],
+                                       **fmtspec)
 
 # -----------------------------------------------------------------------------
 # andnot

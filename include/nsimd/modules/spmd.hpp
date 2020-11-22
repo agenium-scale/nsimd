@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace spmd {
 
-#if NSIMD_CXX < 2011 && NSIMD_C < 1999
+#if NSIMD_CXX < 2011 || NSIMD_C < 1999
   #define NSIMD_VARIADIC_MACROS_IS_EXTENSION
 #endif
 

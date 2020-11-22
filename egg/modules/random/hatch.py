@@ -84,6 +84,7 @@ class Rand(object, metaclass=MAddToRands):
         res = '''
         #include <nsimd/modules/random/functions.hpp>
         #include "reference.hpp"
+        #include <iostream>
 
         int main() {{
           int res = EXIT_SUCCESS;
@@ -137,8 +138,8 @@ class Rand(object, metaclass=MAddToRands):
             for (int i=0; i<{nwords}; ++i) {{
               {compare}
 
-              if (memcmp(out_nsimd, &out[i*len],
-                       (u64){nwords} * sizeof(u{word_size}))) {{
+              if (memcmp(out_nsimd, &out[i * len],
+                         (u64)len * (u64)sizeof(u{word_size}))) {{
                 printf ("%i\\n", i);
                 for (int j=0; j<len; ++j) {{
                   printf ("%{l}u\\t(0x%{l}x)\\t\\t%{l}u\\t(0x%{l}x)\\n",

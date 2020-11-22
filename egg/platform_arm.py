@@ -370,37 +370,18 @@ def emulate_f64_neon(simd_ext, op, params):
                                  for i in range(0, len(params) - 1)])
     fmtspec2['ret_decl'] = 'nsimd_{}_{}f64 ret;'. \
                            format(simd_ext, 'v' if params[0] == 'v' else 'vl')
-    if common.CPU_NBITS == 64:
-        buf_set0 = '\n'.join('buf{i}.v0 = {ini}.v0;'. \
-                             format(i=i, ini=fmtspec['in{}'.format(i)]) \
-                             for i in range(0, len(params) - 1))
-        buf_set1 = '\n'.join('buf{i}.v0 = {ini}.v1;'. \
-                             format(i=i, ini=fmtspec['in{}'.format(i)]) \
-                             for i in range(0, len(params) - 1))
-        return '''{buf_ret_decl}
-                  {buf_decl}
-                  {ret_decl}
-                  {buf_set0}
-                  buf_ret = nsimd_{op}_cpu_f64({bufs});
-                  ret.v0 = buf_ret.v0;
-                  {buf_set1}
-                  buf_ret = nsimd_{op}_cpu_f64({bufs});
-                  ret.v1 = buf_ret.v0;
-                  return ret;'''. \
-                  format(buf_set0=buf_set0, buf_set1=buf_set1, **fmtspec2)
-    else:
-        buf_set = '\n'.join('''buf{i}.v0 = {ini}.v0;
-                               buf{i}.v1 = {ini}.v1;'''. \
-                               format(i=i, ini=fmtspec['in{}'.format(i)]) \
-                               for i in range(0, arity))
-        return '''{buf_ret_decl}
-                  {buf_decl}
-                  {ret_decl}
-                  {buf_set}
-                  buf_ret = nsimd_{op}_cpu_f64({bufs});
-                  ret.v0 = buf_ret.v0;
-                  ret.v1 = buf_ret.v1;
-                  return ret;'''.format(buf_set=buf_set, **fmtspec2)
+    buf_set = '\n'.join('''buf{i}.v0 = {ini}.v0;
+                           buf{i}.v1 = {ini}.v1;'''. \
+                           format(i=i, ini=fmtspec['in{}'.format(i)]) \
+                           for i in range(0, len(params) - 1))
+    return '''{buf_ret_decl}
+              {buf_decl}
+              {ret_decl}
+              {buf_set}
+              buf_ret = nsimd_{op}_cpu_f64({bufs});
+              ret.v0 = buf_ret.v0;
+              ret.v1 = buf_ret.v1;
+              return ret;'''.format(buf_set=buf_set, **fmtspec2)
 
 # -----------------------------------------------------------------------------
 
