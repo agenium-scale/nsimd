@@ -1287,19 +1287,20 @@ def fmafnma3(op, simd_ext, typ):
 # FMS and FNMS
 
 def fmsfnms3(op, simd_ext, typ):
-    emul = \
-    '''return nsimd_neg_{simd_ext}_{typ}(nsimd_{op2}_{simd_ext}_{typ}(
-                  {in0}, {in1}, {in2}));'''. \
-                  format(op2='fma' if op == 'fnms' else 'fnma', **fmtspec)
+    if typ in common.iutypes:
+        return \
+        '''return nsimd_neg_{simd_ext}_{typ}(nsimd_{op2}_{simd_ext}_{typ}(
+                      {in0}, {in1}, {in2}));'''. \
+                      format(op2='fma' if op == 'fnms' else 'fnma', **fmtspec)
     if simd_ext in neon:
-        return emul
+        return \
+        '''return nsimd_{op2}_{simd_ext}_{typ}({in0}, {in1},
+                      nsimd_neg_{simd_ext}_{typ}({in2}));'''. \
+                      format(op2='fma' if op == 'fms' else 'fnma', **fmtspec)
     else:
-        if typ in common.iutypes:
-            return emul
-        else:
-            armop = {'fnms': 'nmla', 'fms': 'nmls'}
-            return 'return sv{armop}_{suf}_z({svtrue}, {in2}, {in1}, {in0});'. \
-                   format(armop=armop[op], **fmtspec)
+        armop = {'fnms': 'nmla', 'fms': 'nmls'}
+        return 'return sv{armop}_{suf}_z({svtrue}, {in2}, {in1}, {in0});'. \
+               format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
 # Neg
