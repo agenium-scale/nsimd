@@ -65,7 +65,7 @@ class Rand(object, metaclass=MAddToRands):
             '''.format(i=i, word_size=word_size)
 
         input_initilization = \
-                'memset(in, 0, sizeof(u{}) * {} * (u64)len);\n'. \
+                'memset(in, 0, sizeof(u{}) * {} * ulen);\n'. \
                 format(word_size, nwords)
         for i in range (0, nwords):
             input_initilization += 'in_pack.v{} = nsimd::pack<u{}>(0);'. \
@@ -79,12 +79,18 @@ class Rand(object, metaclass=MAddToRands):
                 }}
                 '''.format(i=i)
 
-        l = 'l' if word_size==64 else ''
+        l = 'll' if word_size == 64 else ''
 
         res = '''
         #include <nsimd/modules/random/functions.hpp>
         #include "reference.hpp"
         #include <iostream>
+
+        #ifdef NSIMD_LONGLONG_IS_EXTENSION
+          #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+            #pragma GCC diagnostic ignored "-Wformat"
+          #endif
+        #endif
 
         int main() {{
           int res = EXIT_SUCCESS;
@@ -93,15 +99,16 @@ class Rand(object, metaclass=MAddToRands):
           nsimd::packx{nwords}<u{word_size}> in_pack;
           nsimd::packx{nwords}<u{word_size}> out_pack;
 
-          const i64 len = nsimd::len(u{word_size}());
+          const int len = nsimd::len(u{word_size}());
+          const unsigned int ulen = (unsigned int)len;
 
-          u{word_size} *key = (u{word_size}*)malloc((u64)len *
+          u{word_size} *key = (u{word_size}*)malloc(ulen *
                                 sizeof(u{word_size}) * {key_size});
-          u{word_size} *in = (u{word_size}*)malloc((u64)len *
+          u{word_size} *in = (u{word_size}*)malloc(ulen *
                                sizeof(u{word_size}) * {nwords});
-          u{word_size} *out = (u{word_size}*)malloc((u64)len *
+          u{word_size} *out = (u{word_size}*)malloc(ulen *
                                 sizeof(u{word_size}) * {nwords});
-          u{word_size} *out_nsimd = (u{word_size}*)malloc((u64)len *
+          u{word_size} *out_nsimd = (u{word_size}*)malloc(ulen *
                                       sizeof(u{word_size}));
 
           tab{word_size}x{nwords}_t in_ref;
@@ -139,7 +146,7 @@ class Rand(object, metaclass=MAddToRands):
               {compare}
 
               if (memcmp(out_nsimd, &out[i * len],
-                         (u64)len * (u64)sizeof(u{word_size}))) {{
+                         ulen * sizeof(u{word_size}))) {{
                 printf ("%i\\n", i);
                 for (int j=0; j<len; ++j) {{
                   printf ("%{l}u\\t(0x%{l}x)\\t\\t%{l}u\\t(0x%{l}x)\\n",
@@ -154,7 +161,7 @@ class Rand(object, metaclass=MAddToRands):
             }}
 
             in_pack = out_pack;
-            memcpy(in, out, sizeof(u{word_size}) * {nwords} * (u64)len);
+            memcpy(in, out, sizeof(u{word_size}) * {nwords} * ulen);
           }}
 
           fprintf(stdout, "... OK\\n");
@@ -271,8 +278,8 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
 
   nsimd::pack<u64> tmp3 = tmp1 + tmp2;
 
-  nsimd::pack<u64> _1 = nsimd::set1(nsimd::pack<u64>(), 1lu);
-  nsimd::pack<u64> _0 = nsimd::set1(nsimd::pack<u64>(), 0lu);
+  nsimd::pack<u64> _1 = nsimd::set1(nsimd::pack<u64>(), (u64)1);
+  nsimd::pack<u64> _0 = nsimd::set1(nsimd::pack<u64>(), (u64)0);
 
   nsimd::pack<u64> carry =
       nsimd::if_else1((tmp3 < tmp1) || (tmp3 < tmp2), _1, _0);

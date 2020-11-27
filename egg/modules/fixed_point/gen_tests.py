@@ -82,7 +82,8 @@ static double __get_numeric_precision() {
 comparison_fp = """\
 template <uint8_t lf, uint8_t rt>
 bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
-  return abs(double(val) - ref) <= __get_numeric_precision<lf, rt>();
+  return nsimd_scalar_abs_f64(double(val) - ref) <=
+           __get_numeric_precision<lf, rt>();
 }
 
 """

@@ -29,37 +29,30 @@ import sys
 
 def get_put_impl(simd_ext):
     args = {
-      'i8' :      ['"%d"', '(int)buf[i]'],
-      'u8' :      ['"%d"', '(int)buf[i]'],
-      'i16':      ['"%d"', '(int)buf[i]'],
-      'u16':      ['"%d"', '(int)buf[i]'],
-      'i32':      ['"%d"', 'buf[i]'],
-      'u32':      ['"%u"', 'buf[i]'],
-      'i64':      ['"%ld"', 'buf[i]'],
-      'u64':      ['"%lu"', 'buf[i]'],
-      'i64_msvc': ['"%lld"', 'buf[i]'],
-      'u64_msvc': ['"%llu"', 'buf[i]'],
-      'f16':      ['"%e"', '(double)nsimd_f16_to_f32(buf[i])'],
-      'f32':      ['"%e"', '(double)buf[i]'],
-      'f64':      ['"%e"', 'buf[i]'],
+      'i8' : ['"%d"', '(int)buf[i]'],
+      'u8' : ['"%d"', '(int)buf[i]'],
+      'i16': ['"%d"', '(int)buf[i]'],
+      'u16': ['"%d"', '(int)buf[i]'],
+      'i32': ['"%d"', 'buf[i]'],
+      'u32': ['"%u"', 'buf[i]'],
+      'i64': ['"%lld"', 'buf[i]'],
+      'u64': ['"%llu"', 'buf[i]'],
+      'f16': ['"%e"', '(double)nsimd_f16_to_f32(buf[i])'],
+      'f32': ['"%e"', '(double)buf[i]'],
+      'f64': ['"%e"', 'buf[i]'],
     }
-    ret = '''extern "C" {
+    ret = '''#ifdef NSIMD_LONGLONG_IS_EXTENSION
+               #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+                 #pragma GCC diagnostic ignored "-Wformat"
+               #endif
+             #endif
 
              #include <cstdio>
 
+             extern "C" {
+
              '''
     for typ in common.types:
-
-        if typ in ['i64', 'u64']:
-            fprintf = '''#if defined(NSIMD_IS_MSVC ) || (NSIMD_WORD_SIZE == 32)
-                           code = fprintf(out, {fmt_msvc}, {val});
-                         #else
-                           code = fprintf(out, {fmt}, {val});
-                         #endif'''.format(fmt_msvc=args[typ + '_msvc'][0],
-                                          fmt=args[typ][0], val=args[typ][1])
-        else:
-            fprintf = 'code = fprintf(out, {fmt}, {val});'. \
-                      format(fmt=args[typ][0], val=args[typ][1])
 
         fmt = '''NSIMD_DLLEXPORT
            int nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
@@ -78,7 +71,7 @@ def get_put_impl(simd_ext):
                if (fmt != NULL) {{
                  code = fprintf(out, fmt, {val});
                }} else {{
-                 {fprintf}
+                 code = fprintf(out, {fmt}, {val});
                }}
                if (code < 0) {{
                  return -1;
@@ -99,16 +92,11 @@ def get_put_impl(simd_ext):
            {hbar}
            '''
 
-        ret += fmt\
-        .format(typ=typ, l='', simd_ext=simd_ext, hbar=common.hbar,
-                      fprintf=fprintf, val=args[typ][1])
-
-        ret += fmt\
-        .format(typ=typ, l='l', simd_ext=simd_ext, hbar=common.hbar,
-                      fprintf=fprintf, val=args[typ][1])
-    ret += \
-    '''} // extern "C"
-       '''
+        ret += fmt.format(typ=typ, l='', simd_ext=simd_ext, hbar=common.hbar,
+                          fmt=args[typ][0], val=args[typ][1])
+        ret += fmt.format(typ=typ, l='l', simd_ext=simd_ext, hbar=common.hbar,
+                          fmt=args[typ][0], val=args[typ][1])
+    ret += '} // extern "C"\n'
     return ret
 
 # -----------------------------------------------------------------------------

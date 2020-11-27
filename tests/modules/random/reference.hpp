@@ -58,6 +58,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* ------------------------------------------------------------------------- */
 /* Structs */
 /* ------------------------------------------------------------------------- */
+
 typedef struct {
   u64 v[4];
 } tab64x4_t;
@@ -90,23 +91,34 @@ typedef struct {
 /* ------------------------------------------------------------------------- */
 /* Helpers */
 
-__attribute__((always_inline)) inline u64 mulhilo64(u64 a, u64 b, u64 *hip) {
-  __uint128_t product = ((__uint128_t)a) * ((__uint128_t)b);
-  *hip = (u64)(product >> 64);
-  return (u64)product;
+NSIMD_INLINE u64 mulhilo64(u64 a, u64 b, u64 *hip) {
+  /*
+                           a1      a0
+                        x  b1      b0
+                        -------------
+                     a1b0+r00    a0b0
+          +  a1b1        b1a0
+          ---------------------------
+
+  */
+  u64 a0 = a & 0xFFFFFFFF;
+  u64 a1 = a >> 32;
+  u64 b0 = b & 0xFFFFFFFF;
+  u64 b1 = b >> 32;
+  *hip = (a1 * b1) + ((b0 * a1 + a0 * b1 + ((a0 * b0) >> 32)) >> 32);
+  return a * b;
 }
 
 /* ------------------------------------------------------------------------- */
 /* Philox 64x4 */
-__attribute__((always_inline)) inline tab64x2_t
-_philox4x64bumpkey(tab64x2_t key) {
+
+NSIMD_INLINE tab64x2_t _philox4x64bumpkey(tab64x2_t key) {
   key.v[0] += 0x9E3779B97F4A7C15UL;
   key.v[1] += 0xBB67AE8584CAA73BUL;
   return key;
 }
 
-__attribute__((always_inline)) inline tab64x4_t
-_philox4x64round(tab64x4_t ctr, tab64x2_t key) {
+NSIMD_INLINE tab64x4_t _philox4x64round(tab64x4_t ctr, tab64x2_t key) {
   u64 hi0;
   u64 hi1;
   u64 lo0 = mulhilo64(0xD2E7470EE14C6C93UL, ctr.v[0], &hi0);
@@ -186,14 +198,13 @@ tab64x4_t branson_philox4x64_R(unsigned int R, tab64x4_t ctr, tab64x2_t key) {
 
 /* ------------------------------------------------------------------------- */
 /* Philox 64x2 */
-__inline__ tab64x1_t _philox2x64bumpkey(tab64x1_t key) {
+
+NSIMD_INLINE tab64x1_t _philox2x64bumpkey(tab64x1_t key) {
   key.v[0] += 0x9E3779B97F4A7C15UL;
   return key;
 }
 
-__inline__ tab64x2_t _philox2x64round(tab64x2_t ctr, tab64x1_t key)
-    __attribute__((always_inline));
-__inline__ tab64x2_t _philox2x64round(tab64x2_t ctr, tab64x1_t key) {
+NSIMD_INLINE tab64x2_t _philox2x64round(tab64x2_t ctr, tab64x1_t key) {
   uint64_t hi;
   uint64_t lo = mulhilo64(0xD2B74407B1CE6E93UL, ctr.v[0], &hi);
   tab64x2_t out = {{hi ^ key.v[0] ^ ctr.v[1], lo}};
@@ -273,7 +284,8 @@ tab64x2_t branson_philox2x64_R(unsigned int R, tab64x2_t ctr, tab64x1_t key) {
 
 /* ------------------------------------------------------------------------- */
 /* Helpers */
-__inline__ u32 mulhilo32(u32 a, u32 b, u32 *hip) {
+
+NSIMD_INLINE u32 mulhilo32(u32 a, u32 b, u32 *hip) {
   u64 product = ((u64)a) * ((u64)b);
   *hip = (u32)(product >> 32);
   return (u32)product;
@@ -281,14 +293,14 @@ __inline__ u32 mulhilo32(u32 a, u32 b, u32 *hip) {
 
 /* ------------------------------------------------------------------------- */
 /* Philox 32x4 */
-__inline__ tab32x2_t _philox4x32bumpkey(tab32x2_t key) {
+
+NSIMD_INLINE tab32x2_t _philox4x32bumpkey(tab32x2_t key) {
   key.v[0] += ((uint32_t)0x9E3779B9);
   key.v[1] += ((uint32_t)0xBB67AE85);
   return key;
 }
-__inline__ tab32x4_t _philox4x32round(tab32x4_t ctr, tab32x2_t key)
-    __attribute__((always_inline));
-__inline__ tab32x4_t _philox4x32round(tab32x4_t ctr, tab32x2_t key) {
+
+NSIMD_INLINE tab32x4_t _philox4x32round(tab32x4_t ctr, tab32x2_t key) {
   uint32_t hi0;
   uint32_t hi1;
   uint32_t lo0 = mulhilo32(((uint32_t)0xD2511F53), ctr.v[0], &hi0);
@@ -368,14 +380,13 @@ tab32x4_t branson_philox4x32_R(unsigned int R, tab32x4_t ctr, tab32x2_t key) {
 
 /* ------------------------------------------------------------------------- */
 /* Philox 32x2 */
-__inline__ tab32x1_t _philox2x32bumpkey(tab32x1_t key) {
+
+NSIMD_INLINE tab32x1_t _philox2x32bumpkey(tab32x1_t key) {
   key.v[0] += ((uint32_t)0x9E3779B9);
   return key;
 }
 
-__inline__ tab32x2_t _philox2x32round(tab32x2_t ctr, tab32x1_t key)
-    __attribute__((always_inline));
-__inline__ tab32x2_t _philox2x32round(tab32x2_t ctr, tab32x1_t key) {
+NSIMD_INLINE tab32x2_t _philox2x32round(tab32x2_t ctr, tab32x1_t key) {
   uint32_t hi;
   uint32_t lo = mulhilo32(((uint32_t)0xd256d193), ctr.v[0], &hi);
   tab32x2_t out = {{hi ^ key.v[0] ^ ctr.v[1], lo}};

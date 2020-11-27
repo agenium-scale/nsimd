@@ -282,14 +282,13 @@ def get_content(op, typ, lang):
     nargs = range(1, len(op.params))
 
     if typ in common.ftypes:
-        code = ['''if ({classify}({f32_conv}(vin{i}[i])) == FP_SUBNORMAL) {{
+        code = ['''if (!nsimd_isnormal_{typ}({f32_conv}(vin{i}[i]))) {{
                      vin{i}[i] = {f16_conv}(0.f);
-                }}'''. \
-                format(i=i, f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                classify='fpclassify' if lang=='c_base' \
-                                      else 'std::fpclassify') for i in nargs]
-
+                   }}'''. \
+                   format(i=i,
+                          f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                          f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                          typ='f32' if typ == 'f16' else typ) for i in nargs]
         denormalize_inputs = '\n'.join(code)
     else:
         denormalize_inputs = ''
@@ -373,18 +372,16 @@ def get_content(op, typ, lang):
                    #pragma GCC diagnostic ignored "-Wconversion"
                    #pragma GCC diagnostic ignored "-Wdouble-promotion"
                    for (vi = i; vi < i+nsimd_len_cpu_{typ}(); ++vi) {{
-                       if ({classify}({f32_conv}(vout_ref[vi])) ==
-                           FP_SUBNORMAL) {{
-                           vout_ref[vi] = {f16_conv}(0.f);
-                       }}
+                     if (!nsimd_isnormal_{typ}({f32_conv}(vout_ref[vi]))) {{
+                       vout_ref[vi] = {f16_conv}(0.f);
+                     }}
                    }}
                    #pragma GCC diagnostic pop
                    #endif
-                   '''.format(
-                   typ=typ, f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                   f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                   classify='fpclassify' \
-                   if lang=='c_base' else 'std::fpclassify')
+                   '''. \
+                   format(f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
+                          f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
+                          typ='f32' if typ == 'f16' else typ)
 
         # Make vout_nsimd_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
