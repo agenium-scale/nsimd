@@ -92,8 +92,8 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 
 ## Some defaults
 
-set flags   = -Wall -fPIC -O3 -I$root$/include -DNDEBUG
-set cflags  = -std=c++14 $flags$
+set flags   = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
+set cflags  = -std=c++98 $flags$
 
 ## Default building rules
 
@@ -253,7 +253,7 @@ set phony_tests_for_avx512_knl     = $phony_tests_for_
 set phony_tests_for_avx512_skylake = $phony_tests_for_
 set phony_tests_for_neon128        = $phony_tests_for_
 set phony_tests_for_aarch64        = $phony_tests_for_
-set phony_tests_for_sve            = $phony_tests_for_
+set phony_tests_for_sve            = tests.c11 tests.cpp11
 set phony_tests_for_sve128         = $phony_tests_for_
 set phony_tests_for_sve256         = $phony_tests_for_
 set phony_tests_for_sve512         = $phony_tests_for_

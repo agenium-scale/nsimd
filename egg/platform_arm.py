@@ -684,7 +684,7 @@ def store1234(opts, simd_ext, typ, deg):
             format(im1=i - 1, i=i).format(deg=deg, **fmtspec) \
             for i in range(1, deg + 1)])
         return \
-        '''{soa_typ} tmp;
+        '''{soa_typ} tmp = svundef{deg}_{suf}();
            {fill_soa_typ}
            svst{deg}_{suf}({svtrue}, {in0}, tmp);'''. \
            format(soa_typ=get_native_soa_typ('sve', typ, deg), deg=deg,
