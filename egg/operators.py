@@ -1287,7 +1287,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
+    tests_ulps = common.ulps_from_relative_distance_power(11)
 
 class Rec8(Operator):
     full_name = 'reciprocal with relative error at most 2^{-8}'
@@ -1295,7 +1295,7 @@ class Rec8(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
+    tests_ulps = common.ulps_from_relative_distance_power(8)
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -1314,7 +1314,7 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
+    tests_ulps = common.ulps_from_relative_distance_power(11)
 
 class Rsqrt8(Operator):
     full_name = 'square root with relative error at most $2^{-8}$'
@@ -1322,7 +1322,7 @@ class Rsqrt8(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
+    tests_ulps = common.ulps_from_relative_distance_power(8)
 
 class Ziplo(Operator):
     full_name = 'zip low halves'

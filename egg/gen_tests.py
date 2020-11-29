@@ -176,15 +176,10 @@ int main(void) {{
     {vin_rand}
   }}
 
-  #ifdef NSIMD_DNZ_FLUSH_TO_ZERO
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wconversion"
-  #pragma GCC diagnostic ignored "-Wdouble-promotion"
+  /* we ensure that ipnuts are normal numbers */
   for (i = 0; i < SIZE; i++) {{
     {denormalize_inputs}
   }}
-  #pragma GCC diagnostic pop
-  #endif
 
   /* Fill vout_ref output vector with reference values */
   for (i = 0; i < SIZE; i += {cpu_step}) {{
@@ -347,7 +342,7 @@ def get_content(op, typ, lang):
             vout_nsimd_comp = '\n'.join(code)
     elif op.params == ['l', 'v', 'v']:
         vin_defi = \
-            '''{typ} *vin1, *vin2;
+        '''{typ} *vin1, *vin2;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
            CHECK(vin2 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))

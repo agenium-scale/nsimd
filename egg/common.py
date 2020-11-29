@@ -570,6 +570,13 @@ def load_ulps_informations(opts):
 
     return ulps
 
+def ulps_from_relative_distance_power(p):
+    return {
+      'f16': max(2 ** (11 - p), 1),
+      'f32': max(2 ** (24 - p), 1),
+      'f64': max(2 ** (53 - p), 1)
+    }
+
 # -----------------------------------------------------------------------------
 # Domain stuff
 
