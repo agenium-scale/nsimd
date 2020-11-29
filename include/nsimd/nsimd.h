@@ -994,52 +994,38 @@ template <> struct traits<f64> {
 /* ------------------------------------------------------------------------- */
 /* POPCNT: GCC and Clang have intrinsics */
 
+NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-
-NSIMD_INLINE int nsimd_popcnt32_(u32 a) { return __builtin_popcount(a); }
+  return __builtin_popcount(a);
+#elif defined(NSIMD_IS_MSVC)
+  return (int)__popcnt(a);
+#else
+  int i, ret = 0;
+  for (i = 0; i < 32; i++) {
+    ret += (int)((a >> i) & 1);
+  }
+  return ret;
+#endif
+}
 
 NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
+#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
 #if __SIZEOF_LONG__ == 4
   return __builtin_popcountl((u32)(a & 0xFFFFFFFF)) +
          __builtin_popcountl((u32)(a >> 32));
 #else
   return __builtin_popcountl(a);
 #endif
-}
-
-/* ------------------------------------------------------------------------- */
-/* POPCNT: MSVC has also an intrinsic for that */
-
 #elif defined(NSIMD_IS_MSVC)
-
-#include <intrin.h>
-
-NSIMD_INLINE int nsimd_popcnt32_(u32 a) { return (int)__popcnt(a); }
-
-NSIMD_INLINE int nsimd_popcnt64_(u64 a) { return (int)__popcnt64(a); }
-
-/* ------------------------------------------------------------------------- */
-/* POPCNT: Default naive implementation */
-
+  return (int)__popcnt64(a);
 #else
-
-NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
-  int i, ret = 0;
-  for (i = 0; i < 32; i++) {
-    ret += (int)((a >> i) & 1);
-  }
-  return ret;
-}
-
-NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
     ret += (int)((a >> i) & 1);
   }
   return ret;
-}
-
 #endif
+}
 
 /* ------------------------------------------------------------------------- */
 /* Macro to automatically include function depending on detected
@@ -1904,7 +1890,13 @@ void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* isnan and isinf functions */
+/* isnan, isnormal and isinf functions */
+
+NSIMD_INLINE int nsimd_isnan_f16(f16 a) {
+  /* We assume IEEE representation for f16's */
+  u16 b = nsimd_scalar_reinterpret_u16_f16(a);
+  return (((b >> 10) & 0x1F) == 0x1F) && ((b << 6) != 0u);
+}
 
 NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
 #if NSIMD_C >= 1999
@@ -1928,6 +1920,12 @@ NSIMD_INLINE int nsimd_isnan_f64(f64 a) {
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
   return (((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u);
 #endif
+}
+
+NSIMD_INLINE int nsimd_isinf_f16(f16 a) {
+  /* We assume IEEE representation for f16's */
+  u16 b = nsimd_scalar_reinterpret_u16_f16(a);
+  return (((b >> 10) & 0x1F) == 0x1F) && ((b << 6) == 0u);
 }
 
 NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
@@ -1954,6 +1952,12 @@ NSIMD_INLINE int nsimd_isinf_f64(f64 a) {
 #endif
 }
 
+NSIMD_INLINE int nsimd_isnormal_f16(f16 a) {
+  /* We assume IEEE representation for f16's */
+  u16 b = nsimd_scalar_reinterpret_u16_f16(a);
+  return (((b >> 10) & 0x1F) == 0u) && ((b << 6) != 0u);
+}
+
 NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
 #if NSIMD_C >= 1999
   return isnormal(a);
@@ -1962,7 +1966,7 @@ NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return (((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u);
+  return !((((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u));
 #endif
 }
 
@@ -1974,18 +1978,65 @@ NSIMD_INLINE int nsimd_isnormal_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return (((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u);
+  return !((((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u));
 #endif
 }
 
 #if NSIMD_CXX > 0
 namespace nsimd {
+NSIMD_INLINE int isnan(f16 a) { return nsimd_isnan_f16(a); }
 NSIMD_INLINE int isnan(f32 a) { return nsimd_isnan_f32(a); }
 NSIMD_INLINE int isnan(f64 a) { return nsimd_isnan_f64(a); }
+NSIMD_INLINE int isinf(f16 a) { return nsimd_isinf_f16(a); }
 NSIMD_INLINE int isinf(f32 a) { return nsimd_isinf_f32(a); }
 NSIMD_INLINE int isinf(f64 a) { return nsimd_isinf_f64(a); }
+NSIMD_INLINE int isnormal(f16 a) { return nsimd_isnormal_f16(a); }
 NSIMD_INLINE int isnormal(f32 a) { return nsimd_isnormal_f32(a); }
 NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Difference in ulps, returns an int. If it is too large to fit within an   */
+/* int, return MAX_INT */
+
+NSIMD_INLINE int nsimd_diff_in_ulps_f16(f16 a, f16 b) {
+  int d = nsimd_scalar_reinterpret_i16_f16(a) -
+          nsimd_scalar_reinterpret_i16_f16(b);
+  return (d >= 0 ? d : -d);
+}
+
+NSIMD_INLINE int nsimd_diff_in_ulps_f32(f32 a, f32 b) {
+  int d = nsimd_scalar_reinterpret_i32_f32(a) -
+          nsimd_scalar_reinterpret_i32_f32(b);
+  return (d >= 0 ? d : -d);
+}
+
+NSIMD_INLINE int nsimd_diff_in_ulps_f64(f64 a, f64 b) {
+  i64 d = nsimd_scalar_reinterpret_i64_f64(a) -
+          nsimd_scalar_reinterpret_i64_f64(b);
+  if (d < 0) {
+    d = -d;
+  }
+  if (d > INT_MAX) {
+    d = INT_MAX;
+  }
+  return (int)d;
+}
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+NSIMD_INLINE int diff_in_ulps(f16 a, f16 b) {
+  return nsimd_diff_in_ulps_f16(a, b);
+}
+
+NSIMD_INLINE int diff_in_ulps(f32 a, f32 b) {
+  return nsimd_diff_in_ulps_f32(a, b);
+}
+
+NSIMD_INLINE int diff_in_ulps(f64 a, f64 b) {
+  return nsimd_diff_in_ulps_f64(a, b);
+}
 } // namespace nsimd
 #endif
 

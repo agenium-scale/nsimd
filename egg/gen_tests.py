@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2020 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -75,117 +75,65 @@ def get_includes(lang):
 # Function to compute number of common bits between two floatting points
 # numbers
 
-get_2th_power = \
-    '''
-/* One could use ldexp, but it is not available in C89. Plus we really
-   don't care about performences here. */
-double get_2th_power(int a) {
-  double ret = 1.0;
-  if (a == 0) {
-    return ret;
-  }
-  if (a < 0) {
-    int i;
-    for (i = 0; i < (-a); i++) {
-      ret /= 2.0;
-    }
-    return ret;
-  }
-  /* a > 0 */ {
-    int i;
-    for (i = 0; i < a; i++) {
-      ret *= 2.0;
-    }
-    return ret;
-  }
-}
-
-/* ------------------------------------------------------------------------- */
-
+distance_int = '''
+int distance({typ} a, {typ} b) {{
+  {typ} d;
+  if (a > b) {{
+    d = ({typ})(a - b);
+  }} else {{
+    d = ({typ})(b - a);
+  }}
+  if ((u64)d > (u64)INT_MAX) {{
+    return INT_MAX;
+  }}
+  return (int)d;
+}}
 '''
 
-relative_distance_cpp = \
-'''
-double relative_distance(double a, double b) {
-  double ma, mi;
+distance_float = '''
+int distance({typ} a, {typ} b) {{
+  if (nsimd_isnan_{typ}(a) && nsimd_isnan_{typ}(b)) {{
+    return 0;
+  }}
 
-  if (nsimd::isnan(a) && nsimd::isnan(b)) {
-    return 0.0;
-  }
+  if (nsimd_isnan_{typ}(a) || nsimd_isnan_{typ}(b)) {{
+    return -1;
+  }}
 
-  if (nsimd::isnan(a) || nsimd::isnan(b)) {
-    return -1.;
-  }
+  if (nsimd_isinf_{typ}(a) && nsimd_isinf_{typ}(b)) {{
+    return 0;
+  }}
 
-  if (nsimd::isinf(a) && nsimd::isinf(b) &&
-      ((a > 0 && b > 0) || (a < 0 && b < 0))) {
-    return 0.0;
-  }
+  if (nsimd_isinf_{typ}(a) || nsimd_isinf_{typ}(b)) {{
+    return -1;
+  }}
 
-  if (nsimd::isinf(a) || nsimd::isinf(b)) {
-    return -1.;
-  }
-
-  a = (a > 0.0 ? a : -a);
-  b = (b > 0.0 ? b : -b);
-  ma = (a > b ? a : b);
-  mi = (a < b ? a : b);
-
-  if (ma == 0.0) {
-    return 0.0;
-  }
-
-  return (ma - mi) / ma;
-}
+  return nsimd_diff_in_ulps_{typ}(a, b);
+}}
 
 /* ------------------------------------------------------------------------- */
-''' + get_2th_power
-
-relative_distance_c = \
 '''
-double relative_distance(double a, double b) {
-  double ma, mi;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-  if (nsimd_isnan_f64(a) && nsimd_isnan_f64(b)) {
-    return 0.0;
-  }
-
-  if (nsimd_isnan_f64(a) || nsimd_isnan_f64(b)) {
-    return -1.;
-  }
-
-  if (nsimd_isinf_f64(a) * nsimd_isinf_f64(b) > 0) {
-    return 0.0;
-  }
-
-  if (nsimd_isinf_f64(a) || nsimd_isinf_f64(b)) {
-    return -1.;
-  }
-#pragma GCC diagnostic pop
-
-  a = (a > 0.0 ? a : -a);
-  b = (b > 0.0 ? b : -b);
-  ma = (a > b ? a : b);
-  mi = (a < b ? a : b);
-
-  if (ma == 0.0) {
-    return 0.0;
-  }
-
-  return (ma - mi) / ma;
+distance = {
+  'i8': distance_int.format(typ='i8'),
+  'u8': distance_int.format(typ='u8'),
+  'i16': distance_int.format(typ='i16'),
+  'u16': distance_int.format(typ='u16'),
+  'i32': distance_int.format(typ='i32'),
+  'u32': distance_int.format(typ='u32'),
+  'i64': distance_int.format(typ='i64'),
+  'u64': distance_int.format(typ='u64'),
+  'f16': distance_float.format(typ='f16'),
+  'f32': distance_float.format(typ='f32'),
+  'f64': distance_float.format(typ='f64')
 }
 
-/* ------------------------------------------------------------------------- */
-''' + get_2th_power
 
 # -----------------------------------------------------------------------------
 # Template for a lot of tests
 
 template = \
-    '''{includes}
+'''{includes}
 
 #define SIZE (2048 / {sizeof})
 
@@ -202,6 +150,7 @@ template = \
 }}
 
 /* ------------------------------------------------------------------------- */
+
 {extra_code}
 
 int comp_function({typ} mpfr_out, {typ} nsimd_out)
@@ -227,8 +176,6 @@ int main(void) {{
     {vin_rand}
   }}
 
-
-
   #ifdef NSIMD_DNZ_FLUSH_TO_ZERO
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wconversion"
@@ -239,7 +186,7 @@ int main(void) {{
   #pragma GCC diagnostic pop
   #endif
 
-  /* Fill output vector 0 with reference values */
+  /* Fill vout_ref output vector with reference values */
   for (i = 0; i < SIZE; i += {cpu_step}) {{
     /* This is a call directly to the cpu API of nsimd
        to ensure that we call the scalar version of the
@@ -247,10 +194,12 @@ int main(void) {{
     {vout_ref_comp}
   }}
 
-  /* Fill output vector 1 with computed values */
+  /* Fill vout_nsimd output vector with computed values */
   for (i = 0; i < SIZE; i += step) {{
     {vout_nsimd_comp}
   }}
+
+  {dnz_flush_to_zero}
 
   /* Compare results */
   for (vi = 0; vi < SIZE; vi += step) {{
@@ -274,6 +223,7 @@ int main(void) {{
 
 def get_content(op, typ, lang):
     cast = 'f32' if typ in ['f16', 'f32'] else 'f64'
+    zero = 'nsimd_f32_to_f16(0.0f)' if typ == 'f16' else '({})0'.format(typ)
 
     # By default we use emulation functions ("cpu" architecture) for testing
     # in which case increment is given by nsimd_cpu_len()
@@ -282,13 +232,9 @@ def get_content(op, typ, lang):
     nargs = range(1, len(op.params))
 
     if typ in common.ftypes:
-        code = ['''if (!nsimd_isnormal_{typ}({f32_conv}(vin{i}[i]))) {{
-                     vin{i}[i] = {f16_conv}(0.f);
-                   }}'''. \
-                   format(i=i,
-                          f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                          f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                          typ='f32' if typ == 'f16' else typ) for i in nargs]
+        code = ['''if (!nsimd_isnormal_{typ}(vin{i}[i])) {{
+                     vin{i}[i] = {zero};
+                   }}'''.format(typ=typ, i=i, zero=zero) for i in nargs]
         denormalize_inputs = '\n'.join(code)
     else:
         denormalize_inputs = ''
@@ -363,25 +309,6 @@ def get_content(op, typ, lang):
             code += ['nsimd_store{}u_cpu_{}(&vout_ref[i], vc);'. \
                      format(logical, typ)]
             vout_ref_comp = '\n'.join(code)
-
-            if op.name[-2:] == '11' or op.name[-1:] == '8':
-                vout_ref_comp += \
-                '''/* Intel 11 bit precision intrinsics force denormalized output to 0. */
-                   #ifdef NSIMD_X86
-                   #pragma GCC diagnostic push
-                   #pragma GCC diagnostic ignored "-Wconversion"
-                   #pragma GCC diagnostic ignored "-Wdouble-promotion"
-                   for (vi = i; vi < i+nsimd_len_cpu_{typ}(); ++vi) {{
-                     if (!nsimd_isnormal_{typ}({f32_conv}(vout_ref[vi]))) {{
-                       vout_ref[vi] = {f16_conv}(0.f);
-                     }}
-                   }}
-                   #pragma GCC diagnostic pop
-                   #endif
-                   '''. \
-                   format(f16_conv='nsimd_f32_to_f16' if typ=='f16' else '',
-                          f32_conv='nsimd_f16_to_f32' if typ=='f16' else '',
-                          typ='f32' if typ == 'f16' else typ)
 
         # Make vout_nsimd_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
@@ -518,7 +445,6 @@ def get_content(op, typ, lang):
 # Generate test in C, C++ (base API) and C++ (advanced API) for almost all
 # tests
 
-
 def gen_test(opts, op, typ, lang, ulps):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
@@ -533,53 +459,28 @@ def gen_test(opts, op, typ, lang, ulps):
                       'nsimd_scalar_reinterpret_{uT}_{typ}(nsimd_out)'. \
                format(typ=typ, uT=common.bitfield_type[typ])
     elif op.name in ['max', 'min'] and typ in common.ftypes:
-        if typ == 'f16':
-            left = 'nsimd_f16_to_f32(mpfr_out)'
-            right = 'nsimd_f16_to_f32(nsimd_out)'
-        else:
-            left = 'mpfr_out'
-            right = 'nsimd_out'
-
-        comp = '''#pragma GCC diagnostic push
-                  #pragma GCC diagnostic ignored "-Wconversion"
-                  #pragma GCC diagnostic ignored "-Wdouble-promotion"
-
-                  /* None of the architecture correctly manage NaN with the  */
+        comp = '''/* None of the architecture correctly manage NaN with the  */
                   /* function min and max. According to IEEE754, min(a, NaN) */
                   /* should return a but every architecture returns NaN.     */
-                  if (nsimd_isnan_f64({right})) {{
+                  if (nsimd_isnan_{typ}(nsimd_out)) {{
                     return 0;
                   }}
 
                   /* PPC doesn't correctly manage +Inf and -Inf in relation */
                   /* with NaN either (min(NaN, -Inf) returns -Inf).         */
                   #ifdef NSIMD_POWERPC
-                  if (nsimd_isinf_f64({right})) {{
+                  if (nsimd_isinf_{typ}(nsimd_out)) {{
                     return 0;
                   }}
                   #endif
 
-                  return {left} != {right};
-                  #pragma GCC diagnostic pop
-                  '''.format(left=left, right=right,
-                             uT=common.bitfield_type[typ])
+                  return nsimd_scalar_ne_{typ}(mpfr_out, nsimd_out);'''. \
+                  format(typ=typ, uT=common.bitfield_type[typ])
     else:
-        if typ == 'f16':
-            left = 'nsimd_f16_to_f32(mpfr_out)'
-            right = 'nsimd_f16_to_f32(nsimd_out)'
-        elif typ == 'f32':
-            left = 'mpfr_out'
-            right = 'nsimd_out'
-        else:
-            left = 'mpfr_out'
-            right = 'nsimd_out'
-        relative_distance = relative_distance_c if lang == 'c_base' \
-                            else relative_distance_cpp
         if op.tests_ulps and typ in common.ftypes:
-            comp = 'return relative_distance((double){}, ' \
-                   '(double){}) > get_2th_power(-{nbits})'. \
-                   format(left, right, nbits=op.tests_ulps[typ])
-            extra_code += relative_distance
+            comp = 'return distance(mpfr_out, nsimd_out) > {}'. \
+                   format(op.tests_ulps[typ])
+            extra_code += distance[typ]
         elif op.src:
             if op.name in ulps:
                 nbits = ulps[op.name][typ]["ulps"]
@@ -587,42 +488,41 @@ def gen_test(opts, op, typ, lang, ulps):
                 inf_error = ulps[op.name][typ]["Inf Error"]
                 nan_error = ulps[op.name][typ]["NaN Error"]
 
-                comp = '''#pragma GCC diagnostic push
-                          #pragma GCC diagnostic ignored "-Wconversion"
-                          #pragma GCC diagnostic ignored "-Wdouble-promotion"
-                          '''
                 if nan_error:
                     # Ignore error with NaN output, we know we will encounter
                     # some
-                    comp += 'if (nsimd_isnan_f64({left})) return 0;\n'
+                    comp += 'if (nsimd_isnan_{}(mpfr_out)) ' \
+                            '{{ return 0; }}\n'.format(typ)
                 else:
                     # Return false if one is NaN and not the other
-                    comp += 'if (nsimd_isnan_f64({left}) ^ ' \
-                                'nsimd_isnan_f64({rigth})) return 1;\n'
+                    comp += 'if (nsimd_isnan_{typ}(mpfr_out) ^ ' \
+                                'nsimd_isnan_{typ}(nsimd_out)) ' \
+                                '{{ return 1; }} \n'.format(typ=typ)
 
                 if inf_error:
                     # Ignore error with infinite output, we know we will
                     # encounter some
-                    comp += 'if (nsimd_isinf_f64({left})) return 0;\n'
+                    comp += 'if (nsimd_isinf_{}(mpfr_out)) ' \
+                            '{{ return 0; }}\n'.format(typ)
                 else:
                     # One is infinite and not the other
-                    comp += 'if (nsimd_isinf_f64({left}) ^ ' \
-                                'nsimd_isinf_f64({rigth})) return 1;\n'
+                    comp += 'if (nsimd_isinf_{typ}(mpfr_out) ^ ' \
+                                'nsimd_isinf_{typ}(nsimd_out)) ' \
+                                '{{ return 1; }}\n'.format(typ=typ)
                     # Wrong sign for infinite
-                    comp += 'if (nsimd_isinf_f64({left}) && ' \
-                                'nsimd_isinf_f64({rigth}) && ' \
-                                '({right} * {left} < 0)) return 1;\n'
+                    comp += 'if (nsimd_isinf_{typ}(mpfr_out) && ' \
+                                'nsimd_isinf_{typ}(nsimd_out) && ' \
+                                '({right} * {left} < 0)) {{ return 1; }} \n'. \
+                                format(typ=typ)
 
-                comp += '''
-                if (nsimd_isnormal_f32({left})) {{
+                comp += \
+                '''if (nsimd_isnormal_{typ}(mpfr_out)) {{
                     return relative_distance((double){left}, (double){right})
                              > get_2th_power(-({nbits}));
                 }} else {{
                     return relative_distance((double){left}, (double){right})
                              > get_2th_power(-({nbits_dnz}));
-                }}
-                #pragma GCC diagnostic pop
-                '''
+                }}'''
 
                 if lang == 'c_base':
                     comp = comp.format(left=left, right=right, nbits=nbits,
@@ -632,25 +532,19 @@ def gen_test(opts, op, typ, lang, ulps):
                                        nbits_dnz=nbits_dnz)
 
             else:
-                nbits = {'f16': '10', 'f32': 21, 'f64': '48'}
-                comp = 'return relative_distance((double){}, (double){}) ' \
-                       '> get_2th_power(-{nbits})'. \
+                comp = 'return distance(mpfr_out, nsimd_out) > 1'. \
                        format(left, right, nbits=nbits[typ])
 
-            extra_code += relative_distance
+            extra_code += distance[typ]
         else:
             if typ in common.ftypes:
                 comp = \
-                '''#pragma GCC diagnostic push
-                   #pragma GCC diagnostic ignored "-Wconversion"
-                   #pragma GCC diagnostic ignored "-Wdouble-promotion"
-                   return {left} != {right} &&
-                          (!nsimd_isnan_f64({left}) ||
-                           !nsimd_isnan_f64({right}));
-                   #pragma GCC diagnostic pop'''. \
-                   format(left=left, right=right)
+                '''return nsimd_scalar_ne_{typ}(mpfr_out, nsimd_out) &&
+                          (!nsimd_isnan_{typ}(mpfr_out) ||
+                           !nsimd_isnan_{typ}(nsimd_out));'''. \
+                           format(typ=typ)
             else:
-                comp = 'return {} != {};'.format(left, right)
+                comp = 'return mpfr_out != nsimd_out;'
 
             extra_code += ''
 
@@ -676,10 +570,29 @@ def gen_test(opts, op, typ, lang, ulps):
             #pragma GCC diagnostic pop
             '''
 
+    if typ in common.ftypes:
+        dnz_flush_to_zero = \
+        '''/* We flush subnormal numbers to zero because support for it      */
+           /* can be disabled, some intrinsics do not support them,          */
+           /* execution of 32-bits code on 64-bits system may have different */
+           /* ways of handling them. */
+           for (i = 0; i < SIZE; i++) {{
+             if (!nsimd_isnormal_{typ}(vout_ref[i])) {{
+               vout_ref[i] = {zero};
+             }}
+             if (!nsimd_isnormal_{typ}(vout_nsimd[i])) {{
+               vout_nsimd[i] = {zero};
+             }}
+           }}'''.format(typ=typ, zero='({})0'.format(typ) if typ != 'f16' \
+                        else 'nsimd_f32_to_f16(0.0f)')
+    else:
+        dnz_flush_to_zero = ''
+
     with common.open_utf8(opts, filename) as out:
-        out.write(template.format( \
+        out.write(template.format(
             includes=includes, sizeof=common.sizeof(typ), typ=typ,
             op_name=op.name, year=date.today().year, comp=comp,
+            dnz_flush_to_zero=dnz_flush_to_zero,
             extra_code=extra_code, **content))
     common.clang_format(opts, filename)
 
@@ -692,17 +605,13 @@ def gen_addv(opts, op, typ, lang):
         return
     if lang == 'c_base':
         op_test = 'v{}(vloada(buf, {}), {})'.format(op.name, typ, typ)
-        extra_code = relative_distance_c
     elif lang == 'cxx_base':
         op_test = 'nsimd::{}(nsimd::loada(buf, {}()), {}())'.format(
             op.name, typ, typ)
-        extra_code = relative_distance_cpp
     else:
         op_test = 'nsimd::{}(nsimd::loada<nsimd::pack<{}> >(buf))'.format(
             op.name, typ)
-        extra_code = relative_distance_cpp
 
-    nbits = {'f16': '10', 'f32': '21', 'f64': '48'}
     head = '''{posix_c_source}
               {includes}
               #include <float.h>
@@ -718,26 +627,23 @@ def gen_addv(opts, op, typ, lang):
                 }} \\
               }}
 
-              {extra_code}''' .format(year=date.today().year,
-                                      posix_c_source=posix_c_source,
-                                      includes=get_includes(lang),
-                                      extra_code=extra_code)
+              {distance}
+
+              ''' .format(year=date.today().year, includes=get_includes(lang),
+                          posix_c_source=posix_c_source,
+                          distance=distance[typ])
 
     if typ == 'f16':
         # Variables initialization
         init = '''f16 res = nsimd_f32_to_f16(0.0f);
-                  f32 ref = 0.0f;'''
+                  f16 ref = nsimd_f32_to_f16(0.0f);'''
         rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
                          (f32)(1 << (rand() % 4)) /
                            (f32)(1 << (rand() % 4)))'''
         init_statement = 'buf[i] = {};'.format(rand)
-        ref_statement = 'ref += nsimd_u16_to_f32(((u16 *)buf)[i]);'
-        test = '''if (relative_distance((double) ref,
-                                        (double) nsimd_f16_to_f32(res)) >
-                                          get_2th_power(-{nbits})) {{
-                    return EXIT_FAILURE;
-                  }}'''.format(nbits=nbits[typ])
-    elif typ[0] == 'f':
+        ref_statement = 'ref = nsimd_scalar_add_f16(ref, buf[i]);'
+        test = 'if (distance(ref, res) > 1) { return EXIT_FAILURE; }'
+    elif typ in ['f32', 'f64']:
         init = '''{typ} ref = ({typ})0;
                   {typ} res = ({typ})0;''' .format(typ=typ)
         rand = '''({typ})(2 * (rand() % 2) - 1) *
@@ -745,19 +651,14 @@ def gen_addv(opts, op, typ, lang):
                         ({typ})(1 << (rand() % 4))'''.format(typ=typ)
         init_statement = 'buf[i] = {};'.format(rand)
         ref_statement = 'ref += buf[i];'
-        test = '''if (relative_distance((double)ref,
-                      (double)res) > get_2th_power(-{nbits})) {{
-                    return EXIT_FAILURE;
-                  }}'''.format(nbits=nbits[typ])
+        test = 'if (distance(ref, res) > 1) { return EXIT_FAILURE; }'
     else:
         init = '''{typ} ref = ({typ}) 0;
                   {typ} res = ({typ}) 0;'''.format(typ=typ)
         rand = '({})(rand() % 4)'.format(typ)
         init_statement = 'buf[i] = {rand};' .format(rand=rand)
         ref_statement = 'ref += buf[i];'
-        test = '''if(ref != res) {{
-                      return EXIT_FAILURE;
-                  }}'''
+        test = 'if (ref != res) { return EXIT_FAILURE; }'
 
     with common.open_utf8(opts, filename) as out:
         out.write(
@@ -774,11 +675,11 @@ def gen_addv(opts, op, typ, lang):
             fprintf(stdout, "test of {op_name} over {typ}...\\n");
             CHECK(buf = ({typ} *)nsimd_aligned_alloc(len * {sizeof}));
 
-            for(i = 0; i < len; i++) {{
+            for (i = 0; i < len; i++) {{
                 {init_statement}
             }}
 
-            for(i = 0; i < len; i++) {{
+            for (i = 0; i < len; i++) {{
                 {ref_statement}
             }}
 
@@ -790,7 +691,8 @@ def gen_addv(opts, op, typ, lang):
             return EXIT_SUCCESS;
             }}
             '''.format(head=head, init=init, op_name=op.name, typ=typ,
-                       sizeof=common.sizeof(typ), init_statement=init_statement,
+                       sizeof=common.sizeof(typ),
+                       init_statement=init_statement,
                        ref_statement=ref_statement, op_test=op_test, test=test)
         )
     common.clang_format(opts, filename)
@@ -844,7 +746,8 @@ def random_sign_flip():
 
 def zero_out_arrays(typ):
       return '''
-      void zero_out_arrays({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      void zero_out_arrays({typ} vin1[], {typ} vin2[], {typ} vout_expected[],
+                           {typ} vout_computed[])
       {{
         int ii = 0;
         for(ii = 0; ii < SIZE; ++ii)
@@ -886,7 +789,9 @@ def compute_op_given_language(typ, op, language):
 def compare_expected_vs_computed(typ, op, language):
       values_computation = compute_op_given_language(typ, op, language)
       return '''
-      int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2, const {typ}* vout_expected, {typ} vout_computed[])
+      int compare_expected_vs_computed(const {typ}* vin1, const {typ}* vin2,
+                                       const {typ}* vout_expected,
+                                       {typ} vout_computed[])
       {{
           const int step = vlen({typ});
           int outer = 0;
@@ -909,7 +814,9 @@ def compare_expected_vs_computed(typ, op, language):
 
 def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check):
       return '''
-      int test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_neither_overflow_nor_underflow({typ} vin1[], {typ} vin2[],
+                                              {typ} vout_expected[],
+                                              {typ} vout_computed[])
       {{
         int ii = 0;
         while(ii < SIZE)
@@ -927,15 +834,20 @@ def test_signed_neither_overflow_nor_underflow(typ, min_, max_, operator, check)
         assert(ii == SIZE);
         /*
         Test:
-        if (neither overflow nor underflow) {{ vout_expected[ii] == a {operator} b; }}
+        if (neither overflow nor underflow) {{
+          vout_expected[ii] == a {operator} b;
+        }}
         */
-        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+        return compare_expected_vs_computed(vin1, vin2, vout_expected,
+                                            vout_computed);
       }}
       '''.format(typ=typ, min_=min_, max_=max_, operator=operator, check=check)
 
-def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_underflow):
+def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow,
+                          oper_is_underflow):
       return '''
-      int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_all_cases({typ} vin1[], {typ} vin2[], {typ} vout_expected[],
+                         {typ} vout_computed[])
       {{
         int ii = 0;
         for(ii = 0; ii < SIZE; ++ii)
@@ -956,7 +868,8 @@ def test_signed_all_cases(typ, min_, max_, oper, oper_is_overflow, oper_is_under
           }}
         }}
         /* Test all cases */
-        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+        return compare_expected_vs_computed(vin1, vin2, vout_expected,
+                                            vout_computed);
       }}
       ''' .format(typ=typ, min_=min_, max_=max_,
                   oper=oper, oper_is_overflow=oper_is_overflow,
@@ -983,7 +896,8 @@ def adds_signed_is_underflow(typ, min_):
 
 def adds_signed_is_neither_overflow_nor_underflow(typ):
       return '''
-      int adds_signed_is_neither_overflow_nor_underflow(const {typ} a, const {typ} b)
+      int adds_signed_is_neither_overflow_nor_underflow(const {typ} a,
+                                                        const {typ} b)
       {{
         return ! adds_is_overflow(a, b) && ! adds_signed_is_underflow(a, b);
       }}
@@ -994,11 +908,15 @@ def adds_signed_is_neither_overflow_nor_underflow(typ):
 
 # test integer overflow
 def test_adds_overflow(typ, max_):
-      rand_ = '({typ})rand()'.format(typ=typ) if typ in common.utypes else 'rand()'
+      rand_ = '({typ})rand()'.format(typ=typ) \
+              if typ in common.utypes else 'rand()'
       return '''
-      int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_overflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[],
+                        {typ} vout_computed[])
       {{
-        /* if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ overflow }} */
+        /* if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{
+             overflow
+           }} */
         int ii = 0;
 
         /* vin1[ii] > 0 */
@@ -1023,9 +941,12 @@ def test_adds_overflow(typ, max_):
 
         /*
         Test:
-        if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{ vout_expected[ii] == {max_}; }}
+        if ((vin1[ii] > 0) && (vin2[ii] > {max_} - vin1[ii])) {{
+          vout_expected[ii] == {max_};
+        }}
         */
-        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+        return compare_expected_vs_computed(vin1, vin2, vout_expected,
+                                            vout_computed);
      }}
       '''.format(typ=typ, max_=max_, rand_=rand_)
 
@@ -1035,9 +956,12 @@ def test_adds_overflow(typ, max_):
 # test signed underflow
 def test_adds_signed_underflow(typ, min_):
       return '''
-      int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[], {typ} vout_computed[])
+      int test_underflow({typ} vin1[], {typ} vin2[], {typ} vout_expected[],
+                         {typ} vout_computed[])
       {{
-        /* if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ underflow }} */
+        /* if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{
+             underflow
+           }} */
         int ii = 0;
 
         /* vin1[ii] < 0 */
@@ -1064,9 +988,12 @@ def test_adds_signed_underflow(typ, min_):
 
         /*
         Test:
-        if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{ vout_expected[ii] == {min_}; }}
+        if ((vin1[ii] < 0) && (vin2[ii] < {min_} - vin1[ii])) {{
+          vout_expected[ii] == {min_};
+        }}
         */
-        return compare_expected_vs_computed(vin1, vin2, vout_expected, vout_computed);
+        return compare_expected_vs_computed(vin1, vin2, vout_expected,
+                                            vout_computed);
       }}
       '''.format(typ=typ, min_=min_)
 
@@ -1078,7 +1005,8 @@ def test_adds_signed_neither_overflow_nor_underflow(typ, min_, max_):
 
 # test signed all cases
 def test_adds_signed_all_cases(typ, min_, max_):
-      return test_signed_all_cases(typ, min_, max_, '+', 'adds_is_overflow', 'adds_signed_is_underflow')
+      return test_signed_all_cases(typ, min_, max_, '+', 'adds_is_overflow',
+                                   'adds_signed_is_underflow')
 
 # all signed tests
 def tests_adds_signed():
@@ -1092,8 +1020,9 @@ def tests_adds_signed():
                  vout_computed), "underflow");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
-      CHECK_CASE(test_neither_overflow_nor_underflow(vin1, vin2, vout_expected, vout_computed),
-      "neither underflow nor overflow");
+      CHECK_CASE(test_neither_overflow_nor_underflow(vin1, vin2,
+                 vout_expected, vout_computed),
+                 "neither underflow nor overflow");
 
       zero_out_arrays(vin1, vin2, vout_expected, vout_computed);
       CHECK_CASE(test_all_cases(vin1, vin2, vout_expected,
@@ -2912,7 +2841,6 @@ def gen_unpack_half(opts, op, typ, lang):
         right = 'nsimd_out'
 
     if lang == 'c_base':
-        extra_code = relative_distance_c
         typ_nsimd = 'vec({typ})'.format(typ=typ)
         vout1_comp = '''vec({typ}) va1, va2, vc;
         va1 = vloadu(&vin1[i], {typ});
@@ -2921,7 +2849,6 @@ def gen_unpack_half(opts, op, typ, lang):
         vstoreu(&vout[i], vc, {typ});'''. \
             format(typ=typ, op_name=op.name)
     if lang == 'cxx_base':
-        extra_code = relative_distance_cpp
         typ_nsimd = 'vec({typ})'.format(typ=typ)
         vout1_comp = '''vec({typ}) va1, va2, vc;
         va1 = nsimd::loadu(&vin1[i], {typ}());
@@ -2930,7 +2857,6 @@ def gen_unpack_half(opts, op, typ, lang):
         nsimd::storeu(&vout[i], vc, {typ}());'''. \
             format(typ=typ, op_name=op.name)
     if lang == 'cxx_adv':
-        extra_code = relative_distance_cpp
         typ_nsimd = 'nsimd::pack<{typ}>'.format(typ=typ)
         vout1_comp = '''nsimd::pack<{typ}> va1, va2, vc;
         va1 = nsimd::loadu<nsimd::pack<{typ}> >(&vin1[i]);
@@ -2984,15 +2910,13 @@ def gen_unpack_half(opts, op, typ, lang):
                 }} \\
               }}
 
-              {extra_code}
-
               /* {simd} */
-            ''' .format(year=date.today().year, typ=typ,
-                        posix_c_source=posix_c_source,
-                        includes=get_includes(lang),
-                        extra_code=extra_code,
-                        comp_unpack=comp_unpack,
-                        sizeof=common.sizeof(typ), simd= opts.simd)
+
+              ''' .format(year=date.today().year, typ=typ,
+                          posix_c_source=posix_c_source,
+                          includes=get_includes(lang),
+                          comp_unpack=comp_unpack,
+                          sizeof=common.sizeof(typ), simd=opts.simd)
     if typ == 'f16':
         rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
         (f32)(1 << (rand() % 4)) /
@@ -3080,7 +3004,6 @@ def gen_unpack(opts, op, typ, lang):
         right = 'nsimd_out'
 
     if lang == 'c_base':
-        extra_code = relative_distance_c
         typ_nsimd = 'vec({typ})'.format(typ=typ)
         vout1_comp = '''vec({typ}) va1, va2;
         vecx2({typ}) vc;
@@ -3091,7 +3014,6 @@ def gen_unpack(opts, op, typ, lang):
         vstoreu(&vout[2 * i + vlen({typ})], vc.v1, {typ});'''. \
             format(typ=typ, op_name=op.name)
     if lang == 'cxx_base':
-        extra_code = relative_distance_cpp
         typ_nsimd = 'vec({typ})'.format(typ=typ)
         vout1_comp = '''vec({typ}) va1, va2;
         vecx2({typ}) vc;
@@ -3102,7 +3024,6 @@ def gen_unpack(opts, op, typ, lang):
         nsimd::storeu(&vout[2 * i + vlen({typ})], vc.v1, {typ}());'''. \
             format(typ=typ, op_name=op.name)
     if lang == 'cxx_adv':
-        extra_code = relative_distance_cpp
         typ_nsimd = 'nsimd::pack<{typ}>'.format(typ=typ)
         vout1_comp = '''nsimd::pack<{typ}> va1, va2;
         nsimd::packx2<{typ}> vc;
@@ -3131,13 +3052,10 @@ def gen_unpack(opts, op, typ, lang):
       }} \\
     }}
 
-    {extra_code}
-
     /* {simd} */
     ''' .format(year=date.today().year, typ=typ,
                 posix_c_source=posix_c_source,
                 includes=get_includes(lang),
-                extra_code=extra_code,
                 sizeof=common.sizeof(typ), simd= opts.simd)
 
     if typ == 'f16':

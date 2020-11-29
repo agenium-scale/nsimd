@@ -36,7 +36,7 @@ def get_filename(opts, op, lf, rt):
     else:
         return None
 
-includes = """\
+includes = """
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@ includes = """\
 #include <nsimd/modules/fixed_point.hpp>
 """
 
-arithmetic_aliases = """\
+arithmetic_aliases = """
 typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
 typedef nsimd::fixed_point::pack<fp_t> vec_t;
 typedef nsimd::fixed_point::packl<fp_t> vecl_t;
@@ -60,7 +60,7 @@ const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 # ------------------------------------------------------------------------------
 # Utility functions
 
-check = """\
+check = """
 #define CHECK(a) {{ \\
   if (!(a)) {{ \\
     fprintf(stderr, "ERROR: " #a ":%s: %d\\n", __FILE__, __LINE__); \\
@@ -71,7 +71,7 @@ check = """\
 
 """
 
-limits = """\
+limits = """
 template <uint8_t lf, uint8_t rt>
 static double __get_numeric_precision() {
   return (double)ldexpf(1.0, -(int)rt);
@@ -79,7 +79,7 @@ static double __get_numeric_precision() {
 
 """
 
-comparison_fp = """\
+comparison_fp = """
 template <uint8_t lf, uint8_t rt>
 bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
   return nsimd_scalar_abs_f64(double(val) - ref) <=
@@ -88,7 +88,7 @@ bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
 
 """
 
-comparison_log = """\
+comparison_log = """
 template <typename T, uint8_t lf, uint8_t rt>
 bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
     nsimd::fixed_point::fp_t<lf, rt> v1)
@@ -99,7 +99,7 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 
 """
 
-gen_random_val = """\
+gen_random_val = """
 template <uint8_t lf, uint8_t rt>
 nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
   float tmp = (float) rand() / (float) RAND_MAX;
@@ -111,11 +111,13 @@ nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
 # ------------------------------------------------------------------------------
 # Template for arithmetic binary operators
 
-arithmetic_test_template = """\
+arithmetic_test_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -176,7 +178,7 @@ def gen_arithmetic_ops_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Min max operators template
 
-minmax_test_template = """\
+minmax_test_template = """
 {includes}
 #define op_min(a, b) ((a) < (b) ?(a) : (b))
 #define op_max(a, b) ((a) > (b) ?(a) : (b))
@@ -184,6 +186,7 @@ minmax_test_template = """\
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -238,11 +241,13 @@ def gen_minmax_ops_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Ternary ops (FMA and co)
 
-ternary_ops_template = """\
+ternary_ops_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -311,13 +316,14 @@ def gen_ternary_ops_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Template for math operators
 
-rec_reference = """\
+rec_reference = """
 // Rec operator on floating points (avoids to write a particular test for rec)
-static inline double rec(const double x){{return 1.0 / x;}}
+static inline double rec(const double x) {{ return 1.0 / x; }}
 """
 
-math_test_template = """\
+math_test_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
@@ -347,7 +353,7 @@ int main() {{
   nsimd::fixed_point::storeu(res_fp, vres_fp);
 
   for (size_t i = 0; i < v_size; i++) {{
-    res_f[i] = {op_name}(tab0_f[i]);
+    res_f[i] = {ref_op_name}(tab0_f[i]);
   }}
 
   for(size_t i = 0; i < v_size; i++) {{
@@ -363,10 +369,14 @@ math_ops = ["rec", "abs"]
 def gen_math_functions_tests(lf, rt, opts):
     for op_name in math_ops:
         decls = check + limits + comparison_fp + gen_random_val
-        if op_name == "rec": decls += rec_reference
-        content_src = math_test_template.format(
-            op_name=op_name, lf=lf, rt=rt,
-            includes=includes, decls=decls)
+        if op_name == "rec":
+            decls += rec_reference
+            ref_op_name = 'rec'
+        else:
+            ref_op_name = 'nsimd_scalar_abs_f64'
+        content_src = math_test_template.format(op_name=op_name, lf=lf, rt=rt,
+                                                ref_op_name=ref_op_name,
+                                                includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
         if filename == None:
             continue
@@ -377,11 +387,13 @@ def gen_math_functions_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Comparison operators
 
-comparison_test_template = """\
+comparison_test_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main(){{
@@ -437,13 +449,14 @@ def gen_comparison_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Bitwise binary operators
 
-bitwise_binary_test_template = """\
+bitwise_binary_test_template = """
 {includes}
 #include <limits>
 
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -517,12 +530,13 @@ def gen_bitwise_ops_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Bitwise unary operators
 
-bitwise_unary_test_template = """\
+bitwise_unary_test_template = """
 {includes}
 
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -564,8 +578,8 @@ def gen_unary_ops_tests(lf, rt, opts):
         content_src = bitwise_unary_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls,
-            rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
-            test_statement=s0, l="", term="b")
+            rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf,
+            rt=rt), test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
         if filename != None:
             with common.open_utf8(opts, filename) as fp:
@@ -587,12 +601,13 @@ def gen_unary_ops_tests(lf, rt, opts):
 # -----------------------------------------------------------------------------
 # if_else
 
-if_else_test_template = """\
+if_else_test_template = """
 {includes}
 
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
