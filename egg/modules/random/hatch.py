@@ -307,16 +307,19 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
 
     def gen_func(self, opts, nrounds, word_size, nwords):
         if nwords == 2:
-            bump_keys_init = 'nsimd::pack<u{word_size}> bump = nsimd::set1(nsimd::pack<u{word_size}>(), {bump});'.\
-                    format(word_size=word_size,
-                            bump = '0x9E3779B97F4A7C15UL' if word_size == 64 else '0x9E3779B9U')
+            bump_keys_init = \
+            'nsimd::pack<u{word_size}> bump = ' \
+            'nsimd::set1(nsimd::pack<u{word_size}>(), {bump});'.\
+            format(word_size=word_size, bump = '0x9E3779B97F4A7C15ULL' \
+                                        if word_size == 64 else '0x9E3779B9U')
             bump_keys = 'key.v0 = key.v0 + bump;'
 
             round_init = '''
-            nsimd::pack<u{word_size}> mul = nsimd::set1(nsimd::pack<u{word_size}>(), {mul});
+            nsimd::pack<u{word_size}> mul =
+                nsimd::set1(nsimd::pack<u{word_size}>(), {mul});
             nsimd::pack<u{word_size}> high, low;'''. \
-                    format(word_size=word_size,
-                            mul='0xD2B74407B1CE6E93UL' if word_size == 64 else '0xD256D193U')
+            format(word_size=word_size, mul='0xD2B74407B1CE6E93ULL' \
+                   if word_size == 64 else '0xD256D193U')
 
             round='''
               mulhilo{word_size}(mul, in.v0, &low, &high);
@@ -327,31 +330,37 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
 
         elif nwords == 4:
             bump_keys_init = '''
-                nsimd::pack<u{word_size}> bump0 = nsimd::set1(nsimd::pack<u{word_size}>(), {bump0});
-                nsimd::pack<u{word_size}> bump1 = nsimd::set1(nsimd::pack<u{word_size}>(), {bump1});'''.\
-                    format(word_size=word_size,
-                            bump0 = '0x9E3779B97F4A7C15UL' if word_size == 64 else '0x9E3779B9U',
-                            bump1 = '0xBB67AE8584CAA73BUL' if word_size == 64 else '0xBB67AE85U')
+            nsimd::pack<u{word_size}> bump0 =
+                nsimd::set1(nsimd::pack<u{word_size}>(), {bump0});
+            nsimd::pack<u{word_size}> bump1 =
+                nsimd::set1(nsimd::pack<u{word_size}>(), {bump1});'''.\
+                format(word_size=word_size,
+                       bump0 = '0x9E3779B97F4A7C15ULL' \
+                       if word_size == 64 else '0x9E3779B9U',
+                       bump1 = '0xBB67AE8584CAA73BULL' \
+                       if word_size == 64 else '0xBB67AE85U')
             bump_keys = 'key.v0 = key.v0 + bump0;\nkey.v1 = key.v1 + bump1;'
 
             round_init = '''
-                nsimd::pack<u{word_size}> mul0 = nsimd::set1(nsimd::pack<u{word_size}>(), {mul0});
-                nsimd::pack<u{word_size}> mul1 = nsimd::set1(nsimd::pack<u{word_size}>(), {mul1});
-                nsimd::pack<u{word_size}> low0, high0, low1, high1;
-                '''. \
-                    format(word_size=word_size,
-                            mul0='0xD2E7470EE14C6C93UL' if word_size == 64 else '0xD2511F53U',
-                            mul1='0xCA5A826395121157UL' if word_size == 64 else '0xCD9E8D57U')
+            nsimd::pack<u{word_size}> mul0 =
+                nsimd::set1(nsimd::pack<u{word_size}>(), {mul0});
+            nsimd::pack<u{word_size}> mul1 =
+                nsimd::set1(nsimd::pack<u{word_size}>(), {mul1});
+            nsimd::pack<u{word_size}> low0, high0, low1, high1;
+            '''.format(word_size=word_size,
+                       mul0='0xD2E7470EE14C6C93ULL' \
+                       if word_size == 64 else '0xD2511F53U',
+                       mul1='0xCA5A826395121157ULL' \
+                       if word_size == 64 else '0xCD9E8D57U')
 
             round='''
-              mulhilo{word_size}(mul0, in.v0, &low0, &high0);
-              mulhilo{word_size}(mul1, in.v2, &low1, &high1);
+            mulhilo{word_size}(mul0, in.v0, &low0, &high0);
+            mulhilo{word_size}(mul1, in.v2, &low1, &high1);
 
-              in.v0 = high1 ^ key.v0 ^ in.v1;
-              in.v1 = low1;
-              in.v2 = high0 ^ key.v1 ^ in.v3;
-              in.v3 = low0;
-            '''.format(word_size=word_size)
+            in.v0 = high1 ^ key.v0 ^ in.v1;
+            in.v1 = low1;
+            in.v2 = high0 ^ key.v1 ^ in.v3;
+            in.v3 = low0;'''.format(word_size=word_size)
 
 
         res = self.gen_signature (nwords, word_size, nrounds)
@@ -471,8 +480,8 @@ class ThreeFry(Rand):
             {fun_name} \
             (nsimd::packx{nwords}<u{word_size}> in, \
             nsimd::packx{nwords}<u{word_size}> key)'''. \
-            format (nwords = nwords, word_size = word_size,
-                    fun_name = self.gen_function_name(nwords, word_size, nrounds))
+            format(nwords=nwords, word_size = word_size,
+                   fun_name=self.gen_function_name(nwords, word_size, nrounds))
 
     def get_key_size(self, nwords):
         return nwords
@@ -480,12 +489,12 @@ class ThreeFry(Rand):
     def gen_body(self, opts, nrounds, word_size, nwords):
         if word_size == 32:
             initialize_keys = '''nsimd::pack<u32> ks{nwords} =
-                nsimd::set1(nsimd::pack<u32>(), 0x1BD11BDAu);'''. \
+                nsimd::set1(nsimd::pack<u32>(), 0x1BD11BDAU);'''. \
                         format(nwords=nwords)
         elif word_size == 64:
             initialize_keys = '''nsimd::pack<u64> ks{nwords} =
-                nsimd::set1(nsimd::pack<u64>(), 0x1BD11BDAA9FC1A22u);'''. \
-                        format(nwords=nwords)
+                nsimd::set1(nsimd::pack<u64>(), 0x1BD11BDAA9FC1A22ULL);'''. \
+                format(nwords=nwords)
 
         res = self.gen_signature(nwords, word_size, nrounds)
 
@@ -502,7 +511,8 @@ class ThreeFry(Rand):
         '''
 
         for i in range(0,nwords):
-            res += initialisation_keys.format(i=i, nwords=nwords, word_size=word_size)
+            res += initialisation_keys.format(i=i, nwords=nwords,
+                                              word_size=word_size)
 
         for i in range(0, nrounds):
             if nwords == 4:
@@ -522,9 +532,10 @@ class ThreeFry(Rand):
             elif nwords == 2:
                 res += '''
                 out.v0 = out.v0 + out.v1;
-                out.v1 = SHIFT_MOD_{word_size}(out.v1, Rot_{word_size}x{nwords}_{i_mod});
-                out.v1 = out.v1 ^ out.v0;'''.format(i_mod=i%8,
-                        word_size=word_size, nwords=nwords)
+                out.v1 = SHIFT_MOD_{word_size}(out.v1,
+                             Rot_{word_size}x{nwords}_{i_mod});
+                out.v1 = out.v1 ^ out.v0;'''. \
+                format(i_mod=i % 8, word_size=word_size, nwords=nwords)
 
             #if (i % nwords) == nwords - 1:
             if (i % 4) == 3:
@@ -534,8 +545,9 @@ class ThreeFry(Rand):
                     res += 'out.v{j} = out.v{j} + ks{calc};\n'. \
                             format(j=j, calc=str(int((d+j)%(nwords+1))))
 
-                res += 'out.v{n} = out.v{n} + nsimd::pack<u{word_size}>({d});\n'. \
-                        format(d=d, n=nwords-1, word_size=word_size)
+                res += 'out.v{n} = out.v{n} + ' \
+                       'nsimd::pack<u{word_size}>({d});\n'. \
+                       format(d=d, n=nwords-1, word_size=word_size)
 
         res+='''
             return out;
@@ -605,9 +617,11 @@ def gen_tests(opts):
                     dirname = os.path.join(opts.tests_dir, 'modules', 'random')
                     common.mkdir_p(dirname)
                     filename = os.path.join(dirname, '{}.cpp'. \
-                                format(func.gen_function_name(nwords, word_size, nrounds)))
+                               format(func.gen_function_name(nwords, word_size,
+                                                             nrounds)))
                     with common.open_utf8(opts, filename) as out:
-                        out.write(func.gen_tests(opts, nrounds, word_size, nwords))
+                        out.write(func.gen_tests(opts, nrounds, word_size,
+                                  nwords))
 
                     common.clang_format(opts, filename)
 

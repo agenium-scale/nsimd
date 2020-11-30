@@ -113,16 +113,16 @@ NSIMD_INLINE u64 mulhilo64(u64 a, u64 b, u64 *hip) {
 /* Philox 64x4 */
 
 NSIMD_INLINE tab64x2_t _philox4x64bumpkey(tab64x2_t key) {
-  key.v[0] += 0x9E3779B97F4A7C15UL;
-  key.v[1] += 0xBB67AE8584CAA73BUL;
+  key.v[0] += 0x9E3779B97F4A7C15ULL;
+  key.v[1] += 0xBB67AE8584CAA73BULL;
   return key;
 }
 
 NSIMD_INLINE tab64x4_t _philox4x64round(tab64x4_t ctr, tab64x2_t key) {
   u64 hi0;
   u64 hi1;
-  u64 lo0 = mulhilo64(0xD2E7470EE14C6C93UL, ctr.v[0], &hi0);
-  u64 lo1 = mulhilo64(0xCA5A826395121157UL, ctr.v[2], &hi1);
+  u64 lo0 = mulhilo64(0xD2E7470EE14C6C93ULL, ctr.v[0], &hi0);
+  u64 lo1 = mulhilo64(0xCA5A826395121157ULL, ctr.v[2], &hi1);
   tab64x4_t out = {
       {hi1 ^ ctr.v[1] ^ key.v[0], lo1, hi0 ^ ctr.v[3] ^ key.v[1], lo0}};
   return out;
@@ -200,13 +200,13 @@ tab64x4_t branson_philox4x64_R(unsigned int R, tab64x4_t ctr, tab64x2_t key) {
 /* Philox 64x2 */
 
 NSIMD_INLINE tab64x1_t _philox2x64bumpkey(tab64x1_t key) {
-  key.v[0] += 0x9E3779B97F4A7C15UL;
+  key.v[0] += 0x9E3779B97F4A7C15ULL;
   return key;
 }
 
 NSIMD_INLINE tab64x2_t _philox2x64round(tab64x2_t ctr, tab64x1_t key) {
   uint64_t hi;
-  uint64_t lo = mulhilo64(0xD2B74407B1CE6E93UL, ctr.v[0], &hi);
+  uint64_t lo = mulhilo64(0xD2B74407B1CE6E93ULL, ctr.v[0], &hi);
   tab64x2_t out = {{hi ^ key.v[0] ^ ctr.v[1], lo}};
   return out;
 }
