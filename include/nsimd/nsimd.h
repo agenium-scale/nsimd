@@ -1997,45 +1997,32 @@ NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Difference in ulps, returns an int. If it is too large to fit within an   */
-/* int, return MAX_INT */
+/* Difference in log ulps, returns an int. */
 
-NSIMD_INLINE int nsimd_diff_in_ulps_f16(f16 a, f16 b) {
-  int d = nsimd_scalar_reinterpret_i16_f16(a) -
-          nsimd_scalar_reinterpret_i16_f16(b);
-  return (d >= 0 ? d : -d);
-}
+#if NSIMD_CXX > 0
+extern "C" {
+#endif
 
-NSIMD_INLINE int nsimd_diff_in_ulps_f32(f32 a, f32 b) {
-  int d = nsimd_scalar_reinterpret_i32_f32(a) -
-          nsimd_scalar_reinterpret_i32_f32(b);
-  return (d >= 0 ? d : -d);
-}
+NSIMD_DLLIMPORT int nsimd_diff_in_logulps_f16(f16, f16);
+NSIMD_DLLIMPORT int nsimd_diff_in_logulps_f32(f32, f32);
+NSIMD_DLLIMPORT int nsimd_diff_in_logulps_f64(f64, f64);
 
-NSIMD_INLINE int nsimd_diff_in_ulps_f64(f64 a, f64 b) {
-  i64 d = nsimd_scalar_reinterpret_i64_f64(a) -
-          nsimd_scalar_reinterpret_i64_f64(b);
-  if (d < 0) {
-    d = -d;
-  }
-  if (d > INT_MAX) {
-    d = INT_MAX;
-  }
-  return (int)d;
-}
+#if NSIMD_CXX > 0
+} // extern "C"
+#endif
 
 #if NSIMD_CXX > 0
 namespace nsimd {
-NSIMD_INLINE int diff_in_ulps(f16 a, f16 b) {
-  return nsimd_diff_in_ulps_f16(a, b);
+NSIMD_INLINE int diff_in_logulps(f16 a, f16 b) {
+  return nsimd_diff_in_logulps_f16(a, b);
 }
 
-NSIMD_INLINE int diff_in_ulps(f32 a, f32 b) {
-  return nsimd_diff_in_ulps_f32(a, b);
+NSIMD_INLINE int diff_in_logulps(f32 a, f32 b) {
+  return nsimd_diff_in_logulps_f32(a, b);
 }
 
-NSIMD_INLINE int diff_in_ulps(f64 a, f64 b) {
-  return nsimd_diff_in_ulps_f64(a, b);
+NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
+  return nsimd_diff_in_logulps_f64(a, b);
 }
 } // namespace nsimd
 #endif

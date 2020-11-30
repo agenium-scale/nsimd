@@ -108,7 +108,7 @@ int distance({typ} a, {typ} b) {{
     return -1;
   }}
 
-  return nsimd_diff_in_ulps_{typ}(a, b);
+  return nsimd_diff_in_logulps_{typ}(a, b);
 }}
 
 /* ------------------------------------------------------------------------- */

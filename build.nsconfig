@@ -47,7 +47,7 @@ ifnot_set "Turn off tests/bench/ulps" build_library_only = false
 
 ## Targets for compilation
 
-set o_for_               = fp16$o memory$o api_cpu$o
+set o_for_               = fp16$o memory$o ulps$o api_cpu$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_
 set o_for_rocm           = $o_for_
@@ -110,6 +110,9 @@ build_file fp16$o autodeps $root$/src/fp16.cpp
 	c++ $cflags$ @in -c -o @out
 
 build_file memory$o autodeps $root$/src/memory.cpp
+	c++ $cflags$ @in -c -o @out
+
+build_file ulps$o autodeps $root$/src/ulps.cpp
 	c++ $cflags$ @in -c -o @out
 
 build_file api_cpu$o autodeps $root$/src/api_cpu.cpp
