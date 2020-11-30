@@ -88,6 +88,8 @@ typedef struct {
 /* Philox 64 bits */
 /* ------------------------------------------------------------------------- */
 
+#include <iostream>
+
 /* ------------------------------------------------------------------------- */
 /* Helpers */
 
@@ -101,11 +103,19 @@ NSIMD_INLINE u64 mulhilo64(u64 a, u64 b, u64 *hip) {
           ---------------------------
 
   */
-  u64 a0 = a & 0xFFFFFFFF;
+
+  u64 a0 = a & (u64)0xFFFFFFFF;
   u64 a1 = a >> 32;
-  u64 b0 = b & 0xFFFFFFFF;
+  u64 b0 = b & (u64)0xFFFFFFFF;
   u64 b1 = b >> 32;
-  *hip = (a1 * b1) + ((b0 * a1 + a0 * b1 + ((a0 * b0) >> 32)) >> 32);
+
+  u64 a0b1 = a0 * b1;
+  u64 a1b0 = a1 * b0;
+  u64 c264 = ((a0b1 & (u64)0xFFFFFFFF) + (a1b0 & (u64)0xFFFFFFFF) +
+              ((a0 * b0) >> 32)) >> 32;
+
+  *hip = (a1 * b1) + (a0b1 >> 32) + (a1b0 >> 32) + c264;
+
   return a * b;
 }
 

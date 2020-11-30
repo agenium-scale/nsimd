@@ -80,6 +80,7 @@ class Rand(object, metaclass=MAddToRands):
                 '''.format(i=i)
 
         l = 'll' if word_size == 64 else ''
+        cast = '(nsimd_ulonglong)' if word_size == 64 else ''
 
         res = '''
         #include <nsimd/modules/random/functions.hpp>
@@ -150,8 +151,8 @@ class Rand(object, metaclass=MAddToRands):
                 printf ("%i\\n", i);
                 for (int j=0; j<len; ++j) {{
                   printf ("%{l}u\\t(0x%{l}x)\\t\\t%{l}u\\t(0x%{l}x)\\n",
-                          out[j+i*len], out[j+i*len],
-                          out_nsimd[j], out_nsimd[j]);
+                          {cast}out[j+i*len], {cast}out[j+i*len],
+                          {cast}out_nsimd[j], {cast}out_nsimd[j]);
                 }}
 
                 res = EXIT_FAILURE;
@@ -178,7 +179,7 @@ class Rand(object, metaclass=MAddToRands):
                    nrounds), word_size=word_size, key_size=key_size,
                    nwords=nwords, key_initialization=key_initialization,
                    nrounds=nrounds, input_initilization=input_initilization,
-                   compare=compare, l=l, name = self.name)
+                   compare=compare, l=l, name = self.name, cast=cast)
 
         # Write file
         return res
@@ -310,16 +311,16 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
             bump_keys_init = \
             'nsimd::pack<u{word_size}> bump = ' \
             'nsimd::set1(nsimd::pack<u{word_size}>(), {bump});'.\
-            format(word_size=word_size, bump = '0x9E3779B97F4A7C15ULL' \
-                                        if word_size == 64 else '0x9E3779B9U')
+            format(word_size=word_size, bump = '(u64)0x9E3779B97F4A7C15ULL' \
+                   if word_size == 64 else '(u32)0x9E3779B9U')
             bump_keys = 'key.v0 = key.v0 + bump;'
 
             round_init = '''
             nsimd::pack<u{word_size}> mul =
                 nsimd::set1(nsimd::pack<u{word_size}>(), {mul});
             nsimd::pack<u{word_size}> high, low;'''. \
-            format(word_size=word_size, mul='0xD2B74407B1CE6E93ULL' \
-                   if word_size == 64 else '0xD256D193U')
+            format(word_size=word_size, mul='(u64)0xD2B74407B1CE6E93ULL' \
+                   if word_size == 64 else '(u32)0xD256D193U')
 
             round='''
               mulhilo{word_size}(mul, in.v0, &low, &high);
@@ -335,10 +336,10 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
             nsimd::pack<u{word_size}> bump1 =
                 nsimd::set1(nsimd::pack<u{word_size}>(), {bump1});'''.\
                 format(word_size=word_size,
-                       bump0 = '0x9E3779B97F4A7C15ULL' \
-                       if word_size == 64 else '0x9E3779B9U',
-                       bump1 = '0xBB67AE8584CAA73BULL' \
-                       if word_size == 64 else '0xBB67AE85U')
+                       bump0 = '(u64)0x9E3779B97F4A7C15ULL' \
+                       if word_size == 64 else '(u32)0x9E3779B9U',
+                       bump1 = '(u64)0xBB67AE8584CAA73BULL' \
+                       if word_size == 64 else '(u32)0xBB67AE85U')
             bump_keys = 'key.v0 = key.v0 + bump0;\nkey.v1 = key.v1 + bump1;'
 
             round_init = '''
@@ -348,10 +349,10 @@ void mulhilo64(pack<u64> a, pack<u64> b, pack<u64> *low, pack<u64> *high) {
                 nsimd::set1(nsimd::pack<u{word_size}>(), {mul1});
             nsimd::pack<u{word_size}> low0, high0, low1, high1;
             '''.format(word_size=word_size,
-                       mul0='0xD2E7470EE14C6C93ULL' \
-                       if word_size == 64 else '0xD2511F53U',
-                       mul1='0xCA5A826395121157ULL' \
-                       if word_size == 64 else '0xCD9E8D57U')
+                       mul0='(u64)0xD2E7470EE14C6C93ULL' \
+                       if word_size == 64 else '(u32)0xD2511F53U',
+                       mul1='(u64)0xCA5A826395121157ULL' \
+                       if word_size == 64 else '(u32)0xCD9E8D57U')
 
             round='''
             mulhilo{word_size}(mul0, in.v0, &low0, &high0);
@@ -493,8 +494,8 @@ class ThreeFry(Rand):
                         format(nwords=nwords)
         elif word_size == 64:
             initialize_keys = '''nsimd::pack<u64> ks{nwords} =
-                nsimd::set1(nsimd::pack<u64>(), 0x1BD11BDAA9FC1A22ULL);'''. \
-                format(nwords=nwords)
+            nsimd::set1(nsimd::pack<u64>(), (u64)0x1BD11BDAA9FC1A22ULL);'''. \
+            format(nwords=nwords)
 
         res = self.gen_signature(nwords, word_size, nrounds)
 
