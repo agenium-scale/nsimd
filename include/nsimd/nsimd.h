@@ -1512,6 +1512,12 @@ T to(S value) {
      warning here. */
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wc++11-long-long"
+#elif defined(NSIMD_IS_GCC) && defined(NSIMD_SVE_FAMILY)
+  /* Using SVE intrinsics svundef_XXX() is supposed to silence the
+     -Wuninitialized warnings but it does not with GCC 10.0 up to GCC 10.2
+     so we silence the warning manually for now. */
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
 
 #include <nsimd/functions.h>
@@ -1520,6 +1526,8 @@ T to(S value) {
   #pragma warning(pop)
 #elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
   #pragma clang diagnostic pop
+#elif defined(NSIMD_IS_GCC) && defined(NSIMD_SVE_FAMILY)
+  #pragma GCC diagnostic pop
 #endif
 
 /* clang-format on */
@@ -1895,7 +1903,7 @@ void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
 NSIMD_INLINE int nsimd_isnan_f16(f16 a) {
   /* We assume IEEE representation for f16's */
   u16 b = nsimd_scalar_reinterpret_u16_f16(a);
-  return (((b >> 10) & 0x1F) == 0x1F) && ((b << 6) != 0u);
+  return ((((b >> 10) & 0x1F) == 0x1F) && ((b << 6) != 0u) ? 1 : 0);
 }
 
 NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
@@ -1906,7 +1914,7 @@ NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return (((b >> 23) & 0xFF) == 0xFF) && ((b << 9) != 0u);
+  return ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) != 0u) ? 1 : 0);
 #endif
 }
 
@@ -1918,14 +1926,14 @@ NSIMD_INLINE int nsimd_isnan_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return (((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u);
+  return ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u) ? 1 : 0);
 #endif
 }
 
 NSIMD_INLINE int nsimd_isinf_f16(f16 a) {
   /* We assume IEEE representation for f16's */
   u16 b = nsimd_scalar_reinterpret_u16_f16(a);
-  return (((b >> 10) & 0x1F) == 0x1F) && ((b << 6) == 0u);
+  return ((((b >> 10) & 0x1F) == 0x1F) && ((b << 6) == 0u) ? 1 : 0);
 }
 
 NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
@@ -1936,7 +1944,7 @@ NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return (((b >> 23) & 0xFF) == 0xFF) && ((b << 9) == 0u);
+  return ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) == 0u) ? 1 : 0);
 #endif
 }
 
@@ -1948,14 +1956,14 @@ NSIMD_INLINE int nsimd_isinf_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return (((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) == 0u);
+  return ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) == 0u) ? 1 : 0);
 #endif
 }
 
 NSIMD_INLINE int nsimd_isnormal_f16(f16 a) {
   /* We assume IEEE representation for f16's */
   u16 b = nsimd_scalar_reinterpret_u16_f16(a);
-  return (((b >> 10) & 0x1F) == 0u) && ((b << 6) != 0u);
+  return ((((b >> 10) & 0x1F) == 0u) && ((b << 6) != 0u) ? 1 : 0);
 }
 
 NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
@@ -1966,7 +1974,7 @@ NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return !((((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u));
+  return (!((((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u)) ? 1 : 0);
 #endif
 }
 
@@ -1978,7 +1986,7 @@ NSIMD_INLINE int nsimd_isnormal_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return !((((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u));
+  return (!((((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u)) ? 1 : 0);
 #endif
 }
 

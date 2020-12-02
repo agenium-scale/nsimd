@@ -589,23 +589,44 @@ def gen_functions(opts):
     common.mkdir_p(dirname)
     filename = os.path.join(dirname, 'functions.hpp')
     with common.open_utf8(opts, filename) as out:
-        out.write('#ifndef NSIMD_MODULES_RANDOM_FUNCTIONS_HPP\n')
-        out.write('#define NSIMD_MODULES_RANDOM_FUNCTIONS_HPP\n\n')
+        out.write(
+        '''#ifndef NSIMD_MODULES_RANDOM_FUNCTIONS_HPP
+           #define NSIMD_MODULES_RANDOM_FUNCTIONS_HPP
 
-        out.write('#include <nsimd/nsimd.h>\n')
-        out.write('#include <nsimd/cxx_adv_api.hpp>\n')
-        out.write('#include <nsimd/cxx_adv_api_functions.hpp>\n')
+           #include <nsimd/nsimd.h>
+           #include <nsimd/cxx_adv_api.hpp>
+           #include <nsimd/cxx_adv_api_functions.hpp>
 
-        out.write('namespace nsimd {\n')
-        out.write('namespace random {\n')
+           #ifdef NSIMD_LONGLONG_IS_EXTENSION
+             #if defined(NSIMD_IS_GCC)
+               #pragma GCC diagnostic push
+               #pragma GCC diagnostic ignored "-Wlong-long"
+             #else if defined(NSIMD_IS_CLANG)
+               #pragma clang diagnostic push
+               #pragma clang diagnostic ignored "-Wlong-long"
+             #endif
+           #endif
+
+           namespace nsimd {
+           namespace random {'''
 
         out.write('{}\n\n'.format(common.hbar))
         for func in rand_functions:
             out.write(func.gen_headers(opts))
             out.write(func.generate(opts))
 
-        out.write('} // namespace nsimd\n')
-        out.write('} // namespace random\n')
+        out.write(
+        '''#ifdef NSIMD_LONGLONG_IS_EXTENSION
+             #if defined(NSIMD_IS_GCC)
+               #pragma GCC diagnostic pop
+             #else if defined(NSIMD_IS_CLANG)
+               #pragma clang diagnostic pop
+             #endif
+           #endif
+
+           } // namespace nsimd
+           } // namespace random''')
+
         out.write('#endif\n')
     common.clang_format(opts, filename)
 
