@@ -151,7 +151,7 @@ if [ -f "${JOBS_FILE}" ]; then
     echo "--   Launching commands"
     ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
     rjob="${REMOTE_DIR}/`basename ${job}`"
-    PID=`${SSH} ${ADDR} "bash -c 'echo \$PPID' ; bash ${rjob} </dev/null \
+    PID=`${SSH} ${ADDR} "bash -c 'echo \\\$PPID' ; bash ${rjob} </dev/null \
                          1>/dev/null 2>/dev/null &"`
     echo "--   PID = ${PID}"
     echo ${PID} >"${TMP_DIR}/`basename ${job} .sh`.pid"
@@ -207,6 +207,7 @@ while true; do
     break
   fi
   if [ "${key}" == "k" ]; then
+    clear
     for pid in "${TMP_DIR}"/*.pid; do
       ADDR=`basename ${job} .sh | sed 's/--.*//g'`
       DESC=`basename ${job} .sh | sed 's/.*--//g'`
@@ -216,6 +217,7 @@ while true; do
     break
   fi
   if [ "${key}" == "d" ]; then
+    clear
     for job in "${TMP_DIR}/"*.sh; do
       ADDR=`basename ${job} .sh | sed 's/--.*//g'`
       DESC=`basename ${job} .sh | sed 's/.*--//g'`

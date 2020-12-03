@@ -887,7 +887,7 @@ namespace nsimd {
   #define NSIMD_CONCEPT_VALUE_TYPE nsimd::simd_value_type_c
 
   template <typename T> concept simd_value_type_or_bool_c =
-      simd_value_type<T> || std::is_same_v<T, bool>;
+      simd_value_type_c<T> || std::is_same_v<T, bool>;
   #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool_c
 
   // We need our own sizeof because of f16 which can be 4 bytes (i.e. a
@@ -895,7 +895,7 @@ namespace nsimd {
   template <typename T> struct sizeof_t { const size_t value = sizeof(T); };
   template <> struct sizeof_t<f16> { const size_t value = 2; };
 
-  template <typename T> const sizeof_v = sizeof_t<T>::value;
+  template <typename T> const size_t sizeof_v = sizeof_t<T>::value;
 
   #define NSIMD_REQUIRES(cond) requires(cond)
 #else
