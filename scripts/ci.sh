@@ -168,11 +168,14 @@ if [ -d "${JOBS_FILE}" ]; then
   TMP_DIR="${JOBS_FILE}"
 fi
 
+trap "stty echo icanon; exit 0" SIGINT
+stty -echo -icanon
 clear
 key=""
 
 while true; do
   tput cup 0 0
+  key=""
   echo
   echo "[q] quit    [d] download outputs and quit    [k] kill all jobs"
   echo
@@ -187,14 +190,21 @@ while true; do
     printf "%-${COLUMNS}s" " "
     W=`expr ${COLUMNS} - 4`
     echo -e "\r    `echo ${ONE_LINER} | cut -c 1-${W}`"
-    echo
+    printf "%-${COLUMNS}s" " "
+    echo -e "\r"
+    read -t 0.01 -n 1 key || true
+    if [ "${key}" != "" ]; then
+      break
+    fi
   done
-  read -t 1 -n 1 key || true
+  if [ "${key}" == "" ]; then
+    read -t 1 -n 1 key || true
+  fi
   if [ "${key}" == "" ]; then
     continue
   fi
   if [ "${key}" == "q" ]; then
-    exit 0
+    break
   fi
   if [ "${key}" == "k" ]; then
     for pid in "${TMP_DIR}"/*.pid; do
@@ -203,7 +213,7 @@ while true; do
       PID=`cat ${pid}`
       ${SSH} ${ADDR} "pkill -P ${PID}"
     done
-    exit 0
+    break
   fi
   if [ "${key}" == "d" ]; then
     for job in "${TMP_DIR}/"*.sh; do
@@ -212,7 +222,9 @@ while true; do
       FILENAME="${REMOTE_DIR}/ci-nsimd-${DESC}-output.txt"
       ${SCP} ${ADDR}:${FILENAME} ${TMP_DIR}
     done
-    exit 0
+    break
   fi
-  key=""
 done
+
+stty echo icanon
+exit 0

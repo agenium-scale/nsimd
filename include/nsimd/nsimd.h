@@ -1903,7 +1903,11 @@ void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
 NSIMD_INLINE int nsimd_isnan_f16(f16 a) {
   /* We assume IEEE representation for f16's */
   u16 b = nsimd_scalar_reinterpret_u16_f16(a);
-  return ((((b >> 10) & 0x1F) == 0x1F) && ((b << 6) != 0u) ? 1 : 0);
+  if ((((b >> 10) & 0x1F) == 0x1F) && ((b << 6) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
@@ -1914,7 +1918,11 @@ NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) != 0u) ? 1 : 0);
+  if ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 #endif
 }
 
@@ -1926,14 +1934,22 @@ NSIMD_INLINE int nsimd_isnan_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u) ? 1 : 0);
+  if ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 #endif
 }
 
 NSIMD_INLINE int nsimd_isinf_f16(f16 a) {
   /* We assume IEEE representation for f16's */
   u16 b = nsimd_scalar_reinterpret_u16_f16(a);
-  return ((((b >> 10) & 0x1F) == 0x1F) && ((b << 6) == 0u) ? 1 : 0);
+  if ((((b >> 10) & 0x1F) == 0x1F) && ((b << 6) == 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
@@ -1944,7 +1960,11 @@ NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) == 0u) ? 1 : 0);
+  if ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) == 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 #endif
 }
 
@@ -1956,14 +1976,22 @@ NSIMD_INLINE int nsimd_isinf_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) == 0u) ? 1 : 0);
+  if ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) == 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 #endif
 }
 
 NSIMD_INLINE int nsimd_isnormal_f16(f16 a) {
   /* We assume IEEE representation for f16's */
   u16 b = nsimd_scalar_reinterpret_u16_f16(a);
-  return ((((b >> 10) & 0x1F) == 0u) && ((b << 6) != 0u) ? 1 : 0);
+  if ((((b >> 10) & 0x1F) == 0u) && ((b << 6) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
@@ -1974,7 +2002,11 @@ NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
 #else
   /* We assume IEEE representation for f32's */
   u32 b = nsimd_scalar_reinterpret_u32_f32(a);
-  return (!((((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u)) ? 1 : 0);
+  if (!((((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u))) {
+    return 1;
+  } else {
+    return 0;
+  }
 #endif
 }
 
@@ -1986,7 +2018,11 @@ NSIMD_INLINE int nsimd_isnormal_f64(f64 a) {
 #else
   /* We assume IEEE representation for f64's */
   u64 b = nsimd_scalar_reinterpret_u64_f64(a);
-  return (!((((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u)) ? 1 : 0);
+  if (!((((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u))) {
+    return 1;
+  } else {
+    return 0;
+  }
 #endif
 }
 

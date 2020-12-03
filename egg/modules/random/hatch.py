@@ -601,7 +601,7 @@ def gen_functions(opts):
              #if defined(NSIMD_IS_GCC)
                #pragma GCC diagnostic push
                #pragma GCC diagnostic ignored "-Wlong-long"
-             #else if defined(NSIMD_IS_CLANG)
+             #elif defined(NSIMD_IS_CLANG)
                #pragma clang diagnostic push
                #pragma clang diagnostic ignored "-Wlong-long"
              #endif

@@ -1973,9 +1973,8 @@ def fma_fms(func, simd_ext, typ):
                                 {in2});'''.format(op=op, **fmtspec)
     else:
         emulate = '''return nsimd_{op}_{simd_ext}_{typ}(
-                              nsimd_sub_{simd_ext}_{typ}(
-                                {pre}setzero{sufsi}(),
-                                  nsimd_mul_{simd_ext}_{typ}({in0}, {in1})),
+                              nsimd_mul_{simd_ext}_{typ}(
+                                nsimd_neg_{simd_ext}_{typ}({in0}), {in1}),
                                     {in2});'''.format(op=op, **fmtspec)
     # One could use only emulate and no split. But to avoid splitting and
     # merging SIMD register for each operation: sub, mul and add, we use
