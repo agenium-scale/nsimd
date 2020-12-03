@@ -39,6 +39,12 @@ namespace spmd {
 
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
   #if defined(NSIMD_IS_GCC)
+    /* Not emitting the warning -Wvariadic-macros is not possible with
+       GCC <= 12. It is a bug. A workaround is to tell GCC to consider this
+       header file as a system header file so that all warnings are not
+       emitted. This is not satisfying but necessary for the moment.
+       */
+    #pragma GCC system_header
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wvariadic-macros"
   #elif defined(NSIMD_IS_CLANG)

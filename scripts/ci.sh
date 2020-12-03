@@ -180,13 +180,15 @@ while true; do
     ADDR=`basename ${job} .sh | sed 's/--.*//g'`
     DESC=`basename ${job} .sh | sed 's/.*--//g'`
     FILENAME="${REMOTE_DIR}/ci-nsimd-${DESC}-one-liner.txt"
-    ONE_LINER=`${SSH} ${ADDR} "[ -f ${FILENAME} ] && cat ${FILENAME}" || echo`
-    printf "%-70s" " "
+    ONE_LINER=`${SSH} ${ADDR} "[ -f ${FILENAME} ] && cat ${FILENAME}" \
+                      </dev/null || echo`
+    printf "%-${$COLUMNS}s" " "
     echo -e "\r${ADDR}, ${DESC}"
-    printf "%-74s" " "
-    echo -e "\r    `echo ${ONE_LINER} | cut -c 1-70`"
+    printf "%-${$COLUMNS}s" " "
+    W=`expr ${COLUMNS} - 4`
+    echo -e "\r    `echo ${ONE_LINER} | cut -c 1-${W}`"
     echo
-    read -t 0.1 -n 1 key || true
+    read -t 0 -n 1 key || true
   done
   read -t 1 -n 1 key || true
   if [ "${key}" == "" ]; then
