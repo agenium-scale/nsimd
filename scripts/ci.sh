@@ -182,13 +182,12 @@ while true; do
     FILENAME="${REMOTE_DIR}/ci-nsimd-${DESC}-one-liner.txt"
     ONE_LINER=`${SSH} ${ADDR} "[ -f ${FILENAME} ] && cat ${FILENAME}" \
                       </dev/null || echo`
-    printf "%-${$COLUMNS}s" " "
+    printf "%-${COLUMNS}s" " "
     echo -e "\r${ADDR}, ${DESC}"
-    printf "%-${$COLUMNS}s" " "
+    printf "%-${COLUMNS}s" " "
     W=`expr ${COLUMNS} - 4`
     echo -e "\r    `echo ${ONE_LINER} | cut -c 1-${W}`"
     echo
-    read -t 0 -n 1 key || true
   done
   read -t 1 -n 1 key || true
   if [ "${key}" == "" ]; then

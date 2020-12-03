@@ -608,7 +608,9 @@ def gen_functions(opts):
            #endif
 
            namespace nsimd {
-           namespace random {'''
+           namespace random {
+
+           ''')
 
         out.write('{}\n\n'.format(common.hbar))
         for func in rand_functions:
@@ -625,9 +627,11 @@ def gen_functions(opts):
            #endif
 
            } // namespace nsimd
-           } // namespace random''')
+           } // namespace random
 
-        out.write('#endif\n')
+           #endif
+           ''')
+
     common.clang_format(opts, filename)
 
 def gen_tests(opts):
