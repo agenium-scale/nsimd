@@ -335,7 +335,9 @@ def gen_tests_for_shifts(opts, t, operator):
             1 + (((unsigned int)i * 69342380 + 414585) % 5))
 
         int main() {{
-          for (unsigned int n = 64; n < 1000000; n *= 2) {{
+          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
+            unsigned int n = n_[i];
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {t} *tab0 = nsimd::device_calloc<{t}>(n);
@@ -359,6 +361,7 @@ def gen_tests_for_shifts(opts, t, operator):
         }}
         '''.format(gpu_params=gpu_params, op_name=op_name, t=t,
                    typnbits=t[1:]))
+    common.clang_format(opts, filename, cuda=True)
 
 def gen_tests_for(opts, t, tt, operator):
     op_name = operator.name
@@ -557,7 +560,9 @@ def gen_tests_for(opts, t, tt, operator):
             1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         int main() {{
-          for (unsigned int n = 64; n < 1000000; n *= 2) {{
+          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
+            unsigned int n = n_[i];
             int ret = 0;
             {fill_tabs}
             {typ} *ref = nsimd::device_calloc<{typ}>(n);

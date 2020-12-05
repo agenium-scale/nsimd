@@ -627,7 +627,7 @@ def gen_functions(opts):
         '''#ifdef NSIMD_LONGLONG_IS_EXTENSION
              #if defined(NSIMD_IS_GCC)
                #pragma GCC diagnostic pop
-             #else if defined(NSIMD_IS_CLANG)
+             #elif defined(NSIMD_IS_CLANG)
                #pragma clang diagnostic pop
              #endif
            #endif

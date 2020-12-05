@@ -844,7 +844,7 @@ void store4(typename Pack::value_type *ptr, Pack const &p1, Pack const &p2,
 
 // ----------------------------------------------------------------------------
 
-template <NSIMD_CONCEPT_VALUE_TYPE T> T native_register(T a) { return a; }
+template <typename T> T native_register(T a) { return a; }
 
 template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
 typename pack<T, 1, SimdExt>::simd_vector

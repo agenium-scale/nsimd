@@ -504,7 +504,9 @@ def gen_tests_for_shifts(opts, t, operator):
         // clang-format on
 
         int main() {{
-          for (unsigned int n = 10; n < 1000000; n *= 2) {{
+          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
+            unsigned int n = n_[i];
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {typ} *a0 = nsimd::device_calloc<{typ}>(n);
@@ -600,7 +602,9 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         // clang-format on
 
         int main() {{
-          for (unsigned int n = 10; n < 1000000; n *= 2) {{
+          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
+            unsigned int n = n_[i];
             int ret = 0;
             {typ} *a0 = nsimd::device_calloc<{typ}>(n);
             prng7(a0, n);
@@ -805,7 +809,9 @@ def gen_tests_for(opts, t, operator):
         #endif
 
         int main() {{
-          for (unsigned int n = 10; n < 1000000; n *= 2) {{
+          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
+            unsigned int n = n_[i];
             int ret = 0;
             {fill_tabs}
             {typ} *ref = nsimd::device_calloc<{typ}>(n);

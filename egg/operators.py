@@ -353,7 +353,7 @@ class Operator(object, metaclass=MAddToOperators):
             temp = ', '.join(['{} a{}'.format(get_type(a[1], typename),
                               a[0]) for a in args_list])
             temp += ', ' if temp != '' else ''
-            if not self.closed :
+            if not self.closed:
                 func_args = temp + 'F, T'
                 if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
                     cxx20_require = \
@@ -463,7 +463,7 @@ class Operator(object, metaclass=MAddToOperators):
                 tmpl = 'NSIMD_REQUIRES((' \
                     '{}sizeof_v<typename ToPackType::value_type> == ' \
                         '{}sizeof_v<T> && ' \
-                    'ToPackType::unroll == N && '\
+                    'ToPackType::unroll == {{}} && '\
                     'std::is_same_v<typename ToPackType::simd_ext, SimdExt>))'
                 if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
                     cxx20_require = tmpl.format('', '')
@@ -475,11 +475,13 @@ class Operator(object, metaclass=MAddToOperators):
             ret = { \
                 '1': 'template <{tmpl_args1}> {cxx20_require}{ret1} ' \
                      '{cxx_name}({args1});'. \
-                     format(tmpl_args1=tmpl_args1, cxx20_require=cxx20_require,
+                     format(tmpl_args1=tmpl_args1,
+                            cxx20_require=cxx20_require.format('1'),
                             ret1=ret1, args1=args1, cxx_name=self.name),
                 'N': 'template <{tmpl_argsN}> {cxx20_require}{retN} ' \
                      '{cxx_name}({argsN});'. \
-                     format(tmpl_argsN=tmpl_argsN, cxx20_require=cxx20_require,
+                     format(tmpl_argsN=tmpl_argsN,
+                            cxx20_require=cxx20_require.format('N'),
                             retN=retN, argsN=argsN, cxx_name=self.name)
             }
             if self.cxx_operator:
@@ -499,7 +501,8 @@ class Operator(object, metaclass=MAddToOperators):
                 ret['dispatch'] = \
                 'template <{tmpl_argsN}> {cxx20_require}{retN} ' \
                 '{cxx_name}({other_argsN});'. \
-                format(tmpl_argsN=tmpl_argsN, cxx20_require=cxx20_require,
+                format(tmpl_argsN=tmpl_argsN,
+                       cxx20_require=cxx20_require.format('N'),
                        other_argsN=other_argsN, retN=retN, cxx_name=self.name)
             elif tag_dispatching:
                 if [i for i in ['s', '*', 'c*'] if i in self.params[1:]] == []:
