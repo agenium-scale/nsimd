@@ -37,7 +37,7 @@ set root  = @source_dir
 ## Some defaults
 
 ifnot_set "SIMD extension to use" simd = cpu
-ifnot_set "Optional flags like FMA, FP16..." optional_flags = ""
+ifnot_set "CUDA target arch flag(s) for tests" cuda_arch_flags = ""
 [L] ifnot_set "MPFR compilation flags (for tests only)" mpfr = -lmpfr
 [W] ifnot_set "MPFR compilation flags (for tests only)" mpfr = ""
 ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
@@ -179,8 +179,8 @@ begin_translate_if $build_library_only == false
 
 set tests_comp_for_               = c++
 set tests_comp_for_cpu            = c++
-set tests_comp_for_cuda           = nvcc
-set tests_comp_for_rocm           = hipcc
+set tests_comp_for_cuda           = nvcc $cuda_arch_flags
+set tests_comp_for_rocm           = hipcc $cuda_arch_flags
 set tests_comp_for_dpcpp          = dpcpp
 set tests_comp_for_sse2           = c++
 set tests_comp_for_sse42          = c++

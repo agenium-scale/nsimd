@@ -178,7 +178,8 @@ while true; do
   key=""
   echo
   echo "[q] quit    [d] download outputs and quit    [k] kill all jobs"
-  echo
+  printf "%-${COLUMNS}s" " "
+  echo -e "\r"
   for job in "${TMP_DIR}/"*.sh; do
     ADDR=`basename ${job} .sh | sed 's/--.*//g'`
     DESC=`basename ${job} .sh | sed 's/.*--//g'`
