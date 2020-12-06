@@ -123,19 +123,19 @@ template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
             hipMemcpyDeviceToHost);
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                               \
-  template <typename T>                                                        \
-  __global__ void kernel_##func_name##_(T *ptr, unsigned int n) {              \
-    unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;           \
-    if (i < n) {                                                               \
-      ptr[i] = (T)(expr);                                                      \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  template <typename T> void func_name(T *ptr, size_t sz) {                    \
-    hipLaunchKernelGGL((kernel_##func_name##_<T>),                             \
-                       (unsigned int)((sz + 127) / 128), 128, 0, NULL, ptr,    \
-                       (unsigned int)sz);                                      \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  __global__ void kernel_##func_name##_(T *ptr, size_t n) {                   \
+    size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;                \
+    if (i < n) {                                                              \
+      ptr[i] = (T)(expr);                                                     \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *ptr, size_t sz) {                   \
+    hipLaunchKernelGGL((kernel_##func_name##_<T>),                            \
+                       (size_t)((sz + 127) / 128), 128, 0, NULL, ptr,         \
+                       (size_t)sz);                                           \
   }
 
 // ----------------------------------------------------------------------------

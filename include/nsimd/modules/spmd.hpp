@@ -79,15 +79,15 @@ namespace spmd {
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
-  __global__ void name(__VA_ARGS__, unsigned int n) {                         \
-    unsigned int spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;    \
+  __global__ void name(__VA_ARGS__, size_t n) {                               \
+    size_t spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;          \
     if (spmd_i_ < n) {
 
 // templated kernel definition
 #define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
   template <typename template_argument, int spmd_ScalarBits_>                 \
-  __global__ void name(__VA_ARGS__, unsigned int n) {                         \
-    unsigned int spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;    \
+  __global__ void name(__VA_ARGS__, size_t n) {                               \
+    size_t spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;          \
     if (spmd_i_ < n) {
 
 #endif
@@ -130,9 +130,8 @@ namespace spmd {
                               ...)                                            \
   hipLaunchKernelGGL(                                                         \
       (name<spmd_scalar_bits_>),                                              \
-      (unsigned int)((n + threads_per_block - 1) / threads_per_block),        \
-      (unsigned int)(threads_per_block), 0, NULL, __VA_ARGS__,                \
-      (unsigned int)n)
+      (size_t)((n + threads_per_block - 1) / threads_per_block),              \
+      (size_t)(threads_per_block), 0, NULL, __VA_ARGS__, (size_t)n)
 
 #endif
 

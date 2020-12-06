@@ -136,19 +136,19 @@ template <typename T> void del(T *ptr) { cudaFree(ptr); }
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
-__global__ void device_cmp_blocks(T *src1, T *src2, unsigned int n) {
+__global__ void device_cmp_blocks(T *src1, T *src2, size_t n) {
   extern __shared__ char buf_[]; // size of a block
   T *buf = (T*)buf_;
-  unsigned int tid = hipThreadIdx_x;
-  unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+  size_t tid = hipThreadIdx_x;
+  size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
   if (i < n) {
     buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
   }
 
-  const unsigned int block_start = hipBlockIdx_x * hipBlockDim_x;
-  const unsigned int block_end = block_start + hipBlockDim_x;
+  const size_t block_start = hipBlockIdx_x * hipBlockDim_x;
+  const size_t block_end = block_start + hipBlockDim_x;
 
-  unsigned int size;
+  size_t size;
   if (block_end < n) {
     size = hipBlockDim_x;
   } else {
@@ -156,7 +156,7 @@ __global__ void device_cmp_blocks(T *src1, T *src2, unsigned int n) {
   }
 
   __syncthreads();
-  for (unsigned int s = size / 2; s != 0; s /= 2) {
+  for (size_t s = size / 2; s != 0; s /= 2) {
     if (tid < s && i < n) {
       buf[tid] = nsimd::gpu_mul(buf[tid], buf[tid + s]);
       __syncthreads();
@@ -168,19 +168,19 @@ __global__ void device_cmp_blocks(T *src1, T *src2, unsigned int n) {
 }
 
 template <typename T>
-__global__ void device_cmp_array(int *dst, T *src1, unsigned int n) {
+__global__ void device_cmp_array(int *dst, T *src1, size_t n) {
   // reduction on the whole vector
   T buf = T(1);
-  for (unsigned int i = 0; i < n; i += blockDim.x) {
+  for (size_t i = 0; i < n; i += blockDim.x) {
     buf = nsimd::gpu_mul(buf, src1[i]);
   }
-  unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+  size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
   if (i == 0) {
     dst[0] = int(buf);
   }
 }
 
-template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
+template <typename T> bool cmp(T *src1, T *src2, size_t n) {
   int host_ret;
   int *device_ret;
   if (hipMalloc((void **)&device_ret, sizeof(int)) != hipSuccess) {
@@ -196,7 +196,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   return bool(host_ret);
 }
 
-template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
+template <typename T> bool cmp(T *src1, T *src2, size_t n, double) {
   return cmp(src1, src2, n);
 }
 

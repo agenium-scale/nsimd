@@ -45,6 +45,7 @@ const nsimd::nat end = nsimd::nat(-1);
 
 // ----------------------------------------------------------------------------
 // Error management
+
 #if defined(NSIMD_CUDA)
 #define nsimd_cuda_assert(ans) tet1d::gpuCheck((ans), __FILE__, __LINE__)
 inline void gpuCheck(cudaError_t code, const char *file, int line) {
