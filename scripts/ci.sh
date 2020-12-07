@@ -151,7 +151,7 @@ if [ -f "${JOBS_FILE}" ]; then
     echo "--   Launching commands"
     ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
     rjob="${REMOTE_DIR}/`basename ${job}`"
-    PID=`${SSH} ${ADDR} "bash -c 'echo \\\$PPID' ; bash ${rjob} </dev/null \
+    PID=`${SSH} ${ADDR} "echo \\\$PPID ; bash ${rjob} </dev/null \
                          1>/dev/null 2>/dev/null &"`
     echo "--   PID = ${PID}"
     echo ${PID} >"${TMP_DIR}/`basename ${job} .sh`.pid"
@@ -199,7 +199,7 @@ while true; do
     fi
   done
   if [ "${key}" == "" ]; then
-    read -t 1 -n 1 key || true
+    read -t 0.01 -n 1 key || true
   fi
   if [ "${key}" == "" ]; then
     continue

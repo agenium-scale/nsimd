@@ -310,14 +310,14 @@ def gen_tests_for_shifts(opts, t, operator):
 
         #elif defined(NSIMD_ROCM)
 
-        __global__ void kernel({t} *dst, {t} *tab0, unsigned int n, int s) {{
-          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+        __global__ void kernel({t} *dst, {t} *tab0, size_t n, int s) {{
+          size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
           if (i < n) {{
             dst[i] = nsimd::gpu_{op_name}(tab0[i], s);
           }}
         }}
 
-        void compute_result({t} *dst, {t} *tab0, unsigned int n, int s) {{
+        void compute_result({t} *dst, {t} *tab0, size_t n, int s) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, tab0, n, s);
         }}
 
@@ -529,14 +529,14 @@ def gen_tests_for(opts, t, tt, operator):
 
         #elif defined(NSIMD_ROCM)
 
-        __global__ void kernel({typ} *dst, {args_tabs}, unsigned int n) {{
-          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+        __global__ void kernel({typ} *dst, {args_tabs}, size_t n) {{
+          size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
           if (i < n) {{
             {gpu_kernel}
           }}
         }}
 
-        void compute_result({typ} *dst, {args_tabs}, unsigned int n) {{
+        void compute_result({typ} *dst, {args_tabs}, size_t n) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, {args_tabs_call},
                              n);
         }}
@@ -715,7 +715,7 @@ def gen_functions(opts):
           }}
 
         #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
-          __device__ {return_type} gpu_get(nsimd:: nat i) const {{
+          __device__ {return_type} gpu_get(nsimd::nat i) const {{
             {impl_gpu}
           }}
         #else

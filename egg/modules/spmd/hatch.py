@@ -69,7 +69,7 @@ addition of `float`'s.
 
 ```c++
 spmd_kernel_1d(add, float *dst, float *a, float *b)
-  k_store(k_load(a) + k_load(b));
+  k_store(dst, k_load(a) + k_load(b));
 spmd_kernel_end
 ```
 
@@ -471,14 +471,14 @@ def gen_tests_for_shifts(opts, t, operator):
 
         #elif defined(NSIMD_ROCM)
 
-        __global__ void kernel({typ} *dst, {typ} *a0, unsigned int n, int s) {{
-          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+        __global__ void kernel({typ} *dst, {typ} *a0, size_t n, int s) {{
+          size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
           if (i < n) {{
             dst[i] = nsimd::gpu_{op_name}(a0[i], s);
           }}
         }}
 
-        void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
+        void compute_result({typ} *dst, {typ} *a0, size_t n, int s) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n, s);
         }}
 
@@ -566,15 +566,15 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 
         #elif defined(NSIMD_ROCM)
 
-        __global__ void kernel({typ} *dst, {typ} *a0, unsigned int n) {{
-          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+        __global__ void kernel({typ} *dst, {typ} *a0, size_t n) {{
+          size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
           if (i < n) {{
             dst[i] = nsimd::gpu_{op_name}({typ}(), nsimd::gpu_{op_name}(
                          {totyp}(), a0[i]));
           }}
         }}
 
-        void compute_result({typ} *dst, {typ} *a0, unsigned int n) {{
+        void compute_result({typ} *dst, {typ} *a0, size_t n) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n);
         }}
 
@@ -764,14 +764,14 @@ def gen_tests_for(opts, t, operator):
 
         #elif defined(NSIMD_ROCM)
 
-        __global__ void kernel({typ} *dst, {k_args}, unsigned int n) {{
-          unsigned int i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+        __global__ void kernel({typ} *dst, {k_args}, size_t n) {{
+          size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
           if (i < n) {{
             {gpu_kernel}
           }}
         }}
 
-        void compute_result({typ} *dst, {k_args}, unsigned int n) {{
+        void compute_result({typ} *dst, {k_args}, size_t n) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, {k_call_args},
                              n);
         }}

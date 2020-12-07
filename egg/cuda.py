@@ -29,11 +29,11 @@ fmtspec = dict()
 
 def get_impl_f16(operator, totyp, typ):
     if operator.name == 'round_to_even':
-        arch53_code = 'return __hrint({in0}, {in1});'.format(**fmtspec)
+        arch53_code = 'return hrint({in0}, {in1});'.format(**fmtspec)
     elif operator.name in ['rec', 'rec8', 'rec11']:
-        arch53_code = 'return __hrcp({in0});'.format(**fmtspec)
+        arch53_code = 'return hrcp({in0});'.format(**fmtspec)
     elif operator.name in ['rsqrt8', 'rsqrt11']:
-        arch53_code = 'return __hrsqrt({in0});'.format(**fmtspec)
+        arch53_code = 'return hrsqrt({in0});'.format(**fmtspec)
     elif operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
@@ -50,8 +50,14 @@ def get_impl_f16(operator, totyp, typ):
         arch53_code = 'return __h{op}({in0}, {in1});'. \
                       format(op=operator.name[:-1], **fmtspec)
     else:
-        arch53_code = 'return __h{}({in0}, {in1});'. \
-                      format(operator.name, **fmtspec)
+        args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
+                          for i in range(len(operator.params[1:]))])
+        # Some f16 functions are not prefixed by `__`
+        not_prefixed = ['ceil', 'floor', 'trunc']
+        if operator.name in not_prefixed:
+            arch53_code = 'return h{}({});'.format(operator.name, args)
+        else:
+            arch53_code = 'return __h{}({});'.format(operator.name, args)
     args = ', '.join(['__half2float({{in{}}})'.format(i).format(**fmtspec) \
                       for i in range(len(operator.params[1:]))])
     if operator.params[0] == 'l':
