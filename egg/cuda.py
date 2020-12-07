@@ -29,7 +29,7 @@ fmtspec = dict()
 
 def get_impl_f16(operator, totyp, typ):
     if operator.name == 'round_to_even':
-        arch53_code = 'return hrint({in0}, {in1});'.format(**fmtspec)
+        arch53_code = 'return hrint({in0});'.format(**fmtspec)
     elif operator.name in ['rec', 'rec8', 'rec11']:
         arch53_code = 'return hrcp({in0});'.format(**fmtspec)
     elif operator.name in ['rsqrt8', 'rsqrt11']:
