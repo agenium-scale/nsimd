@@ -53,7 +53,7 @@ def get_impl_f16(operator, totyp, typ):
         args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
                           for i in range(len(operator.params[1:]))])
         # Some f16 functions are not prefixed by `__`
-        not_prefixed = ['ceil', 'floor', 'trunc']
+        not_prefixed = ['ceil', 'floor', 'trunc', 'sqrt']
         if operator.name in not_prefixed:
             arch53_code = 'return h{}({});'.format(operator.name, args)
         else:
