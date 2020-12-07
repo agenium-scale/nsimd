@@ -504,7 +504,7 @@ def gen_tests_for_shifts(opts, t, operator):
         // clang-format on
 
         int main() {{
-          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          unsigned int n_[3] = {{ 10, 1001, 10001 }};
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
             unsigned int n = n_[i];
             for (int s = 0; s < {typnbits}; s++) {{
@@ -602,7 +602,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         // clang-format on
 
         int main() {{
-          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          unsigned int n_[3] = {{ 10, 1001, 10001 }};
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
             unsigned int n = n_[i];
             int ret = 0;
@@ -809,7 +809,7 @@ def gen_tests_for(opts, t, operator):
         #endif
 
         int main() {{
-          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          unsigned int n_[3] = {{ 10, 1001, 10001 }};
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
             unsigned int n = n_[i];
             int ret = 0;

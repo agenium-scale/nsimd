@@ -335,7 +335,7 @@ def gen_tests_for_shifts(opts, t, operator):
             1 + (((unsigned int)i * 69342380 + 414585) % 5))
 
         int main() {{
-          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          unsigned int n_[3] = {{ 10, 1001, 10001 }};
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
             unsigned int n = n_[i];
             for (int s = 0; s < {typnbits}; s++) {{
@@ -560,7 +560,7 @@ def gen_tests_for(opts, t, tt, operator):
             1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         int main() {{
-          unsigned int n_[3] = {{ 10, 1001, 10000001 }};
+          unsigned int n_[3] = {{ 10, 1001, 10001 }};
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
             unsigned int n = n_[i];
             int ret = 0;
