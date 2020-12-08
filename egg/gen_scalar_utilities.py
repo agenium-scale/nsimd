@@ -29,8 +29,7 @@ import rocm
 
 def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
     if cuda_impl == rocm_impl:
-        return '''#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-                      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+        return '''#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
                   inline {gpu_sig} {{
                     {cuda_impl}
@@ -38,7 +37,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
 
                   #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl)
     else:
-        return '''#ifdef NSIMD_CUDA_COMPILING_FOR_DEVICE
+        return '''#ifdef NSIMD_CUDA
 
                   inline {gpu_sig} {{
                     {cuda_impl}
@@ -46,7 +45,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
 
                   #endif
 
-                  #ifdef NSIMD_ROCM_COMPILING_FOR_DEVICE
+                  #ifdef NSIMD_ROCM
 
                   inline {gpu_sig} {{
                     {rocm_impl}
@@ -101,8 +100,7 @@ def doit(opts):
 
            {scalar_reinterpret_decls}
 
-           #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-               defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+           #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
            namespace nsimd {{
 

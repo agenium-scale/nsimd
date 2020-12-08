@@ -56,10 +56,9 @@ namespace spmd {
 // ----------------------------------------------------------------------------
 // CUDA and ROCm
 
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                               \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
@@ -114,7 +113,7 @@ namespace spmd {
 #define spmd_call_tmpl_dev_func(name, template_argument, ...)                 \
   name<template_argument, spmd_ScalarBits_>(__VA_ARGS__)
 
-#ifdef NSIMD_CUDA_COMPILING_FOR_DEVICE
+#ifdef NSIMD_CUDA
 
 // launch 1d kernel CUDA
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \

@@ -27,7 +27,10 @@ Note that we do support the Armclang C and C++ compilers but for NSIMD there
 is no need to have code different from Clang's specific code so we do no
 provide a macro to detect this compiler in particular.
 
-Note that when one of the above macros is defined the others are not.
+Note also that two of the above macros can be defined at the same time. This
+happens typically when compiling for a device. For example when compiling for
+NVIDIA CUDA with nvcc both `NSIMD_IS_NVCC` and `NSIMD_IS_GCC` (when the host
+compiler is GCC).
 
 ## Compilation environment and contants
 
@@ -54,6 +57,7 @@ Note that when one of the above macros is defined the others are not.
 | `NSIMD_I64_MAX`   | Maximum value for i64 | 9223372036854775807             |
 | `NSIMD_DLLSPEC`   | (Windows) DLL storage-class information | `__declspec(dllexport)` or `__declspec(dllimport)` |
 | `NSIMD_DLLSPEC`   | (Unix) storage-class information        | `extern` or nothing |
+| `NSIMD_C_LINKAGE_FOR_F16` | Indicate whether functions involving f16 have C linkage | defined or not |
 
 ## Targeted architecture detection
 
@@ -80,7 +84,7 @@ following defines.
 | `NSIMD_SVE512`         | Arm SVE (size known at compilation to 512 bits)   |
 | `NSIMD_SVE1024`        | Arm SVE (size known at compilation to 1024 bits)  |
 | `NSIMD_SVE2048`        | Arm SVE (size known at compilation to 2048 bits)  |
-| `NSIMD_NATIVE_FP16`    | Architecture supports natively IEEE float16       |
+| `NSIMD_FP16`           | Architecture supports natively IEEE float16       |
 | `NSIMD_FMA`            | Architecture supports natively FMAs               |
 
 ## Targeted architecture constants

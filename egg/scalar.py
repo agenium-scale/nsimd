@@ -29,7 +29,7 @@ def opnum(func, typ):
              format(func=func.format(**fmtspec), **fmtspec)
     if typ == 'f16':
         return \
-        '''#ifdef NSIMD_NATIVE_FP16
+        '''#ifdef NSIMD_ARM_FP16
              {normal}
            #else
              return nsimd_f32_to_f16({func});
@@ -47,7 +47,7 @@ def cmp(func, typ):
              format(func=func.format(**fmtspec), **fmtspec)
     if typ == 'f16':
         return \
-        '''#ifdef NSIMD_NATIVE_FP16
+        '''#ifdef NSIMD_ARM_FP16
              {normal}
            #else
              return ({func});
@@ -232,11 +232,10 @@ def reinterpret(totyp, typ):
             emulated = 'return nsimd_scalar_reinterpret_i16_u16({in0}.u);'. \
                        format(**fmtspec)
         return \
-        '''#if defined(NSIMD_NATIVE_FP16) && defined(NSIMD_IS_GCC)
+        '''#if defined(NSIMD_ARM_FP16) && defined(NSIMD_IS_GCC)
              {via_union}
-           #elif (defined(NSIMD_NATIVE_FP16) && !defined(NSIMD_IS_GCC)) || \
-                 defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-                 defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+           #elif (defined(NSIMD_ARM_FP16) && !defined(NSIMD_IS_GCC)) || \
+                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
              {via_memcpy}
            #else
              {emulated}
@@ -252,11 +251,10 @@ def reinterpret(totyp, typ):
                           ret.u = nsimd_scalar_reinterpret_u16_i16({in0});
                           return ret;'''.format(**fmtspec)
         return \
-        '''#if defined(NSIMD_NATIVE_FP16) && defined(NSIMD_IS_GCC)
+        '''#if defined(NSIMD_ARM_FP16) && defined(NSIMD_IS_GCC)
              {via_union}
-           #elif (defined(NSIMD_NATIVE_FP16) && !defined(NSIMD_IS_GCC)) || \
-                 defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-                 defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+           #elif (defined(NSIMD_ARM_FP16) && !defined(NSIMD_IS_GCC)) || \
+                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
              {via_memcpy}
            #else
              {emulated}
@@ -274,13 +272,13 @@ def cvt(totyp, typ):
     if totyp == typ:
         return 'return {in0};'.format(**fmtspec)
     if typ == 'f16':
-        return '''#ifdef NSIMD_NATIVE_FP16
+        return '''#ifdef NSIMD_ARM_FP16
                       return ({totyp}){in0};
                   #else
                       return ({totyp})nsimd_f16_to_f32({in0});
                   #endif'''.format(**fmtspec)
     if totyp == 'f16':
-        return '''#ifdef NSIMD_NATIVE_FP16
+        return '''#ifdef NSIMD_ARM_FP16
                       return (f16){in0};
                   #else
                       return nsimd_f32_to_f16((f32){in0});

@@ -102,7 +102,7 @@ phony all deps libnsimd_$simd$$so$
 build_file libnsimd_$simd$$so deps ${o_for_$simd$}
 	c++ -shared @in -o @out
 
-set ldflags = -L. -lnsimd_$simd
+set ldflags = -fPIC -L. -lnsimd_$simd
 
 ## CPU (emulation) rules for building
 
@@ -233,19 +233,35 @@ build_files cpp20 foreach glob:$root$/tests/*.cpp \
                   autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++20 @item $tests_flags -o @out
 
+build_files cu98 foreach glob:$root$/tests/*.cu \
+                 foreach glob:$root$/tests/cxx_base/*.cpp \
+                 foreach glob:$root$/tests/cxx_adv/*.cpp \
+                 as tests.%r.cu98$exe \
+                 autodeps @item libnsimd_$simd$$so$
+	nvcc -std=c++98 @item $tests_flags -o @out
+
+build_files cu11 foreach glob:$root$/tests/*.cu \
+                 foreach glob:$root$/tests/cxx_base/*.cpp \
+                 foreach glob:$root$/tests/cxx_adv/*.cpp \
+                 as tests.%r.cu11$exe \
+                 autodeps @item libnsimd_$simd$$so$
+	nvcc -std=c++11 @item $tests_flags -o @out
+
 phony tests.c89 deps $c89.files
 phony tests.c99 deps $c99.files
 phony tests.c11 deps $c11.files
 phony tests.cpp98 deps $cpp98.files
 phony tests.cpp11 deps $cpp11.files
 phony tests.cpp20 deps $cpp20.files
+phony tests.cu98 deps $cu98.files
+phony tests.cu11 deps $cu11.files
 
 # Phony target for tests
 
 set phony_tests_for_               = tests.c89 tests.c99 tests.cpp98 \
                                      tests.cpp11
 set phony_tests_for_cpu            = $phony_tests_for_
-set phony_tests_for_cuda           = tests.cpp98 tests.cpp11
+set phony_tests_for_cuda           = tests.cu98 tests.cu11
 set phony_tests_for_rocm           = tests.cpp11
 set phony_tests_for_dpcpp          = tests.cpp11
 set phony_tests_for_sse2           = $phony_tests_for_

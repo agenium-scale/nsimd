@@ -80,7 +80,9 @@ implementation below was written so that it can easily be SIMD'ed.
 #endif
 #include <algorithm>
 
+#ifdef NSIMD_C_LINKAGE_FOR_F16
 extern "C" {
+#endif
 
 /* Union used to manipulate bit in float numbers. */
 typedef union {
@@ -261,7 +263,9 @@ NSIMD_DLLEXPORT f16 nsimd_f32_to_f16(f32 a) {
 
 // ----------------------------------------------------------------------------
 
+#ifdef NSIMD_C_LINKAGE_FOR_F16
 } // extern "C"
+#endif
 
 // ----------------------------------------------------------------------------
 // C++ versions in namespace nsimd

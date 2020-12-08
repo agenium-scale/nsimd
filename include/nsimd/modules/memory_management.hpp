@@ -35,7 +35,7 @@ namespace nsimd {
 // ----------------------------------------------------------------------------
 // CUDA
 
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA)
 
 template <typename T> T *device_malloc(size_t sz) {
   void *ret;
@@ -88,7 +88,7 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 // ----------------------------------------------------------------------------
 // ROCm
 
-#elif defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_ROCM)
 
 template <typename T> T *device_malloc(size_t sz) {
   void *ret;
@@ -184,8 +184,7 @@ struct paired_pointers_t {
 template <typename T> paired_pointers_t<T> pair_malloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   ret.device_ptr = device_malloc<T>(sz);
   if (ret.device_ptr == NULL) {
     ret.host_ptr = NULL;
@@ -218,8 +217,7 @@ template <typename T> paired_pointers_t<T> pair_malloc_or_exit(size_t sz) {
 template <typename T> paired_pointers_t<T> pair_calloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   ret.device_ptr = device_calloc<T>(sz);
   if (ret.device_ptr == NULL) {
     ret.host_ptr = NULL;
@@ -250,8 +248,7 @@ template <typename T> paired_pointers_t<T> pair_calloc_or_exit(size_t sz) {
 }
 
 template <typename T> void pair_free(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   device_free(p.device_free);
   free((void *)p.host_ptr);
 #else
@@ -260,8 +257,7 @@ template <typename T> void pair_free(paired_pointers_t<T> p) {
 }
 
 template <typename T> void copy_to_device(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   copy_to_device(p.device_ptr, p.host_ptr, p.sz);
 #else
   (void)p;
@@ -269,8 +265,7 @@ template <typename T> void copy_to_device(paired_pointers_t<T> p) {
 }
 
 template <typename T> void copy_to_host(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   copy_to_host(p.host_ptr, p.device_ptr, p.sz);
 #else
   (void)p;

@@ -35,8 +35,7 @@ SOFTWARE.
 // ----------------------------------------------------------------------------
 // Common code for devices
 
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-    defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
 template <typename T> __device__ bool cmp_Ts(T a, T b) { return a == b; }
 
@@ -57,7 +56,7 @@ __device__ bool cmp_Ts(double a, double b) {
 // ----------------------------------------------------------------------------
 // CUDA
 
-#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE)
+#if defined(NSIMD_CUDA)
 
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
@@ -128,7 +127,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
 
 template <typename T> void del(T *ptr) { cudaFree(ptr); }
 
-#elif defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_ROCM)
 
 // ----------------------------------------------------------------------------
 // ROCm

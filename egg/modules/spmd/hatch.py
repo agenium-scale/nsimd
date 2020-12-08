@@ -801,8 +801,7 @@ def gen_tests_for(opts, t, operator):
 
         // clang-format on
 
-        #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-            defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+        #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
         #define THREADS_PER_BLOCK 128
         #else
         #define THREADS_PER_BLOCK 1
@@ -953,8 +952,7 @@ def gen_functions(opts):
             s_tmpl = 'template <{}>'.format(s_tmpl)
 
         functions += \
-        '''#if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \\
-               defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+        '''#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
            {signature} nsimd::gpu_{s_op_name}({m_call_args_gpu})
 

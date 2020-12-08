@@ -41,6 +41,7 @@ import io
 import collections
 import platform
 import string
+import shutil
 
 # -----------------------------------------------------------------------------
 # print
@@ -132,20 +133,18 @@ SOFTWARE.
 # clang-format
 
 def clang_format(opts, filename, cuda=False):
-    if opts.enable_clang_format:
-        # We add a newline at EOF as required by compilers
-        with io.open(filename, mode='a', encoding='utf-8') as fout:
-            fout.write('\n')
-        return
-    # TODO: not sure if needed to implement a smarter call to clang-format
-    if cuda:
-        os.system('clang-format -style="{{ Standard: Cpp11 }}" -i {}'. \
-                  format(filename))
-    else:
-        os.system('clang-format -style="{{ Standard: Cpp03 }}" -i {}'. \
-                  format(filename))
-    with open(filename, 'a') as fout:
+    with io.open(filename, 'a', encoding='utf-8') as fout:
         fout.write('\n')
+    if not opts.enable_clang_format:
+        # TODO: not sure if needed to implement a smarter call to clang-format
+        if cuda:
+            os.system('clang-format -style="{{ Standard: Cpp11 }}" -i {}'. \
+                      format(filename))
+        else:
+            os.system('clang-format -style="{{ Standard: Cpp03 }}" -i {}'. \
+                      format(filename))
+    if cuda:
+        shutil.copyfile(filename, filename[:-4] + '.cu')
 
 # -----------------------------------------------------------------------------
 # Not implemented response

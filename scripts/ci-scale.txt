@@ -39,12 +39,12 @@ logres.numscale.com (cpu-gcc-cuda-nvcc)
 - export LD_LIBRARY_PATH=/usr/local/cuda/lib64
 - mkdir ../build-cuda-gcc
 - cd ../build-cuda-gcc
-- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -comp=gcc
+- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -comp=nvcc
 - ninja tests
-- ../nstools/bin/nstest -j80
+- ../nstools/bin/nstest -j20
 
 bowden.numscale.com (rocm-hipcc)
-- bash scripts/build-tests.sh for rocm with gcc
+- bash scripts/build-tests.sh for rocm with hipcc
 - cd build-rocm-gcc
 - ../nstools/bin/nstest -j80
 

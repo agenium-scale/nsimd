@@ -30,20 +30,24 @@ SOFTWARE.
 /* ------------------------------------------------------------------------- */
 /* Compiler detection (order matters https://stackoverflow.com/a/28166605)   */
 
+/* Detect host compiler */
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
-#elif defined(__HIPCC__)
-  #define NSIMD_IS_HIPCC
-#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
-  #define NSIMD_IS_DPCPP
-#elif defined(__NVCC__) || defined(__CUDACC__)
-  #define NSIMD_IS_NVCC
 #elif defined(__INTEL_COMPILER)
   #define NSIMD_IS_ICC
 #elif defined(__clang__)
   #define NSIMD_IS_CLANG
 #elif defined(__GNUC__) || defined(__GNUG__)
   #define NSIMD_IS_GCC
+#endif
+
+/* Detect device compiler, if any */
+#if defined(__HIPCC__)
+  #define NSIMD_IS_HIPCC
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  #define NSIMD_IS_DPCPP
+#elif defined(__NVCC__)
+  #define NSIMD_IS_NVCC
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -189,9 +193,9 @@ namespace nsimd {
 
 #if NSIMD_CXX > 0 || NSIMD_C > 1989
   #if NSIMD_C > 0 && defined(NSIMD_IS_MSVC)
-    #define NSIMD_INLINE static __inline
+    #define NSIMD_INLINE __inline
   #else
-    #define NSIMD_INLINE static inline
+    #define NSIMD_INLINE inline
   #endif
 #else
   #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
@@ -315,28 +319,16 @@ namespace nsimd {
   #define NSIMD_CUDA
 #endif
 
-#if defined(NSIMD_CUDA) && (defined(NSIMD_IS_NVCC) || defined(NSIMD_IS_HIPCC))
-  #define NSIMD_CUDA_COMPILING_FOR_DEVICE
-#endif
-
 /* ROCm */
 
 #if defined(ROCM) && !defined(NSIMD_ROCM)
   #define NSIMD_ROCM
 #endif
 
-#if defined(NSIMD_ROCM) && defined(NSIMD_IS_HIPCC)
-  #define NSIMD_ROCM_COMPILING_FOR_DEVICE
-#endif
-
 /* oneAPI */
 
 #if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
   #define NSIMD_ONEAPI
-#endif
-
-#if defined(NSIMD_ONEAPI) && defined(NSIMD_IS_DPCPP)
-  #define NSIMD_ONEAPI_COMPILING_FOR_DEVICE
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -715,16 +707,28 @@ namespace nsimd {
 
 #else
 
-  #ifdef NSIMD_CUDA_COMPILING_FOR_DEVICE
+  #ifdef NSIMD_CUDA
+    #if defined(NSIMD_IS_GCC)
+      #pragma GCC diagnostic push
+      #pragma GCC diagnostic ignored "-Wunused-function"
+    #elif defined(NSIMD_IS_CLANG)
+      #pragma clang diagnostic push
+      #pragma clang diagnostic ignored "-Wunused-function"
+    #endif
     #include <cuda_fp16.h>
+    #if defined(NSIMD_IS_GCC)
+      #pragma GCC diagnostic pop
+    #elif defined(NSIMD_IS_CLANG)
+      #pragma clang diagnostic pop
+    #endif
   #endif
 
-  #ifdef NSIMD_ROCM_COMPILING_FOR_DEVICE
+  #ifdef NSIMD_ROCM
     #include <hip/hip_fp16.h>
     #include <hip/hip_runtime.h>
   #endif
 
-  #ifdef NSIMD_ONEAPI_COMPILING_FOR_DEVICE
+  #ifdef NSIMD_ONEAPI
     #include <CL/sycl.hpp>
   #endif
 
@@ -835,15 +839,14 @@ namespace nsimd {
 
 #if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                    \
      defined(NSIMD_FP16)) || defined(NSIMD_SVE_FAMILY)
-  #define NSIMD_NATIVE_FP16
+  #define NSIMD_ARM_FP16
 #endif
 
-#ifdef NSIMD_NATIVE_FP16
+#ifdef NSIMD_ARM_FP16
   typedef __fp16 f16;
-#elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
-      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   typedef __half f16;
-#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_ONEAPI)
   typedef half f16;
 #else
   typedef struct { u16 u; } f16;
@@ -1420,23 +1423,28 @@ template <NSIMD_CONCEPT_VALUE_TYPE T> struct scoped_aligned_mem_for {
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Conversion functions f16 <---> f32 for C */
+/* Conversion functions f16 <---> f32 for C but only when compiling with a   */
+/* host compiler. Otherwise we must have C++ linkage as fp16 types are       */
+/* defined as C++ classes . */
 
-#if NSIMD_CXX > 0
+#if NSIMD_CXX > 0 && !defined(NSIMD_IS_NVCC) && !defined(NSIMD_IS_HIPCC)
+  #define NSIMD_C_LINKAGE_FOR_F16
+#endif
+
+#ifdef NSIMD_C_LINKAGE_FOR_F16
 extern "C" {
 #endif
 
 NSIMD_DLLSPEC u16 nsimd_f32_to_u16(f32);
 NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 
-#ifdef NSIMD_NATIVE_FP16
+#ifdef NSIMD_ARM_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
-#elif defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) ||                             \
-      defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
-#elif defined(NSIMD_ONEAPI_COMPILING_FOR_DEVICE)
+#elif defined(NSIMD_ONEAPI)
 inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
 #else
@@ -1444,7 +1452,7 @@ NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 #endif
 
-#if NSIMD_CXX > 0
+#ifdef NSIMD_C_LINKAGE_FOR_F16
 } // extern "C"
 #endif
 
@@ -1455,7 +1463,7 @@ NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 namespace nsimd {
 NSIMD_DLLSPEC u16 f32_to_u16(f32);
 NSIMD_DLLSPEC f32 u16_to_f32(u16);
-#ifdef NSIMD_NATIVE_FP16
+#ifdef NSIMD_ARM_FP16
 NSIMD_INLINE f16 f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 f16_to_f32(f16 a) { return (f32)a; }
 #else
