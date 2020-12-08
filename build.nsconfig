@@ -179,7 +179,7 @@ begin_translate_if $build_library_only == false
 
 set tests_comp_for_               = c++
 set tests_comp_for_cpu            = c++
-set tests_comp_for_cuda           = nvcc $cuda_arch_flags
+set tests_comp_for_cuda           = nvcc -x cu $cuda_arch_flags
 set tests_comp_for_rocm           = hipcc $cuda_arch_flags
 set tests_comp_for_dpcpp          = dpcpp
 set tests_comp_for_sse2           = c++
@@ -233,35 +233,19 @@ build_files cpp20 foreach glob:$root$/tests/*.cpp \
                   autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++20 @item $tests_flags -o @out
 
-build_files cu98 foreach glob:$root$/tests/*.cu \
-                         glob:$root$/tests/cxx_base/*.cpp \
-                         glob:$root$/tests/cxx_adv/*.cpp \
-                 as tests.%r.cuda.%e98$exe \
-                 autodeps @item libnsimd_$simd$$so$
-	$tests_comp -std=c++98 @item $tests_flags -o @out
-
-build_files cu11 foreach glob:$root$/tests/*.cu \
-                         glob:$root$/tests/cxx_base/*.cpp \
-                         glob:$root$/tests/cxx_adv/*.cpp \
-                 as tests.%r.cuda.%e11$exe \
-                 autodeps @item libnsimd_$simd$$so$
-	$test_comp -std=c++11 @item $tests_flags -o @out
-
 phony tests.c89 deps $c89.files
 phony tests.c99 deps $c99.files
 phony tests.c11 deps $c11.files
 phony tests.cpp98 deps $cpp98.files
 phony tests.cpp11 deps $cpp11.files
 phony tests.cpp20 deps $cpp20.files
-phony tests.cu98 deps $cu98.files
-phony tests.cu11 deps $cu11.files
 
 # Phony target for tests
 
 set phony_tests_for_               = tests.c89 tests.c99 tests.cpp98 \
                                      tests.cpp11
 set phony_tests_for_cpu            = $phony_tests_for_
-set phony_tests_for_cuda           = tests.cu98 tests.cu11
+set phony_tests_for_cuda           = tests.cpp98 tests.cpp11
 set phony_tests_for_rocm           = tests.cpp11
 set phony_tests_for_dpcpp          = tests.cpp11
 set phony_tests_for_sse2           = $phony_tests_for_
