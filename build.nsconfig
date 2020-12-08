@@ -236,14 +236,14 @@ build_files cpp20 foreach glob:$root$/tests/*.cpp \
 build_files cu98 foreach glob:$root$/tests/*.cu \
                          glob:$root$/tests/cxx_base/*.cpp \
                          glob:$root$/tests/cxx_adv/*.cpp \
-                 as tests.%r.cu98$exe \
+                 as tests.%r.cuda.%e98$exe \
                  autodeps @item libnsimd_$simd$$so$
 	$tests_comp -std=c++98 @item $tests_flags -o @out
 
 build_files cu11 foreach glob:$root$/tests/*.cu \
                          glob:$root$/tests/cxx_base/*.cpp \
                          glob:$root$/tests/cxx_adv/*.cpp \
-                 as tests.%r.cu11$exe \
+                 as tests.%r.cuda.%e11$exe \
                  autodeps @item libnsimd_$simd$$so$
 	$test_comp -std=c++11 @item $tests_flags -o @out
 
