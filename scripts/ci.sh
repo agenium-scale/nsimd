@@ -300,6 +300,7 @@ while true; do
       ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
                       1>/dev/null 2>/dev/null &"
     done
+    echo
     echo "...done"
     echo
     break
@@ -322,6 +323,7 @@ while true; do
       LOG=`get_a ${LOG_A} ${i}`
       ${SCP} ${ADDR}:${REMOTE_DIR}/${LOG} ${TMP_DIR}
     done
+    echo
     echo "...done"
     echo
     break

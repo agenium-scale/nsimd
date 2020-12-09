@@ -5,15 +5,6 @@ camelot.numscale.com (sse2-sse42-gcc)
 - cd ../build-sse42-gcc
 - ../nstools/bin/nstest -j80
 
-carrant.numscale.com (sse2-sse42-clang)
-- source /etc/profile.d/profile.sh
-- module load clang/11.0.0
-- bash scripts/build-tests.sh for sse2/sse42 with clang
-- cd build-sse2-clang
-- ../nstools/bin/nstest -j80
-- cd ../build-sse42-clang
-- ../nstools/bin/nstest -j80
-
 glastonbury.numscale.com (avx512_skylake-gcc)
 - bash scripts/build-tests.sh for avx512_skylake with gcc
 - cd build-avx512_skylake-gcc
@@ -37,15 +28,15 @@ logres.numscale.com (cpu-gcc-cuda-nvcc)
 - ../nstools/bin/nstest -j80
 - export PATH=${PATH}:/usr/local/cuda/bin
 - export LD_LIBRARY_PATH=/usr/local/cuda/lib64
-- mkdir ../build-cuda-gcc
-- cd ../build-cuda-gcc
+- mkdir ../build-cuda-nvcc
+- cd ../build-cuda-nvcc
 - ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -comp=nvcc
 - ninja tests
 - ../nstools/bin/nstest -j20
 
 bowden.numscale.com (rocm-hipcc)
 - bash scripts/build-tests.sh for rocm with hipcc
-- cd build-rocm-gcc
+- cd build-rocm-hipcc
 - ../nstools/bin/nstest -j80
 
 caradigan.numscale.com (neon128-aarch64-gcc)
@@ -66,13 +57,4 @@ carahes.numscale.com (sve128-gcc)
 - cd build-sve128-gcc
 - module load qemu/4.2.0
 - ../nstools/bin/nstest -j80 --prefix="qemu-aarch64 -cpu max,sve-max-vq=1"
-
-camlann.numscale.com (aarch64-clang)
-- bash scripts/setup.sh
-- python3 egg/hatch.py -ltf
-- mkdir build-aarch64-clang
-- cd build-aarch64-clang
-- ../nstools/bin/nsconfig .. -Dsimd=aarch64 -comp=clang
-- ninja tests.c99 tests.cpp98 tests.cpp11
-- ../nstools/bin/nstest -j20
 
