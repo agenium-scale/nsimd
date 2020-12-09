@@ -2030,9 +2030,9 @@ NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
 extern "C" {
 #endif
 
-NSIMD_DLLIMPORT int nsimd_diff_in_logulps_f16(f16, f16);
-NSIMD_DLLIMPORT int nsimd_diff_in_logulps_f32(f32, f32);
-NSIMD_DLLIMPORT int nsimd_diff_in_logulps_f64(f64, f64);
+NSIMD_DLLSPEC int nsimd_diff_in_logulps_f16(f16, f16);
+NSIMD_DLLSPEC int nsimd_diff_in_logulps_f32(f32, f32);
+NSIMD_DLLSPEC int nsimd_diff_in_logulps_f64(f64, f64);
 
 #if NSIMD_CXX > 0
 } // extern "C"
