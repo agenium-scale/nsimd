@@ -193,13 +193,13 @@ namespace nsimd {
 
 #if NSIMD_CXX > 0 || NSIMD_C > 1989
   #if NSIMD_C > 0 && defined(NSIMD_IS_MSVC)
-    #define NSIMD_INLINE __inline
+    #define NSIMD_INLINE static __inline
   #else
-    #define NSIMD_INLINE inline
+    #define NSIMD_INLINE static inline
   #endif
 #else
   #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-    #define NSIMD_INLINE __extension__ __inline__
+    #define NSIMD_INLINE __extension__ static __inline
   #else
     #define NSIMD_INLINE
   #endif
