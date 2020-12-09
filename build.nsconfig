@@ -90,10 +90,32 @@ set cflags_for_sve512         = -DSVE512 -msve512
 set cflags_for_sve1024        = -DSVE1024 -msve1024
 set cflags_for_sve2048        = -DSVE2048 -msve2048
 
+## std default flag
+
+set std_flag_for_               = -std=c++98
+set std_flag_for_cpu            = $std_flag_for_
+set std_flag_for_cuda           = $std_flag_for_
+set std_flag_for_rocm           = -std=c++11
+set std_flag_for_oneapi         = -std=c++17
+set std_flag_for_sse2           = $std_flag_for_
+set std_flag_for_sse42          = $std_flag_for_
+set std_flag_for_avx            = $std_flag_for_
+set std_flag_for_avx2           = $std_flag_for_
+set std_flag_for_avx512_knl     = $std_flag_for_
+set std_flag_for_avx512_skylake = $std_flag_for_
+set std_flag_for_neon128        = $std_flag_for_
+set std_flag_for_aarch64        = $std_flag_for_
+set std_flag_for_sve            = $std_flag_for_
+set std_flag_for_sve128         = $std_flag_for_
+set std_flag_for_sve256         = $std_flag_for_
+set std_flag_for_sve512         = $std_flag_for_
+set std_flag_for_sve1024        = $std_flag_for_
+set std_flag_for_sve2048        = $std_flag_for_
+
 ## Some defaults
 
-set flags   = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
-set cflags  = -std=c++98 $flags$
+set flags  = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
+set cflags = ${std_flag_for_$simd$} $flags
 
 ## Default building rules
 

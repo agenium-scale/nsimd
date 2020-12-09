@@ -218,99 +218,114 @@ clear
 key=""
 selected=1
 
+echo2() {
+ printf "%-${COLUMNS}s" " "
+ echo -e "\r${1}"
+}
+
 while true; do
+  if [ "${selected}" -gt "${N}" ]; then
+    selected=${N}
+  fi
+  if [ "${selected}" -lt "1" ]; then
+    selected=1
+  fi
+
   # Display part
   tput cup 0 0
   key=""
-  echo
-  echo "[q] quit         [D] download outputs and quit  [T] kill all jobs"
-  echo "[j] select next  [k] select previous            [t] kill selected job"
-  echo "                 [d] see selected job log"
-  printf "%-${COLUMNS}s" " "
-  echo -e "\r"
+  echo2
+  echo2 "[q] quit         [D] download outputs and quit  [T] kill all jobs"
+  echo2 "[j] select next  [k] select previous            [t] kill selected job"
+  echo2 "                 [d] see selected job log"
+  echo2
   for i in `seq 1 ${N}`; do
     ADDR=`get_a ${ADDR_A} ${i}`
     DESC=`get_a ${DESC_A} ${i}`
     ONE_LINER=`get_a ${ONE_LINER_A} ${i}`
     STATUS=`${SSH} ${ADDR} "[ -f ${ONE_LINER} ] && cat ${ONE_LINER}" \
                    </dev/null || true`
-    printf "%-${COLUMNS}s" " "
     if [ "${i}" == "${selected}" ]; then
-      echo -e "\r++++  ${ADDR}, ${DESC}  ++++"
+      echo2 "++++  ${i}: ${ADDR}, ${DESC}  ++++"
     else
-      echo -e "\r${ADDR}, ${DESC}"
+      echo2 "${i}: ${ADDR}, ${DESC}"
     fi
-    printf "%-${COLUMNS}s" " "
     W=`expr ${COLUMNS} - 4`
-    echo -e "\r    `echo ${STATUS} | cut -c 1-${W}`"
-    printf "%-${COLUMNS}s" " "
-    echo -e "\r"
-
-    # Keyboard input part
+    echo2 "    `echo ${STATUS} | cut -c 1-${W}`"
+    echo2
     read -t 0.01 -n 1 key || true
-    if [ "${key}" == "" ]; then
-      continue
-    fi
-    if [ "${key}" == "q" ]; then
-      break
-    fi
-    if [ "${key}" == "j" ]; then
-      selected=`expr ${selected} + 1`
-      if [ "${selected}" -gt "${N}" ]; then
-        selected=${N}
-      fi
-    fi
-    if [ "${key}" == "k" ]; then
-      selected=`expr ${selected} - 1`
-      if [ "${selected}" -lt "1" ]; then
-        selected=1
-      fi
-    fi
-    if [ "${key}" == "t" ]; then
-      ADDR=`get_a ${ADDR_A} ${selected}`
-      KILL_SCRIPT=`get_a ${KILL_SCRIPT_A} ${selected}`
-      ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
-                      1>/dev/null 2>/dev/null &"
-      clear
-      continue
-    fi
-    if [ "${key}" == "T" ]; then
-      clear
-      echo
-      echo "Terminating every job..."
-      echo
-      for i in `seq 1 ${N}`; do
-        ADDR=`get_a ${ADDR_A} ${i}`
-        KILL_SCRIPT=`get_a ${KILL_SCRIPT_A} ${i}`
-        ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
-                        1>/dev/null 2>/dev/null &"
-      done
-      echo "...done"
-      echo
-      break
-    fi
-    if [ "${key}" == "d" ]; then
-      ADDR=`get_a ${ADDR_A} ${selected}`
-      LOG=`get_a ${LOG_A} ${selected}`
-      ${SSH} ${ADDR} "cat ${REMOTE_DIR}/${LOG}" |& less
-      clear
-      continue
-    fi
-    if [ "${key}" == "D" ]; then
-      clear
-      echo
-      echo "Downloading every log..."
-      echo
-      for i in `seq 1 ${N}`; do
-        ADDR=`get_a ${ADDR_A} ${i}`
-        LOG=`get_a ${LOG_A} ${i}`
-        ${SCP} ${ADDR}:${REMOTE_DIR}/${LOG} ${TMP_DIR}
-      done
-      echo "...done"
-      echo
+    if [ "${key}" != "" ]; then
       break
     fi
   done
+
+  # Keyboard input part
+  if [ "${key}" == "" ]; then
+    read -t 0.01 -n 1 key || true
+  fi
+  if [ "${key}" == "" ]; then
+    continue
+  fi
+  if [ "${key}" == "q" ]; then
+    break
+  fi
+  if [ "${key}" == "j" ]; then
+    selected=`expr ${selected} + 1`
+    continue
+  fi
+  if [ "${key}" == "k" ]; then
+    selected=`expr ${selected} - 1`
+    continue
+  fi
+  if [ "`echo ${key} | grep [123456789]`" != "" ]; then
+    selected=${key}
+    continue
+  fi
+  if [ "${key}" == "t" ]; then
+    ADDR=`get_a ${ADDR_A} ${selected}`
+    KILL_SCRIPT=`get_a ${KILL_SCRIPT_A} ${selected}`
+    ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
+                    1>/dev/null 2>/dev/null &"
+    clear
+    continue
+  fi
+  if [ "${key}" == "T" ]; then
+    clear
+    echo
+    echo "Terminating every job..."
+    echo
+    for i in `seq 1 ${N}`; do
+      ADDR=`get_a ${ADDR_A} ${i}`
+      KILL_SCRIPT=`get_a ${KILL_SCRIPT_A} ${i}`
+      ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
+                      1>/dev/null 2>/dev/null &"
+    done
+    echo "...done"
+    echo
+    break
+  fi
+  if [ "${key}" == "d" ]; then
+    ADDR=`get_a ${ADDR_A} ${selected}`
+    LOG=`get_a ${LOG_A} ${selected}`
+    ${SCP} ${ADDR}:${REMOTE_DIR}/${LOG} ${TMP_DIR}
+    less ${TMP_DIR}/${LOG}
+    clear
+    continue
+  fi
+  if [ "${key}" == "D" ]; then
+    clear
+    echo
+    echo "Downloading every log..."
+    echo
+    for i in `seq 1 ${N}`; do
+      ADDR=`get_a ${ADDR_A} ${i}`
+      LOG=`get_a ${LOG_A} ${i}`
+      ${SCP} ${ADDR}:${REMOTE_DIR}/${LOG} ${TMP_DIR}
+    done
+    echo "...done"
+    echo
+    break
+  fi
 done
 
 stty echo icanon
