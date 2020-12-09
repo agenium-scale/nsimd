@@ -999,6 +999,10 @@ template <> struct traits<f64> {
 /* ------------------------------------------------------------------------- */
 /* POPCNT: GCC and Clang have intrinsics */
 
+#ifdef NSIMD_IS_MSVC
+#include <intrin.h>
+#endif
+
 NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
   return __builtin_popcount(a);
@@ -1022,7 +1026,12 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   return __builtin_popcountl(a);
 #endif
 #elif defined(NSIMD_IS_MSVC)
-  return (int)__popcnt64(a);
+  #if NSIMD_WORD_SIZE == 64
+    return (int)__popcnt64(a);
+  #else
+    return (int)__popcnt((u32)(a & 0xFFFFFFFF)) +
+           (int)__popcnt((u32)(a >> 32));
+  #endif
 #else
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
