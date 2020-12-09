@@ -735,6 +735,10 @@ namespace nsimd {
   #define NSIMD_SIMD cpu
   #define NSIMD_PLATFORM cpu
 
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
+
   #if NSIMD_CXX > 0
     namespace nsimd {
       struct cpu {};
@@ -998,10 +1002,6 @@ template <> struct traits<f64> {
 
 /* ------------------------------------------------------------------------- */
 /* POPCNT: GCC and Clang have intrinsics */
-
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
 
 NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
@@ -1524,6 +1524,23 @@ T to(S value) {
      2^n. */
   #pragma warning(push)
   #pragma warning(disable : 4146)
+
+  /* Some intrinsics are not available in 32-bits mode so we give an
+     implementation here. */
+
+  #if defined(NSIMD_IS_MSVC) && NSIMD_WORD_SIZE == 32
+    static inline i64 _mm_cvtsi128_si64(__m128i a) {
+      return ((i64)_mm_cvtsi128_si32(a) |
+              ((i64)(_mm_cvtsi128_si32(_mm_shuffle_epi32(a, 1))) << 32));
+    }
+
+    static inline __m128i _mm_cvtsi64_si128(i64 a) {
+      __m128i lo = _mm_cvtsi32_si128((i32)(a & 0xFFFFFFFF));
+      __m128i hi = _mm_shuffle_epi32(
+                       _mm_cvtsi32_si128((i32)((u64)a >> 32)), 9);
+      return _mm_or_si128(hi, lo);
+    }
+  #endif
 #elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
   /* When compiling with Clang with C++98 or C++03, some Intel intrinsics are
      implemented as macros which contain long long but long long are not
