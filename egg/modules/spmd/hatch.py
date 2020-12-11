@@ -485,7 +485,7 @@ def gen_tests_for_shifts(opts, t, operator):
         #elif defined(NSIMD_SYCL)
 
         inline void kernel({typ} *dst, {typ} *a0, size_t n, int s, 
-                           sycl::tem<2> item) {{
+                           sycl::item<2> item) {{
           size_t i = item.get_id(1) * item.get_range()[0] + item.get_id(0);
           if (i < n) {{
             dst[i] = nsimd::scalar_{op_name}(a0[i], s);
@@ -497,7 +497,7 @@ def gen_tests_for_shifts(opts, t, operator):
             sycl::range<2>({gpu_params}), [=](sycl::item<2> item){{
                 kernel(dst, a0, n, s, item);
             }}       
-          );
+          ).wait();
         }}
 
         #else
@@ -610,7 +610,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
             sycl::range<2>({gpu_params}), [=](sycl::item<2> item){{
                 kernel(dst, a0, n, item);
             }}       
-          );
+          ).wait();
         }}
 
         #else
@@ -824,7 +824,7 @@ def gen_tests_for(opts, t, operator):
             sycl::range<2>({gpu_params}), [=](sycl::item<2> item){{
                 kernel(dst, {k_call_args}, n, item);
             }}       
-          );
+          ).wait();
         }}
 
         #else

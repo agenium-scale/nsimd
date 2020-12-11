@@ -1430,10 +1430,14 @@ template <NSIMD_CONCEPT_VALUE_TYPE T> struct scoped_aligned_mem_for {
 #if NSIMD_CXX > 0
 extern "C" {
 #endif
-
+#if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+SYCL_EXTERNAL NSIMD_DLLSPEC u16 nsimd_f32_to_u16(f32);
+SYCL_EXTERNAL NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
+#else
 NSIMD_DLLSPEC u16 nsimd_f32_to_u16(f32);
 NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
-
+#endif
+  
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
@@ -1441,9 +1445,9 @@ NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
       defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
-  /* #elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE) */
-  /* inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }*/
-  /* inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); } */
+#elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+SYCL_EXTERNAL NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
+SYCL_EXTERNAL NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
@@ -1458,14 +1462,24 @@ NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 
 #if NSIMD_CXX > 0
 namespace nsimd {
+#if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+SYCL_EXTERNAL NSIMD_DLLSPEC u16 f32_to_u16(f32);
+SYCL_EXTERNAL NSIMD_DLLSPEC f32 u16_to_f32(u16);
+#else
 NSIMD_DLLSPEC u16 f32_to_u16(f32);
 NSIMD_DLLSPEC f32 u16_to_f32(u16);
+#endif
 #ifdef NSIMD_NATIVE_FP16
 NSIMD_INLINE f16 f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 f16_to_f32(f16 a) { return (f32)a; }
 #else
+#if defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+SYCL_EXTERNAL NSIMD_DLLSPEC f16 f32_to_f16(f32);
+SYCL_EXTERNAL NSIMD_DLLSPEC f32 f16_to_f32(f16);
+#else
 NSIMD_DLLSPEC f16 f32_to_f16(f32);
 NSIMD_DLLSPEC f32 f16_to_f32(f16);
+#endif
 #endif
 } // namespace nsimd
 #endif

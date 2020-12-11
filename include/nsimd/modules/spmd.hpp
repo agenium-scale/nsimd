@@ -243,14 +243,38 @@ template <> struct type_t<64> {
 #define k_bool typename spmd::type_t<spmd_ScalarBits_>::btype
 
 // loads and stores (generic)
+#if defined(NSIMD_CUDE_COMPILING_FOR_DEVICE) ||                               \
+  defined(NSIMD_ROCM_COMPILING_FOR_DEVICE)
 #define k_store(base_addr, value)                                             \
   do {                                                                        \
     base_addr[spmd_i_] = value;                                               \
   } while (0)
-
 #define k_unmasked_store(base_addr, value) k_store(base_addr, value)
 #define k_load(base_addr) base_addr[spmd_i_]
 #define k_unmasked_load(base_addr) k_load(base_addr)
+
+#elif defined(NSIMD_SYCL_COMPILING_FOR_DEVICE)
+struct store_helper {
+  template <typename T, typename S>
+  static void unmasked_impl(T *addr, S value) {
+    *addr = nsimd::to<T>(value);
+  }
+};
+struct load_helper {
+  template <typename T> static T unmasked_impl(T *addr) {
+    return *addr;
+  }
+};
+
+#define k_store(base_addr, value)                                             \
+  spmd::store_helper::unmasked_impl(&base_addr[spmd_i_], value)
+#define k_unmasked_store(base_addr, value)                                    \
+  spmd::store_helper::unmasked_impl(&base_addr[spmd_i_], value)
+#define k_load(base_addr)                                                     \
+  spmd::load_helper::unmasked_impl(&base_addr[spmd_i_])
+#define k_unmasked_load(base_addr)                                            \
+  spmd::load_helper::unmasked_impl(&base_addr[spmd_i_])
+#endif
 
 // f32 <--> f16 conversions
 #if defined(NSIMD_CUDA_COMPILING_FOR_DEVICE) || \
