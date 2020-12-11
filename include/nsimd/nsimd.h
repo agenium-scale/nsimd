@@ -73,7 +73,11 @@ SOFTWARE.
 /* C++ standard detection */
 
 #ifdef NSIMD_IS_MSVC
-  #define NSIMD__cplusplus _MSVC_LANG
+  #ifdef _MSVC_LANG
+    #define NSIMD__cplusplus _MSVC_LANG
+  #else
+    #define NSIMD__cplusplus __cplusplus
+  #endif
 #else
   #ifdef __cplusplus
     #define NSIMD__cplusplus __cplusplus
@@ -186,6 +190,16 @@ namespace nsimd {
   #define NSIMD_DLLSPEC NSIMD_DLLEXPORT
 #else
   #define NSIMD_DLLSPEC NSIMD_DLLIMPORT
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Vector calling convention: https://devblogs.microsoft.com/cppblog
+                                  /introducing-vector-calling-convention/ */
+
+#if defined(NSIMD_IS_MSVC) && NSIMD_WORD_SIZE == 32
+  #define NSIMD_VECTORCALL __vectorcall
+#else
+  #define NSIMD_VECTORCALL
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -1529,12 +1543,12 @@ T to(S value) {
      implementation here. */
 
   #if defined(NSIMD_IS_MSVC) && NSIMD_WORD_SIZE == 32
-    static inline i64 _mm_cvtsi128_si64(__m128i a) {
+    static inline i64 __vectorcall _mm_cvtsi128_si64(__m128i a) {
       return ((i64)_mm_cvtsi128_si32(a) |
               ((i64)(_mm_cvtsi128_si32(_mm_shuffle_epi32(a, 1))) << 32));
     }
 
-    static inline __m128i _mm_cvtsi64_si128(i64 a) {
+    static inline __m128i __vectorcall _mm_cvtsi64_si128(i64 a) {
       __m128i lo = _mm_cvtsi32_si128((i32)(a & 0xFFFFFFFF));
       __m128i hi = _mm_shuffle_epi32(
                        _mm_cvtsi32_si128((i32)((u64)a >> 32)), 9);

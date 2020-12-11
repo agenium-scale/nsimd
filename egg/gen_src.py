@@ -54,9 +54,10 @@ def get_put_impl(simd_ext):
              '''
     for typ in common.types:
 
-        fmt = '''NSIMD_DLLEXPORT
-           int nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
-                                          nsimd_{simd_ext}_v{l}{typ} v) {{
+        fmt = \
+        '''NSIMD_DLLEXPORT int NSIMD_VECTORCALL
+           nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
+                                         nsimd_{simd_ext}_v{l}{typ} v) {{
              using namespace nsimd;
              {typ} buf[NSIMD_MAX_LEN({typ})];
 
@@ -164,8 +165,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_cpu_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_cpu_{suf}({c_args}) {{
                      nsimd_cpu_v{logical}f16 ret;
                      nsimd::pack{logical}<f32> tmp;
                      tmp = nsimd::impl::{name}({args1});
@@ -187,8 +188,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      nsimd_{simd_ext}_v{logical}f16 ret;
                      auto buf = nsimd::impl::{name}({args1});
                      ret.v0 = buf.car;
@@ -225,8 +226,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      using namespace nsimd;
                      int len_f16 = len(pack<f16>());
                      int len_f32 = len(pack<f32>());
@@ -251,8 +252,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      auto buf = nsimd::impl::{name}({args});
                      return buf.car;
                    }}

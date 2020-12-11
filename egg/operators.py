@@ -369,7 +369,7 @@ class Operator(object, metaclass=MAddToOperators):
                 cxx20_require = ''
 
             return 'template <{tmpl_args}> {cxx20_require}{return_typ} ' \
-                   '{name}({func_args});'. \
+                   'NSIMD_VECTORCALL {name}({func_args});'. \
                    format(return_typ=return_typ, tmpl_args=tmpl_args,
                           func_args=func_args, name=self.name,
                           cxx20_require=cxx20_require)
@@ -530,10 +530,11 @@ class Operator(object, metaclass=MAddToOperators):
         fmtspec = self.get_fmtspec(typename, typename, simd_ext)
 
         if lang == 'c_base':
-            sig = '{return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args})'. \
-                  format(**fmtspec)
+            sig = '{return_typ} NSIMD_VECTORCALL ' \
+                  'nsimd_{name}_{simd_ext}_{suf}({c_args})'.format(**fmtspec)
         elif lang == 'cxx_base':
-            sig = '{return_typ} {name}({cxx_args})'.format(**fmtspec)
+            sig = '{return_typ} NSIMD_VECTORCALL ' \
+                  '{name}({cxx_args})'.format(**fmtspec)
         elif lang == 'cxx_adv':
             sig = ''
             raise Exception('TODO cxx_adv for {}'.format(lang))

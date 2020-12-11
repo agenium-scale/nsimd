@@ -63,7 +63,8 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
                #endif
 
                NSIMD_DLLSPEC
-               {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args});
+               {return_typ} NSIMD_VECTORCALL
+               nsimd_{name}_{simd_ext}_{suf}({c_args});
 
                #if NSIMD_CXX > 0
                }} // extern "C"
@@ -71,7 +72,8 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-                 NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
+                 NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                 {name}({cxx_args}) {{
                    {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
                  }}
                }} // namespace nsimd
@@ -82,14 +84,15 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
             ret += \
             '''{hbar}
 
-               NSIMD_INLINE
-               {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+               NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+               nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                  {content}
                }}
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-                 NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
+                 NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                 {name}({cxx_args}) {{
                    {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
                  }}
                }} // namespace nsimd
@@ -129,9 +132,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
                extern "C" {{
                #endif
 
-               NSIMD_DLLSPEC
-               int nsimd_put_{simd_ext}_{typ}(FILE *, const char *,
-                                              nsimd_{simd_ext}_v{typ});
+               NSIMD_DLLSPEC int NSIMD_VECTORCALL
+               nsimd_put_{simd_ext}_{typ}(FILE *, const char *,
+                                          nsimd_{simd_ext}_v{typ});
 
                #if NSIMD_CXX > 0
                }} // extern "C"
@@ -139,9 +142,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-               NSIMD_INLINE int put(FILE *out, const char *fmt,
-                                    nsimd_{simd_ext}_v{typ} a0, {typ},
-                                    {simd_ext}) {{
+               NSIMD_INLINE int NSIMD_VECTORCALL
+               put(FILE *out, const char *fmt, nsimd_{simd_ext}_v{typ} a0,
+                   {typ}, {simd_ext}) {{
                  return nsimd_put_{simd_ext}_{typ}(out, fmt, a0);
                }}
                }} // namespace nsimd
@@ -153,9 +156,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
                extern "C" {{
                #endif
 
-               NSIMD_DLLSPEC
-               int nsimd_put_{simd_ext}_l{typ}(FILE *, const char *,
-                                              nsimd_{simd_ext}_vl{typ});
+               NSIMD_DLLSPEC int NSIMD_VECTORCALL
+               nsimd_put_{simd_ext}_l{typ}(FILE *, const char *,
+                                           nsimd_{simd_ext}_vl{typ});
 
                #if NSIMD_CXX > 0
                }} // extern "C"
@@ -163,9 +166,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-               NSIMD_INLINE int putl(FILE *out, const char *fmt,
-                                    nsimd_{simd_ext}_vl{typ} a0, {typ},
-                                    {simd_ext}) {{
+               NSIMD_INLINE int NSIMD_VECTORCALL
+               putl(FILE *out, const char *fmt, nsimd_{simd_ext}_vl{typ} a0,
+                    {typ}, {simd_ext}) {{
                  return nsimd_put_{simd_ext}_l{typ}(out, fmt, a0);
                }}
                }} // namespace nsimd

@@ -194,8 +194,7 @@ def get_additional_include(func, platform, simd_ext):
                   extern "C" {{
                   # endif
 
-                  NSIMD_INLINE
-                  nsimd_{simd_ext}_vlu16
+                  NSIMD_INLINE nsimd_{simd_ext}_vlu16 NSIMD_VECTORCALL
                   nsimd_{func}_{simd_ext}_u16(const u16*);
 
                   # if NSIMD_CXX > 0
@@ -211,7 +210,7 @@ def get_additional_include(func, platform, simd_ext):
                   extern "C" {{
                   # endif
 
-                  NSIMD_INLINE nsimd_{simd_ext}_vu16x{deg}
+                  NSIMD_INLINE nsimd_{simd_ext}_vu16x{deg} NSIMD_VECTORCALL
                   nsimd_{func}_{simd_ext}_u16(const u16*);
 
                   # if NSIMD_CXX > 0
@@ -231,7 +230,8 @@ def get_additional_include(func, platform, simd_ext):
                   extern "C" {{
                   # endif
 
-                  NSIMD_INLINE void nsimd_{func}_{simd_ext}_u16(u16*, {args});
+                  NSIMD_INLINE void NSIMD_VECTORCALL
+                  nsimd_{func}_{simd_ext}_u16(u16*, {args});
 
                   # if NSIMD_CXX > 0
                   }} // extern "C"
