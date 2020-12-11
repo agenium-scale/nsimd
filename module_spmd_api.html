@@ -1,0 +1,243 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<b>SPMD programming module documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<a href="module_spmd_overview.html">Overview</a> | <a href="module_spmd_api.html">API reference</a>
+<hr>
+</div>
+
+<h1>NSIMD SPMD API reference</h1>
+<p>This page contains the exhaustive API of the SPMD module. Note that most
+operators names follow the simple naming <code>k_[NSIMD name]</code> and have the same
+semantics. This page is light, you may use CTRL+F to find the operator you
+are looking for.</p>
+<p>For genericity on the base type you should use operator names instead of
+infix operators, e.g. <code>k_add</code> instead of <code>+</code>. Indeed for <code>f16</code>&apos;s NVIDIA CUDA
+and NSIMD do not provide overloads and therefore code using <code>+</code> will fail to
+compile.</p>
+<p>Note that all operators accept literals and scalars. For example you may
+write <code>k_add(a, 1)</code> or <code>float s; k_add(a, s);</code>. This also applies when
+using infix operators. But note that literals or scalars must have the
+same type as the other operands.</p>
+<h2>Bits manipulation operators</h2>
+<ul>
+<li><p><code>#define k_orb(a0, a1)</code><br>
+Infix operator: <code>|</code> (<em>for certain types only</em>)<br>
+Returns the bitwise or of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_andb(a0, a1)</code><br>
+Infix operator: <code>&amp;</code> (<em>for certain types only</em>)<br>
+Returns the bitwise and of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_andnotb(a0, a1)</code><br>
+Returns the bitwise andnot of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_notb(a0)</code><br>
+Infix operator: <code>~</code> (<em>for certain types only</em>)<br>
+Returns the bitwise not of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>#define k_xorb(a0, a1)</code><br>
+Infix operator: <code>^</code> (<em>for certain types only</em>)<br>
+Returns the bitwise xor of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_shr(a0, a1)</code><br>
+Infix operator: <code>&gt;&gt;</code> (<em>for certain types only</em>)<br>
+Returns the right shift in zeros of the arguments. Defined over \(ℝ × ℕ\).</p></li>
+<li><p><code>#define k_shl(a0, a1)</code><br>
+Infix operator: <code>&lt;&lt;</code> (<em>for certain types only</em>)<br>
+Returns the left shift of the arguments. Defined over \(ℝ × ℕ\).</p></li>
+<li><p><code>#define k_shra(a0, a1)</code><br>
+Performs a right shift operation with sign extension.</p></li>
+</ul>
+<h2>Logicals operators</h2>
+<ul>
+<li><p><code>#define k_orl(a0, a1)</code><br>
+Infix operator: <code>||</code> (<em>for certain types only</em>)<br>
+Returns the logical or of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>#define k_andl(a0, a1)</code><br>
+Infix operator: <code>&amp;&amp;</code> (<em>for certain types only</em>)<br>
+Returns the logical and of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>#define k_andnotl(a0, a1)</code><br>
+Returns the logical andnot of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>#define k_xorl(a0, a1)</code><br>
+Returns the logical xor of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>#define k_notl(a0)</code><br>
+Infix operator: <code>!</code> (<em>for certain types only</em>)<br>
+Returns the logical not of the argument. Defined over \(𝔹\).</p></li>
+<li><p><code>#define k_to_mask(to_type, a0)</code><br>
+Returns a mask consisting of all ones for true elements and all zeros for false elements.</p></li>
+<li><p><code>#define k_to_logical(a0)</code><br>
+Returns a vector of logicals. Set true when the corresponding elements are non zero (at least one bit to 1) and false otherwise.</p></li>
+</ul>
+<h2>Basic arithmetic operators</h2>
+<ul>
+<li><p><code>#define k_add(a0, a1)</code><br>
+Infix operator: <code>+</code> (<em>for certain types only</em>)<br>
+Returns the addition of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_sub(a0, a1)</code><br>
+Infix operator: <code>-</code> (<em>for certain types only</em>)<br>
+Returns the subtraction of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_mul(a0, a1)</code><br>
+Infix operator: <code>*</code> (<em>for certain types only</em>)<br>
+Returns the multiplication of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_div(a0, a1)</code><br>
+Infix operator: <code>/</code> (<em>for certain types only</em>)<br>
+Returns the division of the arguments. Defined over \(ℝ × ℝ∖\{0\}\).</p></li>
+<li><p><code>#define k_neg(a0)</code><br>
+Infix operator: <code>-</code> (<em>for certain types only</em>)<br>
+Returns the opposite of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>#define k_min(a0, a1)</code><br>
+Returns the minimum of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_max(a0, a1)</code><br>
+Returns the maximum of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>#define k_abs(a0)</code><br>
+Returns the absolute value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>#define k_fma(a0, a1, a2)</code><br>
+Multiply the first and second inputs and then adds the third input.</p></li>
+<li><p><code>#define k_fnma(a0, a1, a2)</code><br>
+Multiply the first and second inputs, negate the intermediate result and then adds the third input.</p></li>
+<li><p><code>#define k_fms(a0, a1, a2)</code><br>
+Substracts the third input to multiplication the first and second inputs.</p></li>
+<li><p><code>#define k_fnms(a0, a1, a2)</code><br>
+Multiply the first and second inputs, negate the intermediate result and then substracts the third input to the intermediate result.</p></li>
+<li><p><code>#define k_rec(a0)</code><br>
+Returns the reciprocal of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+<li><p><code>#define k_rec11(a0)</code><br>
+Returns the reciprocal with relative error at most \(2^{-11}\) of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+<li><p><code>#define k_rec8(a0)</code><br>
+Returns the reciprocal with relative error at most 2^{-8} of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+<li><p><code>#define k_sqrt(a0)</code><br>
+Returns the square root of the argument. Defined over \([0, +∞)\).</p></li>
+<li><p><code>#define k_rsqrt11(a0)</code><br>
+Returns the square root with relative error at most \(2^{-11}\) of the argument. Defined over \([0, +∞)\).</p></li>
+<li><p><code>#define k_rsqrt8(a0)</code><br>
+Returns the square root with relative error at most \(2^{-8}\) of the argument. Defined over \([0, +∞)\).</p></li>
+<li><p><code>#define k_adds(a0, a1)</code><br>
+Returns the saturated sum of the two vectors given as arguments</p></li>
+<li><p><code>#define k_subs(a0, a1)</code><br>
+Returns the saturated subtraction of the two vectors given as arguments</p></li>
+</ul>
+<h2>Comparison operators</h2>
+<ul>
+<li><p><code>#define k_eq(a0, a1)</code><br>
+Infix operator: <code>==</code> (<em>for certain types only</em>)<br>
+Compare the inputs for equality.</p></li>
+<li><p><code>#define k_ne(a0, a1)</code><br>
+Infix operator: <code>!=</code> (<em>for certain types only</em>)<br>
+Compare the inputs for inequality.</p></li>
+<li><p><code>#define k_gt(a0, a1)</code><br>
+Infix operator: <code>&gt;</code> (<em>for certain types only</em>)<br>
+Compare the inputs for greater-than.</p></li>
+<li><p><code>#define k_ge(a0, a1)</code><br>
+Infix operator: <code>&gt;=</code> (<em>for certain types only</em>)<br>
+Compare the inputs for greater-or-equal-than.</p></li>
+<li><p><code>#define k_lt(a0, a1)</code><br>
+Infix operator: <code>&lt;</code> (<em>for certain types only</em>)<br>
+Compare the inputs for lesser-than.</p></li>
+<li><p><code>#define k_le(a0, a1)</code><br>
+Infix operator: <code>&lt;=</code> (<em>for certain types only</em>)<br>
+Compare the inputs for lesser-or-equal-than.</p></li>
+</ul>
+<h2>Rounding functions</h2>
+<ul>
+<li><p><code>#define k_ceil(a0)</code><br>
+Returns the rounding up to integer value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>#define k_floor(a0)</code><br>
+Returns the rounding down to integer value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>#define k_trunc(a0)</code><br>
+Returns the rounding towards zero to integer value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>#define k_round_to_even(a0)</code><br>
+Returns the rounding to nearest integer value, tie to even of the argument. Defined over \(ℝ\).</p></li>
+</ul>
+<h2>Conversion operators</h2>
+<ul>
+<li><p><code>#define k_reinterpret(to_type, a0)</code><br>
+Reinterpret input vector into a different vector type preserving all bits.</p></li>
+<li><p><code>#define k_cvt(to_type, a0)</code><br>
+Convert input vector into a different vector type. The output type must have same length as input type.</p></li>
+</ul>
+  </body>
+</html>

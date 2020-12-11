@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ SOFTWARE.
 
 -->
 
+<!-- This file has been auto-generated -->
+
 <!DOCTYPE html>
 
 <html>
@@ -39,20 +41,25 @@ SOFTWARE.
         line-height:1.4;
         /*font-size:18px;*/
         color:#444;
-        padding:0 10px
+        padding: 0 10px;
       }
       h1,h2,h3 {
-        line-height:1.2
+        line-height: 1.2;
       }
-      table,th, td {
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
       }
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -61,17 +68,25 @@ SOFTWARE.
   </head>
 <body>
 
-<center>
-  <img src="img/logo.svg"><br>
-  <br>
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
   <a href="index.html">Index</a> |
-  <a href="quick_start.html">Quick Start</a> |
-  <a href="tutorials.html">Tutorials</a> |
+  <a href="tutorial.html">Tutorial</a> |
   <a href="faq.html">FAQ</a> |
   <a href="contribute.html">Contribute</a> |
   <a href="overview.html">API overview</a> |
-  <a href="api.html">API reference</a>
-</center>
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
 <h2>How to Contribute to <code>nsimd</code>?</h2>
 <p>You are welcome to contribute to <code>nsimd</code>. This document gives some details on
 how to add/wrap new intrinsics. When you have finished fixing some bugs or
@@ -101,13 +116,27 @@ targets not supported by <code>nsimd</code> or with no SIMD.</p></li>
 <li><p><code>AVX</code> called <code>AVX</code> in source code.</p></li>
 <li><p><code>AVX2</code> called <code>AVX2</code> in source code.</p></li>
 <li><p><code>AVX-512</code> as found on KNLs called <code>AVX512_KNL</code> in source code.</p></li>
-<li><p><code>AVX-512</code> as found on Xeon Skylake CPUs called <code>AVX512_SKYLAKE</code> in source code.</p></li>
+<li><p><code>AVX-512</code> as found on Xeon Skylake CPUs called <code>AVX512_SKYLAKE</code> in source
+code.</p></li>
 </ul>
 </li>
 <li><p>Arm</p><ul>
 <li><p><code>NEON</code> 128 bits as found on ARMv7 CPUs called <code>NEON128</code> in source code.</p></li>
 <li><p><code>NEON</code> 128 bits as found on Aarch64 CPUs called <code>AARCH64</code> in source code.</p></li>
 <li><p><code>SVE</code> called <code>SVE</code> in source code.</p></li>
+<li><p><code>SVE</code> 128 bits known at compiled time called <code>SVE128</code> in source code.</p></li>
+<li><p><code>SVE</code> 256 bits known at compiled time called <code>SVE256</code> in source code.</p></li>
+<li><p><code>SVE</code> 512 bits known at compiled time called <code>SVE512</code> in source code.</p></li>
+<li><p><code>SVE</code> 1024 bits known at compiled time called <code>SVE1024</code> in source code.</p></li>
+<li><p><code>SVE</code> 2048 bits known at compiled time called <code>SVE2048</code> in source code.</p></li>
+</ul>
+</li>
+<li><p>NVIDIA</p><ul>
+<li><p><code>CUDA</code> called <code>CUDA</code> in source code</p></li>
+</ul>
+</li>
+<li><p>AMD</p><ul>
+<li><p><code>ROCm</code> called <code>ROCM</code> in source code</p></li>
 </ul>
 </li>
 </ul>
@@ -157,8 +186,26 @@ follows:</p>
 <li><p><code>NEON128</code>: <code>vfooq_f16</code> for <code>float16</code>s, <code>vfooq_f32</code> for <code>float</code>s and no
 intrinsics for <code>double</code>s.</p></li>
 <li><p><code>AARCH64</code>: same as <code>NEON128</code> but <code>vfooq_f64</code> for doubles.</p></li>
-<li><p><code>SVE</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively <code>float16</code>s,
-<code>float</code>s and <code>double</code>s.</p></li>
+<li><p><code>SVE</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively
+<code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
+<li><p><code>SVE128</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively
+<code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
+<li><p><code>SVE256</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively
+<code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
+<li><p><code>SVE512</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively
+<code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
+<li><p><code>SVE1024</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively
+<code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
+<li><p><code>SVE2048</code>: <code>svfoo_f16</code>, <code>svfoo_f32</code> and <code>svfoo_f64</code> for respectively
+<code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
+</ul>
+</li>
+<li><p>NVIDIA</p><ul>
+<li><p><code>CUDA</code>: no intrinsics is provided.</p></li>
+</ul>
+</li>
+<li><p>AMD</p><ul>
+<li><p><code>ROCM</code>: no intrinsics is provided.</p></li>
 </ul>
 </li>
 </ul>
@@ -279,6 +326,8 @@ the standard library.</p></li>
 comparison, then test the correctness of the operator against it.</p></li>
 <li><p><code>tests_ulps [= False]</code> in case the auto-generated tests has to compare ULPs
 (<a href="https://en.wikipedia.org/wiki/Unit_in_the_last_place">https://en.wikipedia.org/wiki/Unit_in_the_last_place</a>).</p></li>
+<li><p><code>has_scalar_impl [= True]</code> in case the operator has a CPU scalar and GPU
+implementation.</p></li>
 </ul>
 <h3>Implementing the operator</h3>
 <p>Now that the operator is registered, all signatures will be generated but
@@ -296,6 +345,11 @@ the implemenatations will be missing. Type</p>
 <li><p><code>include/nsimd/arm/neon128/foo.h</code></p></li>
 <li><p><code>include/nsimd/arm/aarch64/foo.h</code></p></li>
 <li><p><code>include/nsimd/arm/sve/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/sve128/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/sve256/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/sve512/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/sve1024/foo.h</code></p></li>
+<li><p><code>include/nsimd/arm/sve2048/foo.h</code></p></li>
 </ul>
 <p>They each correspond to the implementations of the operator for each supported
 architectures. When openening one of these files the implementations in plain
@@ -310,12 +364,14 @@ files:</p>
 <li><p><code>egg/platform_cpu.py</code></p></li>
 <li><p><code>egg/platform_x86.py</code></p></li>
 <li><p><code>egg/platform_arm.py</code></p></li>
+<li><p><code>egg/scalar.py</code></p></li>
+<li><p><code>egg/cuda.py</code></p></li>
+<li><p><code>egg/hip.py</code></p></li>
 </ul>
 <p>The idea is to produce plain C (not C++) code using Python string format. Each
-<code>platform_*.py</code> file provides some helper functions to ease as much as
-possible the programmer&apos;s job. But every <code>platform_*.py</code> file provides the
-same &quot;global&quot; variables available in every functions and is designed in the
-same way:</p>
+of the Python files provides some helper functions to ease as much as
+possible the programmer&apos;s job. But every file provides the same &quot;global&quot;
+variables available in every functions and is designed in the same way:</p>
 <ol>
 <li><p>At the bottom of the file is the <code>get_impl</code> function taking the following
 arguments:</p><ul>
@@ -466,6 +522,43 @@ is compiled with native <code>float16</code> support. This also affect SIMD type
 <li><p>Do not forget to add the <code>foo</code> entry to the <code>impls</code> dictionary in the
 <code>get_impl</code> Python function.</p></li>
 </ol>
+<h3>The scalar CPU version</h3>
+<pre class="python"><code>def foo1(func, typ):
+    normal = \
+    &apos;return ({typ})(1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0})));&apos;. \
+    if typ == &apos;f16&apos;:
+        return \
+        &apos;&apos;&apos;#ifdef NSIMD_NATIVE_FP16
+             {normal}
+           #else
+             return nsimd_f32_to_f16({normal_fp16});
+           #endif&apos;&apos;&apos;. \
+           format(normal=normal.format(**fmtspec),
+                  normal_fp16=normal.format(in0=&apos;nsimd_f16_to_f32({in0})))
+    else:
+        return normal.format(**fmtspec)</code></pre>
+<p>The only caveat for the CPU scalar implementation is to handle float16
+correctly. The easiest way to do is to have the same implementation as float32
+but replacing <code>{in0}</code>&apos;s by <code>nsimd_f16_to_f32({in0})</code>&apos;s and converting back
+the float32 result to a float16.</p>
+<h3>The GPU versions</h3>
+<p>The GPU generator Python files <code>cuda.py</code> and <code>rocm.py</code> are a bit different
+from the other files but it is easy to find where to add the relevant
+pieces of code as ROCm syntax is fully compatible with CUDA&apos;s one only needs
+to modify the <code>cuda.py</code> file.</p>
+<p>The code to add for float32&apos;s is as follows to be added inside the <code>get_impl</code>
+Python function.</p>
+<pre class="python"><code>return &apos;1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}))&apos;.format(**fmtspec)</code></pre>
+<p>The code to add for float16&apos;s is as follows to be added inside the
+<code>get_impl_f16</code> Python function.</p>
+<pre class="python"><code>arch53_code = &apos;&apos;&apos;__half one = __float2half(1.0f);
+                 return __hadd(
+                               __hdiv(one, __hsub(one, {in0})),
+                               __hmul(
+                                      __hdiv(one, __hsub(one, {in0})),
+                                      __hdiv(one, __hsub(one, {in0}))
+                                     )
+                              );&apos;&apos;&apos;.format(**fmtspec)</code></pre>
 <h3>Implementing the test for the operator</h3>
 <p>Now that we have written the implementations for the <code>foo</code> operator we must
 write the corresponding tests. For tests all generations are done by
@@ -519,5 +612,57 @@ a class with only one member named <code>title</code> as follows:</p>
 <p>The class must inherit from the <code>DocCategory</code> class and its name must begin
 with <code>Doc</code>. The system will then take it into account, generate the entry
 in the documentation and so on.</p>
+<h2>How to I add a new module?</h2>
+<p>A module is a set of functionnalities that make sense to be provided alongside
+NSIMD but that cannot be part of NSIMD&apos;s core. Therefore it is not mandatory
+to provide all C and C++ APIs versions or to support all operators. For what
+follows let&apos;s call the module we want to implement <code>mymod</code>.</p>
+<p>Include files (written by hand or generated by Python) must be placed into
+the <code>nsimd/include/nsimd/modules/mymod</code> directory and a master header file must
+be placed at <code>nsimd/include/nsimd/modules/mymod.h</code>. You are free to organize
+the <code>nsimd/include/nsimd/modules/mymod</code> folder as you see fit.</p>
+<p>Your module has to be found by NSIMD generation system. For this you must
+create the <code>nsimd/egg/modules/mymod</code> directory and
+<code>nsimd/egg/modules/mymod/hatch.py</code> file. The latter must expose the following
+functions:</p>
+<ul>
+<li><p><code>def name()</code><br>
+Return a human readable module name beginning with a uppercase letter.</p></li>
+<li><p><code>def desc()</code><br>
+Return a small description of 4-5 lines of text for the module. This text
+will appear in the <code>modules.md</code> file that lists all the available modules.</p></li>
+<li><p><code>def doc_menu()</code><br>
+Return a Python dictionnary containing the menu for when the generation
+system produces the HTML pages of documentation for the module. The entry
+markdown file must be <code>nsimd/nsimd/module_mymod_overview.md</code> for
+module documentation. Then  if your module has no other documentation
+pages this function can simply returns <code>dict()</code>. Otherwise if has to return
+<code>{&apos;menu_label&apos;: &apos;filename_suffix&apos;, ...}</code> where <code>menu_label</code> is a menu entry
+to be displayed and pointing to <code>nsimd/egg/module_mymod_filename_suffix.md</code>.
+Several fucntion in <code>egg/common.py</code> (<code>import common</code>) have to be used to
+ease crafting documentation pages filenames:</p><ul>
+<li><p><code>def get_markdown_dir(opts)</code><br>
+Return the folder into which markdown for documentation have to be put.</p></li>
+<li><p><code>def get_markdown_file(opts, name, module=&apos;&apos;)</code><br>
+Return the filename to be passed to the <code>common.open_utf8</code> function. The
+<code>name</code> argument acts as a suffix as explained above while the <code>module</code>
+argument if the name of the module.</p></li>
+</ul>
+</li>
+<li><p><code>def doit(opts)</code> 
+Is the real entry point of the module. This function has the responsability
+to generate all the code for your module. It can of course import all Python
+files from NSIMD and take advantage of the <code>operators.py</code> file. To
+respect the switches passed by the user at command line it is recommanded to
+write this function as follows.</p><pre class="python"><code>def doit(opts):
+    common.myprint(opts, &apos;Generating module mymod&apos;)
+    if opts.library:
+        gen_module_headers(opts)
+    if opts.tests:
+        gen_tests(opts)
+    if opts.doc:
+        gen_doc(opts)</code></pre></li>
+</ul>
+<p>Tests for the module have to be put into the <code>nsimd/tests/mymod</code> directory.</p>
   </body>
 </html>

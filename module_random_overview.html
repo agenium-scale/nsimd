@@ -1,0 +1,148 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<b>Random number generators module documentation</b>
+
+<hr>
+</div>
+
+<h1>NSIMD Random module overview</h1>
+<p>This module define functions that generate pseudorandom numbers usingalgorithms described in Parallel Random Numbers: As Easy as 1,2,3, byJohn K. Salmon, Mark A. Moraes, Ron O. Dror and David E.Shaw.</p>
+<p>Two different algorithms are proposed : threefry and philox. Both should give
+high quality random number.
+Threefry is quicker on CPU, while philox is best used on GPU.</p>
+<p>Both algorithms are counter based pseudorandom number generator, meaning that
+they need two parameters:</p>
+<ul>
+<li><p>a key, each key will generate an unique sequence,</p></li>
+<li><p>a counter, which will give the different numbers in the sequence.</p></li>
+</ul>
+<h1>NSIMD Random API reference</h1>
+<ul>
+<li><p><code>nsimd::packx2&lt;u32&gt; philox_2x32_10(nsimd::packx2&lt;u32&gt; in, nsimd::packx1&lt;u32&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx4&lt;u32&gt; philox_4x32_7(nsimd::packx4&lt;u32&gt; in, nsimd::packx2&lt;u32&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx4&lt;u32&gt; philox_4x32_10(nsimd::packx4&lt;u32&gt; in, nsimd::packx2&lt;u32&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx2&lt;u64&gt; philox_2x64_6(nsimd::packx2&lt;u64&gt; in, nsimd::packx1&lt;u64&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx2&lt;u64&gt; philox_2x64_10(nsimd::packx2&lt;u64&gt; in, nsimd::packx1&lt;u64&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx4&lt;u64&gt; philox_4x64_7(nsimd::packx4&lt;u64&gt; in, nsimd::packx2&lt;u64&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx4&lt;u64&gt; philox_4x64_10(nsimd::packx4&lt;u64&gt; in, nsimd::packx2&lt;u64&gt; key)</code>;<br>
+Returns a random number using the philox generator</p></li>
+<li><p><code>nsimd::packx2&lt;u32&gt;             threefry_2x32_12             (nsimd::packx2&lt;u32&gt; in,             nsimd::packx2&lt;u32&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx2&lt;u32&gt;             threefry_2x32_20             (nsimd::packx2&lt;u32&gt; in,             nsimd::packx2&lt;u32&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx2&lt;u32&gt;             threefry_2x32_32             (nsimd::packx2&lt;u32&gt; in,             nsimd::packx2&lt;u32&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx4&lt;u32&gt;             threefry_4x32_12             (nsimd::packx4&lt;u32&gt; in,             nsimd::packx4&lt;u32&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx4&lt;u32&gt;             threefry_4x32_20             (nsimd::packx4&lt;u32&gt; in,             nsimd::packx4&lt;u32&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx4&lt;u32&gt;             threefry_4x32_72             (nsimd::packx4&lt;u32&gt; in,             nsimd::packx4&lt;u32&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx2&lt;u64&gt;             threefry_2x64_13             (nsimd::packx2&lt;u64&gt; in,             nsimd::packx2&lt;u64&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx2&lt;u64&gt;             threefry_2x64_20             (nsimd::packx2&lt;u64&gt; in,             nsimd::packx2&lt;u64&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx2&lt;u64&gt;             threefry_2x64_32             (nsimd::packx2&lt;u64&gt; in,             nsimd::packx2&lt;u64&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx4&lt;u64&gt;             threefry_4x64_12             (nsimd::packx4&lt;u64&gt; in,             nsimd::packx4&lt;u64&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx4&lt;u64&gt;             threefry_4x64_20             (nsimd::packx4&lt;u64&gt; in,             nsimd::packx4&lt;u64&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+<li><p><code>nsimd::packx4&lt;u64&gt;             threefry_4x64_72             (nsimd::packx4&lt;u64&gt; in,             nsimd::packx4&lt;u64&gt; key)</code>;<br>
+Returns a random number using the threefry generator</p></li>
+</ul>
+  </body>
+</html>

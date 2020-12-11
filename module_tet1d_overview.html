@@ -1,0 +1,233 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<b>Tiny expression templates 1D module documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<a href="module_tet1d_overview.html">Overview</a> | <a href="module_tet1d_api.html">API reference</a>
+<hr>
+</div>
+
+<h1>Overview</h1>
+<h2>What are expression templates?</h2>
+<p>Expression templates are a C++ template metaprogramming technique that
+essentially allows high level programming for loop fusion. Take the following
+exemple.</p>
+<pre class="c++"><code>std::vector&lt;float&gt; operator+(std::vector&lt;float&gt; const &amp;a,
+                             std::vector&lt;float&gt; const &amp;b) {
+  std::vector&lt;float&gt; ret(a.size());
+  for (size_t i = 0; i &lt; a.size(); i++) {
+    ret[i] = a[i] + b[i];
+  }
+  return ret;
+}
+
+int main() {
+  std::vector&lt;float&gt; a, b, c, d, sum;
+
+  ...
+
+  sum = a + b + c + d;
+
+  ...
+
+  return 0;
+}</code></pre>
+<p>The expression <code>a + b + c + d</code> involves three calls to <code>operator+</code> and at least
+nine memory passes are necessary. This can be optimized as follows.</p>
+<pre class="c++"><code>int main() {
+  std::vector&lt;float&gt; a, b, c, d, sum;
+
+  ...
+
+  for (size_t i = 0; i &lt; a.size(); i++) {
+    ret[i] = a[i] + b[i] + c[i] + d[i];
+  }
+
+  ...
+
+  return 0;
+}</code></pre>
+<p>The rewriting above requires only four memory passes which is of course better
+but as humans we prefer the writing <code>a + b + c + d</code>. Expression templates
+solves exactly this problem and allows the programmer to write <code>a + b + c + d</code>
+and the compiler to see the loop written above.</p>
+<h2>Expressions templates with NSIMD</h2>
+<p>This module provides expression templates on top of NSIMD core. As a
+consequence the loops seen by the compiler deduced from the high-level
+expressions are optimized using SIMD instructions. Note also that NVIDIA and
+AMD GPUs are supported through CUDA and ROCm/HIP. The API for expression
+templates in NSIMD is C++98 compatible and is able to work with any container
+as its only requirement for data is that it must be contiguous.</p>
+<p>All inputs to an expression must be declared using <code>tet1d::in</code> while the
+output must be declared using <code>tet1d::out</code>.</p>
+<pre class="c++"><code>int main() {
+  std::vector&lt;float&gt; a, b, c;
+
+  ...
+
+  tet1d::out(a) = tet1d::in(&amp;a[0], a.size()) + tet1d::in(&amp;b[0], b.size());
+
+  ...
+
+  return 0;
+}</code></pre>
+<ul>
+<li><p><code>template &lt;typename T, typename I&gt; inline node in(const T *data, I sz);</code><br>
+Construct an input for expression templates starting at address <code>data</code> and
+containing <code>sz</code> elements. The return type of this functin <code>node</code> can be used
+with the help of the <code>TET1D_IN(T)</code> macro where <code>T</code> if the underlying type of
+data (ints, floats, doubles...).</p></li>
+<li><p><code>template &lt;typename T&gt; node out(T *data);</code><br>
+Construct an output for expression templates starting at address <code>data</code>. Note
+that memory must be allocated by the user before passing it to the expression
+template engine. The output type can be used with the <code>TET1D_OUT(T)</code> where
+<code>T</code> is the underlying type (ints, floats, doubles...).</p></li>
+</ul>
+<p>Note that it is possible to pass parameters to the expression template engine
+to specify the number of threads per block for GPUs or the SIMD extension to
+use...</p>
+<ul>
+<li><p><code>template &lt;typename T, typename Pack&gt; node out(T *data, int
+threads_per_block, void *stream);</code><br>
+Construct an output for expression templates starting at address <code>data</code>. Note
+that memory must be allocated by the user before passing it to the expression
+template engine. The <code>Pack</code> parameter is useful when compiling for CPUs. The
+type is <code>nsimd::pack&lt;...&gt;</code> allowing the developper to specify all details
+about the NSIMD packs that will be used by the expression template engine.
+The <code>threads_per_block</code> and <code>stream</code> arguments are used only when compiling
+for GPUs. Their meaning is contained in their names. The output type can be
+used with the <code>TET1D_OUT_EX(T, N, SimdExt)</code> where <code>T</code> is the underlying type
+(ints, floats, doubles...), <code>N</code> is the unroll factor and <code>SimdExt</code> the SIMD
+extension.</p></li>
+</ul>
+<p>Moreover a MATLAB-like syntax is provided. One can select a subrange of given
+input. Indexes are understood as for Python: -1 represents the last element.
+The contant <code>tet1d::end = -1</code> allows one to write portable code.</p>
+<pre class="c++"><code>int main() {
+  std::vector&lt;float&gt; a, b, c;
+
+  ...
+
+  TET1D_IN(float) va = tet1d::in(&amp;a[0], a.size());
+  TET1D_IN(float) vb = tet1d::in(&amp;b[0], b.size());
+  tet1d::out(c) = va(10, tet1d::end - 10) + vb;
+
+  ...
+
+  return 0;
+}</code></pre>
+<p>One can also specify which elements of the output must be rewritten with
+the following syntax.</p>
+<pre class="c++"><code>int main() {
+  std::vector&lt;float&gt; a, b, c;
+
+  ...
+
+  TET1D_IN(float) va = tet1d::in(&amp;a[0], a.size());
+  TET1D_IN(float) vb = tet1d::in(&amp;b[0], b.size());
+  TET1D_OUT(float) vc = tet1d::out(&amp;c[0]);
+  vc(va &gt;= 10 &amp;&amp; va &lt; 20) = vb;
+
+  ...
+
+  return 0;
+}</code></pre>
+<p>In the exemple above, element <code>i</code> in <code>vc</code> is written only if <code>va[i] &gt;= 10</code> and
+<code>va[i] &lt; 20</code>. The expression appearing in the parenthesis can contain
+arbitrary expression templates as soon as the underlying type is <code>bool</code>.</p>
+<h2>Warning using <code>auto</code></h2>
+<p>Using auto can lead to surprising results. We advice you never to use auto
+when dealing with expression templates. Indeed using <code>auto</code> will make the
+variable an obscure type representing the computation tree of the expression
+template. This implies that you won&apos;t be able to get data from this variable
+i.e. get the <code>.data</code> member for exemple. Again this variable or its type cannot
+be used in template arguments where you need it.</p>
+  </body>
+</html>

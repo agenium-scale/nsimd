@@ -1,0 +1,250 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<b>Tiny expression templates 1D module documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<a href="module_tet1d_overview.html">Overview</a> | <a href="module_tet1d_api.html">API reference</a>
+<hr>
+</div>
+
+<h1>NSIMD TET1D API reference</h1>
+<p>This page contains the exhaustive API of the TET1D module. Note that most
+operators names follow their NSIMD counterparts and have the same
+semantics. This page is light, you may use CTRL+F to find the operator you
+are looking for.</p>
+<p>Note that all operators accept literals and scalars. For example you may
+write <code>tet1d::add(a, 1)</code>. This also applies when using infix operators. Note
+that literals or scalars of different types can be used with expression
+involving other types.</p>
+<p>In all signature below the following pseudo types are used for simplification:</p>
+<ul>
+<li><p><code>ExprNumber</code> to designate an existing expression template on signed, unsigned
+integers of floatting point types or a scalar of signed, unsigned integers or
+floatting point types.</p></li>
+<li><p><code>ExprBool</code> to designate an existing expression template over booleans or
+a boolean.</p></li>
+<li><p><code>ToType</code> to designate a base type (signed, unsigned integers or floatting
+point types) and is used when a change in type is requested for example
+when converting data.</p></li>
+</ul>
+<h2>Bits manipulation operators</h2>
+<ul>
+<li><p><code>ExprNumber orb(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the bitwise or of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber andb(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the bitwise and of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber andnotb(ExprNumber a0, ExprNumber a1);</code><br>
+Returns the bitwise andnot of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber notb(ExprNumber a0);</code><br>
+Infix operator: <code></code><br>
+Returns the bitwise not of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>ExprNumber xorb(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the bitwise xor of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber shr(ExprNumber a0, int a1);</code><br>
+Infix operator: <code></code><br>
+Returns the right shift in zeros of the arguments. Defined over \(ℝ × ℕ\).</p></li>
+<li><p><code>ExprNumber shl(ExprNumber a0, int a1);</code><br>
+Infix operator: <code></code><br>
+Returns the left shift of the arguments. Defined over \(ℝ × ℕ\).</p></li>
+<li><p><code>ExprNumber shra(ExprNumber a0, int a1);</code><br>
+Performs a right shift operation with sign extension.</p></li>
+</ul>
+<h2>Logicals operators</h2>
+<ul>
+<li><p><code>ExprBool orl(ExprBool a0, ExprBool a1);</code><br>
+Infix operator: <code></code><br>
+Returns the logical or of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>ExprBool andl(ExprBool a0, ExprBool a1);</code><br>
+Infix operator: <code></code><br>
+Returns the logical and of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>ExprBool andnotl(ExprBool a0, ExprBool a1);</code><br>
+Returns the logical andnot of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>ExprBool xorl(ExprBool a0, ExprBool a1);</code><br>
+Returns the logical xor of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+<li><p><code>ExprBool notl(ExprBool a0);</code><br>
+Infix operator: <code></code><br>
+Returns the logical not of the argument. Defined over \(𝔹\).</p></li>
+<li><p><code>ExprNumber to_mask(ExprBool a0);</code><br>
+Returns a mask consisting of all ones for true elements and all zeros for false elements.</p></li>
+<li><p><code>ExprBool to_logical(ExprNumber a0);</code><br>
+Returns a vector of logicals. Set true when the corresponding elements are non zero (at least one bit to 1) and false otherwise.</p></li>
+</ul>
+<h2>Basic arithmetic operators</h2>
+<ul>
+<li><p><code>ExprNumber add(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the addition of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber sub(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the subtraction of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber mul(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the multiplication of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber div(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Returns the division of the arguments. Defined over \(ℝ × ℝ∖\{0\}\).</p></li>
+<li><p><code>ExprNumber neg(ExprNumber a0);</code><br>
+Infix operator: <code></code><br>
+Returns the opposite of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>ExprNumber min(ExprNumber a0, ExprNumber a1);</code><br>
+Returns the minimum of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber max(ExprNumber a0, ExprNumber a1);</code><br>
+Returns the maximum of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+<li><p><code>ExprNumber abs(ExprNumber a0);</code><br>
+Returns the absolute value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>ExprNumber fma(ExprNumber a0, ExprNumber a1, ExprNumber a2);</code><br>
+Multiply the first and second inputs and then adds the third input.</p></li>
+<li><p><code>ExprNumber fnma(ExprNumber a0, ExprNumber a1, ExprNumber a2);</code><br>
+Multiply the first and second inputs, negate the intermediate result and then adds the third input.</p></li>
+<li><p><code>ExprNumber fms(ExprNumber a0, ExprNumber a1, ExprNumber a2);</code><br>
+Substracts the third input to multiplication the first and second inputs.</p></li>
+<li><p><code>ExprNumber fnms(ExprNumber a0, ExprNumber a1, ExprNumber a2);</code><br>
+Multiply the first and second inputs, negate the intermediate result and then substracts the third input to the intermediate result.</p></li>
+<li><p><code>ExprNumber rec(ExprNumber a0);</code><br>
+Returns the reciprocal of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+<li><p><code>ExprNumber rec11(ExprNumber a0);</code><br>
+Returns the reciprocal with relative error at most \(2^{-11}\) of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+<li><p><code>ExprNumber rec8(ExprNumber a0);</code><br>
+Returns the reciprocal with relative error at most 2^{-8} of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+<li><p><code>ExprNumber sqrt(ExprNumber a0);</code><br>
+Returns the square root of the argument. Defined over \([0, +∞)\).</p></li>
+<li><p><code>ExprNumber rsqrt11(ExprNumber a0);</code><br>
+Returns the square root with relative error at most \(2^{-11}\) of the argument. Defined over \([0, +∞)\).</p></li>
+<li><p><code>ExprNumber rsqrt8(ExprNumber a0);</code><br>
+Returns the square root with relative error at most \(2^{-8}\) of the argument. Defined over \([0, +∞)\).</p></li>
+<li><p><code>ExprNumber adds(ExprNumber a0, ExprNumber a1);</code><br>
+Returns the saturated sum of the two vectors given as arguments</p></li>
+<li><p><code>ExprNumber subs(ExprNumber a0, ExprNumber a1);</code><br>
+Returns the saturated subtraction of the two vectors given as arguments</p></li>
+</ul>
+<h2>Comparison operators</h2>
+<ul>
+<li><p><code>ExprBool eq(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Compare the inputs for equality.</p></li>
+<li><p><code>ExprBool ne(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Compare the inputs for inequality.</p></li>
+<li><p><code>ExprBool gt(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Compare the inputs for greater-than.</p></li>
+<li><p><code>ExprBool ge(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Compare the inputs for greater-or-equal-than.</p></li>
+<li><p><code>ExprBool lt(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Compare the inputs for lesser-than.</p></li>
+<li><p><code>ExprBool le(ExprNumber a0, ExprNumber a1);</code><br>
+Infix operator: <code></code><br>
+Compare the inputs for lesser-or-equal-than.</p></li>
+</ul>
+<h2>Rounding functions</h2>
+<ul>
+<li><p><code>ExprNumber ceil(ExprNumber a0);</code><br>
+Returns the rounding up to integer value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>ExprNumber floor(ExprNumber a0);</code><br>
+Returns the rounding down to integer value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>ExprNumber trunc(ExprNumber a0);</code><br>
+Returns the rounding towards zero to integer value of the argument. Defined over \(ℝ\).</p></li>
+<li><p><code>ExprNumber round_to_even(ExprNumber a0);</code><br>
+Returns the rounding to nearest integer value, tie to even of the argument. Defined over \(ℝ\).</p></li>
+</ul>
+<h2>Conversion operators</h2>
+<ul>
+<li><p><code>ExprNumber reinterpret(ToType, ExprNumber a0);</code><br>
+Reinterpret input vector into a different vector type preserving all bits.</p></li>
+<li><p><code>ExprNumber cvt(ToType, ExprNumber a0);</code><br>
+Convert input vector into a different vector type. The output type must have same length as input type.</p></li>
+</ul>
+  </body>
+</html>

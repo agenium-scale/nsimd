@@ -1,0 +1,457 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>NSIMD tutorial</h1>
+<p>In this tutorial we will write and compile a simple SIMD kernel to become
+familiar with the basics of NSIMD. We will also see different aspects of SIMD
+programming:</p>
+<ul>
+<li><p>aligned vs. unaligned data access</p></li>
+<li><p>basic SIMD arithmetic</p></li>
+<li><p>SIMD loops</p></li>
+<li><p>SIMD branching</p></li>
+<li><p>architecture selection at runtime</p></li>
+</ul>
+<h2>SIMD basics</h2>
+<p>SIMD programming means using the CPU SIMD registers to performs operations
+on several data at once. A SIMD vector should be viewed as a set of bits
+which are interpreted by the operators that operate on them. Taking a 128-bits
+wide SIMD register, it can be interpreted as:</p>
+<ul>
+<li><p>16 signed/unsigned chars</p></li>
+<li><p>8 signed/unsigned shorts</p></li>
+<li><p>4 signed/unsigned ints</p></li>
+<li><p>4 floats</p></li>
+<li><p>2 signed/unsigned longs</p></li>
+<li><p>2 doubles</p></li>
+</ul>
+<p>as shown in the picture below.</p>
+<p><img src="img/register.png" alt="Register layout" /></p>
+<h2>Computation kernel</h2>
+<p>We will explain the rewriting of the following kernel which uppercases ASCII
+letters only.</p>
+<pre class="C++"><code>template &lt;typename T&gt;
+void uppercase_scalar(T *dst, const T *src, int n) {
+  for (int i = 0; i &lt; n; i++) {
+    if (src[i] &gt;= &apos;a&apos; &amp;&amp; src[i] &lt;= &apos;z&apos;) {
+      dst[i] = src[i] + (&apos;A&apos; - &apos;a&apos;);
+    } else {
+      dst[i] = src[i];
+    }
+  }
+}</code></pre>
+
+<p>Here is the corresponding SIMD version. Explanations to follow.</p>
+<pre class="C++"><code>template &lt;typename T&gt;
+void uppercase_simd(T *dst, const T *src, int n) {
+  using namespace nsimd;
+  typedef pack&lt;T&gt; p_t;
+  typedef packl&lt;T&gt; pl_t;
+  int l = len&lt;p_t&gt;();
+
+  int i;
+  for (i = 0; i + l &lt;= n; i += l) {
+    p_t text = loadu&lt;p_t&gt;(src + i);
+    pl_t mask = text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;;
+    p_t then_pack = text + (&apos;A&apos; - &apos;a&apos;);
+    p_t TEXT = if_else(mask, then_pack, text);
+    storeu(dst + i, TEXT);
+  }
+
+  pl_t mask = mask_for_loop_tail&lt;pl_t&gt;(i, n);
+  p_t text = maskz_loadu(mask, src + i);
+  p_t TEXT = if_else(text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;, text + (&apos;A&apos; - &apos;a&apos;), text);
+  mask_storeu(mask, dst + i, TEXT);
+}</code></pre>
+
+<h2>Getting started with NSIMD</h2>
+<p>All APIs of NSIMD core is available with this include:</p>
+<pre class="C++"><code>#include &lt;nsimd/nsimd-all.hpp&gt;</code></pre>
+
+<p>For ease of programming with use the NSIMD namespace inside the
+<code>uppercase_simd</code> function.</p>
+<pre class="C++"><code>using namespace nsimd;</code></pre>
+
+<h2>SIMD vectors</h2>
+<p>A <code>nsimd::pack&lt;T&gt;</code> can be considered analogous to a SIMD register (on your or
+any other machine). Operations performed on packs - from elementary operations
+such as addition to complicated functions such as <code>nsimd::rsqrt11(x)</code> - will be
+performed using SIMD registers and operations if supported by your hardware. As
+shown below, data must be manually loaded into and stored from these registers.
+Again, for ease of programming we typedef a pack of T&apos;s.</p>
+<pre class="C++"><code>typedef pack&lt;T&gt; p_t;</code></pre>
+
+<p>NSIMD provides another type of pack called <code>nsimd::packl</code> which handles vectors
+of booleans.</p>
+<pre class="C++"><code>typedef packl&lt;T&gt; pl_t;</code></pre>
+
+<p>This distinction between pack&apos;s and packl&apos;s is necessary ffor two reasons:</p>
+<ul>
+<li><p>On recent hardware, SIMD vectors of booleans are handled by dedicated
+registers.</p></li>
+<li><p>Pack and Packl must have different semantics as arithmetic operators on
+booleans have no sense as well as logical operators on Pack&apos;s.</p></li>
+</ul>
+<h2>Loading data from memory</h2>
+<p>One way to construct a <code>nsimd::pack&lt;T&gt;</code> is to simply declare
+(default-construct) it. Such a pack may <em>not</em> be zero-initialized and thus may
+<em>contain arbitrary values</em>.</p>
+<p>Another way to construct a <code>nsimd::pack&lt;T&gt;</code> is to fill it with a single value.
+This so-called splatting constructor takes one scalar value and replicates it
+in all elements of the pack.</p>
+<p>But most common usage to construct a <code>nsimd::pack&lt;T&gt;</code> is by using the copy
+constructor from loading functions.</p>
+<pre class="C++"><code>p_t text = loadu&lt;p_t&gt;(src + i);</code></pre>
+
+<h2>Aligned vs. unaligned memory</h2>
+<p>Alignement of a given pointer <code>ptr</code> to memory to some value <code>A</code> means that
+<code>ptr % A == 0</code>. On older hardware loading data from unaligned memory can
+result in performance penalty. On recent hardware it is hard to exhibit a
+difference. NSIMD provides two versions of &quot;load&quot;:</p>
+<ul>
+<li><p><code>loada</code> for loading data from aligned memory</p></li>
+<li><p><code>loadu</code> for loading data from unaligned momery</p></li>
+</ul>
+<p>Note that using <code>loada</code> on unaligned pointer may result in segfaults. As
+recent hardware have good support for unaligned memory we use <code>loadu</code>.</p>
+<pre class="C++"><code>p_t text = loadu&lt;p_t&gt;(src + i);</code></pre>
+
+<p>To ensure that data allocated by <code>std::vector</code> is aligned, NSIMD provide
+a C++ allocator.</p>
+<pre class="c++"><code>std::vector&lt;T, nsimd::allocator&lt;T&gt; &gt; data;</code></pre>
+<p>When loading data from memory you must ensure that there is sufficient data in
+the block of memory you load from to fill a <code>nsimd::pack&lt;T&gt;</code>. For example, on
+an <code>AVX</code> capable machine, a SIMD vector of <code>float</code> (32 bits) contains 8
+elements. Therefore, there must be at least 8 floats in the memory block you
+load data from otherwise loading may result in segfaults. More on this below.</p>
+<h2>Operations on pack&apos;s and packl&apos;s</h2>
+<p>Once initialized, <code>nsimd::pack&lt;T&gt;</code> instances can be used to perform arithmetic.
+Usual operations are provided by NSIMD such:</p>
+<ul>
+<li><p>addition</p></li>
+<li><p>substraction</p></li>
+<li><p>multiplication</p></li>
+<li><p>division</p></li>
+<li><p>square root</p></li>
+<li><p>bitwise and/or/xor</p></li>
+<li><p>...</p></li>
+</ul>
+<pre class="C++"><code>pl_t mask = text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;;
+p_t then_pack = text + (&apos;A&apos; - &apos;a&apos;);</code></pre>
+
+<p>C++ operators are also overloaded for pack&apos;s and packl&apos;s as well as between
+pack&apos;s and scalars or packl&apos;s and booleans.</p>
+<h2>SIMD branching</h2>
+<p>NSIMD provide the <code>if_else</code> operator which fill the output, lane by lane,
+according to the lane value of its first argument:</p>
+<ul>
+<li><p>if it is true, the output lane will be filled with the second argument&apos;s lane</p></li>
+<li><p>if it is false, the output lane will be filled with the third argument&apos;s lane</p></li>
+</ul>
+<p>Therefore the branching:</p>
+<pre class="C++"><code>if (src[i] &gt;= &apos;a&apos; &amp;&amp; src[i] &lt;= &apos;z&apos;) {
+  dst[i] = src[i] + (&apos;A&apos; - &apos;a&apos;);
+} else {
+  dst[i] = src[i];
+}</code></pre>
+
+<p>will be rewritten as</p>
+<pre class="C++"><code>pl_t mask = text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;;
+p_t then_pack = text + (&apos;A&apos; - &apos;a&apos;);
+p_t TEXT = if_else(mask, then_pack, text);</code></pre>
+
+<p>or as a one liner</p>
+<pre class="C++"><code>p_t TEXT = if_else(text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;, text + (&apos;A&apos; - &apos;a&apos;), text);</code></pre>
+
+<h2>SIMD loops</h2>
+<p>A SIMD loop is similar to its scalar counterpart except that instead of
+going through data one element at a time it goes 4 by 4 or 8 by 8 elements
+at a time. More precisely SIMD loops generally goes from steps equal to
+pack&apos;s length. Therefore the scalar loop</p>
+<pre class="C++"><code>for (int i = 0; i &lt; n; i++) {</code></pre>
+
+<p>is rewritten as</p>
+<pre class="C++"><code>  int l = len&lt;p_t&gt;();
+
+  int i;
+  for (i = 0; i + l &lt;= n; i += l) {</code></pre>
+
+<p>Note that going step by step will only cover most of the data except maybe the
+tail of data in case that the number of elements is not a multiple of the
+Pack&apos;s length. Therefore to perform computations on the tail one has to
+load data from only <code>n</code> elements where <code>n &lt; len&lt;p_t&gt;()</code>. One can use
+<code>maskz_loadu</code> which will load data only on lanes that are marked as true by
+another argument to the function.</p>
+<pre class="C++"><code>p_t text = maskz_loadu(mask, src + i);</code></pre>
+
+<p>The mask can be computed manually but NSIMD provides a function for it.</p>
+<pre class="C++"><code>pl_t mask = mask_for_loop_tail&lt;pl_t&gt;(i, n);</code></pre>
+
+<p>Then the computation on the tail is exactly the same as within the loop. Put
+together it gives for the tail:</p>
+<pre class="C++"><code>pl_t mask = mask_for_loop_tail&lt;pl_t&gt;(i, n);
+p_t text = maskz_loadu(mask, src + i);
+p_t TEXT = if_else(text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;, text + (&apos;A&apos; - &apos;a&apos;), text);
+mask_storeu(mask, dst + i, TEXT);</code></pre>
+
+<p>Then the entire loop reads as follows.</p>
+<pre class="C++"><code>  int i;
+  for (i = 0; i + l &lt;= n; i += l) {
+    p_t text = loadu&lt;p_t&gt;(src + i);
+    pl_t mask = text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;;
+    p_t then_pack = text + (&apos;A&apos; - &apos;a&apos;);
+    p_t TEXT = if_else(mask, then_pack, text);
+    storeu(dst + i, TEXT);
+  }
+
+  pl_t mask = mask_for_loop_tail&lt;pl_t&gt;(i, n);
+  p_t text = maskz_loadu(mask, src + i);
+  p_t TEXT = if_else(text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;, text + (&apos;A&apos; - &apos;a&apos;), text);
+  mask_storeu(mask, dst + i, TEXT);</code></pre>
+
+<h2>Compiling the Code</h2>
+<p>Here is the complete listing of the code.</p>
+<pre class="C++"><code>#include &lt;nsimd/nsimd-all.hpp&gt;
+
+#include &lt;string&gt;
+#include &lt;vector&gt;
+#include &lt;iostream&gt;
+
+template &lt;typename T&gt;
+void uppercase_scalar(T *dst, const T *src, int n) {
+  for (int i = 0; i &lt; n; i++) {
+    if (src[i] &gt;= &apos;a&apos; &amp;&amp; src[i] &lt;= &apos;z&apos;) {
+      dst[i] = src[i] + (&apos;A&apos; - &apos;a&apos;);
+    } else {
+      dst[i] = src[i];
+    }
+  }
+}
+
+template &lt;typename T&gt;
+void uppercase_simd(T *dst, const T *src, int n) {
+  using namespace nsimd;
+  typedef pack&lt;T&gt; p_t;
+  typedef packl&lt;T&gt; pl_t;
+  int l = len&lt;p_t&gt;();
+
+  int i;
+  for (i = 0; i + l &lt;= n; i += l) {
+    p_t text = loadu&lt;p_t&gt;(src + i);
+    pl_t mask = text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;;
+    p_t then_pack = text + (&apos;A&apos; - &apos;a&apos;);
+    p_t TEXT = if_else(mask, then_pack, text);
+    storeu(dst + i, TEXT);
+  }
+
+  pl_t mask = mask_for_loop_tail&lt;pl_t&gt;(i, n);
+  p_t text = maskz_loadu(mask, src + i);
+  p_t TEXT = if_else(text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;, text + (&apos;A&apos; - &apos;a&apos;), text);
+  mask_storeu(mask, dst + i, TEXT);
+}
+
+int main(int argc, char **argv) {
+  std::string input;
+
+  for (int i = 1; i &lt; argc; i++) {
+    input += std::string(argv[i]);
+    if (i &lt; argc - 1) {
+      input += std::string(&quot; &quot;);
+    }
+  }
+
+  std::cout &lt;&lt; &quot;Orignal text         : &quot; &lt;&lt; input &lt;&lt; std::endl;
+
+  std::vector&lt;i8&gt; dst_scalar(input.size() + 1);
+  uppercase_scalar(&amp;dst_scalar[0], (i8 *)input.c_str(), (int)input.size());
+  std::cout &lt;&lt; &quot;Scalar uppercase text: &quot; &lt;&lt; &amp;dst_scalar[0] &lt;&lt; std::endl;
+
+  std::vector&lt;i8&gt; dst_simd(input.size() + 1);
+  uppercase_simd(&amp;dst_simd[0], (i8 *)input.c_str(), (int)input.size());
+  std::cout &lt;&lt; &quot;NSIMD uppercase text : &quot; &lt;&lt; &amp;dst_simd[0] &lt;&lt; std::endl;
+
+  return 0;
+}</code></pre>
+
+<p>The compilation of a program using <code>nsimd</code> is like any other library.</p>
+<pre class="bash"><code>c++ -O3 -DAVX2 -mavx2 -L/path/to/lib -lnsimd_avx2 -I/path/to/include tutorial.cpp</code></pre>
+<p>When compiling with NSIMD, you have to decide at compile time the targeted
+SIMD extensions, AVX2 in the example above. It is therefore necessary to
+give <code>-mavx2</code> to the compiler for it to emit AVX2 instructions. To tell NSIMD
+that AVX2 has to be used the <code>-DAVX2</code> has to be passed to the compiler. For
+an exhaustive list of defines controlling compilation see <a href="defines.html">defines.md</a>. There
+is a .so file for each SIMD extension, it is therefore necessary to link
+against the proper .so file.</p>
+<h2>Runtime selection of SIMD extensions</h2>
+<p>It is sometimes necessary to have several versions of a given algorithm for
+different SIMD extensions. This is rather to do with NSIMD. Basically the
+idea is to write the algorithm in a generic manner using pack&apos;s as shown above.
+It is then sufficient to compile the same soure file for different SIMD
+extensions and then link the resulting object files altogether. Suppose that
+a file named <code>uppercase.cpp</code> contains the following code:</p>
+<pre class="C++"><code>template &lt;typename T&gt;
+void uppercase_simd(T *dst, const T *src, int n) {
+  using namespace nsimd;
+  typedef pack&lt;T&gt; p_t;
+  typedef packl&lt;T&gt; pl_t;
+  int l = len&lt;p_t&gt;();
+
+  int i;
+  for (i = 0; i + l &lt;= n; i += l) {
+    p_t text = loadu&lt;p_t&gt;(src + i);
+    pl_t mask = text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;;
+    p_t then_pack = text + (&apos;A&apos; - &apos;a&apos;);
+    p_t TEXT = if_else(mask, then_pack, text);
+    storeu(dst + i, TEXT);
+  }
+
+  pl_t mask = mask_for_loop_tail&lt;pl_t&gt;(i, n);
+  p_t text = maskz_loadu(mask, src + i);
+  p_t TEXT = if_else(text &gt;= &apos;a&apos; &amp;&amp; text &lt;= &apos;z&apos;, text + (&apos;A&apos; - &apos;a&apos;), text);
+  mask_storeu(mask, dst + i, TEXT);
+}</code></pre>
+
+<p>This would give the following in a Makefile.</p>
+<pre class="makefile"><code>all: uppercase
+
+uppercase_sse2.o: uppercase.cpp
+	c++ -O3 -DSSE2 -msse2 -c $? -o $@
+
+uppercase_sse42.o: uppercase.cpp
+	c++ -O3 -DSSE42 -msse4.2 -c $? -o $@
+
+uppercase_avx.o: uppercase.cpp
+	c++ -O3 -DAVX -mavx -c $? -o $@
+
+uppercase_avx2.o: uppercase.cpp
+	c++ -O3 -DAVX2 -mavx2 -c $? -o $@
+
+uppercase: uppercase_sse2.o \
+           uppercase_sse42.o \
+           uppercase_avx.o \
+           uppercase_avx2.o
+           main.cpp
+	c++ $? -lnsimd_avx2 -o $@</code></pre>
+<p>Note that <code>libnsimd_avx2</code> contains all the functions for SSE 2, SSE 4.2, AVX
+and AVX2. This is a consequence of the retrocompatiblity of Intel SIMD
+extensions. The situation is the same on ARM where <code>libnsimd_sve.so</code> will
+contain functions for AARCH64.</p>
+<p>There is a small caveat. The symbol name corresponding to the <code>uppercase_simd</code>
+function will be same for all the object files which will result in error
+when linking together all objects. To avoid this situation one can use
+function overloading as follows:</p>
+<pre class="c++"><code>template &lt;typename T&gt;
+void uppercase_simd(NSIMD_SIMD, T *dst, const T *src, int n) {
+  // ...
+}</code></pre>
+<p>The macro <code>NSIMD_SIMD</code> will be expanded to a type containing the information on
+the SIMD extension currently requested by the user. This techniques is called
+tag dispatching and does not require <em>any</em> modification of the algorithm
+inside the function. Finally in <code>main</code> one has to do dispatching by using
+either <code>cpuid</code> of by another mean.</p>
+<pre class="c++"><code>int main() {
+  // what follows is pseudo-code
+  switch(cpuid()) {
+  case cpuid_sse2:
+    uppercase(nsimd::sse2, dst, src, n);
+    break;
+  case cpuid_sse42:
+    uppercase(nsimd::sse42, dst, src, n);
+    break;
+  case cpuid_avx:
+    uppercase(nsimd::avx, dst, src, n);
+    break;
+  case cpuid_avx2:
+    uppercase(nsimd::avx2, dst, src, n);
+    break;
+  }
+  return 0;
+}</code></pre>
+  </body>
+</html>

@@ -1,0 +1,184 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>Memory functions</h1>
+<p>Although the purpose of NSIMD is not to provide a full memory container
+library, it provides some helper functions to facilitate the end-user. The
+functions below only deals with CPUs. If your needs concerns GPUs or memory
+transfers between CPUs and GPUs see the <a href="module_memory_management_overview.html">memory management
+module</a>.</p>
+<h2>Memory functions available in C and C++</h2>
+<ul>
+<li><p><code>void *nsimd_aligned_alloc(nsimd_nat n);</code><br>
+Returns a pointer to <code>n</code> bytes of aligned memory. It returns NULL is an
+error occurs.</p></li>
+<li><p><code>void nsimd_aligned_free(void *ptr);</code>
+Frees the memory pointed to by <code>ptr</code>.</p></li>
+</ul>
+<h2>Memory functions available in C++</h2>
+<ul>
+<li><p><code>void *nsimd::aligned_alloc(nsimd_nat n);</code><br>
+Returns a pointer to <code>n</code> bytes of aligned memory. It returns NULL is an
+error occurs.</p></li>
+<li><p><code>void nsimd::aligned_free(void *ptr);</code><br>
+Frees the memory pointed to by <code>ptr</code>.</p></li>
+<li><p><code>template &lt;typename T&gt; T *nsimd::aligned_alloc_for(nsimd_nat n);</code><br>
+Returns a pointer to <code>n</code> <code>T</code>&apos;s of aligned memory. It returns NULL is an
+error occurs.</p></li>
+<li><p><code>template &lt;typename T&gt; void nsimd::aligned_free_for(void *ptr);</code><br>
+Free memory pointed to by <code>ptr</code>.</p></li>
+</ul>
+<h2>C++ allocators for <code>std::vector</code>&apos;s</h2>
+<p>NSIMD provides C++ allocators so that memory used by C++ container such as
+<code>std::vector</code>&apos;s will be suitably aligned in memory.</p>
+<ul>
+<li><p><code>template &lt;typename T&gt; class nsimd::allocator;</code><br>
+The class for allocating aligned memory inside C++ containers.</p></li>
+</ul>
+<p>Exemple:</p>
+<pre class="c++"><code>#include &lt;nsimd/nsimd.h&gt;
+
+int main() {
+  int n = // number of float&apos;s to allocate
+  std::vector&lt;float, nsimd::allocator&lt;float&gt; &gt; myvector(size_t(n));
+  
+  // In what follows ptr is a pointer suitably aligned for the current SIMD
+  // targeted architecture.
+  float *ptr;
+  
+  // C++98
+  ptr = &amp;myvector[0]; 
+
+  // C++11 and above
+  ptr = myvector.data(); 
+}</code></pre>
+<p>As there is no portable way of having aligned scoped memory, one can use the
+NSIMD allocators to emulate such memory.</p>
+<pre class="c++"><code>#include &lt;nsimd/nsimd.h&gt;
+
+template &lt;typename T, int N&gt; void test() {
+  std::vector&lt;T, nsimd::allocator&lt;T&gt; &gt; mem(size_t(N));
+  T *ptr;
+  
+  // C++98
+  ptr = &amp;mem[0]; // scoped aligned memory
+
+  // C++11 and above
+  ptr = mem.data(); // scoped aligned memory
+}
+
+int main() {
+  test&lt;float, 16&gt;();
+  test&lt;double, 8&gt;();
+}</code></pre>
+<h2>C++ scoped memory allocation</h2>
+<p>NSIMD provides a struct helper for the user to allocate a chunk of memory and
+don&apos;t care about its release. It uses C++ RAII.</p>
+<pre class="c++"><code>namespace nsimd {
+
+template &lt;typename T&gt; class scoped_aligned_mem_for {
+
+  template &lt;typename I&gt; scoped_aligned_mem(I n);
+  // Construct a struct an array of n T&apos;s.
+
+  T *get();
+  // Return the pointer to access memory.
+
+};
+
+}
+
+int main() {
+  // Allocates 1024 floats in memory. It will be freed when the function (or
+  // the program) terminates.
+  nsimd::scoped_aligned_mem_for&lt;float&gt; buffer(1024);
+  return 0;
+}</code></pre>
+  </body>
+</html>

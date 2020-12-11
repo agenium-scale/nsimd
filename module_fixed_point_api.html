@@ -1,0 +1,153 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<b>Fixed-point arithmetic module documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<a href="module_fixed_point_overview.html">Overview</a> | <a href="module_fixed_point_api.html">API reference</a>
+<hr>
+</div>
+
+<h1>NSIMD fixed point API</h1>
+<h2>Basic arithmetic operators</h2>
+<ul>
+<li><p><a href="module_fixed_point_api_abs.html">Absolute value (abs)</a></p></li>
+<li><p><a href="module_fixed_point_api_add.html">Addition of two vectors (add)</a></p></li>
+<li><p><a href="module_fixed_point_api_div.html">Division of two vectors (div)</a></p></li>
+<li><p><a href="module_fixed_point_api_fma.html">Fused multiplication and accumulation emulation (fma)</a></p></li>
+<li><p><a href="module_fixed_point_api_max.html">Maximum value (max)</a></p></li>
+<li><p><a href="module_fixed_point_api_min.html">Minimum value (min)</a></p></li>
+<li><p><a href="module_fixed_point_api_mul.html">Multplication of two vectors (mul)</a></p></li>
+<li><p><a href="module_fixed_point_api_rec.html">Reciprocal (rec)</a></p></li>
+<li><p><a href="module_fixed_point_api_sub.html">Substraction of two vectors (sub)</a></p></li>
+</ul>
+<h2>Bits manipulation operators</h2>
+<ul>
+<li><p><a href="module_fixed_point_api_andb.html">Bitwise and (andb)</a></p></li>
+<li><p><a href="module_fixed_point_api_andnotb.html">Bitwise and not (andnotb)</a></p></li>
+<li><p><a href="module_fixed_point_api_notb.html">Bitwise not (notb)</a></p></li>
+<li><p><a href="module_fixed_point_api_orb.html">Bitwise or (orb)</a></p></li>
+<li><p><a href="module_fixed_point_api_xorb.html">Bitwise xor (xorb)</a></p></li>
+</ul>
+<h2>Comparison operators</h2>
+<ul>
+<li><p><a href="module_fixed_point_api_eq.html">Compare for equality (eq)</a></p></li>
+<li><p><a href="module_fixed_point_api_ge.html">Compare for greater-or-equal-than (ge)</a></p></li>
+<li><p><a href="module_fixed_point_api_gt.html">Compare for greater-than (gt)</a></p></li>
+<li><p><a href="module_fixed_point_api_le.html">Compare for lesser-or-equal-than (le)</a></p></li>
+<li><p><a href="module_fixed_point_api_lt.html">Compare for lesser-than (lt)</a></p></li>
+<li><p><a href="module_fixed_point_api_ne.html">Compare for inequality (ne)</a></p></li>
+</ul>
+<h2>Loads and stores</h2>
+<ul>
+<li><p><a href="module_fixed_point_api_loada.html">Vector aligned load (loada)</a></p></li>
+<li><p><a href="module_fixed_point_api_loadla.html">Logical vector aligned load (loadla)</a></p></li>
+<li><p><a href="module_fixed_point_api_loadlu.html">Logical vector unaligned load (loadlu)</a></p></li>
+<li><p><a href="module_fixed_point_api_loadu.html">Vector unaligned load (loadu)</a></p></li>
+<li><p><a href="module_fixed_point_api_storea.html">Vector aligned store (storea)</a></p></li>
+<li><p><a href="module_fixed_point_api_storela.html">Logical vector aligned store (storela)</a></p></li>
+<li><p><a href="module_fixed_point_api_storelu.html">Logical vector unaligned store (storelu)</a></p></li>
+<li><p><a href="module_fixed_point_api_storeu.html">Vector unaligned store (storeu)</a></p></li>
+</ul>
+<h2>Logical operators</h2>
+<ul>
+<li><p><a href="module_fixed_point_api_andl.html">Bitwise logical and (andl)</a></p></li>
+<li><p><a href="module_fixed_point_api_andnotl.html">Bitwise and not (andnotl)</a></p></li>
+<li><p><a href="module_fixed_point_api_notl.html">Bitwise not (notl)</a></p></li>
+<li><p><a href="module_fixed_point_api_orl.html">Bitwise or (orl)</a></p></li>
+<li><p><a href="module_fixed_point_api_xorl.html">Bitwise xor (xorl)</a></p></li>
+</ul>
+<h2>Miscellaneous operators</h2>
+<ul>
+<li><p><a href="module_fixed_point_api_if-else1.html">Vector blending (if_else1)</a></p></li>
+<li><p><a href="module_fixed_point_api_len.html">Vector length (len)</a></p></li>
+<li><p><a href="module_fixed_point_api_set1.html">Value broadcast (set1)</a></p></li>
+</ul>
+  </body>
+</html>

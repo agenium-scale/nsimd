@@ -1,0 +1,210 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>C++20 concepts</h1>
+<p>As of C++20, concepts are available. We quote <a href="en.cppreference.com">en.cppreference.com</a> to
+introduce concepts.</p>
+<p><em>Class templates, function templates, and non-template functions (typically
+members of class templates) may be associated with a constraint, which
+specifies the requirements on template arguments, which can be used to select
+the most appropriate function overloads and template specializations.</em></p>
+<p><em>Named sets of such requirements are called concepts. Each concept is a
+predicate, evaluated at compile time, and becomes a part of the interface of a
+template where it is used as a constraint</em></p>
+<h2>Concepts provided by NSIMD</h2>
+<p>All concepts provided by NSIMD comes in two forms:</p>
+<ul>
+<li><p>The native C++20 form in the <code>nsimd</code> namespace</p></li>
+<li><p>As a macro for keeping the compatibility with older versions of C++</p></li>
+</ul>
+<p>The following tables list all concepts and is exhaustive. Native concepts are
+accessible through the <code>nsimd</code> namespace. They take only one argument. Their
+macro counterparts take no argument as they are meant to be used as
+constraint placeholder types. When compiling for older C++ versions NSIMD
+concepts macros are simply read as <code>typename</code> by the compiler.</p>
+<p>Table for base C and C++ APIs:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Native concept</th>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>simd_ext_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_SIMD_EXT</code></td>
+<td style="text-align: left;">Valid SIMD extension</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>simd_value_type_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_VALUE_TYPE</code></td>
+<td style="text-align: left;">Valid NSIMD underlying value type</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>simd_value_type_or_bool_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL</code></td>
+<td style="text-align: left;">Valid NSIMD underlying value type or <code>bool</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>alignment_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_ALIGNMENT</code></td>
+<td style="text-align: left;">Valid NSIMD alignment <code>aligned</code> or <code>unaligned</code></td>
+</tr>
+</tbody>
+</table>
+<p>Table for advanced C++ API:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Native concept</th>
+<th style="text-align: left;">Macro</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>is_pack_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_PACK</code></td>
+<td style="text-align: left;">Valid NSIMD pack</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>is_packl_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_PACKL</code></td>
+<td style="text-align: left;">Valid NSIMD packl</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>is_pack_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_PACKX1</code></td>
+<td style="text-align: left;">Valid NSIMD packx1</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>is_pack_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_PACKX2</code></td>
+<td style="text-align: left;">Valid NSIMD packx2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>is_pack_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_PACKX3</code></td>
+<td style="text-align: left;">Valid NSIMD packx3</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>is_pack_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_PACKX4</code></td>
+<td style="text-align: left;">Valid NSIMD packx4</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>any_pack_c</code></td>
+<td style="text-align: left;"><code>NSIMD_CONCEPT_ANY_PACK</code></td>
+<td style="text-align: left;">Any of the above pack</td>
+</tr>
+</tbody>
+</table>
+<h2>Expressing C++20 constraints</h2>
+<p>Expressing constraints can of course be done with the <code>requires</code> keyword. But
+for compatibility with older C++ versions NSIMD provides <code>NSIMD_REQUIRES</code>
+which take as onyl argument the constraints.</p>
+<pre class="c++"><code>template &lt;typename T, typename S&gt;
+NSIMD_REQUIRES(sizeof(T) == sizeof(S))
+void foo(T, S);</code></pre>
+<p>It is advised to use doubled parenthesis as coma in the constraints expression
+can be interpreted as argument separators for the macro itself.</p>
+<pre class="c++"><code>template &lt;typename T, typename S&gt;
+NSIMD_REQUIRES((std::is_same&lt;T, S&gt;))
+void foo(T, S);</code></pre>
+<p>Note that when expressing constraints using <code>nsimd::sizeof_v</code>&apos;s prefer the
+NSIMD definition of sizeof for the following reason: when dealing with
+float16&apos;s one cannot know the underlying representation of such a type as it
+is non-portable and non-standard, but NSIMD provides helper functions to
+transparently deal with float16&apos;s as if they were 16-bits wide. Therefore
+expressing sizeof equality should be done with <code>nsimd::sizeof_v</code>.</p>
+<pre class="c++"><code>template &lt;typename T, typename S&gt;
+NSIMD_REQUIRES((nsimd::sizeof_v&lt;T&gt; == nsimd::sizeof_v&lt;S&gt;))
+void foo(T, S);</code></pre>
+  </body>
+</html>

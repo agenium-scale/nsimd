@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ SOFTWARE.
 
 -->
 
+<!-- This file has been auto-generated -->
+
 <!DOCTYPE html>
 
 <html>
@@ -39,20 +41,25 @@ SOFTWARE.
         line-height:1.4;
         /*font-size:18px;*/
         color:#444;
-        padding:0 10px
+        padding: 0 10px;
       }
       h1,h2,h3 {
-        line-height:1.2
+        line-height: 1.2;
       }
-      table,th, td {
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
       }
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -61,17 +68,25 @@ SOFTWARE.
   </head>
 <body>
 
-<center>
-  <img src="img/logo.svg"><br>
-  <br>
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
   <a href="index.html">Index</a> |
-  <a href="quick_start.html">Quick Start</a> |
-  <a href="tutorials.html">Tutorials</a> |
+  <a href="tutorial.html">Tutorial</a> |
   <a href="faq.html">FAQ</a> |
   <a href="contribute.html">Contribute</a> |
   <a href="overview.html">API overview</a> |
-  <a href="api.html">API reference</a>
-</center>
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
 <h1>Overview</h1>
 <h2>NSIMD scalar types</h2>
 <p>Their names follows the following pattern: <code>Sxx</code> where</p>
@@ -124,6 +139,11 @@ Examples include SSE2, SSE42, AVX, ...</p>
 <li><p><code>neon128</code></p></li>
 <li><p><code>aarch64</code></p></li>
 <li><p><code>sve</code></p></li>
+<li><p><code>sve128</code></p></li>
+<li><p><code>sve256</code></p></li>
+<li><p><code>sve512</code></p></li>
+<li><p><code>sve1024</code></p></li>
+<li><p><code>sve2048</code></p></li>
 </ul>
 </li>
 <li><p>Platform <code>x86</code></p><ul>
@@ -223,8 +243,14 @@ c = vadd_e(a, b, f32, avx); // force AVX even if detected SIMDEXT is not AVX</co
 <li><p><code>int len();</code></p></li>
 <li><p><code>vSCALAR set1(SCALAR a0);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vlSCALAR set1l(int a0);</code>
+a0 ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALAR loadu(SCALAR const* a0);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR masko_loadu1(vlSCALAR a0, SCALAR const* a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR maskz_loadu1(vlSCALAR a0, SCALAR const* a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALARx2 load2u(SCALAR const* a0);</code>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALARx3 load3u(SCALAR const* a0);</code>
@@ -233,6 +259,10 @@ a0 ∈ \(ℝ\)</p></li>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALAR loada(SCALAR const* a0);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR masko_loada1(vlSCALAR a0, SCALAR const* a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR maskz_loada1(vlSCALAR a0, SCALAR const* a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALARx2 load2a(SCALAR const* a0);</code>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALARx3 load3a(SCALAR const* a0);</code>
@@ -245,6 +275,8 @@ a0 ∈ \(ℝ\)</p></li>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>void storeu(SCALAR* a0, vSCALAR a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void mask_storeu1(vlSCALAR a0, SCALAR* a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
 <li><p><code>void store2u(SCALAR* a0, vSCALAR a1, vSCALAR a2);</code>
 (a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
 <li><p><code>void store3u(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3);</code>
@@ -253,12 +285,24 @@ a0 ∈ \(ℝ\)</p></li>
 (a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
 <li><p><code>void storea(SCALAR* a0, vSCALAR a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void mask_storea1(vlSCALAR a0, SCALAR* a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
 <li><p><code>void store2a(SCALAR* a0, vSCALAR a1, vSCALAR a2);</code>
 (a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
 <li><p><code>void store3a(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3);</code>
 (a0, a1, a2, a3) ∈ \(ℝ × ℝ × ℝ\)</p></li>
 <li><p><code>void store4a(SCALAR* a0, vSCALAR a1, vSCALAR a2, vSCALAR a3, vSCALAR a4);</code>
 (a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR gather(SCALAR const* a0, viCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)
+Only available for f64, f32, f16, i16, u16, u32, i32, i64, u64</p></li>
+<li><p><code>vSCALAR gather_linear(SCALAR const* a0, int a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void scatter(SCALAR* a0, viCALAR a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)
+Only available for f64, f32, f16, i16, u16, u32, i32, i64, u64</p></li>
+<li><p><code>void scatter_linear(SCALAR* a0, int a1, vSCALAR a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
 <li><p><code>void storelu(SCALAR* a0, vlSCALAR a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>void storela(SCALAR* a0, vlSCALAR a1);</code>
@@ -304,6 +348,9 @@ a0 ∈ \(ℝ\)</p></li>
 (a0, a1) ∈ \(ℝ × ℕ\)
 Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
 <li><p><code>vSCALAR shl(vSCALAR a0, int a1);</code>
+(a0, a1) ∈ \(ℝ × ℕ\)
+Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
+<li><p><code>vSCALAR shra(vSCALAR a0, int a1);</code>
 (a0, a1) ∈ \(ℝ × ℕ\)
 Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
 <li><p><code>vlSCALAR eq(vSCALAR a0, vSCALAR a1);</code>
@@ -382,10 +429,21 @@ Only available for f64, f32, f16</p></li>
 (a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALAR unziphi(vSCALAR a0, vSCALAR a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx2 zip(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALARx2 unzip(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>vSCALAR to_mask(vlSCALAR a0);</code>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>vlSCALAR to_logical(vSCALAR a0);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR iota();</code></p></li>
+<li><p><code>vlSCALAR mask_for_loop_tail(int a0, int a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>vSCALAR adds(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>vSCALAR subs(vSCALAR a0, vSCALAR a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
 </ul>
 <h2>C++ advanced API</h2>
 <p>The C++ advanced API is called advanced not because it requires C++11 or above
@@ -417,8 +475,14 @@ return. Also some functions are available as C++ operators.</p>
 <li><p><code>int len(pack&lt;T, N, SimdExt&gt; const&amp;);</code></p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; set1(T a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; set1l(int a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+a0 ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; loadu(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; masko_loadu1(packl&lt;T, N, SimdExt&gt; const&amp; a0, T const* a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; maskz_loadu1(packl&lt;T, N, SimdExt&gt; const&amp; a0, T const* a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; load2u(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; load3u(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
@@ -427,6 +491,10 @@ a0 ∈ \(ℝ\)</p></li>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; loada(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; masko_loada1(packl&lt;T, N, SimdExt&gt; const&amp; a0, T const* a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; maskz_loada1(packl&lt;T, N, SimdExt&gt; const&amp; a0, T const* a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; load2a(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; load3a(T const* a0, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
@@ -439,6 +507,8 @@ a0 ∈ \(ℝ\)</p></li>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>void storeu(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void mask_storeu1(packl&lt;T, N, SimdExt&gt; const&amp; a0, T* a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
 <li><p><code>void store2u(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
 (a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
 <li><p><code>void store3u(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3);</code>
@@ -447,12 +517,24 @@ a0 ∈ \(ℝ\)</p></li>
 (a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
 <li><p><code>void storea(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void mask_storea1(packl&lt;T, N, SimdExt&gt; const&amp; a0, T* a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
 <li><p><code>void store2a(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
 (a0, a1, a2) ∈ \(ℝ × ℝ\)</p></li>
 <li><p><code>void store3a(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3);</code>
 (a0, a1, a2, a3) ∈ \(ℝ × ℝ × ℝ\)</p></li>
 <li><p><code>void store4a(T* a0, pack&lt;T, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2, pack&lt;T, N, SimdExt&gt; const&amp; a3, pack&lt;T, N, SimdExt&gt; const&amp; a4);</code>
 (a0, a1, a2, a3, a4) ∈ \(ℝ × ℝ × ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; gather(T const* a0, pack&lt;typename traits&lt;T&gt;::itype, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+(a0, a1) ∈ \(ℝ\)
+Only available for f64, f32, f16, i16, u16, u32, i32, i64, u64</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; gather_linear(T const* a0, int a1, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>void scatter(T* a0, pack&lt;typename traits&lt;T&gt;::itype, N, SimdExt&gt; const&amp; a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)
+Only available for f64, f32, f16, i16, u16, u32, i32, i64, u64</p></li>
+<li><p><code>void scatter_linear(T* a0, int a1, pack&lt;T, N, SimdExt&gt; const&amp; a2);</code>
+(a0, a1, a2) ∈ \(ℝ\)</p></li>
 <li><p><code>void storelu(T* a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>void storela(T* a0, packl&lt;T, N, SimdExt&gt; const&amp; a1);</code>
@@ -513,6 +595,9 @@ Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; shl(pack&lt;T, N, SimdExt&gt; const&amp; a0, int a1);</code>
 (a0, a1) ∈ \(ℝ × ℕ\)
 Available as <code>operator&lt;&lt;</code>
+Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; shra(pack&lt;T, N, SimdExt&gt; const&amp; a0, int a1);</code>
+(a0, a1) ∈ \(ℝ × ℕ\)
 Only available for i64, i32, i16, i8, u64, u32, u16, u8</p></li>
 <li><p><code>packl&lt;T, N, SimdExt&gt; eq(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
 (a0, a1) ∈ \(ℝ × ℝ\)
@@ -596,10 +681,21 @@ Only available for f64, f32, f16</p></li>
 (a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; unziphi(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
 (a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; zip(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; unzip(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
 <li><p><code>pack&lt;T, N, SimdExt&gt; to_mask(packl&lt;T, N, SimdExt&gt; const&amp; a0);</code>
 a0 ∈ \(ℝ\)</p></li>
 <li><p><code>packl&lt;T, N, SimdExt&gt; to_logical(pack&lt;T, N, SimdExt&gt; const&amp; a0);</code>
 a0 ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; iota(pack&lt;T, N, SimdExt&gt; const&amp;);</code></p></li>
+<li><p><code>packl&lt;T, N, SimdExt&gt; mask_for_loop_tail(int a0, int a1, pack&lt;T, N, SimdExt&gt; const&amp;);</code>
+(a0, a1) ∈ \(ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; adds(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
+<li><p><code>pack&lt;T, N, SimdExt&gt; subs(pack&lt;T, N, SimdExt&gt; const&amp; a0, pack&lt;T, N, SimdExt&gt; const&amp; a1);</code>
+(a0, a1) ∈ \(ℝ × ℝ\)</p></li>
 </ul>
   </body>
 </html>

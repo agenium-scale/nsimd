@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ SOFTWARE.
 
 -->
 
+<!-- This file has been auto-generated -->
+
 <!DOCTYPE html>
 
 <html>
@@ -39,20 +41,25 @@ SOFTWARE.
         line-height:1.4;
         /*font-size:18px;*/
         color:#444;
-        padding:0 10px
+        padding: 0 10px;
       }
       h1,h2,h3 {
-        line-height:1.2
+        line-height: 1.2;
       }
-      table,th, td {
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
       }
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -61,101 +68,74 @@ SOFTWARE.
   </head>
 <body>
 
-<center>
-  <img src="img/logo.svg"><br>
-  <br>
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
   <a href="index.html">Index</a> |
-  <a href="quick_start.html">Quick Start</a> |
-  <a href="tutorials.html">Tutorials</a> |
+  <a href="tutorial.html">Tutorial</a> |
   <a href="faq.html">FAQ</a> |
   <a href="contribute.html">Contribute</a> |
   <a href="overview.html">API overview</a> |
-  <a href="api.html">API reference</a>
-</center>
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
 <h1>Frequently Asked Questions</h1>
-<h2>Why Is the Speed-Up of My Code Not as Expected?</h2>
-<p>There are several factors which can reduce the speed-up obtained using <code>nsimd</code>.</p>
+<h2>Is it good practice to use a <code>nsimd::pack</code> as a <code>std::vector</code>?</h2>
+<p>No, these are two very different objects. A <code>nsimd::pack</code> represent a SIMD
+register whereas a <code>std::vector</code> represents a chunk of memory. You should
+separate concerns and use <code>std::vector</code> to store data in your structs or
+classes, <code>nsimd::pack</code> should only be used in computation kernels and nowhere
+else especially not in structs or classes.</p>
+<h2>Why is the speed-up of my code not as expected?</h2>
+<p>There are several reasons which can reduce the speed-up:</p>
 <ul>
 <li><p>Have you enabled compiler optimizations? You must enable all compiler
 optimizations (like <code>-O3</code>).</p></li>
-<li><p>Have you compiled in 64 bit mode? There is significant performance increase on
-architectures supporting 64 bit binaries.</p></li>
-<li><p>Is you algorithm memory bound? Computational problems can often be classed as
-either compute-bound or memory-bound. Memory bound problems reach the limits
-of the system bandwidth transfering data between the memory and the processor,
-while compute-bound problems are limited by the processor&apos;s calculation
-ability.
-Processors have often several hierarchies of caches. The time taken to
-transfer data from the cache to a register varies depending on the cache.
-When the required data is not in the cache, it is referred to as a cache miss.
-Cache-misses are very expensive. Data is transferred from memory to the cache
-in cache-lines sized chunks. On modern x86 machines, a cache-line is 64 bytes
-or twice the size of an <code>AVX</code> register. It is therefore highly advantageous to
-use all data loaded into cache.
-The following loop is clearly memory bound as all of the time is spent loading
-and storing the data. The cost of the computation is negligible compared to
-that of the memory accesses.</p><pre class="nohighlight"><code>for (int i = 0; i &lt; size; i += pack_t::static_size) {
-  pack_t v0(&amp;data[i]);
-  v0 = v0 * 2;
-  bs::aligned_store(v0, &amp;output[i]);
-}</code></pre><p>The following loop is compute-bound. As most of the time is spent calculating
-exp, significant speed-up is observed when this code is vectorized.</p><pre class="nohighlight"><code>t0 = high_resolution_clock::now();
-for (int i = 0; i &lt; size; i += pack_t::static_size) {
-  pack_t v0(&amp;data[i]);
-  v0 = bs::exp(bs::exp(v0));
-  bs::aligned_store(v0, &amp;output[i]);
-}</code></pre></li>
+<li><p>Have you compiled in 64 bit mode? There is significant performance increase
+on architectures supporting 64 bit binaries.</p></li>
 <li><p>Is your code trivially vectorizable? Modern compilers can vectorize trivial
 code segments automatically. If you benchmark a trivial scalar code versus a
 vectorized code, the compiler may vectorize the scalar code, thereby giving
 similar performance to the vectorized version.</p></li>
-<li><p>Is your algorithm vectorizable?</p></li>
+<li><p>Some architectures do not provides certains functionnalities. For example
+AVX2 chips do not provide a way to convert long to double. So using
+<code>nsimd::cvt&lt;f64&gt;</code> will produce an emulation for-loop in the resulting
+binary. To know which intrinsics are used by NSIMD you can consult
+<a href="wrapped_intrinsics.html">wrapped_intrinsics.md</a>.</p></li>
 </ul>
-<h2>Why Did My Code Seg-Faulted or Crashed?</h2>
-<p>The most common cause of seg-faults in SIMD codes is accessing non-aligned
-memory. For best performance, all memory should be aligned. <code>nsimd</code> includes an
+<h2>Why did my code segfaulted or crashed?</h2>
+<p>The most common cause of segfaults in SIMD codes is accessing non-aligned
+memory. For best performance, all memory should be aligned. NSIMD includes an
 aligned memory allocation function and an aligned memory allocator to help you
-with this. Please refer to <a href="tutorials.html">tutorials</a> for details on how to
+with this. Please refer to <a href="tutorials.html">tutorials.md</a> for details on how to
 ensure that you memory is correctly aligned.</p>
-<h2>How to Measure the Speed-Up of SIMD code?</h2>
-<p>There are several ways to measure the speed-up of your code. You may use the
-<a href="https://github.com/google/benchmark"><code>Google Benchmark</code></a> to benchmark your code
-segment. This allows you to measure the execution time of your code.</p>
-<p>Otherwise, you may use standard timing routines. C++11 adds <code>std::chrono</code>. You
-can use
-<a href="https://en.cppreference.com/w/cpp/chrono/high_resolution_clock"><code>std::chrono::high_resolution_clock</code></a>
-if <code>std::chrono::high_resolution_clock::is_steady</code> is true. If not, use
-<a href="https://en.cppreference.com/w/cpp/chrono/steady_clock"><code>std::chrono::steady_clock</code></a> otherwise.
-In C and C++98, use <a href="http://man7.org/linux/man-pages/man2/clock_gettime.2.html"><code>clock_gettime</code></a>
-with <code>CLOCK_MONOTONIC</code> or equivalent for non POSIX.1-2001 system. In order to
-accurately benchmark your code, there are several points to consider.</p>
-<ul>
-<li><p>Your input should be sufficiently large. This is to eliminate cache effects.</p></li>
-<li><p>Your code is compiled in release mode, with all optimizations enabled and
-debug information not included.</p></li>
-<li><p>You should measure several times and use the median (better than the average).</p></li>
-</ul>
-<p>A typical case where a benchmark could give inaccurate results is where the
-input is not large enough to fill the cache and a scalar and SIMD code segment
-are individually benchmarked, one after the other. In this case, all of the data
-will be loaded into the cache during the first bench, and will be available for
-the second bench, therefore decreasing the execution time of the second bench.
-Also, if you measure the code segment multiple times, the data from the first
-execution will already be in the cache.</p>
-<h2>My Code Compiled for <code>AVX</code> Is Not Twice As Fast As for <code>SSE</code></h2>
-<p>Not all <code>SSE</code> instructions have an equivalent <code>AVX</code> instruction. Also, the
-cycles required for certain instructions are not equal on both architectures,
-for example, <code>sqrt</code> on <code>SSE</code> requires 13-14 cycles whereas <code>sqrt</code> on <code>AVX</code>
-requires 21-28 cycles. Please refer
+<p>Another common cause is to read or write data beyond the allocated memory.
+Do not forget that loading data into a SIMD vector will result in loading
+16 bytes (or 4 floats) from memory. If this read occurs at the last 2 elements
+of allocated memory then a segfault will be generated.</p>
+<h2>My code compiled for AVX is not twice as fast as for SSE, why?</h2>
+<p>Not all SSE instructions have an equivalent AVX instruction. As a consequence
+NSIMD uses two SSE operations to emulate the equivalent AVX operation.  Also,
+the cycles required for certain instructions are not equal on both
+architectures, for example, <code>sqrt</code> on <code>SSE</code> requires 13-14 cycles whereas
+<code>sqrt</code> on <code>AVX</code> requires 21-28 cycles. Please refer
 <a href="https://www.agner.org/optimize/instruction_tables.pdf">here</a> for more
 information.</p>
-<p>Very few integer operations are supported on <code>AVX</code>, <code>AVX2</code> is required for most
-integer operations. If a <code>nsimd</code> function is called on an integer <code>AVX</code>
-register, this register will be split into two <code>SSE</code> registers and the
-equivalent instruction called on both register. In the case, no speed-up will be
-observed compared with <code>SSE</code> code. This is true also on <code>POWER 7</code>, where
-<code>double</code> is not supported.</p>
-<h2>I Disassembled My Code, and the Generated Code Is Less Than Optimal</h2>
+<p>Very few integer operations are supported on AVX, AVX2 is required for most
+integer operations. If a NSIMD function is called on an integer AVX register,
+this register will be split into two SSE registers and the equivalent
+instruction called on both register. In the case, no speed-up will be observed
+compared with SSE code. This is true also on POWER 7, where double is not
+supported.</p>
+<h2>I disassembled my code, and the generated code is less than optimal, why?</h2>
 <ul>
 <li><p>Have you compiled in release mode, with full optimizations options?</p></li>
 <li><p>Have you used a 64 bit compiler?</p></li>
@@ -167,12 +147,76 @@ missed some. You may also have found a bug in <code>nsimd</code>. Please report 
 through issues on our github with a minimal code example. We responds quickly
 to bug reports and do our best to patch them as quickly as possible.</p></li>
 </ul>
-<h2>How Can I Use a Certain Intrinsic?</h2>
-<p>If you require a certain intrinsic, you may search inside of <code>nsimd</code> for it and
-then call the relevant function.</p>
-<p>In rare cases, the intrinsic may not be included in <code>nsimd</code> as we map the
+<h2>How can I use a certain intrinsic?</h2>
+<p>If you require a certain intrinsic, you may search inside of NSIMD for it and
+then call the relevant function or look at <a href="wrapped_intrinsics.html">wrapped_intrinsics.md</a>.</p>
+<p>In rare cases, the intrinsic may not be included in NSIMD as we map the
 intrinsic wherever it makes sense semantically. If a certain intrinsic does not
 fit inside of this model, if may be excluded. In this case, you may call it
-yourself, however, this will not be portable. </p>
+yourself, however, note this will not be portable. </p>
+<p>To use a particular intrinsic say <code>_mm_avg_epu8</code>, you can write the following.</p>
+<pre class="c++"><code>nsimd::pack&lt;u8&gt; a, b, result;
+result = nsimd::pack&lt;u8&gt;(_mm_avg_epu8(a.native_register(),
+                                      b.native_register()));</code></pre>
+<h2>How do I convert integers/floats to/from logicals?</h2>
+<p>Use <a href="api_to-mask.html"><code>nsimd::to_mask</code></a> and
+<a href="api_to-logical.html"><code>nsimd::to_logical</code></a>.</p>
+<h2>How about shuffles?</h2>
+<p>General shuffles are not provided by NSIMD. You can see
+<a href="https://github.com/agenium-scale/nsimd/issues/8">issue 8 on github</a>. For now
+we provide only some length agnostic shuffles such as zip and unzip, see
+<a href="api.html">the shuffle API</a> at the Shuffle section.</p>
+<h2>Are there C++ STL like algorithms?</h2>
+<p>No. You are welcome to <a href="contribute.html">contribute</a> to NSIMD and add them as
+a NSIMD module. You should use
+<a href="module_tet1d_overview.html">expressions templates</a> instead. Strictly conforment
+STL algorithms do not provide means to control for example the unroll factor
+or the number of threads per block when compiling for GPUs.</p>
+<h2>Are there masked operators in NSIMD?</h2>
+<p>Yes, we provide masked loads and stores, see <a href="api.html">the api</a> at the
+&quot;Loads &amp; stores&quot; section. We also provide the
+<a href="api_mask-for-loop-tail.html"><code>nsimd::mask_for_loop_tail</code></a> which computes the
+mask for ending loops. But note that using these is not recommanded as on
+most architectures there are no intrinsic. This will result in slow code. It
+is recommanded to finish loops using a scalar implementation.</p>
+<h2>Are there gathers and scatter in NSIMD?</h2>
+<p>Yes, we provide gathers and scatters, see <a href="api.html">the api</a> at the
+&quot;Loads &amp; stores&quot; section. Note also that as most architectures do not provide
+such intrinsics and so this could result in slow code.</p>
+<h2>Why does not NSIMD recognize the target architecture automatically?</h2>
+<p>Autodetecting the SIMD extension is compiler/compiler version/cpu/system
+dependant which means a lot of code for a (most likely buggy) feature which can
+be an inconvenience sometimes. Plus some compilers do not permit this feature.
+For example cf.
+<a href="https://www.boost.org/doc/libs/1_71_0/doc/html/predef/reference.html">https://www.boost.org/doc/libs/1_71_0/doc/html/predef/reference.html</a> and
+<a href="https://msdn.microsoft.com/en-us/library/b0084kay.aspx">https://msdn.microsoft.com/en-us/library/b0084kay.aspx</a>. Thus a &quot;manual&quot;
+system is always necessary.</p>
+<h2>Why some operators have their names ending with an &quot;1&quot;?</h2>
+<p>This is because of C++ and our will not to use C++-useless-complicated stuff.
+Taking the example with <code>if_else</code>, suppose that we have called it &quot;if_else&quot;
+without the &quot;1&quot;. When working with packs, one wants to be able to use <code>if_else</code>
+in this manner:</p>
+<pre class="c++"><code>int main() {
+  using namespace nsimd;
+  
+  typedef pack&lt;int&gt; pi;
+  typedef pack&lt;float&gt; pf;
+
+  int n;
+  int *a, *b;      // suppose both points to n ints
+  float *fa, *fb;  // suppose both points to n floats
+
+  for (int i = 0; i &lt; n; i += len()) {
+    packl&lt;int&gt; cond = (loada&lt;pi&gt;(&amp;a[i]) &lt; loada&lt;pi&gt;(&amp;b[i]));
+    storea(&amp;fb[i], if_else(cond, load&lt;pf&gt;(&amp;fb[i]), set1&lt;pf&gt;(0.0f)));
+  }
+
+  return 0;
+}</code></pre>
+<p>But this causes a compiler error, the overload of <code>if_else</code> is ambiguous.
+Sure one can use many C++-ish techniques to tackle this problem but we chose
+not to as the goal is to make the life of the compiler as easy as possible.
+So as we want to favor the C++ advanced API as it is the most human readable,
+users of the C and C++ base APIs will have to use <code>if_else1</code>.</p>
   </body>
 </html>

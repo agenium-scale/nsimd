@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ SOFTWARE.
 
 -->
 
+<!-- This file has been auto-generated -->
+
 <!DOCTYPE html>
 
 <html>
@@ -39,20 +41,25 @@ SOFTWARE.
         line-height:1.4;
         /*font-size:18px;*/
         color:#444;
-        padding:0 10px
+        padding: 0 10px;
       }
       h1,h2,h3 {
-        line-height:1.2
+        line-height: 1.2;
       }
-      table,th, td {
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
       }
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -61,52 +68,77 @@ SOFTWARE.
   </head>
 <body>
 
-<center>
-  <img src="img/logo.svg"><br>
-  <br>
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
   <a href="index.html">Index</a> |
-  <a href="quick_start.html">Quick Start</a> |
-  <a href="tutorials.html">Tutorials</a> |
+  <a href="tutorial.html">Tutorial</a> |
   <a href="faq.html">FAQ</a> |
   <a href="contribute.html">Contribute</a> |
   <a href="overview.html">API overview</a> |
-  <a href="api.html">API reference</a>
-</center>
-<h1>API</h1>
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>General API</h1>
+<ul>
+<li><p><a href="memory.html">Memory function</a></p></li>
+<li><p><a href="fp16.html">Float16 related functions</a></p></li>
+<li><p><a href="defines.html">Defines provided by NSIMD</a></p></li>
+<li><p><a href="pack.html">NSIMD pack and related functions</a></p></li>
+<li><p><a href="concepts.html">NSIMD C++20 concepts</a></p></li>
+</ul>
+<h1>SIMD operators</h1>
 <h2>Miscellaneous</h2>
 <ul>
 <li><p><a href="api_len.html">Vector length (len)</a></p></li>
 <li><p><a href="api_set1.html">Value broadcast (set1)</a></p></li>
+<li><p><a href="api_set1l.html">Logical value broadcast (set1l)</a></p></li>
 <li><p><a href="api_addv.html">Horizontal sum (addv)</a></p></li>
 <li><p><a href="api_if-else1.html">Blend (if_else1)</a></p></li>
 <li><p><a href="api_all.html">Check all elements (all)</a></p></li>
 <li><p><a href="api_any.html">Check for one true elements (any)</a></p></li>
 <li><p><a href="api_nbtrue.html">Count true elements (nbtrue)</a></p></li>
-<li><p><a href="api_ziplo.html">Zip low halves (ziplo)</a></p></li>
-<li><p><a href="api_ziphi.html">Zip high halves (ziphi)</a></p></li>
-<li><p><a href="api_unziplo.html">Unziplo (unziplo)</a></p></li>
-<li><p><a href="api_unziphi.html">Unziphi (unziphi)</a></p></li>
+<li><p><a href="api_iota.html">Fill vector with increasing values (iota)</a></p></li>
+<li><p><a href="api_mask-for-loop-tail.html">Build mask for ending loops (mask_for_loop_tail)</a></p></li>
 </ul>
 <h2>Loads &amp; stores</h2>
 <ul>
 <li><p><a href="api_loadu.html">Loadu (loadu)</a></p></li>
+<li><p><a href="api_masko-loadu1.html">MaskoLoadu1 (masko_loadu1)</a></p></li>
+<li><p><a href="api_maskz-loadu1.html">MaskzLoadu1 (maskz_loadu1)</a></p></li>
 <li><p><a href="api_load2u.html">Load array of structure (load2u)</a></p></li>
 <li><p><a href="api_load3u.html">Load array of structure (load3u)</a></p></li>
 <li><p><a href="api_load4u.html">Load array of structure (load4u)</a></p></li>
 <li><p><a href="api_loada.html">Loada (loada)</a></p></li>
+<li><p><a href="api_masko-loada1.html">MaskoLoada (masko_loada1)</a></p></li>
+<li><p><a href="api_maskz-loada1.html">MaskzLoada (maskz_loada1)</a></p></li>
 <li><p><a href="api_load2a.html">Load array of structure (load2a)</a></p></li>
 <li><p><a href="api_load3a.html">Load array of structure (load3a)</a></p></li>
 <li><p><a href="api_load4a.html">Load array of structure (load4a)</a></p></li>
 <li><p><a href="api_loadlu.html">Load vector of logicals (loadlu)</a></p></li>
 <li><p><a href="api_loadla.html">Load vector of logicals (loadla)</a></p></li>
 <li><p><a href="api_storeu.html">Storeu (storeu)</a></p></li>
-<li><p><a href="api_store2u.html">Store into array of structures (store2u)</a></p></li>
+<li><p><a href="api_mask-storeu1.html">MaskStoreu1 (mask_storeu1)</a></p></li>
+<li><p><a href="api_store2u.html">Store2u (store2u)</a></p></li>
 <li><p><a href="api_store3u.html">Store into array of structures (store3u)</a></p></li>
 <li><p><a href="api_store4u.html">Store into array of structures (store4u)</a></p></li>
 <li><p><a href="api_storea.html">Storea (storea)</a></p></li>
+<li><p><a href="api_mask-storea1.html">MaskStorea1 (mask_storea1)</a></p></li>
 <li><p><a href="api_store2a.html">Store into array of structures (store2a)</a></p></li>
 <li><p><a href="api_store3a.html">Store into array of structures (store3a)</a></p></li>
 <li><p><a href="api_store4a.html">Store into array of structures (store4a)</a></p></li>
+<li><p><a href="api_gather.html">Gather elements from memory into a SIMD vector (gather)</a></p></li>
+<li><p><a href="api_gather-linear.html">Gather elements from memory into a SIMD vector (gather_linear)</a></p></li>
+<li><p><a href="api_scatter.html">Scatter elements from SIMD vector to memory (scatter)</a></p></li>
+<li><p><a href="api_scatter-linear.html">Scatter elements from SIMD vector to memory (scatter_linear)</a></p></li>
 <li><p><a href="api_storelu.html">Store vector of logicals (storelu)</a></p></li>
 <li><p><a href="api_storela.html">Store vector of logicals (storela)</a></p></li>
 </ul>
@@ -119,6 +151,7 @@ SOFTWARE.
 <li><p><a href="api_xorb.html">Bitwise xor (xorb)</a></p></li>
 <li><p><a href="api_shr.html">Right shift in zeros (shr)</a></p></li>
 <li><p><a href="api_shl.html">Left shift (shl)</a></p></li>
+<li><p><a href="api_shra.html">Arithmetic right shift (shra)</a></p></li>
 </ul>
 <h2>Logicals operators</h2>
 <ul>
@@ -150,6 +183,8 @@ SOFTWARE.
 <li><p><a href="api_sqrt.html">Square root (sqrt)</a></p></li>
 <li><p><a href="api_rsqrt11.html">Square root with relative error at most \(2^{-11}\) (rsqrt11)</a></p></li>
 <li><p><a href="api_rsqrt8.html">Square root with relative error at most \(2^{-8}\) (rsqrt8)</a></p></li>
+<li><p><a href="api_adds.html">Addition using saturation (adds)</a></p></li>
+<li><p><a href="api_subs.html">Subtraction using saturation (subs)</a></p></li>
 </ul>
 <h2>Comparison operators</h2>
 <ul>
@@ -174,6 +209,15 @@ SOFTWARE.
 <li><p><a href="api_cvt.html">Convert vector (cvt)</a></p></li>
 <li><p><a href="api_upcvt.html">Convert vector to larger type (upcvt)</a></p></li>
 <li><p><a href="api_downcvt.html">Convert vector to narrow type (downcvt)</a></p></li>
+</ul>
+<h2>Shuffle functions</h2>
+<ul>
+<li><p><a href="api_ziplo.html">Zip low halves (ziplo)</a></p></li>
+<li><p><a href="api_ziphi.html">Zip high halves (ziphi)</a></p></li>
+<li><p><a href="api_unziplo.html">Unziplo (unziplo)</a></p></li>
+<li><p><a href="api_unziphi.html">Unziphi (unziphi)</a></p></li>
+<li><p><a href="api_zip.html">Zip (zip)</a></p></li>
+<li><p><a href="api_unzip.html">Unzip (unzip)</a></p></li>
 </ul>
   </body>
 </html>

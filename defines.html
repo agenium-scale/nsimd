@@ -1,0 +1,417 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>Defines provided by NSIMD</h1>
+<p>NSIMD uses macros (not function macros) that we call defines to make choices
+in its code at copmile time. Most of them can be of use to the end-user so
+we list them here.</p>
+<h2>Compiler detection</h2>
+<p>The compiler detection is automatically done by NSIMD as it is relatively
+easy.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Define</th>
+<th style="text-align: left;">Compiler</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>NSIMD_IS_MSVC</code></td>
+<td style="text-align: left;">Microsoft Visual C++</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_IS_HIPCC</code></td>
+<td style="text-align: left;">ROCm HIP compiler (warning, see below)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_IS_NVCC</code></td>
+<td style="text-align: left;">NVIDIA CUDA Compiler</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_IS_ICC</code></td>
+<td style="text-align: left;">Intel C++ Compiler</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_IS_CLANG</code></td>
+<td style="text-align: left;">Clang/LLVM</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_IS_GCC</code></td>
+<td style="text-align: left;">GNU Compiler Collection</td>
+</tr>
+</tbody>
+</table>
+<p><b>Warning</b>: some HIP versions do not declare themselves at all so it
+impossible to find out that HIP is the compiler. As HIP is based on clang,
+without help NSIMD will detect Clang. It is up to the end-user to compile
+with <code>-D__HIPCC__</code> for NSIMD to detect HIP.</p>
+<p>Note that we do support the Armclang C and C++ compilers but for NSIMD there
+is no need to have code different from Clang&apos;s specific code so we do no
+provide a macro to detect this compiler in particular.</p>
+<p>Note also that two of the above macros can be defined at the same time. This
+happens typically when compiling for a device. For example when compiling for
+NVIDIA CUDA with nvcc both <code>NSIMD_IS_NVCC</code> and <code>NSIMD_IS_GCC</code> (when the host
+compiler is GCC).</p>
+<h2>Compilation environment and contants</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Define</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Possible values</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>NSIMD_C</code></td>
+<td style="text-align: left;">C version</td>
+<td style="text-align: left;">1989, 1999, 2011</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_CXX</code></td>
+<td style="text-align: left;">C++ version</td>
+<td style="text-align: left;">1998, 2011, 2014, 2017</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_WORD_SIZE</code></td>
+<td style="text-align: left;">Machine word size</td>
+<td style="text-align: left;">32, 64</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U8_MIN</code></td>
+<td style="text-align: left;">Minimum value for u8</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U8_MAX</code></td>
+<td style="text-align: left;">Maximum value for u8</td>
+<td style="text-align: left;">255</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I8_MIN</code></td>
+<td style="text-align: left;">Minimum value for i8</td>
+<td style="text-align: left;">-128</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I8_MAX</code></td>
+<td style="text-align: left;">Maximum value for i8</td>
+<td style="text-align: left;">127</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U16_MIN</code></td>
+<td style="text-align: left;">Minimum value for u16</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U16_MAX</code></td>
+<td style="text-align: left;">Maximum value for u16</td>
+<td style="text-align: left;">65535</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I16_MIN</code></td>
+<td style="text-align: left;">Minimum value for i16</td>
+<td style="text-align: left;">-32768</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I16_MAX</code></td>
+<td style="text-align: left;">Maximum value for i16</td>
+<td style="text-align: left;">32767</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U32_MIN</code></td>
+<td style="text-align: left;">Minimum value for u32</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U32_MAX</code></td>
+<td style="text-align: left;">Maximum value for u32</td>
+<td style="text-align: left;">4294967295</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I32_MIN</code></td>
+<td style="text-align: left;">Minimum value for i32</td>
+<td style="text-align: left;">-2147483648</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I32_MAX</code></td>
+<td style="text-align: left;">Maximum value for i32</td>
+<td style="text-align: left;">2147483647</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U64_MIN</code></td>
+<td style="text-align: left;">Minimum value for u64</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_U64_MAX</code></td>
+<td style="text-align: left;">Maximum value for u64</td>
+<td style="text-align: left;">18446744073709551615</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I64_MIN</code></td>
+<td style="text-align: left;">Minimum value for i64</td>
+<td style="text-align: left;">-9223372036854775808</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_I64_MAX</code></td>
+<td style="text-align: left;">Maximum value for i64</td>
+<td style="text-align: left;">9223372036854775807</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_DLLSPEC</code></td>
+<td style="text-align: left;">(Windows) DLL storage-class information</td>
+<td style="text-align: left;"><code>__declspec(dllexport)</code> or <code>__declspec(dllimport)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_DLLSPEC</code></td>
+<td style="text-align: left;">(Unix) storage-class information</td>
+<td style="text-align: left;"><code>extern</code> or nothing</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_C_LINKAGE_FOR_F16</code></td>
+<td style="text-align: left;">Indicate whether functions involving f16 have C linkage</td>
+<td style="text-align: left;">defined or not</td>
+</tr>
+</tbody>
+</table>
+<h2>Targeted architecture detection</h2>
+<p>Contrary to the compiler detection, the targeted architecture is not done
+autoamtically by NSIMD as is really hard and some compilers do not provide
+the necessary informations. So in order to have a consistent way of targeting
+an architecture this is up to the end-user to specify it using one of the
+following defines.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Define</th>
+<th style="text-align: left;">Targeted architecture</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>NSIMD_CPU</code></td>
+<td style="text-align: left;">Generic, no SIMD, emulation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SSE2</code></td>
+<td style="text-align: left;">Intel SSE2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SSE42</code></td>
+<td style="text-align: left;">Intel SSE4.2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_AVX</code></td>
+<td style="text-align: left;">Intel AVX</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_AVX2</code></td>
+<td style="text-align: left;">Intel AVX2</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_AVX512_KNL</code></td>
+<td style="text-align: left;">Intel AVX-512 as found on KNLs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_AVX512_SKYLAKE</code></td>
+<td style="text-align: left;">Intel AVX-512 as found on Xeon Skylake</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_NEON128</code></td>
+<td style="text-align: left;">Arm NEON 128 bits as found on 32-bits Arm chips</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_AARCH64</code></td>
+<td style="text-align: left;">Arm NEON 128 bits as found on 64-bits Arm chips</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SVE</code></td>
+<td style="text-align: left;">Arm SVE (length agnostic)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SVE128</code></td>
+<td style="text-align: left;">Arm SVE (size known at compilation to 128 bits)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SVE256</code></td>
+<td style="text-align: left;">Arm SVE (size known at compilation to 256 bits)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SVE512</code></td>
+<td style="text-align: left;">Arm SVE (size known at compilation to 512 bits)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SVE1024</code></td>
+<td style="text-align: left;">Arm SVE (size known at compilation to 1024 bits)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_SVE2048</code></td>
+<td style="text-align: left;">Arm SVE (size known at compilation to 2048 bits)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_FP16</code></td>
+<td style="text-align: left;">Architecture supports natively IEEE float16</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_FMA</code></td>
+<td style="text-align: left;">Architecture supports natively FMAs</td>
+</tr>
+</tbody>
+</table>
+<h2>Targeted architecture constants</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Define</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>NSIMD_NB_REGISTERS</code></td>
+<td style="text-align: left;">Number of SIMD registers</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_BIT</code></td>
+<td style="text-align: left;">Maximum number of bits in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_i8</code></td>
+<td style="text-align: left;">Maximum number of i8&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_u8</code></td>
+<td style="text-align: left;">Maximum number of u8&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_i16</code></td>
+<td style="text-align: left;">Maximum number of i16&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_u16</code></td>
+<td style="text-align: left;">Maximum number of u16&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_i32</code></td>
+<td style="text-align: left;">Maximum number of i32&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_u32</code></td>
+<td style="text-align: left;">Maximum number of u32&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_i64</code></td>
+<td style="text-align: left;">Maximum number of i64&apos;s in a SIMD register</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_MAX_LEN_u64</code></td>
+<td style="text-align: left;">Maximum number of u64&apos;s in a SIMD register</td>
+</tr>
+</tbody>
+</table>
+<p>NSIMD provides a mean to write generic code by using the <code>NSIMD_MAX_LEN</code> macros
+whose argument is one of { i8, u8, i16, u16, i32, u32, i64, u64 }.</p>
+<pre class="c++"><code>#define T ??? // to be defined as a base type
+
+int main(void) {
+  T buf[NSIMD_MAX_LEN(T)]; // an array of T&apos;s for loading/storing
+  ...
+  return 0;
+}</code></pre>
+<h2>Other useful macros</h2>
+<p>NSIMD provides macros to concatenate blobs so that generic programming in pure
+C is possible.</p>
+<ul>
+<li><p><code>#define NSIMD_PP_CAT_2(a, b)</code> concatenates <code>a</code> and <code>b</code>.</p></li>
+<li><p><code>#define NSIMD_PP_CAT_3(a, b, c)</code> concatenates <code>a</code>, <code>b</code> and <code>c</code>.</p></li>
+<li><p><code>#define NSIMD_PP_CAT_4(a, b, c, d)</code> concatenates <code>a</code>, <code>b</code>, <code>c</code> and <code>d</code>.</p></li>
+<li><p><code>#define NSIMD_PP_CAT_5(a, b, c, d, e)</code> concatenates <code>a</code>, <code>b</code>, <code>c</code>, <code>d</code> and
+<code>e</code>.</p></li>
+<li><p><code>#define NSIMD_PP_CAT_6(a, b, c, d, e, f)</code> concatenates <code>a</code>, <code>b</code>, <code>c</code>, <code>d</code>,
+<code>e</code> and <code>f</code>.</p></li>
+</ul>
+  </body>
+</html>

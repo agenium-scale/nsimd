@@ -1,0 +1,171 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+<b>Memory management module documentation</b>
+
+<hr>
+</div>
+
+<h1>Overview</h1>
+<p>This module provides C-style memory managmenent functions. Its purpose is not
+to become a fully feature container library. It is to provide portable
+malloc, memcpy and free functions with a little helpers to copy data from and
+to the devices.</p>
+<h1>API reference</h1>
+<h2>Equivalents of malloc, calloc, memcpy and free for devices</h2>
+<p>Note that the below functions simply wraps the corresponding C functions
+when targeting a CPU.</p>
+<ul>
+<li><p><code>template &lt;typename T&gt; T *device_malloc(size_t sz)</code><br>
+Allocates <code>sz * sizeof(T)</code> bytes of memory on the device.
+On error NULL is returned.</p></li>
+<li><p><code>template &lt;typename T&gt; T *device_calloc(size_t sz)</code><br>
+Allocates <code>sz * sizeof(T)</code> bytes of memory on the device and set the
+allocated memory to zero.
+On error NULL is returned.</p></li>
+<li><p><code>template &lt;typename T&gt; void device_free(T *ptr)</code><br>
+Free the memory pointed to by the given pointer.</p></li>
+<li><p><code>template &lt;typename T&gt; void copy_to_device(T *device_ptr, T *host_ptr,
+size_t sz)</code><br>
+Copy data to from host to device.</p></li>
+<li><p><code>template &lt;typename T&gt; void copy_to_host(T *host_ptr, T *device_ptr,
+size_t sz)</code><br>
+Copy data to from device to host.</p></li>
+<li><p><code>#define nsimd_fill_dev_mem_func(func_name, expr)</code><br>
+Create a device function that will fill data with <code>expr</code>. To call the created
+function one simply does <code>func_name(ptr, sz)</code>. The <code>expr</code> argument represents
+some simple C++ expression that can depend only on <code>i</code> the i-th element in
+the vector as shown in the example below.</p><pre class="c++"><code>nsimd_fill_dev_mem_func(prng, ((i * 1103515245 + 12345) / 65536) % 32768)
+
+int main() {
+  prng(ptr, 1000);
+  return 0;
+}</code></pre></li>
+</ul>
+<h2>Pairs of pointers</h2>
+<p>It is often useful to allocate a pair of data buffers: one on the host and
+one on the devices to perform data transfers. The below functions provides
+quick ways to malloc, calloc, free and memcpy pointers on host and devices at
+once. Note that when targeting CPUs the pair of pointers is reduced to one
+pointer that ponit the a single data buffer in which case memcpy&apos;s are not
+performed. Note also that there is no implicit synchronization of data
+between both data buffers. It is up to the programmer to triggers memcpy&apos;s.</p>
+<pre class="c++"><code>template &lt;typename T&gt;
+struct paired_pointers_t {
+  T *device_ptr, *host_ptr;
+  size_t sz;
+};</code></pre>
+<p>Members of the above structure are not to be modified but can be passed as
+arguments for reading/writing data from/to memory they point to.</p>
+<ul>
+<li><p><code>template &lt;typename T&gt; paired_pointers_t&lt;T&gt; pair_malloc(size_t sz)</code><br>
+Allocate <code>sz * sizeof(T)</code> bytes of memory on the host and on the device.
+If an error occurs both pointers are NULL.</p></li>
+<li><p><code>template &lt;typename T&gt; paired_pointers_t&lt;T&gt; pair_malloc_or_exit(size_t
+sz)</code><br>
+Allocate <code>sz * sizeof(T)</code> bytes of memory on the host and on the device.
+If an error occurs, prints an error message on stderr and exit(3).</p></li>
+<li><p><code>template &lt;typename T&gt; paired_pointers_t&lt;T&gt; pair_calloc(size_t sz)</code><br>
+Allocate <code>sz * sizeof(T)</code> bytes of memory on the host and on the device.
+Write both data buffers with zeros.
+If an error occurs both pointers are NULL.</p></li>
+<li><p><code>template &lt;typename T&gt; paired_pointers_t&lt;T&gt; pair_calloc_or_exit(size_t
+sz)</code><br>
+Allocate <code>sz * sizeof(T)</code> bytes of memory on the host and on the device.
+Write both data buffers with zeros.
+If an error occurs, prints an error message on stderr and exit(3).</p></li>
+<li><p><code>template &lt;typename T&gt; void pair_free(paired_pointers_t&lt;T&gt; p)</code><br>
+Free data buffers on the host and the device.</p></li>
+<li><p><code>template &lt;typename T&gt; void copy_to_device(paired_pointers_t&lt;T&gt; p)</code><br>
+Copy data from the host buffer to its corresponding device buffer.</p></li>
+<li><p><code>template &lt;typename T&gt; void copy_to_host(paired_pointers_t&lt;T&gt; p)</code><br>
+Copy data from the device buffer to its corresponding host buffer.</p></li>
+</ul>
+  </body>
+</html>

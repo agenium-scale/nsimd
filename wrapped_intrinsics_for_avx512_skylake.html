@@ -1,0 +1,1530 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>Intrinsics wrapped for AVX512_SKYLAKE</h1>
+<p>Notations are as follows:</p>
+<ul>
+<li><p><code>T</code> for trick usually using other intrinsics</p></li>
+<li><p><code>E</code> for scalar emulation</p></li>
+<li><p><code>NOOP</code> for no operation</p></li>
+<li><p><code>NA</code> means the operator does not exist for the given type</p></li>
+<li><p><code>intrinsic</code> for the actual wrapped intrinsic</p></li>
+</ul>
+<h2>abs</h2>
+<ul>
+<li><p> abs on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_abs_epi8"><code>_mm512_abs_epi8</code></a></p></li>
+<li><p> abs on <b>u8</b>: NOOP</p></li>
+<li><p> abs on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_abs_epi16"><code>_mm512_abs_epi16</code></a></p></li>
+<li><p> abs on <b>u16</b>: NOOP</p></li>
+<li><p> abs on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_abs_epi32"><code>_mm512_abs_epi32</code></a></p></li>
+<li><p> abs on <b>u32</b>: NOOP</p></li>
+<li><p> abs on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_abs_epi64"><code>_mm512_abs_epi64</code></a></p></li>
+<li><p> abs on <b>u64</b>: NOOP</p></li>
+<li><p> abs on <b>f16</b>: T</p></li>
+<li><p> abs on <b>f32</b>: T</p></li>
+<li><p> abs on <b>f64</b>: T</p></li>
+</ul>
+<h2>add</h2>
+<ul>
+<li><p> add on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi8"><code>_mm512_add_epi8</code></a></p></li>
+<li><p> add on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi8"><code>_mm512_add_epi8</code></a></p></li>
+<li><p> add on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi16"><code>_mm512_add_epi16</code></a></p></li>
+<li><p> add on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi16"><code>_mm512_add_epi16</code></a></p></li>
+<li><p> add on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi32"><code>_mm512_add_epi32</code></a></p></li>
+<li><p> add on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi32"><code>_mm512_add_epi32</code></a></p></li>
+<li><p> add on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi64"><code>_mm512_add_epi64</code></a></p></li>
+<li><p> add on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_epi64"><code>_mm512_add_epi64</code></a></p></li>
+<li><p> add on <b>f16</b>: T</p></li>
+<li><p> add on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_ps"><code>_mm512_add_ps</code></a></p></li>
+<li><p> add on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_add_pd"><code>_mm512_add_pd</code></a></p></li>
+</ul>
+<h2>adds</h2>
+<ul>
+<li><p> adds on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_adds_epi8"><code>_mm512_adds_epi8</code></a></p></li>
+<li><p> adds on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_adds_epu8"><code>_mm512_adds_epu8</code></a></p></li>
+<li><p> adds on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_adds_epi16"><code>_mm512_adds_epi16</code></a></p></li>
+<li><p> adds on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_adds_epu16"><code>_mm512_adds_epu16</code></a></p></li>
+<li><p> adds on <b>i32</b>: T</p></li>
+<li><p> adds on <b>u32</b>: T</p></li>
+<li><p> adds on <b>i64</b>: T</p></li>
+<li><p> adds on <b>u64</b>: T</p></li>
+<li><p> adds on <b>f16</b>: T</p></li>
+<li><p> adds on <b>f32</b>: T</p></li>
+<li><p> adds on <b>f64</b>: T</p></li>
+</ul>
+<h2>addv</h2>
+<ul>
+<li><p> addv on <b>i8</b>: NA</p></li>
+<li><p> addv on <b>u8</b>: NA</p></li>
+<li><p> addv on <b>i16</b>: NA</p></li>
+<li><p> addv on <b>u16</b>: NA</p></li>
+<li><p> addv on <b>i32</b>: NA</p></li>
+<li><p> addv on <b>u32</b>: NA</p></li>
+<li><p> addv on <b>i64</b>: NA</p></li>
+<li><p> addv on <b>u64</b>: NA</p></li>
+<li><p> addv on <b>f16</b>: T</p></li>
+<li><p> addv on <b>f32</b>: T</p></li>
+<li><p> addv on <b>f64</b>: T</p></li>
+</ul>
+<h2>all</h2>
+<ul>
+<li><p> all on <b>i8</b>: T</p></li>
+<li><p> all on <b>u8</b>: T</p></li>
+<li><p> all on <b>i16</b>: T</p></li>
+<li><p> all on <b>u16</b>: T</p></li>
+<li><p> all on <b>i32</b>: T</p></li>
+<li><p> all on <b>u32</b>: T</p></li>
+<li><p> all on <b>i64</b>: T</p></li>
+<li><p> all on <b>u64</b>: T</p></li>
+<li><p> all on <b>f16</b>: T</p></li>
+<li><p> all on <b>f32</b>: T</p></li>
+<li><p> all on <b>f64</b>: T</p></li>
+</ul>
+<h2>andb</h2>
+<ul>
+<li><p> andb on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_si512"><code>_mm512_and_si512</code></a></p></li>
+<li><p> andb on <b>f16</b>: T</p></li>
+<li><p> andb on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_ps"><code>_mm512_and_ps</code></a></p></li>
+<li><p> andb on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_and_pd"><code>_mm512_and_pd</code></a></p></li>
+</ul>
+<h2>andl</h2>
+<ul>
+<li><p> andl on <b>i8</b>: T</p></li>
+<li><p> andl on <b>u8</b>: T</p></li>
+<li><p> andl on <b>i16</b>: T</p></li>
+<li><p> andl on <b>u16</b>: T</p></li>
+<li><p> andl on <b>i32</b>: T</p></li>
+<li><p> andl on <b>u32</b>: T</p></li>
+<li><p> andl on <b>i64</b>: T</p></li>
+<li><p> andl on <b>u64</b>: T</p></li>
+<li><p> andl on <b>f16</b>: T</p></li>
+<li><p> andl on <b>f32</b>: T</p></li>
+<li><p> andl on <b>f64</b>: T</p></li>
+</ul>
+<h2>andnotb</h2>
+<ul>
+<li><p> andnotb on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_si512"><code>_mm512_andnot_si512</code></a></p></li>
+<li><p> andnotb on <b>f16</b>: T</p></li>
+<li><p> andnotb on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_ps"><code>_mm512_andnot_ps</code></a></p></li>
+<li><p> andnotb on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_andnot_pd"><code>_mm512_andnot_pd</code></a></p></li>
+</ul>
+<h2>andnotl</h2>
+<ul>
+<li><p> andnotl on <b>i8</b>: T</p></li>
+<li><p> andnotl on <b>u8</b>: T</p></li>
+<li><p> andnotl on <b>i16</b>: T</p></li>
+<li><p> andnotl on <b>u16</b>: T</p></li>
+<li><p> andnotl on <b>i32</b>: T</p></li>
+<li><p> andnotl on <b>u32</b>: T</p></li>
+<li><p> andnotl on <b>i64</b>: T</p></li>
+<li><p> andnotl on <b>u64</b>: T</p></li>
+<li><p> andnotl on <b>f16</b>: T</p></li>
+<li><p> andnotl on <b>f32</b>: T</p></li>
+<li><p> andnotl on <b>f64</b>: T</p></li>
+</ul>
+<h2>any</h2>
+<ul>
+<li><p> any on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>f16</b>: T</p></li>
+<li><p> any on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+<li><p> any on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=="><code>=</code></a></p></li>
+</ul>
+<h2>ceil</h2>
+<ul>
+<li><p> ceil on <b>i8</b>: NOOP</p></li>
+<li><p> ceil on <b>u8</b>: NOOP</p></li>
+<li><p> ceil on <b>i16</b>: NOOP</p></li>
+<li><p> ceil on <b>u16</b>: NOOP</p></li>
+<li><p> ceil on <b>i32</b>: NOOP</p></li>
+<li><p> ceil on <b>u32</b>: NOOP</p></li>
+<li><p> ceil on <b>i64</b>: NOOP</p></li>
+<li><p> ceil on <b>u64</b>: NOOP</p></li>
+<li><p> ceil on <b>f16</b>: T</p></li>
+<li><p> ceil on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_ceil_ps"><code>_mm512_ceil_ps</code></a></p></li>
+<li><p> ceil on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_ceil_pd"><code>_mm512_ceil_pd</code></a></p></li>
+</ul>
+<h2>div</h2>
+<ul>
+<li><p> div on <b>i8</b>: T</p></li>
+<li><p> div on <b>u8</b>: T</p></li>
+<li><p> div on <b>i16</b>: T</p></li>
+<li><p> div on <b>u16</b>: T</p></li>
+<li><p> div on <b>i32</b>: T</p></li>
+<li><p> div on <b>u32</b>: T</p></li>
+<li><p> div on <b>i64</b>: T</p></li>
+<li><p> div on <b>u64</b>: T</p></li>
+<li><p> div on <b>f16</b>: T</p></li>
+<li><p> div on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_div_ps"><code>_mm512_div_ps</code></a></p></li>
+<li><p> div on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_div_pd"><code>_mm512_div_pd</code></a></p></li>
+</ul>
+<h2>eq</h2>
+<ul>
+<li><p> eq on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> eq on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> eq on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> eq on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> eq on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> eq on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> eq on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> eq on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> eq on <b>f16</b>: T</p></li>
+<li><p> eq on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_ps_mask"><code>_mm512_cmp_ps_mask</code></a></p></li>
+<li><p> eq on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_pd_mask"><code>_mm512_cmp_pd_mask</code></a></p></li>
+</ul>
+<h2>floor</h2>
+<ul>
+<li><p> floor on <b>i8</b>: NOOP</p></li>
+<li><p> floor on <b>u8</b>: NOOP</p></li>
+<li><p> floor on <b>i16</b>: NOOP</p></li>
+<li><p> floor on <b>u16</b>: NOOP</p></li>
+<li><p> floor on <b>i32</b>: NOOP</p></li>
+<li><p> floor on <b>u32</b>: NOOP</p></li>
+<li><p> floor on <b>i64</b>: NOOP</p></li>
+<li><p> floor on <b>u64</b>: NOOP</p></li>
+<li><p> floor on <b>f16</b>: T</p></li>
+<li><p> floor on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_floor_ps"><code>_mm512_floor_ps</code></a></p></li>
+<li><p> floor on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_floor_pd"><code>_mm512_floor_pd</code></a></p></li>
+</ul>
+<h2>fma</h2>
+<ul>
+<li><p> fma on <b>i8</b>: T</p></li>
+<li><p> fma on <b>u8</b>: T</p></li>
+<li><p> fma on <b>i16</b>: T</p></li>
+<li><p> fma on <b>u16</b>: T</p></li>
+<li><p> fma on <b>i32</b>: T</p></li>
+<li><p> fma on <b>u32</b>: T</p></li>
+<li><p> fma on <b>i64</b>: T</p></li>
+<li><p> fma on <b>u64</b>: T</p></li>
+<li><p> fma on <b>f16</b>: T</p></li>
+<li><p> fma on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fmadd_ps"><code>_mm512_fmadd_ps</code></a></p></li>
+<li><p> fma on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fmadd_pd"><code>_mm512_fmadd_pd</code></a></p></li>
+</ul>
+<h2>fms</h2>
+<ul>
+<li><p> fms on <b>i8</b>: T</p></li>
+<li><p> fms on <b>u8</b>: T</p></li>
+<li><p> fms on <b>i16</b>: T</p></li>
+<li><p> fms on <b>u16</b>: T</p></li>
+<li><p> fms on <b>i32</b>: T</p></li>
+<li><p> fms on <b>u32</b>: T</p></li>
+<li><p> fms on <b>i64</b>: T</p></li>
+<li><p> fms on <b>u64</b>: T</p></li>
+<li><p> fms on <b>f16</b>: T</p></li>
+<li><p> fms on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fmsub_ps"><code>_mm512_fmsub_ps</code></a></p></li>
+<li><p> fms on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fmsub_pd"><code>_mm512_fmsub_pd</code></a></p></li>
+</ul>
+<h2>fnma</h2>
+<ul>
+<li><p> fnma on <b>i8</b>: T</p></li>
+<li><p> fnma on <b>u8</b>: T</p></li>
+<li><p> fnma on <b>i16</b>: T</p></li>
+<li><p> fnma on <b>u16</b>: T</p></li>
+<li><p> fnma on <b>i32</b>: T</p></li>
+<li><p> fnma on <b>u32</b>: T</p></li>
+<li><p> fnma on <b>i64</b>: T</p></li>
+<li><p> fnma on <b>u64</b>: T</p></li>
+<li><p> fnma on <b>f16</b>: T</p></li>
+<li><p> fnma on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fnmadd_ps"><code>_mm512_fnmadd_ps</code></a></p></li>
+<li><p> fnma on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fnmadd_pd"><code>_mm512_fnmadd_pd</code></a></p></li>
+</ul>
+<h2>fnms</h2>
+<ul>
+<li><p> fnms on <b>i8</b>: T</p></li>
+<li><p> fnms on <b>u8</b>: T</p></li>
+<li><p> fnms on <b>i16</b>: T</p></li>
+<li><p> fnms on <b>u16</b>: T</p></li>
+<li><p> fnms on <b>i32</b>: T</p></li>
+<li><p> fnms on <b>u32</b>: T</p></li>
+<li><p> fnms on <b>i64</b>: T</p></li>
+<li><p> fnms on <b>u64</b>: T</p></li>
+<li><p> fnms on <b>f16</b>: T</p></li>
+<li><p> fnms on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fnmsub_ps"><code>_mm512_fnmsub_ps</code></a></p></li>
+<li><p> fnms on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_fnmsub_pd"><code>_mm512_fnmsub_pd</code></a></p></li>
+</ul>
+<h2>gather</h2>
+<ul>
+<li><p> gather on <b>i8</b>: NA</p></li>
+<li><p> gather on <b>u8</b>: NA</p></li>
+<li><p> gather on <b>i16</b>: T</p></li>
+<li><p> gather on <b>u16</b>: T</p></li>
+<li><p> gather on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i32gather_epi32"><code>_mm512_i32gather_epi32</code></a></p></li>
+<li><p> gather on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i32gather_epi32"><code>_mm512_i32gather_epi32</code></a></p></li>
+<li><p> gather on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i64gather_epi64"><code>_mm512_i64gather_epi64</code></a></p></li>
+<li><p> gather on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i64gather_epi64"><code>_mm512_i64gather_epi64</code></a></p></li>
+<li><p> gather on <b>f16</b>: T</p></li>
+<li><p> gather on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i32gather_ps"><code>_mm512_i32gather_ps</code></a></p></li>
+<li><p> gather on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i64gather_pd"><code>_mm512_i64gather_pd</code></a></p></li>
+</ul>
+<h2>gather_linear</h2>
+<ul>
+<li><p> gather_linear on <b>i8</b>: T</p></li>
+<li><p> gather_linear on <b>u8</b>: T</p></li>
+<li><p> gather_linear on <b>i16</b>: T</p></li>
+<li><p> gather_linear on <b>u16</b>: T</p></li>
+<li><p> gather_linear on <b>i32</b>: T</p></li>
+<li><p> gather_linear on <b>u32</b>: T</p></li>
+<li><p> gather_linear on <b>i64</b>: T</p></li>
+<li><p> gather_linear on <b>u64</b>: T</p></li>
+<li><p> gather_linear on <b>f16</b>: T</p></li>
+<li><p> gather_linear on <b>f32</b>: T</p></li>
+<li><p> gather_linear on <b>f64</b>: T</p></li>
+</ul>
+<h2>ge</h2>
+<ul>
+<li><p> ge on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> ge on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu8_mask"><code>_mm512_cmp_epu8_mask</code></a></p></li>
+<li><p> ge on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> ge on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu16_mask"><code>_mm512_cmp_epu16_mask</code></a></p></li>
+<li><p> ge on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> ge on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu32_mask"><code>_mm512_cmp_epu32_mask</code></a></p></li>
+<li><p> ge on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> ge on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu64_mask"><code>_mm512_cmp_epu64_mask</code></a></p></li>
+<li><p> ge on <b>f16</b>: T</p></li>
+<li><p> ge on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_ps_mask"><code>_mm512_cmp_ps_mask</code></a></p></li>
+<li><p> ge on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_pd_mask"><code>_mm512_cmp_pd_mask</code></a></p></li>
+</ul>
+<h2>gt</h2>
+<ul>
+<li><p> gt on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> gt on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu8_mask"><code>_mm512_cmp_epu8_mask</code></a></p></li>
+<li><p> gt on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> gt on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu16_mask"><code>_mm512_cmp_epu16_mask</code></a></p></li>
+<li><p> gt on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> gt on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu32_mask"><code>_mm512_cmp_epu32_mask</code></a></p></li>
+<li><p> gt on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> gt on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu64_mask"><code>_mm512_cmp_epu64_mask</code></a></p></li>
+<li><p> gt on <b>f16</b>: T</p></li>
+<li><p> gt on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_ps_mask"><code>_mm512_cmp_ps_mask</code></a></p></li>
+<li><p> gt on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_pd_mask"><code>_mm512_cmp_pd_mask</code></a></p></li>
+</ul>
+<h2>if_else1</h2>
+<ul>
+<li><p> if_else1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi8"><code>_mm512_mask_blend_epi8</code></a></p></li>
+<li><p> if_else1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi8"><code>_mm512_mask_blend_epi8</code></a></p></li>
+<li><p> if_else1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi16"><code>_mm512_mask_blend_epi16</code></a></p></li>
+<li><p> if_else1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi16"><code>_mm512_mask_blend_epi16</code></a></p></li>
+<li><p> if_else1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi32"><code>_mm512_mask_blend_epi32</code></a></p></li>
+<li><p> if_else1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi32"><code>_mm512_mask_blend_epi32</code></a></p></li>
+<li><p> if_else1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi64"><code>_mm512_mask_blend_epi64</code></a></p></li>
+<li><p> if_else1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_epi64"><code>_mm512_mask_blend_epi64</code></a></p></li>
+<li><p> if_else1 on <b>f16</b>: T</p></li>
+<li><p> if_else1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_ps"><code>_mm512_mask_blend_ps</code></a></p></li>
+<li><p> if_else1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_blend_pd"><code>_mm512_mask_blend_pd</code></a></p></li>
+</ul>
+<h2>iota</h2>
+<ul>
+<li><p> iota on <b>i8</b>: T</p></li>
+<li><p> iota on <b>u8</b>: T</p></li>
+<li><p> iota on <b>i16</b>: T</p></li>
+<li><p> iota on <b>u16</b>: T</p></li>
+<li><p> iota on <b>i32</b>: T</p></li>
+<li><p> iota on <b>u32</b>: T</p></li>
+<li><p> iota on <b>i64</b>: T</p></li>
+<li><p> iota on <b>u64</b>: T</p></li>
+<li><p> iota on <b>f16</b>: T</p></li>
+<li><p> iota on <b>f32</b>: T</p></li>
+<li><p> iota on <b>f64</b>: T</p></li>
+</ul>
+<h2>le</h2>
+<ul>
+<li><p> le on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> le on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu8_mask"><code>_mm512_cmp_epu8_mask</code></a></p></li>
+<li><p> le on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> le on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu16_mask"><code>_mm512_cmp_epu16_mask</code></a></p></li>
+<li><p> le on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> le on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu32_mask"><code>_mm512_cmp_epu32_mask</code></a></p></li>
+<li><p> le on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> le on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epu64_mask"><code>_mm512_cmp_epu64_mask</code></a></p></li>
+<li><p> le on <b>f16</b>: T</p></li>
+<li><p> le on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_ps_mask"><code>_mm512_cmp_ps_mask</code></a></p></li>
+<li><p> le on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_pd_mask"><code>_mm512_cmp_pd_mask</code></a></p></li>
+</ul>
+<h2>len</h2>
+<ul>
+<li><p> len on <b>i8</b>: NOOP</p></li>
+<li><p> len on <b>u8</b>: NOOP</p></li>
+<li><p> len on <b>i16</b>: NOOP</p></li>
+<li><p> len on <b>u16</b>: NOOP</p></li>
+<li><p> len on <b>i32</b>: NOOP</p></li>
+<li><p> len on <b>u32</b>: NOOP</p></li>
+<li><p> len on <b>i64</b>: NOOP</p></li>
+<li><p> len on <b>u64</b>: NOOP</p></li>
+<li><p> len on <b>f16</b>: NOOP</p></li>
+<li><p> len on <b>f32</b>: NOOP</p></li>
+<li><p> len on <b>f64</b>: NOOP</p></li>
+</ul>
+<h2>load2a</h2>
+<ul>
+<li><p> load2a on <b>i8</b>: T</p></li>
+<li><p> load2a on <b>u8</b>: T</p></li>
+<li><p> load2a on <b>i16</b>: T</p></li>
+<li><p> load2a on <b>u16</b>: T</p></li>
+<li><p> load2a on <b>i32</b>: T</p></li>
+<li><p> load2a on <b>u32</b>: T</p></li>
+<li><p> load2a on <b>i64</b>: T</p></li>
+<li><p> load2a on <b>u64</b>: T</p></li>
+<li><p> load2a on <b>f16</b>: T</p></li>
+<li><p> load2a on <b>f32</b>: T</p></li>
+<li><p> load2a on <b>f64</b>: T</p></li>
+</ul>
+<h2>load2u</h2>
+<ul>
+<li><p> load2u on <b>i8</b>: T</p></li>
+<li><p> load2u on <b>u8</b>: T</p></li>
+<li><p> load2u on <b>i16</b>: T</p></li>
+<li><p> load2u on <b>u16</b>: T</p></li>
+<li><p> load2u on <b>i32</b>: T</p></li>
+<li><p> load2u on <b>u32</b>: T</p></li>
+<li><p> load2u on <b>i64</b>: T</p></li>
+<li><p> load2u on <b>u64</b>: T</p></li>
+<li><p> load2u on <b>f16</b>: T</p></li>
+<li><p> load2u on <b>f32</b>: T</p></li>
+<li><p> load2u on <b>f64</b>: T</p></li>
+</ul>
+<h2>load3a</h2>
+<ul>
+<li><p> load3a on <b>i8</b>: T</p></li>
+<li><p> load3a on <b>u8</b>: T</p></li>
+<li><p> load3a on <b>i16</b>: T</p></li>
+<li><p> load3a on <b>u16</b>: T</p></li>
+<li><p> load3a on <b>i32</b>: T</p></li>
+<li><p> load3a on <b>u32</b>: T</p></li>
+<li><p> load3a on <b>i64</b>: T</p></li>
+<li><p> load3a on <b>u64</b>: T</p></li>
+<li><p> load3a on <b>f16</b>: T</p></li>
+<li><p> load3a on <b>f32</b>: T</p></li>
+<li><p> load3a on <b>f64</b>: T</p></li>
+</ul>
+<h2>load3u</h2>
+<ul>
+<li><p> load3u on <b>i8</b>: T</p></li>
+<li><p> load3u on <b>u8</b>: T</p></li>
+<li><p> load3u on <b>i16</b>: T</p></li>
+<li><p> load3u on <b>u16</b>: T</p></li>
+<li><p> load3u on <b>i32</b>: T</p></li>
+<li><p> load3u on <b>u32</b>: T</p></li>
+<li><p> load3u on <b>i64</b>: T</p></li>
+<li><p> load3u on <b>u64</b>: T</p></li>
+<li><p> load3u on <b>f16</b>: T</p></li>
+<li><p> load3u on <b>f32</b>: T</p></li>
+<li><p> load3u on <b>f64</b>: T</p></li>
+</ul>
+<h2>load4a</h2>
+<ul>
+<li><p> load4a on <b>i8</b>: T</p></li>
+<li><p> load4a on <b>u8</b>: T</p></li>
+<li><p> load4a on <b>i16</b>: T</p></li>
+<li><p> load4a on <b>u16</b>: T</p></li>
+<li><p> load4a on <b>i32</b>: T</p></li>
+<li><p> load4a on <b>u32</b>: T</p></li>
+<li><p> load4a on <b>i64</b>: T</p></li>
+<li><p> load4a on <b>u64</b>: T</p></li>
+<li><p> load4a on <b>f16</b>: T</p></li>
+<li><p> load4a on <b>f32</b>: T</p></li>
+<li><p> load4a on <b>f64</b>: T</p></li>
+</ul>
+<h2>load4u</h2>
+<ul>
+<li><p> load4u on <b>i8</b>: T</p></li>
+<li><p> load4u on <b>u8</b>: T</p></li>
+<li><p> load4u on <b>i16</b>: T</p></li>
+<li><p> load4u on <b>u16</b>: T</p></li>
+<li><p> load4u on <b>i32</b>: T</p></li>
+<li><p> load4u on <b>u32</b>: T</p></li>
+<li><p> load4u on <b>i64</b>: T</p></li>
+<li><p> load4u on <b>u64</b>: T</p></li>
+<li><p> load4u on <b>f16</b>: T</p></li>
+<li><p> load4u on <b>f32</b>: T</p></li>
+<li><p> load4u on <b>f64</b>: T</p></li>
+</ul>
+<h2>loada</h2>
+<ul>
+<li><p> loada on <b>i8</b>: T</p></li>
+<li><p> loada on <b>u8</b>: T</p></li>
+<li><p> loada on <b>i16</b>: T</p></li>
+<li><p> loada on <b>u16</b>: T</p></li>
+<li><p> loada on <b>i32</b>: T</p></li>
+<li><p> loada on <b>u32</b>: T</p></li>
+<li><p> loada on <b>i64</b>: T</p></li>
+<li><p> loada on <b>u64</b>: T</p></li>
+<li><p> loada on <b>f16</b>: T</p></li>
+<li><p> loada on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_load_ps"><code>_mm512_load_ps</code></a></p></li>
+<li><p> loada on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_load_pd"><code>_mm512_load_pd</code></a></p></li>
+</ul>
+<h2>loadla</h2>
+<ul>
+<li><p> loadla on <b>i8</b>: T</p></li>
+<li><p> loadla on <b>u8</b>: T</p></li>
+<li><p> loadla on <b>i16</b>: T</p></li>
+<li><p> loadla on <b>u16</b>: T</p></li>
+<li><p> loadla on <b>i32</b>: T</p></li>
+<li><p> loadla on <b>u32</b>: T</p></li>
+<li><p> loadla on <b>i64</b>: T</p></li>
+<li><p> loadla on <b>u64</b>: T</p></li>
+<li><p> loadla on <b>f16</b>: T</p></li>
+<li><p> loadla on <b>f32</b>: T</p></li>
+<li><p> loadla on <b>f64</b>: T</p></li>
+</ul>
+<h2>loadlu</h2>
+<ul>
+<li><p> loadlu on <b>i8</b>: T</p></li>
+<li><p> loadlu on <b>u8</b>: T</p></li>
+<li><p> loadlu on <b>i16</b>: T</p></li>
+<li><p> loadlu on <b>u16</b>: T</p></li>
+<li><p> loadlu on <b>i32</b>: T</p></li>
+<li><p> loadlu on <b>u32</b>: T</p></li>
+<li><p> loadlu on <b>i64</b>: T</p></li>
+<li><p> loadlu on <b>u64</b>: T</p></li>
+<li><p> loadlu on <b>f16</b>: T</p></li>
+<li><p> loadlu on <b>f32</b>: T</p></li>
+<li><p> loadlu on <b>f64</b>: T</p></li>
+</ul>
+<h2>loadu</h2>
+<ul>
+<li><p> loadu on <b>i8</b>: T</p></li>
+<li><p> loadu on <b>u8</b>: T</p></li>
+<li><p> loadu on <b>i16</b>: T</p></li>
+<li><p> loadu on <b>u16</b>: T</p></li>
+<li><p> loadu on <b>i32</b>: T</p></li>
+<li><p> loadu on <b>u32</b>: T</p></li>
+<li><p> loadu on <b>i64</b>: T</p></li>
+<li><p> loadu on <b>u64</b>: T</p></li>
+<li><p> loadu on <b>f16</b>: T</p></li>
+<li><p> loadu on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_loadu_ps"><code>_mm512_loadu_ps</code></a></p></li>
+<li><p> loadu on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_loadu_pd"><code>_mm512_loadu_pd</code></a></p></li>
+</ul>
+<h2>lt</h2>
+<ul>
+<li><p> lt on <b>i8</b>: T</p></li>
+<li><p> lt on <b>u8</b>: T</p></li>
+<li><p> lt on <b>i16</b>: T</p></li>
+<li><p> lt on <b>u16</b>: T</p></li>
+<li><p> lt on <b>i32</b>: T</p></li>
+<li><p> lt on <b>u32</b>: T</p></li>
+<li><p> lt on <b>i64</b>: T</p></li>
+<li><p> lt on <b>u64</b>: T</p></li>
+<li><p> lt on <b>f16</b>: T</p></li>
+<li><p> lt on <b>f32</b>: T</p></li>
+<li><p> lt on <b>f64</b>: T</p></li>
+</ul>
+<h2>mask_for_loop_tail</h2>
+<ul>
+<li><p> mask_for_loop_tail on <b>i8</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>u8</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>i16</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>u16</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>i32</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>u32</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>i64</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>u64</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>f16</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>f32</b>: T</p></li>
+<li><p> mask_for_loop_tail on <b>f64</b>: T</p></li>
+</ul>
+<h2>mask_storea1</h2>
+<ul>
+<li><p> mask_storea1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi8"><code>_mm512_mask_storeu_epi8</code></a></p></li>
+<li><p> mask_storea1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi8"><code>_mm512_mask_storeu_epi8</code></a></p></li>
+<li><p> mask_storea1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi16"><code>_mm512_mask_storeu_epi16</code></a></p></li>
+<li><p> mask_storea1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi16"><code>_mm512_mask_storeu_epi16</code></a></p></li>
+<li><p> mask_storea1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_store_epi32"><code>_mm512_mask_store_epi32</code></a></p></li>
+<li><p> mask_storea1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_store_epi32"><code>_mm512_mask_store_epi32</code></a></p></li>
+<li><p> mask_storea1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_store_epi64"><code>_mm512_mask_store_epi64</code></a></p></li>
+<li><p> mask_storea1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_store_epi64"><code>_mm512_mask_store_epi64</code></a></p></li>
+<li><p> mask_storea1 on <b>f16</b>: T</p></li>
+<li><p> mask_storea1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_store_ps"><code>_mm512_mask_store_ps</code></a></p></li>
+<li><p> mask_storea1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_store_pd"><code>_mm512_mask_store_pd</code></a></p></li>
+</ul>
+<h2>mask_storeu1</h2>
+<ul>
+<li><p> mask_storeu1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi8"><code>_mm512_mask_storeu_epi8</code></a></p></li>
+<li><p> mask_storeu1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi8"><code>_mm512_mask_storeu_epi8</code></a></p></li>
+<li><p> mask_storeu1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi16"><code>_mm512_mask_storeu_epi16</code></a></p></li>
+<li><p> mask_storeu1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi16"><code>_mm512_mask_storeu_epi16</code></a></p></li>
+<li><p> mask_storeu1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi32"><code>_mm512_mask_storeu_epi32</code></a></p></li>
+<li><p> mask_storeu1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi32"><code>_mm512_mask_storeu_epi32</code></a></p></li>
+<li><p> mask_storeu1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi64"><code>_mm512_mask_storeu_epi64</code></a></p></li>
+<li><p> mask_storeu1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_epi64"><code>_mm512_mask_storeu_epi64</code></a></p></li>
+<li><p> mask_storeu1 on <b>f16</b>: T</p></li>
+<li><p> mask_storeu1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_ps"><code>_mm512_mask_storeu_ps</code></a></p></li>
+<li><p> mask_storeu1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_storeu_pd"><code>_mm512_mask_storeu_pd</code></a></p></li>
+</ul>
+<h2>masko_loada1</h2>
+<ul>
+<li><p> masko_loada1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi8"><code>_mm512_mask_loadu_epi8</code></a></p></li>
+<li><p> masko_loada1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi8"><code>_mm512_mask_loadu_epi8</code></a></p></li>
+<li><p> masko_loada1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi16"><code>_mm512_mask_loadu_epi16</code></a></p></li>
+<li><p> masko_loada1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi16"><code>_mm512_mask_loadu_epi16</code></a></p></li>
+<li><p> masko_loada1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_load_epi32"><code>_mm512_mask_load_epi32</code></a></p></li>
+<li><p> masko_loada1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_load_epi32"><code>_mm512_mask_load_epi32</code></a></p></li>
+<li><p> masko_loada1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_load_epi64"><code>_mm512_mask_load_epi64</code></a></p></li>
+<li><p> masko_loada1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_load_epi64"><code>_mm512_mask_load_epi64</code></a></p></li>
+<li><p> masko_loada1 on <b>f16</b>: T</p></li>
+<li><p> masko_loada1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_load_ps"><code>_mm512_mask_load_ps</code></a></p></li>
+<li><p> masko_loada1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_load_pd"><code>_mm512_mask_load_pd</code></a></p></li>
+</ul>
+<h2>masko_loadu1</h2>
+<ul>
+<li><p> masko_loadu1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi8"><code>_mm512_mask_loadu_epi8</code></a></p></li>
+<li><p> masko_loadu1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi8"><code>_mm512_mask_loadu_epi8</code></a></p></li>
+<li><p> masko_loadu1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi16"><code>_mm512_mask_loadu_epi16</code></a></p></li>
+<li><p> masko_loadu1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi16"><code>_mm512_mask_loadu_epi16</code></a></p></li>
+<li><p> masko_loadu1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi32"><code>_mm512_mask_loadu_epi32</code></a></p></li>
+<li><p> masko_loadu1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi32"><code>_mm512_mask_loadu_epi32</code></a></p></li>
+<li><p> masko_loadu1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi64"><code>_mm512_mask_loadu_epi64</code></a></p></li>
+<li><p> masko_loadu1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_epi64"><code>_mm512_mask_loadu_epi64</code></a></p></li>
+<li><p> masko_loadu1 on <b>f16</b>: T</p></li>
+<li><p> masko_loadu1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_ps"><code>_mm512_mask_loadu_ps</code></a></p></li>
+<li><p> masko_loadu1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mask_loadu_pd"><code>_mm512_mask_loadu_pd</code></a></p></li>
+</ul>
+<h2>maskz_loada1</h2>
+<ul>
+<li><p> maskz_loada1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi8"><code>_mm512_maskz_loadu_epi8</code></a></p></li>
+<li><p> maskz_loada1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi8"><code>_mm512_maskz_loadu_epi8</code></a></p></li>
+<li><p> maskz_loada1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi16"><code>_mm512_maskz_loadu_epi16</code></a></p></li>
+<li><p> maskz_loada1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi16"><code>_mm512_maskz_loadu_epi16</code></a></p></li>
+<li><p> maskz_loada1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_load_epi32"><code>_mm512_maskz_load_epi32</code></a></p></li>
+<li><p> maskz_loada1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_load_epi32"><code>_mm512_maskz_load_epi32</code></a></p></li>
+<li><p> maskz_loada1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_load_epi64"><code>_mm512_maskz_load_epi64</code></a></p></li>
+<li><p> maskz_loada1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_load_epi64"><code>_mm512_maskz_load_epi64</code></a></p></li>
+<li><p> maskz_loada1 on <b>f16</b>: T</p></li>
+<li><p> maskz_loada1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_load_ps"><code>_mm512_maskz_load_ps</code></a></p></li>
+<li><p> maskz_loada1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_load_pd"><code>_mm512_maskz_load_pd</code></a></p></li>
+</ul>
+<h2>maskz_loadu1</h2>
+<ul>
+<li><p> maskz_loadu1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi8"><code>_mm512_maskz_loadu_epi8</code></a></p></li>
+<li><p> maskz_loadu1 on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi8"><code>_mm512_maskz_loadu_epi8</code></a></p></li>
+<li><p> maskz_loadu1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi16"><code>_mm512_maskz_loadu_epi16</code></a></p></li>
+<li><p> maskz_loadu1 on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi16"><code>_mm512_maskz_loadu_epi16</code></a></p></li>
+<li><p> maskz_loadu1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi32"><code>_mm512_maskz_loadu_epi32</code></a></p></li>
+<li><p> maskz_loadu1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi32"><code>_mm512_maskz_loadu_epi32</code></a></p></li>
+<li><p> maskz_loadu1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi64"><code>_mm512_maskz_loadu_epi64</code></a></p></li>
+<li><p> maskz_loadu1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_epi64"><code>_mm512_maskz_loadu_epi64</code></a></p></li>
+<li><p> maskz_loadu1 on <b>f16</b>: T</p></li>
+<li><p> maskz_loadu1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_ps"><code>_mm512_maskz_loadu_ps</code></a></p></li>
+<li><p> maskz_loadu1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_maskz_loadu_pd"><code>_mm512_maskz_loadu_pd</code></a></p></li>
+</ul>
+<h2>max</h2>
+<ul>
+<li><p> max on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epi8"><code>_mm512_max_epi8</code></a></p></li>
+<li><p> max on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epu8"><code>_mm512_max_epu8</code></a></p></li>
+<li><p> max on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epi16"><code>_mm512_max_epi16</code></a></p></li>
+<li><p> max on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epu16"><code>_mm512_max_epu16</code></a></p></li>
+<li><p> max on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epi32"><code>_mm512_max_epi32</code></a></p></li>
+<li><p> max on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epu32"><code>_mm512_max_epu32</code></a></p></li>
+<li><p> max on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epi64"><code>_mm512_max_epi64</code></a></p></li>
+<li><p> max on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_epu64"><code>_mm512_max_epu64</code></a></p></li>
+<li><p> max on <b>f16</b>: T</p></li>
+<li><p> max on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_ps"><code>_mm512_max_ps</code></a></p></li>
+<li><p> max on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_max_pd"><code>_mm512_max_pd</code></a></p></li>
+</ul>
+<h2>min</h2>
+<ul>
+<li><p> min on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epi8"><code>_mm512_min_epi8</code></a></p></li>
+<li><p> min on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epu8"><code>_mm512_min_epu8</code></a></p></li>
+<li><p> min on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epi16"><code>_mm512_min_epi16</code></a></p></li>
+<li><p> min on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epu16"><code>_mm512_min_epu16</code></a></p></li>
+<li><p> min on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epi32"><code>_mm512_min_epi32</code></a></p></li>
+<li><p> min on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epu32"><code>_mm512_min_epu32</code></a></p></li>
+<li><p> min on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epi64"><code>_mm512_min_epi64</code></a></p></li>
+<li><p> min on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_epu64"><code>_mm512_min_epu64</code></a></p></li>
+<li><p> min on <b>f16</b>: T</p></li>
+<li><p> min on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_ps"><code>_mm512_min_ps</code></a></p></li>
+<li><p> min on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_min_pd"><code>_mm512_min_pd</code></a></p></li>
+</ul>
+<h2>mul</h2>
+<ul>
+<li><p> mul on <b>i8</b>: T</p></li>
+<li><p> mul on <b>u8</b>: T</p></li>
+<li><p> mul on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mullo_epi16"><code>_mm512_mullo_epi16</code></a></p></li>
+<li><p> mul on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mullo_epi16"><code>_mm512_mullo_epi16</code></a></p></li>
+<li><p> mul on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mullo_epi32"><code>_mm512_mullo_epi32</code></a></p></li>
+<li><p> mul on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mullo_epi32"><code>_mm512_mullo_epi32</code></a></p></li>
+<li><p> mul on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mullo_epi64"><code>_mm512_mullo_epi64</code></a></p></li>
+<li><p> mul on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mullo_epi64"><code>_mm512_mullo_epi64</code></a></p></li>
+<li><p> mul on <b>f16</b>: T</p></li>
+<li><p> mul on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mul_ps"><code>_mm512_mul_ps</code></a></p></li>
+<li><p> mul on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_mul_pd"><code>_mm512_mul_pd</code></a></p></li>
+</ul>
+<h2>nbtrue</h2>
+<ul>
+<li><p> nbtrue on <b>i8</b>: T</p></li>
+<li><p> nbtrue on <b>u8</b>: T</p></li>
+<li><p> nbtrue on <b>i16</b>: T</p></li>
+<li><p> nbtrue on <b>u16</b>: T</p></li>
+<li><p> nbtrue on <b>i32</b>: T</p></li>
+<li><p> nbtrue on <b>u32</b>: T</p></li>
+<li><p> nbtrue on <b>i64</b>: T</p></li>
+<li><p> nbtrue on <b>u64</b>: T</p></li>
+<li><p> nbtrue on <b>f16</b>: T</p></li>
+<li><p> nbtrue on <b>f32</b>: T</p></li>
+<li><p> nbtrue on <b>f64</b>: T</p></li>
+</ul>
+<h2>ne</h2>
+<ul>
+<li><p> ne on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> ne on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi8_mask"><code>_mm512_cmp_epi8_mask</code></a></p></li>
+<li><p> ne on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> ne on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi16_mask"><code>_mm512_cmp_epi16_mask</code></a></p></li>
+<li><p> ne on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> ne on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi32_mask"><code>_mm512_cmp_epi32_mask</code></a></p></li>
+<li><p> ne on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> ne on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_epi64_mask"><code>_mm512_cmp_epi64_mask</code></a></p></li>
+<li><p> ne on <b>f16</b>: T</p></li>
+<li><p> ne on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_ps_mask"><code>_mm512_cmp_ps_mask</code></a></p></li>
+<li><p> ne on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cmp_pd_mask"><code>_mm512_cmp_pd_mask</code></a></p></li>
+</ul>
+<h2>neg</h2>
+<ul>
+<li><p> neg on <b>i8</b>: T</p></li>
+<li><p> neg on <b>u8</b>: T</p></li>
+<li><p> neg on <b>i16</b>: T</p></li>
+<li><p> neg on <b>u16</b>: T</p></li>
+<li><p> neg on <b>i32</b>: T</p></li>
+<li><p> neg on <b>u32</b>: T</p></li>
+<li><p> neg on <b>i64</b>: T</p></li>
+<li><p> neg on <b>u64</b>: T</p></li>
+<li><p> neg on <b>f16</b>: T</p></li>
+<li><p> neg on <b>f32</b>: T</p></li>
+<li><p> neg on <b>f64</b>: T</p></li>
+</ul>
+<h2>notb</h2>
+<ul>
+<li><p> notb on <b>i8</b>: T</p></li>
+<li><p> notb on <b>u8</b>: T</p></li>
+<li><p> notb on <b>i16</b>: T</p></li>
+<li><p> notb on <b>u16</b>: T</p></li>
+<li><p> notb on <b>i32</b>: T</p></li>
+<li><p> notb on <b>u32</b>: T</p></li>
+<li><p> notb on <b>i64</b>: T</p></li>
+<li><p> notb on <b>u64</b>: T</p></li>
+<li><p> notb on <b>f16</b>: T</p></li>
+<li><p> notb on <b>f32</b>: T</p></li>
+<li><p> notb on <b>f64</b>: T</p></li>
+</ul>
+<h2>notl</h2>
+<ul>
+<li><p> notl on <b>i8</b>: T</p></li>
+<li><p> notl on <b>u8</b>: T</p></li>
+<li><p> notl on <b>i16</b>: T</p></li>
+<li><p> notl on <b>u16</b>: T</p></li>
+<li><p> notl on <b>i32</b>: T</p></li>
+<li><p> notl on <b>u32</b>: T</p></li>
+<li><p> notl on <b>i64</b>: T</p></li>
+<li><p> notl on <b>u64</b>: T</p></li>
+<li><p> notl on <b>f16</b>: T</p></li>
+<li><p> notl on <b>f32</b>: T</p></li>
+<li><p> notl on <b>f64</b>: T</p></li>
+</ul>
+<h2>orb</h2>
+<ul>
+<li><p> orb on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_si512"><code>_mm512_or_si512</code></a></p></li>
+<li><p> orb on <b>f16</b>: T</p></li>
+<li><p> orb on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_ps"><code>_mm512_or_ps</code></a></p></li>
+<li><p> orb on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_or_pd"><code>_mm512_or_pd</code></a></p></li>
+</ul>
+<h2>orl</h2>
+<ul>
+<li><p> orl on <b>i8</b>: T</p></li>
+<li><p> orl on <b>u8</b>: T</p></li>
+<li><p> orl on <b>i16</b>: T</p></li>
+<li><p> orl on <b>u16</b>: T</p></li>
+<li><p> orl on <b>i32</b>: T</p></li>
+<li><p> orl on <b>u32</b>: T</p></li>
+<li><p> orl on <b>i64</b>: T</p></li>
+<li><p> orl on <b>u64</b>: T</p></li>
+<li><p> orl on <b>f16</b>: T</p></li>
+<li><p> orl on <b>f32</b>: T</p></li>
+<li><p> orl on <b>f64</b>: T</p></li>
+</ul>
+<h2>rec</h2>
+<ul>
+<li><p> rec on <b>i8</b>: NA</p></li>
+<li><p> rec on <b>u8</b>: NA</p></li>
+<li><p> rec on <b>i16</b>: NA</p></li>
+<li><p> rec on <b>u16</b>: NA</p></li>
+<li><p> rec on <b>i32</b>: NA</p></li>
+<li><p> rec on <b>u32</b>: NA</p></li>
+<li><p> rec on <b>i64</b>: NA</p></li>
+<li><p> rec on <b>u64</b>: NA</p></li>
+<li><p> rec on <b>f16</b>: T</p></li>
+<li><p> rec on <b>f32</b>: T</p></li>
+<li><p> rec on <b>f64</b>: T</p></li>
+</ul>
+<h2>rec11</h2>
+<ul>
+<li><p> rec11 on <b>i8</b>: NA</p></li>
+<li><p> rec11 on <b>u8</b>: NA</p></li>
+<li><p> rec11 on <b>i16</b>: NA</p></li>
+<li><p> rec11 on <b>u16</b>: NA</p></li>
+<li><p> rec11 on <b>i32</b>: NA</p></li>
+<li><p> rec11 on <b>u32</b>: NA</p></li>
+<li><p> rec11 on <b>i64</b>: NA</p></li>
+<li><p> rec11 on <b>u64</b>: NA</p></li>
+<li><p> rec11 on <b>f16</b>: T</p></li>
+<li><p> rec11 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rcp14_ps"><code>_mm512_rcp14_ps</code></a></p></li>
+<li><p> rec11 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rcp14_pd"><code>_mm512_rcp14_pd</code></a></p></li>
+</ul>
+<h2>rec8</h2>
+<ul>
+<li><p> rec8 on <b>i8</b>: NA</p></li>
+<li><p> rec8 on <b>u8</b>: NA</p></li>
+<li><p> rec8 on <b>i16</b>: NA</p></li>
+<li><p> rec8 on <b>u16</b>: NA</p></li>
+<li><p> rec8 on <b>i32</b>: NA</p></li>
+<li><p> rec8 on <b>u32</b>: NA</p></li>
+<li><p> rec8 on <b>i64</b>: NA</p></li>
+<li><p> rec8 on <b>u64</b>: NA</p></li>
+<li><p> rec8 on <b>f16</b>: T</p></li>
+<li><p> rec8 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rcp14_ps"><code>_mm512_rcp14_ps</code></a></p></li>
+<li><p> rec8 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rcp14_pd"><code>_mm512_rcp14_pd</code></a></p></li>
+</ul>
+<h2>round_to_even</h2>
+<ul>
+<li><p> round_to_even on <b>i8</b>: NOOP</p></li>
+<li><p> round_to_even on <b>u8</b>: NOOP</p></li>
+<li><p> round_to_even on <b>i16</b>: NOOP</p></li>
+<li><p> round_to_even on <b>u16</b>: NOOP</p></li>
+<li><p> round_to_even on <b>i32</b>: NOOP</p></li>
+<li><p> round_to_even on <b>u32</b>: NOOP</p></li>
+<li><p> round_to_even on <b>i64</b>: NOOP</p></li>
+<li><p> round_to_even on <b>u64</b>: NOOP</p></li>
+<li><p> round_to_even on <b>f16</b>: T</p></li>
+<li><p> round_to_even on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_roundscale_ps"><code>_mm512_roundscale_ps</code></a></p></li>
+<li><p> round_to_even on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_roundscale_pd"><code>_mm512_roundscale_pd</code></a></p></li>
+</ul>
+<h2>rsqrt11</h2>
+<ul>
+<li><p> rsqrt11 on <b>i8</b>: NA</p></li>
+<li><p> rsqrt11 on <b>u8</b>: NA</p></li>
+<li><p> rsqrt11 on <b>i16</b>: NA</p></li>
+<li><p> rsqrt11 on <b>u16</b>: NA</p></li>
+<li><p> rsqrt11 on <b>i32</b>: NA</p></li>
+<li><p> rsqrt11 on <b>u32</b>: NA</p></li>
+<li><p> rsqrt11 on <b>i64</b>: NA</p></li>
+<li><p> rsqrt11 on <b>u64</b>: NA</p></li>
+<li><p> rsqrt11 on <b>f16</b>: T</p></li>
+<li><p> rsqrt11 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rsqrt14_ps"><code>_mm512_rsqrt14_ps</code></a></p></li>
+<li><p> rsqrt11 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rsqrt14_pd"><code>_mm512_rsqrt14_pd</code></a></p></li>
+</ul>
+<h2>rsqrt8</h2>
+<ul>
+<li><p> rsqrt8 on <b>i8</b>: NA</p></li>
+<li><p> rsqrt8 on <b>u8</b>: NA</p></li>
+<li><p> rsqrt8 on <b>i16</b>: NA</p></li>
+<li><p> rsqrt8 on <b>u16</b>: NA</p></li>
+<li><p> rsqrt8 on <b>i32</b>: NA</p></li>
+<li><p> rsqrt8 on <b>u32</b>: NA</p></li>
+<li><p> rsqrt8 on <b>i64</b>: NA</p></li>
+<li><p> rsqrt8 on <b>u64</b>: NA</p></li>
+<li><p> rsqrt8 on <b>f16</b>: T</p></li>
+<li><p> rsqrt8 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rsqrt14_ps"><code>_mm512_rsqrt14_ps</code></a></p></li>
+<li><p> rsqrt8 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_rsqrt14_pd"><code>_mm512_rsqrt14_pd</code></a></p></li>
+</ul>
+<h2>scatter</h2>
+<ul>
+<li><p> scatter on <b>i8</b>: NA</p></li>
+<li><p> scatter on <b>u8</b>: NA</p></li>
+<li><p> scatter on <b>i16</b>: T</p></li>
+<li><p> scatter on <b>u16</b>: T</p></li>
+<li><p> scatter on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i32scatter_epi32"><code>_mm512_i32scatter_epi32</code></a></p></li>
+<li><p> scatter on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i32scatter_epi32"><code>_mm512_i32scatter_epi32</code></a></p></li>
+<li><p> scatter on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i64scatter_epi64"><code>_mm512_i64scatter_epi64</code></a></p></li>
+<li><p> scatter on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i64scatter_epi64"><code>_mm512_i64scatter_epi64</code></a></p></li>
+<li><p> scatter on <b>f16</b>: T</p></li>
+<li><p> scatter on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i32scatter_ps"><code>_mm512_i32scatter_ps</code></a></p></li>
+<li><p> scatter on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_i64scatter_pd"><code>_mm512_i64scatter_pd</code></a></p></li>
+</ul>
+<h2>scatter_linear</h2>
+<ul>
+<li><p> scatter_linear on <b>i8</b>: T</p></li>
+<li><p> scatter_linear on <b>u8</b>: T</p></li>
+<li><p> scatter_linear on <b>i16</b>: T</p></li>
+<li><p> scatter_linear on <b>u16</b>: T</p></li>
+<li><p> scatter_linear on <b>i32</b>: T</p></li>
+<li><p> scatter_linear on <b>u32</b>: T</p></li>
+<li><p> scatter_linear on <b>i64</b>: T</p></li>
+<li><p> scatter_linear on <b>u64</b>: T</p></li>
+<li><p> scatter_linear on <b>f16</b>: T</p></li>
+<li><p> scatter_linear on <b>f32</b>: T</p></li>
+<li><p> scatter_linear on <b>f64</b>: T</p></li>
+</ul>
+<h2>set1</h2>
+<ul>
+<li><p> set1 on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_set1_epi8"><code>_mm512_set1_epi8</code></a></p></li>
+<li><p> set1 on <b>u8</b>: T</p></li>
+<li><p> set1 on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_set1_epi16"><code>_mm512_set1_epi16</code></a></p></li>
+<li><p> set1 on <b>u16</b>: T</p></li>
+<li><p> set1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_set1_epi32"><code>_mm512_set1_epi32</code></a></p></li>
+<li><p> set1 on <b>u32</b>: T</p></li>
+<li><p> set1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_set1_epi64"><code>_mm512_set1_epi64</code></a></p></li>
+<li><p> set1 on <b>u64</b>: T</p></li>
+<li><p> set1 on <b>f16</b>: T</p></li>
+<li><p> set1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_set1_ps"><code>_mm512_set1_ps</code></a></p></li>
+<li><p> set1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_set1_pd"><code>_mm512_set1_pd</code></a></p></li>
+</ul>
+<h2>set1l</h2>
+<ul>
+<li><p> set1l on <b>i8</b>: T</p></li>
+<li><p> set1l on <b>u8</b>: T</p></li>
+<li><p> set1l on <b>i16</b>: T</p></li>
+<li><p> set1l on <b>u16</b>: T</p></li>
+<li><p> set1l on <b>i32</b>: T</p></li>
+<li><p> set1l on <b>u32</b>: T</p></li>
+<li><p> set1l on <b>i64</b>: T</p></li>
+<li><p> set1l on <b>u64</b>: T</p></li>
+<li><p> set1l on <b>f16</b>: T</p></li>
+<li><p> set1l on <b>f32</b>: T</p></li>
+<li><p> set1l on <b>f64</b>: T</p></li>
+</ul>
+<h2>shl</h2>
+<ul>
+<li><p> shl on <b>i8</b>: T</p></li>
+<li><p> shl on <b>u8</b>: T</p></li>
+<li><p> shl on <b>i16</b>: T</p></li>
+<li><p> shl on <b>u16</b>: T</p></li>
+<li><p> shl on <b>i32</b>: T</p></li>
+<li><p> shl on <b>u32</b>: T</p></li>
+<li><p> shl on <b>i64</b>: T</p></li>
+<li><p> shl on <b>u64</b>: T</p></li>
+<li><p> shl on <b>f16</b>: NA</p></li>
+<li><p> shl on <b>f32</b>: NA</p></li>
+<li><p> shl on <b>f64</b>: NA</p></li>
+</ul>
+<h2>shr</h2>
+<ul>
+<li><p> shr on <b>i8</b>: T</p></li>
+<li><p> shr on <b>u8</b>: T</p></li>
+<li><p> shr on <b>i16</b>: T</p></li>
+<li><p> shr on <b>u16</b>: T</p></li>
+<li><p> shr on <b>i32</b>: T</p></li>
+<li><p> shr on <b>u32</b>: T</p></li>
+<li><p> shr on <b>i64</b>: T</p></li>
+<li><p> shr on <b>u64</b>: T</p></li>
+<li><p> shr on <b>f16</b>: NA</p></li>
+<li><p> shr on <b>f32</b>: NA</p></li>
+<li><p> shr on <b>f64</b>: NA</p></li>
+</ul>
+<h2>shra</h2>
+<ul>
+<li><p> shra on <b>i8</b>: T</p></li>
+<li><p> shra on <b>u8</b>: T</p></li>
+<li><p> shra on <b>i16</b>: T</p></li>
+<li><p> shra on <b>u16</b>: T</p></li>
+<li><p> shra on <b>i32</b>: T</p></li>
+<li><p> shra on <b>u32</b>: T</p></li>
+<li><p> shra on <b>i64</b>: T</p></li>
+<li><p> shra on <b>u64</b>: T</p></li>
+<li><p> shra on <b>f16</b>: NA</p></li>
+<li><p> shra on <b>f32</b>: NA</p></li>
+<li><p> shra on <b>f64</b>: NA</p></li>
+</ul>
+<h2>sqrt</h2>
+<ul>
+<li><p> sqrt on <b>i8</b>: NA</p></li>
+<li><p> sqrt on <b>u8</b>: NA</p></li>
+<li><p> sqrt on <b>i16</b>: NA</p></li>
+<li><p> sqrt on <b>u16</b>: NA</p></li>
+<li><p> sqrt on <b>i32</b>: NA</p></li>
+<li><p> sqrt on <b>u32</b>: NA</p></li>
+<li><p> sqrt on <b>i64</b>: NA</p></li>
+<li><p> sqrt on <b>u64</b>: NA</p></li>
+<li><p> sqrt on <b>f16</b>: T</p></li>
+<li><p> sqrt on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sqrt_ps"><code>_mm512_sqrt_ps</code></a></p></li>
+<li><p> sqrt on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sqrt_pd"><code>_mm512_sqrt_pd</code></a></p></li>
+</ul>
+<h2>store2a</h2>
+<ul>
+<li><p> store2a on <b>i8</b>: T</p></li>
+<li><p> store2a on <b>u8</b>: T</p></li>
+<li><p> store2a on <b>i16</b>: T</p></li>
+<li><p> store2a on <b>u16</b>: T</p></li>
+<li><p> store2a on <b>i32</b>: T</p></li>
+<li><p> store2a on <b>u32</b>: T</p></li>
+<li><p> store2a on <b>i64</b>: T</p></li>
+<li><p> store2a on <b>u64</b>: T</p></li>
+<li><p> store2a on <b>f16</b>: T</p></li>
+<li><p> store2a on <b>f32</b>: T</p></li>
+<li><p> store2a on <b>f64</b>: T</p></li>
+</ul>
+<h2>store2u</h2>
+<ul>
+<li><p> store2u on <b>i8</b>: T</p></li>
+<li><p> store2u on <b>u8</b>: T</p></li>
+<li><p> store2u on <b>i16</b>: T</p></li>
+<li><p> store2u on <b>u16</b>: T</p></li>
+<li><p> store2u on <b>i32</b>: T</p></li>
+<li><p> store2u on <b>u32</b>: T</p></li>
+<li><p> store2u on <b>i64</b>: T</p></li>
+<li><p> store2u on <b>u64</b>: T</p></li>
+<li><p> store2u on <b>f16</b>: T</p></li>
+<li><p> store2u on <b>f32</b>: T</p></li>
+<li><p> store2u on <b>f64</b>: T</p></li>
+</ul>
+<h2>store3a</h2>
+<ul>
+<li><p> store3a on <b>i8</b>: T</p></li>
+<li><p> store3a on <b>u8</b>: T</p></li>
+<li><p> store3a on <b>i16</b>: T</p></li>
+<li><p> store3a on <b>u16</b>: T</p></li>
+<li><p> store3a on <b>i32</b>: T</p></li>
+<li><p> store3a on <b>u32</b>: T</p></li>
+<li><p> store3a on <b>i64</b>: T</p></li>
+<li><p> store3a on <b>u64</b>: T</p></li>
+<li><p> store3a on <b>f16</b>: T</p></li>
+<li><p> store3a on <b>f32</b>: T</p></li>
+<li><p> store3a on <b>f64</b>: T</p></li>
+</ul>
+<h2>store3u</h2>
+<ul>
+<li><p> store3u on <b>i8</b>: T</p></li>
+<li><p> store3u on <b>u8</b>: T</p></li>
+<li><p> store3u on <b>i16</b>: T</p></li>
+<li><p> store3u on <b>u16</b>: T</p></li>
+<li><p> store3u on <b>i32</b>: T</p></li>
+<li><p> store3u on <b>u32</b>: T</p></li>
+<li><p> store3u on <b>i64</b>: T</p></li>
+<li><p> store3u on <b>u64</b>: T</p></li>
+<li><p> store3u on <b>f16</b>: T</p></li>
+<li><p> store3u on <b>f32</b>: T</p></li>
+<li><p> store3u on <b>f64</b>: T</p></li>
+</ul>
+<h2>store4a</h2>
+<ul>
+<li><p> store4a on <b>i8</b>: T</p></li>
+<li><p> store4a on <b>u8</b>: T</p></li>
+<li><p> store4a on <b>i16</b>: T</p></li>
+<li><p> store4a on <b>u16</b>: T</p></li>
+<li><p> store4a on <b>i32</b>: T</p></li>
+<li><p> store4a on <b>u32</b>: T</p></li>
+<li><p> store4a on <b>i64</b>: T</p></li>
+<li><p> store4a on <b>u64</b>: T</p></li>
+<li><p> store4a on <b>f16</b>: T</p></li>
+<li><p> store4a on <b>f32</b>: T</p></li>
+<li><p> store4a on <b>f64</b>: T</p></li>
+</ul>
+<h2>store4u</h2>
+<ul>
+<li><p> store4u on <b>i8</b>: T</p></li>
+<li><p> store4u on <b>u8</b>: T</p></li>
+<li><p> store4u on <b>i16</b>: T</p></li>
+<li><p> store4u on <b>u16</b>: T</p></li>
+<li><p> store4u on <b>i32</b>: T</p></li>
+<li><p> store4u on <b>u32</b>: T</p></li>
+<li><p> store4u on <b>i64</b>: T</p></li>
+<li><p> store4u on <b>u64</b>: T</p></li>
+<li><p> store4u on <b>f16</b>: T</p></li>
+<li><p> store4u on <b>f32</b>: T</p></li>
+<li><p> store4u on <b>f64</b>: T</p></li>
+</ul>
+<h2>storea</h2>
+<ul>
+<li><p> storea on <b>i8</b>: T</p></li>
+<li><p> storea on <b>u8</b>: T</p></li>
+<li><p> storea on <b>i16</b>: T</p></li>
+<li><p> storea on <b>u16</b>: T</p></li>
+<li><p> storea on <b>i32</b>: T</p></li>
+<li><p> storea on <b>u32</b>: T</p></li>
+<li><p> storea on <b>i64</b>: T</p></li>
+<li><p> storea on <b>u64</b>: T</p></li>
+<li><p> storea on <b>f16</b>: T</p></li>
+<li><p> storea on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_store_ps"><code>_mm512_store_ps</code></a></p></li>
+<li><p> storea on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_store_pd"><code>_mm512_store_pd</code></a></p></li>
+</ul>
+<h2>storela</h2>
+<ul>
+<li><p> storela on <b>i8</b>: T</p></li>
+<li><p> storela on <b>u8</b>: T</p></li>
+<li><p> storela on <b>i16</b>: T</p></li>
+<li><p> storela on <b>u16</b>: T</p></li>
+<li><p> storela on <b>i32</b>: T</p></li>
+<li><p> storela on <b>u32</b>: T</p></li>
+<li><p> storela on <b>i64</b>: T</p></li>
+<li><p> storela on <b>u64</b>: T</p></li>
+<li><p> storela on <b>f16</b>: T</p></li>
+<li><p> storela on <b>f32</b>: T</p></li>
+<li><p> storela on <b>f64</b>: T</p></li>
+</ul>
+<h2>storelu</h2>
+<ul>
+<li><p> storelu on <b>i8</b>: T</p></li>
+<li><p> storelu on <b>u8</b>: T</p></li>
+<li><p> storelu on <b>i16</b>: T</p></li>
+<li><p> storelu on <b>u16</b>: T</p></li>
+<li><p> storelu on <b>i32</b>: T</p></li>
+<li><p> storelu on <b>u32</b>: T</p></li>
+<li><p> storelu on <b>i64</b>: T</p></li>
+<li><p> storelu on <b>u64</b>: T</p></li>
+<li><p> storelu on <b>f16</b>: T</p></li>
+<li><p> storelu on <b>f32</b>: T</p></li>
+<li><p> storelu on <b>f64</b>: T</p></li>
+</ul>
+<h2>storeu</h2>
+<ul>
+<li><p> storeu on <b>i8</b>: T</p></li>
+<li><p> storeu on <b>u8</b>: T</p></li>
+<li><p> storeu on <b>i16</b>: T</p></li>
+<li><p> storeu on <b>u16</b>: T</p></li>
+<li><p> storeu on <b>i32</b>: T</p></li>
+<li><p> storeu on <b>u32</b>: T</p></li>
+<li><p> storeu on <b>i64</b>: T</p></li>
+<li><p> storeu on <b>u64</b>: T</p></li>
+<li><p> storeu on <b>f16</b>: T</p></li>
+<li><p> storeu on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_storeu_ps"><code>_mm512_storeu_ps</code></a></p></li>
+<li><p> storeu on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_storeu_pd"><code>_mm512_storeu_pd</code></a></p></li>
+</ul>
+<h2>sub</h2>
+<ul>
+<li><p> sub on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi8"><code>_mm512_sub_epi8</code></a></p></li>
+<li><p> sub on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi8"><code>_mm512_sub_epi8</code></a></p></li>
+<li><p> sub on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi16"><code>_mm512_sub_epi16</code></a></p></li>
+<li><p> sub on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi16"><code>_mm512_sub_epi16</code></a></p></li>
+<li><p> sub on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi32"><code>_mm512_sub_epi32</code></a></p></li>
+<li><p> sub on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi32"><code>_mm512_sub_epi32</code></a></p></li>
+<li><p> sub on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi64"><code>_mm512_sub_epi64</code></a></p></li>
+<li><p> sub on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_epi64"><code>_mm512_sub_epi64</code></a></p></li>
+<li><p> sub on <b>f16</b>: T</p></li>
+<li><p> sub on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_ps"><code>_mm512_sub_ps</code></a></p></li>
+<li><p> sub on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_sub_pd"><code>_mm512_sub_pd</code></a></p></li>
+</ul>
+<h2>subs</h2>
+<ul>
+<li><p> subs on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_subs_epi8"><code>_mm512_subs_epi8</code></a></p></li>
+<li><p> subs on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_subs_epu8"><code>_mm512_subs_epu8</code></a></p></li>
+<li><p> subs on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_subs_epi16"><code>_mm512_subs_epi16</code></a></p></li>
+<li><p> subs on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_subs_epu16"><code>_mm512_subs_epu16</code></a></p></li>
+<li><p> subs on <b>i32</b>: T</p></li>
+<li><p> subs on <b>u32</b>: T</p></li>
+<li><p> subs on <b>i64</b>: T</p></li>
+<li><p> subs on <b>u64</b>: T</p></li>
+<li><p> subs on <b>f16</b>: T</p></li>
+<li><p> subs on <b>f32</b>: T</p></li>
+<li><p> subs on <b>f64</b>: T</p></li>
+</ul>
+<h2>to_logical</h2>
+<ul>
+<li><p> to_logical on <b>i8</b>: T</p></li>
+<li><p> to_logical on <b>u8</b>: T</p></li>
+<li><p> to_logical on <b>i16</b>: T</p></li>
+<li><p> to_logical on <b>u16</b>: T</p></li>
+<li><p> to_logical on <b>i32</b>: T</p></li>
+<li><p> to_logical on <b>u32</b>: T</p></li>
+<li><p> to_logical on <b>i64</b>: T</p></li>
+<li><p> to_logical on <b>u64</b>: T</p></li>
+<li><p> to_logical on <b>f16</b>: T</p></li>
+<li><p> to_logical on <b>f32</b>: T</p></li>
+<li><p> to_logical on <b>f64</b>: T</p></li>
+</ul>
+<h2>to_mask</h2>
+<ul>
+<li><p> to_mask on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi8"><code>_mm512_movm_epi8</code></a></p></li>
+<li><p> to_mask on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi8"><code>_mm512_movm_epi8</code></a></p></li>
+<li><p> to_mask on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi16"><code>_mm512_movm_epi16</code></a></p></li>
+<li><p> to_mask on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi16"><code>_mm512_movm_epi16</code></a></p></li>
+<li><p> to_mask on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi32"><code>_mm512_movm_epi32</code></a></p></li>
+<li><p> to_mask on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi32"><code>_mm512_movm_epi32</code></a></p></li>
+<li><p> to_mask on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi64"><code>_mm512_movm_epi64</code></a></p></li>
+<li><p> to_mask on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi64"><code>_mm512_movm_epi64</code></a></p></li>
+<li><p> to_mask on <b>f16</b>: T</p></li>
+<li><p> to_mask on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi32"><code>_mm512_movm_epi32</code></a></p></li>
+<li><p> to_mask on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_movm_epi64"><code>_mm512_movm_epi64</code></a></p></li>
+</ul>
+<h2>trunc</h2>
+<ul>
+<li><p> trunc on <b>i8</b>: NOOP</p></li>
+<li><p> trunc on <b>u8</b>: NOOP</p></li>
+<li><p> trunc on <b>i16</b>: NOOP</p></li>
+<li><p> trunc on <b>u16</b>: NOOP</p></li>
+<li><p> trunc on <b>i32</b>: NOOP</p></li>
+<li><p> trunc on <b>u32</b>: NOOP</p></li>
+<li><p> trunc on <b>i64</b>: NOOP</p></li>
+<li><p> trunc on <b>u64</b>: NOOP</p></li>
+<li><p> trunc on <b>f16</b>: T</p></li>
+<li><p> trunc on <b>f32</b>: T</p></li>
+<li><p> trunc on <b>f64</b>: T</p></li>
+</ul>
+<h2>unzip</h2>
+<ul>
+<li><p> unzip on <b>i8</b>: T</p></li>
+<li><p> unzip on <b>u8</b>: T</p></li>
+<li><p> unzip on <b>i16</b>: T</p></li>
+<li><p> unzip on <b>u16</b>: T</p></li>
+<li><p> unzip on <b>i32</b>: T</p></li>
+<li><p> unzip on <b>u32</b>: T</p></li>
+<li><p> unzip on <b>i64</b>: T</p></li>
+<li><p> unzip on <b>u64</b>: T</p></li>
+<li><p> unzip on <b>f16</b>: T</p></li>
+<li><p> unzip on <b>f32</b>: T</p></li>
+<li><p> unzip on <b>f64</b>: T</p></li>
+</ul>
+<h2>unziphi</h2>
+<ul>
+<li><p> unziphi on <b>i8</b>: T</p></li>
+<li><p> unziphi on <b>u8</b>: T</p></li>
+<li><p> unziphi on <b>i16</b>: T</p></li>
+<li><p> unziphi on <b>u16</b>: T</p></li>
+<li><p> unziphi on <b>i32</b>: T</p></li>
+<li><p> unziphi on <b>u32</b>: T</p></li>
+<li><p> unziphi on <b>i64</b>: T</p></li>
+<li><p> unziphi on <b>u64</b>: T</p></li>
+<li><p> unziphi on <b>f16</b>: T</p></li>
+<li><p> unziphi on <b>f32</b>: T</p></li>
+<li><p> unziphi on <b>f64</b>: T</p></li>
+</ul>
+<h2>unziplo</h2>
+<ul>
+<li><p> unziplo on <b>i8</b>: T</p></li>
+<li><p> unziplo on <b>u8</b>: T</p></li>
+<li><p> unziplo on <b>i16</b>: T</p></li>
+<li><p> unziplo on <b>u16</b>: T</p></li>
+<li><p> unziplo on <b>i32</b>: T</p></li>
+<li><p> unziplo on <b>u32</b>: T</p></li>
+<li><p> unziplo on <b>i64</b>: T</p></li>
+<li><p> unziplo on <b>u64</b>: T</p></li>
+<li><p> unziplo on <b>f16</b>: T</p></li>
+<li><p> unziplo on <b>f32</b>: T</p></li>
+<li><p> unziplo on <b>f64</b>: T</p></li>
+</ul>
+<h2>xorb</h2>
+<ul>
+<li><p> xorb on <b>i8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>u8</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_si512"><code>_mm512_xor_si512</code></a></p></li>
+<li><p> xorb on <b>f16</b>: T</p></li>
+<li><p> xorb on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_ps"><code>_mm512_xor_ps</code></a></p></li>
+<li><p> xorb on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_xor_pd"><code>_mm512_xor_pd</code></a></p></li>
+</ul>
+<h2>xorl</h2>
+<ul>
+<li><p> xorl on <b>i8</b>: T</p></li>
+<li><p> xorl on <b>u8</b>: T</p></li>
+<li><p> xorl on <b>i16</b>: T</p></li>
+<li><p> xorl on <b>u16</b>: T</p></li>
+<li><p> xorl on <b>i32</b>: T</p></li>
+<li><p> xorl on <b>u32</b>: T</p></li>
+<li><p> xorl on <b>i64</b>: T</p></li>
+<li><p> xorl on <b>u64</b>: T</p></li>
+<li><p> xorl on <b>f16</b>: T</p></li>
+<li><p> xorl on <b>f32</b>: T</p></li>
+<li><p> xorl on <b>f64</b>: T</p></li>
+</ul>
+<h2>zip</h2>
+<ul>
+<li><p> zip on <b>i8</b>: T</p></li>
+<li><p> zip on <b>u8</b>: T</p></li>
+<li><p> zip on <b>i16</b>: T</p></li>
+<li><p> zip on <b>u16</b>: T</p></li>
+<li><p> zip on <b>i32</b>: T</p></li>
+<li><p> zip on <b>u32</b>: T</p></li>
+<li><p> zip on <b>i64</b>: T</p></li>
+<li><p> zip on <b>u64</b>: T</p></li>
+<li><p> zip on <b>f16</b>: T</p></li>
+<li><p> zip on <b>f32</b>: T</p></li>
+<li><p> zip on <b>f64</b>: T</p></li>
+</ul>
+<h2>ziphi</h2>
+<ul>
+<li><p> ziphi on <b>i8</b>: T</p></li>
+<li><p> ziphi on <b>u8</b>: T</p></li>
+<li><p> ziphi on <b>i16</b>: T</p></li>
+<li><p> ziphi on <b>u16</b>: T</p></li>
+<li><p> ziphi on <b>i32</b>: T</p></li>
+<li><p> ziphi on <b>u32</b>: T</p></li>
+<li><p> ziphi on <b>i64</b>: T</p></li>
+<li><p> ziphi on <b>u64</b>: T</p></li>
+<li><p> ziphi on <b>f16</b>: T</p></li>
+<li><p> ziphi on <b>f32</b>: T</p></li>
+<li><p> ziphi on <b>f64</b>: T</p></li>
+</ul>
+<h2>ziplo</h2>
+<ul>
+<li><p> ziplo on <b>i8</b>: T</p></li>
+<li><p> ziplo on <b>u8</b>: T</p></li>
+<li><p> ziplo on <b>i16</b>: T</p></li>
+<li><p> ziplo on <b>u16</b>: T</p></li>
+<li><p> ziplo on <b>i32</b>: T</p></li>
+<li><p> ziplo on <b>u32</b>: T</p></li>
+<li><p> ziplo on <b>i64</b>: T</p></li>
+<li><p> ziplo on <b>u64</b>: T</p></li>
+<li><p> ziplo on <b>f16</b>: T</p></li>
+<li><p> ziplo on <b>f32</b>: T</p></li>
+<li><p> ziplo on <b>f64</b>: T</p></li>
+</ul>
+<h2>cvt</h2>
+<ul>
+<li><p> cvt from <b>i8</b> to <b>i8</b>: NOOP</p></li>
+<li><p> cvt from <b>i8</b> to <b>u8</b>: NOOP</p></li>
+<li><p> cvt from <b>u8</b> to <b>i8</b>: NOOP</p></li>
+<li><p> cvt from <b>u8</b> to <b>u8</b>: NOOP</p></li>
+<li><p> cvt from <b>i16</b> to <b>i16</b>: NOOP</p></li>
+<li><p> cvt from <b>i16</b> to <b>u16</b>: NOOP</p></li>
+<li><p> cvt from <b>i16</b> to <b>f16</b>: T</p></li>
+<li><p> cvt from <b>u16</b> to <b>i16</b>: NOOP</p></li>
+<li><p> cvt from <b>u16</b> to <b>u16</b>: NOOP</p></li>
+<li><p> cvt from <b>u16</b> to <b>f16</b>: T</p></li>
+<li><p> cvt from <b>i32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> cvt from <b>i32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> cvt from <b>i32</b> to <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtepi32_ps"><code>_mm512_cvtepi32_ps</code></a></p></li>
+<li><p> cvt from <b>u32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> cvt from <b>u32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> cvt from <b>u32</b> to <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtepu32_ps"><code>_mm512_cvtepu32_ps</code></a></p></li>
+<li><p> cvt from <b>i64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> cvt from <b>i64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> cvt from <b>i64</b> to <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtepi64_pd"><code>_mm512_cvtepi64_pd</code></a></p></li>
+<li><p> cvt from <b>u64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> cvt from <b>u64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> cvt from <b>u64</b> to <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtepi64_pd"><code>_mm512_cvtepi64_pd</code></a></p></li>
+<li><p> cvt from <b>f16</b> to <b>i16</b>: T</p></li>
+<li><p> cvt from <b>f16</b> to <b>u16</b>: T</p></li>
+<li><p> cvt from <b>f16</b> to <b>f16</b>: NOOP</p></li>
+<li><p> cvt from <b>f32</b> to <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtps_epi32"><code>_mm512_cvtps_epi32</code></a></p></li>
+<li><p> cvt from <b>f32</b> to <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtps_epu32"><code>_mm512_cvtps_epu32</code></a></p></li>
+<li><p> cvt from <b>f32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> cvt from <b>f64</b> to <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtpd_epi64"><code>_mm512_cvtpd_epi64</code></a></p></li>
+<li><p> cvt from <b>f64</b> to <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm512_cvtpd_epi64"><code>_mm512_cvtpd_epi64</code></a></p></li>
+<li><p> cvt from <b>f64</b> to <b>f64</b>: NOOP</p></li>
+</ul>
+<h2>reinterpret</h2>
+<ul>
+<li><p> reinterpret from <b>i8</b> to <b>i8</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i8</b> to <b>u8</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u8</b> to <b>i8</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u8</b> to <b>u8</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i16</b> to <b>i16</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i16</b> to <b>u16</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i16</b> to <b>f16</b>: T</p></li>
+<li><p> reinterpret from <b>u16</b> to <b>i16</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u16</b> to <b>u16</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u16</b> to <b>f16</b>: T</p></li>
+<li><p> reinterpret from <b>i32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>i64</b> to <b>f64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>u64</b> to <b>f64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f16</b> to <b>i16</b>: T</p></li>
+<li><p> reinterpret from <b>f16</b> to <b>u16</b>: T</p></li>
+<li><p> reinterpret from <b>f16</b> to <b>f16</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> reinterpret from <b>f64</b> to <b>f64</b>: NOOP</p></li>
+</ul>
+<h2>reinterpretl</h2>
+<ul>
+<li><p> reinterpretl from <b>i8</b> to <b>i8</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i8</b> to <b>u8</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u8</b> to <b>i8</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u8</b> to <b>u8</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i16</b> to <b>i16</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i16</b> to <b>u16</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i16</b> to <b>f16</b>: T</p></li>
+<li><p> reinterpretl from <b>u16</b> to <b>i16</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u16</b> to <b>u16</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u16</b> to <b>f16</b>: T</p></li>
+<li><p> reinterpretl from <b>i32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>i64</b> to <b>f64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>u64</b> to <b>f64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f16</b> to <b>i16</b>: T</p></li>
+<li><p> reinterpretl from <b>f16</b> to <b>u16</b>: T</p></li>
+<li><p> reinterpretl from <b>f16</b> to <b>f16</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f32</b> to <b>i32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f32</b> to <b>u32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f32</b> to <b>f32</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f64</b> to <b>i64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f64</b> to <b>u64</b>: NOOP</p></li>
+<li><p> reinterpretl from <b>f64</b> to <b>f64</b>: NOOP</p></li>
+</ul>
+<h2>upcvt</h2>
+<ul>
+<li><p> upcvt from <b>i8</b> to <b>i16</b>: T</p></li>
+<li><p> upcvt from <b>i8</b> to <b>u16</b>: T</p></li>
+<li><p> upcvt from <b>i8</b> to <b>f16</b>: T</p></li>
+<li><p> upcvt from <b>u8</b> to <b>i16</b>: T</p></li>
+<li><p> upcvt from <b>u8</b> to <b>u16</b>: T</p></li>
+<li><p> upcvt from <b>u8</b> to <b>f16</b>: T</p></li>
+<li><p> upcvt from <b>i16</b> to <b>i32</b>: T</p></li>
+<li><p> upcvt from <b>i16</b> to <b>u32</b>: T</p></li>
+<li><p> upcvt from <b>i16</b> to <b>f32</b>: T</p></li>
+<li><p> upcvt from <b>u16</b> to <b>i32</b>: T</p></li>
+<li><p> upcvt from <b>u16</b> to <b>u32</b>: T</p></li>
+<li><p> upcvt from <b>u16</b> to <b>f32</b>: T</p></li>
+<li><p> upcvt from <b>i32</b> to <b>i64</b>: T</p></li>
+<li><p> upcvt from <b>i32</b> to <b>u64</b>: T</p></li>
+<li><p> upcvt from <b>i32</b> to <b>f64</b>: T</p></li>
+<li><p> upcvt from <b>u32</b> to <b>i64</b>: T</p></li>
+<li><p> upcvt from <b>u32</b> to <b>u64</b>: T</p></li>
+<li><p> upcvt from <b>u32</b> to <b>f64</b>: T</p></li>
+<li><p> upcvt from <b>f16</b> to <b>i32</b>: T</p></li>
+<li><p> upcvt from <b>f16</b> to <b>u32</b>: T</p></li>
+<li><p> upcvt from <b>f16</b> to <b>f32</b>: T</p></li>
+<li><p> upcvt from <b>f32</b> to <b>i64</b>: T</p></li>
+<li><p> upcvt from <b>f32</b> to <b>u64</b>: T</p></li>
+<li><p> upcvt from <b>f32</b> to <b>f64</b>: T</p></li>
+</ul>
+<h2>downcvt</h2>
+<ul>
+<li><p> downcvt from <b>i16</b> to <b>i8</b>: T</p></li>
+<li><p> downcvt from <b>i16</b> to <b>u8</b>: T</p></li>
+<li><p> downcvt from <b>u16</b> to <b>i8</b>: T</p></li>
+<li><p> downcvt from <b>u16</b> to <b>u8</b>: T</p></li>
+<li><p> downcvt from <b>i32</b> to <b>i16</b>: T</p></li>
+<li><p> downcvt from <b>i32</b> to <b>u16</b>: T</p></li>
+<li><p> downcvt from <b>i32</b> to <b>f16</b>: T</p></li>
+<li><p> downcvt from <b>u32</b> to <b>i16</b>: T</p></li>
+<li><p> downcvt from <b>u32</b> to <b>u16</b>: T</p></li>
+<li><p> downcvt from <b>u32</b> to <b>f16</b>: T</p></li>
+<li><p> downcvt from <b>i64</b> to <b>i32</b>: T</p></li>
+<li><p> downcvt from <b>i64</b> to <b>u32</b>: T</p></li>
+<li><p> downcvt from <b>i64</b> to <b>f32</b>: T</p></li>
+<li><p> downcvt from <b>u64</b> to <b>i32</b>: T</p></li>
+<li><p> downcvt from <b>u64</b> to <b>u32</b>: T</p></li>
+<li><p> downcvt from <b>u64</b> to <b>f32</b>: T</p></li>
+<li><p> downcvt from <b>f16</b> to <b>i8</b>: T</p></li>
+<li><p> downcvt from <b>f16</b> to <b>u8</b>: T</p></li>
+<li><p> downcvt from <b>f32</b> to <b>i16</b>: T</p></li>
+<li><p> downcvt from <b>f32</b> to <b>u16</b>: T</p></li>
+<li><p> downcvt from <b>f32</b> to <b>f16</b>: T</p></li>
+<li><p> downcvt from <b>f64</b> to <b>i32</b>: T</p></li>
+<li><p> downcvt from <b>f64</b> to <b>u32</b>: T</p></li>
+<li><p> downcvt from <b>f64</b> to <b>f32</b>: T</p></li>
+</ul>
+  </body>
+</html>

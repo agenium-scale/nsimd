@@ -1,0 +1,122 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>Modules</h1>
+<p>NSIMD comes with several additional modules. A module provides a set of
+functionnalities that are usually not at the same level as SIMD intrinsics
+and/or that do not provide all C and C++ APIs. These functionnalities are
+given with the library because they make heavy use of NSIMD core which
+abstract SIMD intrinsics. Below is the exhaustive list of modules.</p>
+<ul>
+<li><p><a href="module_memory_management_overview.html">Memory management</a><br>
+This module provides C-style memory managmenent functions:
+malloc, calloc, free, copy to/from devices, etc... Its purpose is to facilitate
+the use of data buffers in a portable way for systems with CPUs only and
+for systems with CPUs and GPUs.</p></li>
+<li><p><a href="module_fixed_point_overview.html">Fixed-point arithmetic</a><br>
+This module provides vectorized fixed-point arithmetic through
+a C++98 API. The programmer can choose the integral type and the place of the
+coma for representing its fixed-point numbers. A number of operators are
+also provided.</p></li>
+<li><p><a href="module_random_overview.html">Random number generators</a><br>
+This module define functions that generate pseudorandom numbers usingalgorithms described in Parallel Random Numbers: As Easy as 1,2,3, byJohn K. Salmon, Mark A. Moraes, Ron O. Dror and David E.Shaw.</p></li>
+<li><p><a href="module_tet1d_overview.html">Tiny expression templates 1D</a><br>
+This module provide a thin layer of expression templates above
+NSIMD core. It also allows the programmer to target NVIDIA and AMD GPUs.
+Expression template are a C++ technique that allows the programmer to write
+code &quot;à la MATLAB&quot; where variables usually represents vectors and operators
+are itemwise.</p></li>
+<li><p><a href="module_spmd_overview.html">SPMD programming</a><br>
+SPMD programming allows the programmer to focus on kernels and
+the compiler to vectorize kernel code more effectively. Basically this
+module provides a &quot;à la CUDA&quot; programming C++ DSL to targets CPU SIMD as well
+as NVIDIA and AMD GPUs.</p></li>
+</ul>
+  </body>
+</html>

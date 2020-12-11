@@ -1,0 +1,179 @@
+<!--
+
+Copyright (c) 2020 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>IEEE float16 related functions</h1>
+<p>NSIMD natively supports IEEE float16&apos;s. This means that NSIMD provides types
+and functions to deal with them. When the targeted architecture supports them
+then NSIMD will use approriate intrinsics otherwise emulation with float32&apos;s
+will be used.</p>
+<ul>
+<li><p>When emulating, as float16&apos;s are not natively supported by neither C or C++
+emulation is done with float32&apos;s.</p></li>
+<li><p>Intel architectures do not support IEEE float16 arithmetic, they only
+provide, as an extension, supports for convertion to/from float32. When
+compiling NSIMD for Intel architectures use <code>-DFP16</code> to activate the
+conversion intrinsics if available on your machine. Note that AVX-512
+has thoses natively.</p></li>
+<li><p>Arm architectures can provide native float16 arithmetic. For 32-bits and
+64-bits chips (ARMv7 and Aarch64) chips float16 support is optional. When
+compiling wuth <code>-DFP16</code>, NSIMD will use float16-related intrinsics. Note
+that for SVE chips float16&apos;s are mandatory hence NSIMD will use appropriate
+intrinsics with or without <code>-DFP16</code>.</p></li>
+<li><p>CUDA provides supports for converting float16&apos;s to/from float32&apos;s. These
+are always used by NSIMD. But it is only since devices of compute
+capabilities 5.3 and above that float16&apos;s arithmetic is provided. NSIMD will
+always use CUDA float16&apos;s functions so there is no need to compile with
+<code>-DFP16</code>.</p></li>
+<li><p>ROCm HIP supports float16&apos;s except for the first versions. For now NSIMD
+assumes that it is always the case and use HIP float16 API. There is no
+need for <code>-DFP16</code>.</p></li>
+</ul>
+<h2>Float16&apos;s related functions and types</h2>
+<p>NSIMD provide the <code>f16</code> type which represents a IEEE float16. Note that
+depending on the targeted architecture and the presence of <code>-DFP16</code> the float16
+type can typedefs many different types. Therefore the two following functions
+are provided and can be used to convert a float16 from/to a float32. These
+functions preserve NaN&apos;s and infinities. When converting from a float32 to
+a float16 saturation to infinities is performed when the float32 cannot be
+represented as a float16.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Function signature</th>
+<th style="text-align: left;">Availability</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>f16 nsimd_f32_to_f16(f32 a);</code></td>
+<td style="text-align: left;">C and C++</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd_f16_to_f32(f16 a);</code></td>
+<td style="text-align: left;">C and C++</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f16 nsimd::f32_to_f16(f32 a);</code></td>
+<td style="text-align: left;">C++ only</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd::f16_to_f32(f16 a);</code></td>
+<td style="text-align: left;">C++ only</td>
+</tr>
+</tbody>
+</table>
+<p>For loading/storing float16&apos;s NSIMD provides other conversion function to/from
+16-bits unsigned integers. The integers will hold the IEEE binary
+representation of the float16&apos;s.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Function signature</th>
+<th style="text-align: left;">Availability</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>u16 nsimd_f32_to_u16(f32 a);</code></td>
+<td style="text-align: left;">C and C++</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd_u16_to_f32(u16 a);</code></td>
+<td style="text-align: left;">C and C++</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>u16 nsimd::f32_to_u16(f32 a);</code></td>
+<td style="text-align: left;">C++ only</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd::u16_to_f32(u16 a);</code></td>
+<td style="text-align: left;">C++ only</td>
+</tr>
+</tbody>
+</table>
+  </body>
+</html>

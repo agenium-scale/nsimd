@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@ SOFTWARE.
 
 -->
 
+<!-- This file has been auto-generated -->
+
 <!DOCTYPE html>
 
 <html>
@@ -39,20 +41,25 @@ SOFTWARE.
         line-height:1.4;
         /*font-size:18px;*/
         color:#444;
-        padding:0 10px
+        padding: 0 10px;
       }
       h1,h2,h3 {
-        line-height:1.2
+        line-height: 1.2;
       }
-      table,th, td {
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
       }
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js"></script>
+    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
+    </script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -61,17 +68,25 @@ SOFTWARE.
   </head>
 <body>
 
-<center>
-  <img src="img/logo.svg"><br>
-  <br>
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
   <a href="index.html">Index</a> |
-  <a href="quick_start.html">Quick Start</a> |
-  <a href="tutorials.html">Tutorials</a> |
+  <a href="tutorial.html">Tutorial</a> |
   <a href="faq.html">FAQ</a> |
   <a href="contribute.html">Contribute</a> |
   <a href="overview.html">API overview</a> |
-  <a href="api.html">API reference</a>
-</center>
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
 <p><code>nsimd</code> is tested with GCC, Clang and MSVC. As a C89 and a C++98 API are
 provided, other compilers should work fine. Old compiler versions should work as
 long as they support the targeted SIMD extension. For instance, <code>nsimd</code> can
@@ -81,10 +96,10 @@ following compilers for the following hardware:</p>
 <table>
 <thead>
 <tr>
-<td style="text-align: left;"><b>Compiler</b></td>
-<td style="text-align: left;"><b>Version</b></td>
-<td style="text-align: left;"><b>Architecture</b></td>
-<td style="text-align: left;"><b>Extensions</b></td>
+<th style="text-align: left;"><b>Compiler</b></th>
+<th style="text-align: left;"><b>Version</b></th>
+<th style="text-align: left;"><b>Architecture</b></th>
+<th style="text-align: left;"><b>Extensions</b></th>
 </tr>
 </thead><tbody>
 <tr>
