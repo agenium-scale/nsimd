@@ -1197,9 +1197,9 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 #if defined(NSIMD_X86)
   #define NSIMD_MAX_ALIGNMENT 64
 #elif defined(NSIMD_ARM)
-#define NSIMD_MAX_ALIGNMENT 256
+  #define NSIMD_MAX_ALIGNMENT 256
 #elif defined(NSIMD_POWERPC)
-#define NSIMD_MAX_ALIGNMENT 64
+  #define NSIMD_MAX_ALIGNMENT 64
 #else
   #define NSIMD_MAX_ALIGNMENT 16
 #endif
