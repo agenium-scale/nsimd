@@ -72,10 +72,9 @@ float mk_fp32_bin(u32 a) {
 /* ------------------------------------------------------------------------- */
 
 int test_f16_to_f32(u16 val, u32 expected) {
-  f32 fexpected = *(f32 *)&expected;
-
-  f32 res = nsimd_f16_to_f32(*(f16 *)&val);
-  u32 ures = *(u32 *)&res;
+  f32 fexpected = nsimd_scalar_reinterpret_f32_u32(expected);
+  f32 res = nsimd_u16_to_f32(val);
+  u32 ures = nsimd_scalar_reinterpret_u32_f32(res);
   if (ures != expected) {
     fprintf(stdout,
             "Error, nsimd_f16_to_f32: expected %e(0x%x) but got %e(0x%x) \n",
@@ -90,8 +89,8 @@ int test_f16_to_f32(u16 val, u32 expected) {
 /* ------------------------------------------------------------------------- */
 
 int test_f32_to_f16(u32 val, u16 expected) {
-  f16 fres = nsimd_f32_to_f16(*(f32 *)&val);
-  u16 ures = *(u16 *)&fres;
+  f16 fres = nsimd_f32_to_f16(nsimd_scalar_reinterpret_f32_u32(val));
+  u16 ures = nsimd_scalar_reinterpret_u16_f16(fres);
   if (ures != expected) {
     fprintf(stdout, "Error, nsimd_f16_to_f32: expected 0x%x but got 0x%x \n",
             expected, ures);
@@ -122,18 +121,18 @@ int main(void) {
   if (test_f16_to_f32(0x3C00, 0x3f800000)) {
     return EXIT_FAILURE;
   }
-  if (test_f16_to_f32(0x13e, 0x379F0000)) { // 1.8954277E-5
+  if (test_f16_to_f32(0x13e, 0x379F0000)) { /* 1.8954277E-5 */
     return EXIT_FAILURE;
   }
-  if (test_f16_to_f32(0x977e, 0xBAEFC000)) { // -1.8291473E-3
-    return EXIT_FAILURE;
-  }
-
-  if (test_f32_to_f16(0xC7BDC4FC, 0xFC00)) { // -97161.97
+  if (test_f16_to_f32(0x977e, 0xBAEFC000)) { /* -1.8291473E-3 */
     return EXIT_FAILURE;
   }
 
-  if (test_f32_to_f16(0x37c3642c, 0x187)) { // 2.329246e-05
+  if (test_f32_to_f16(0xC7BDC4FC, 0xFC00)) { /* -97161.97 */
+    return EXIT_FAILURE;
+  }
+
+  if (test_f32_to_f16(0x37c3642c, 0x187)) { /* 2.329246e-05 */
     return EXIT_FAILURE;
   }
 
@@ -141,7 +140,7 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
-  /* Test rounding when the input f32 is perfectly between 2 f16*/
+  /* Test rounding when the input f32 is perfectly between 2 f16 */
   if (test_f32_to_f16(0xC66AD000, 0xf356)) {
     return EXIT_FAILURE;
   }

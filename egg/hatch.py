@@ -18,24 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# How nsimd works?
-# ----------------
-#
-# nsimd.h includes the following:
-#   - config.h         compiler detection, inline stuff and more and includes:
-#     - pp.h           preprocessor stuff
-#     - detect_simd.h  detect SIMD based on what is given by the user
-#     - basic_types.h  defines basic arithmetic types
-#
-# Then each function in `include/nsimd` does an NSIMD_AUTO_INCLUDE which,
-# based on what was detected in `detect_simd.h` includes the correct function
-# from `include/nsimd/PLATFORM/SIMD_EXT`. The same holds for the advanced
-# C++ API.
-#
-# In `src` lies all functions that do not need to be in headers for
-# performance such as memory management functions, trigonometric functions,
-# log-exp functions, ...
-#
 # What does this script?
 # ----------------------
 #
@@ -116,8 +98,8 @@ import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
 import gen_ulps
-
-import modules.hatch
+import gen_modules
+import gen_scalar_utilities
 
 # Dir of this script
 script_dir = os.path.dirname(__file__)
@@ -149,71 +131,65 @@ def parse_args(args):
             return None
         else:
             return re.compile(value)
+    # In pratice, we either generate all or all except benches and we never
+    # change default directories for code generation. So we remove unused
+    # options and regroup some into --library.
     parser = argparse.ArgumentParser(
                  description='This is NSIMD generation script.')
     parser.add_argument('--force', '-f', action='store_true',
         help='Generate all files even if they already exist')
-    parser.add_argument('--archis', '-a', action='store_true',
-        help='Generate code for all architectures')
+    parser.add_argument('--list-files', '-L', action='store_true',
+        default=False,
+        help='List files that will be created by hatch.py')
     parser.add_argument('--all', '-A', action='store_true',
-        help='Generate code for all architectures, C and C++ APIs')
-    parser.add_argument('--base-apis', '-c', action='store_true',
-        help='Generate the base C and C++ APIs')
-    parser.add_argument('--cxx-api', '-C', action='store_true',
-        help='Generate the "pack" C++ish API')
+        help='Generate code for the library and its benches')
+    parser.add_argument('--library', '-l', action='store_true',
+        help='Generate code of the library (C and C++ APIs)')
     parser.add_argument('--ulps', '-u', action='store_true',
         help='Generate code to compute precision on big functions')
-    parser.add_argument('--ulps-dir', '-U', type=str,
-        default=os.path.join(script_dir, '..', 'ulps'),
-        help='Generate code to compute precision on big functions')
-    parser.add_argument('--friendly-but-not-optimized', '-o',
-        action='store_true',
-        help='Generate friendly but not optimized overloads for C++')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--build-modules', '-M', action='store_true',
-        help='Build modules')
     parser.add_argument('--benches', '-b', action='store_true',
         help='Generate benches in C and C++')
-    parser.add_argument('--include-dir', '-i', type=str,
-        default=os.path.join(script_dir, '..', 'include', 'nsimd'),
-        help='Base directory for headers')
-    parser.add_argument('--benches-dir', '-B', type=str,
-        default=os.path.join(script_dir, '..', 'benches'),
-        help='Base directory for benches')
-    parser.add_argument('--tests-dir', '-T', type=str,
-        default=os.path.join(script_dir, '..', 'tests'),
-        help='Base directory for tests')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
-    parser.add_argument('--disable-clang-format', '-F', action='store_true',
+    parser.add_argument('--enable-clang-format', '-F', action='store_false',
+        default=True,
         help='Disable Clang Format (mainly for speed on Windows)')
-    parser.add_argument('--src', '-s', action='store_true',
-        help='Generate all of the src function bindings')
-    parser.add_argument('--src-dir', '-S', action='store_true',
-        default=os.path.join(script_dir, '..', 'src'),
-        help='Base directory for src')
-    parser.add_argument('--simd', '-D',
-        type=parse_simd,
-        default='all',
+    parser.add_argument('--sve-emulate-bool', action='store_true',
+        default=False,
+        help='Use normal SVE vector to emulate predicates.')
+    parser.add_argument('--simd', '-D', type=parse_simd, default='all',
         help='List of SIMD extensions (separated by a comma)')
-    parser.add_argument('--match', '-m',
-        type=parse_match,
-        default=None,
+    parser.add_argument('--match', '-m', type=parse_match, default=None,
         help='Regex used to filter generation on operator names')
-    parser.add_argument('--verbose', '-v',
-        action = 'store_true',
-        default=None,
+    parser.add_argument('--verbose', '-v', action = 'store_true', default=None,
         help='Enable verbose mode')
-    parser.add_argument('--simple-license', '-l',
-        action='store_true',
-        default=False,
+    parser.add_argument('--simple-license', action='store_true', default=False,
         help='Put a simple copyright statement instead of the whole license')
-    parser.add_argument('--sve-emulate-bool',
-        action='store_true',
-        default=False,
-        help='Use normal sve vector to emulate predicates.')
-    return parser.parse_args(args)
+    opts = parser.parse_args(args)
+    # When -L has been chosen, we want to list all files and so we have to
+    # turn to True other parameters
+    if opts.list_files:
+        opts.library = True
+        opts.tests = True
+        opts.benches = True
+        opts.force = True
+        opts.doc = True
+    # We set variables here because all the code depends on them + we do want
+    # to keep the possibility to change them in the future
+    opts.archis = opts.library
+    opts.base_apis = opts.library
+    opts.cxx_api = opts.library
+    opts.friendly_but_not_optimized = opts.library
+    opts.src = opts.library
+    opts.scalar_utilities = opts.library
+    opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
+    opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
+    opts.benches_dir = os.path.join(script_dir, '..', 'benches')
+    opts.tests_dir = os.path.join(script_dir, '..', 'tests')
+    opts.src_dir = os.path.join(script_dir, '..', 'src')
+    return opts
 
 # -----------------------------------------------------------------------------
 # Entry point
@@ -221,10 +197,12 @@ def parse_args(args):
 def main():
     opts = parse_args(sys.argv[1:])
     opts.script_dir = script_dir
+    opts.modules_list = None
+    opts.platforms_list = None
 
     ## Gather all SIMD dependencies
     opts.simd = common.get_simds_deps_from_opts(opts)
-    print('-- List of SIMD: {}'.format(', '.join(opts.simd)))
+    common.myprint(opts, 'List of SIMD: {}'.format(', '.join(opts.simd)))
     if opts.archis == True or opts.all == True:
         gen_archis.doit(opts)
     if opts.base_apis == True or opts.all == True:
@@ -239,14 +217,13 @@ def main():
         gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
+    if opts.scalar_utilities == True or opts.all == True:
+        gen_scalar_utilities.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
         gen_friendly_but_not_optimized.doit(opts)
+    gen_modules.doit(opts) # this must be here after all NSIMD
     if opts.doc == True or opts.all == True:
         gen_doc.doit(opts)
-
-    ## Gen modules
-    if opts.build_modules == True or opts.all == True:
-        modules.hatch.doit(opts)
 
 if __name__ == '__main__':
     main()

@@ -96,6 +96,23 @@ operators = collections.OrderedDict()
 
 class MAddToOperators(type):
     def __new__(cls, name, bases, dct):
+
+        def member_is_defined(member):
+            if member in dct:
+                return True
+            for bc in range(len(bases)):
+                if member in bases[bc].__dict__:
+                    return True
+            return False
+
+        def get_member_value(member):
+            if member in dct:
+                return dct[member]
+            for bc in range(len(bases)):
+                if member in bases[bc].__dict__:
+                    return bases[bc].__dict__[member]
+            raise Exception('Member does not exists in class {}'.format(name))
+
         # We don't care about the parent class
         if name == 'Operator' or name == 'SrcOperator':
             return type.__new__(cls, name, bases, dct)
@@ -167,6 +184,28 @@ class MAddToOperators(type):
                 'Returns the {} of the {}. Defined over {}.'.\
                 format(dct['full_name'], arg, dct['domain'])
 
+        # Fill src, default is operator is in header not in source
+        if not member_is_defined('src'):
+            dct['src'] = False
+
+        # Fill load_store, default is operator is not for loading/storing
+        if 'load_store' not in dct:
+            dct['load_store'] = False
+
+        # Fill has_scalar_impl, default is based on several properties
+        if 'has_scalar_impl' not in dct:
+            if DocShuffle in dct['categories'] or \
+               DocMisc in dct['categories'] or \
+               'vx2' in dct['params'] or \
+               'vx3' in dct['params'] or \
+               'vx4' in dct['params'] or \
+               dct['output_to'] in [common.OUTPUT_TO_UP_TYPES,
+                                    common.OUTPUT_TO_DOWN_TYPES] or \
+               dct['load_store'] or get_member_value('src'):
+                dct['has_scalar_impl'] = False
+            else:
+                dct['has_scalar_impl'] = True
+
         ret = type.__new__(cls, name, bases, dct)
         operators[dct['name']] = ret()
         return ret
@@ -178,8 +217,6 @@ class Operator(object, metaclass=MAddToOperators):
     cxx_operator = None
     autogen_cxx_adv = True
     output_to = common.OUTPUT_TO_SAME_TYPE
-    src = False
-    load_store = False
     types = common.types
     params = []
     signature = ''
@@ -209,11 +246,6 @@ class Operator(object, metaclass=MAddToOperators):
     @property
     def args(self):
         return self.params[1:]
-
-    @property
-    def cxx_operator_symbol(self):
-        assert self.cxx_operator is not None
-        return self.cxx_operator.replace('operator', '')
 
     def __init__(self):
         (self.name, self.params) = common.parse_signature(self.signature)
@@ -283,119 +315,208 @@ class Operator(object, metaclass=MAddToOperators):
                     '#define v{name}_e({args}, simd_ext)'. \
                     format(name=self.name, args=args)]
         elif lang == 'cxx_base':
-            return_typ = common.get_one_type_generic(self.params[0], 'T')
-            if return_typ.startswith('vT'):
-                return_typ = \
-                'typename simd_traits<T, NSIMD_SIMD>::simd_vector{}'. \
-                format(return_typ[2:])
-            elif return_typ == 'vlT':
-                return_typ = \
-                'typename simd_traits<T, NSIMD_SIMD>::simd_vectorl'
+            def get_type(param, typename):
+                if param == '_':
+                    return 'void'
+                elif param == 'p':
+                    return 'int'
+                elif param == 's':
+                    return typename
+                elif param == '*':
+                    return '{}*'.format(typename)
+                elif param == 'c*':
+                    return '{} const*'.format(typename)
+                elif param == 'vi':
+                    return 'typename simd_traits<typename traits<{}>::itype,' \
+                           ' NSIMD_SIMD>::simd_vector'.format(typename)
+                elif param == 'l':
+                    return \
+                    'typename simd_traits<{}, NSIMD_SIMD>::simd_vectorl'. \
+                    format(typename)
+                elif param.startswith('v'):
+                    return \
+                    'typename simd_traits<{}, NSIMD_SIMD>::simd_vector{}'. \
+                    format(typename, param[1:])
+                else:
+                    raise ValueError("Unknown param '{}'".format(param))
+            return_typ = get_type(self.params[0], 'T')
             args_list = common.enum(self.params[1:])
 
-            temp = ', '.join(['typename A{}'.format(a[0]) for a in args_list])
-            temp += ', ' if temp != '' else ''
             if not self.closed :
-                tmpl_args = temp + 'typename F, typename T'
+                tmpl_args = 'NSIMD_CONCEPT_VALUE_TYPE F, ' \
+                            'NSIMD_CONCEPT_VALUE_TYPE T'
+                typename = 'F'
             else:
-                tmpl_args = temp + 'typename T'
+                tmpl_args = 'NSIMD_CONCEPT_VALUE_TYPE T'
+                typename = 'T'
 
-            temp = ', '.join(['A{i} a{i}'.format(i=a[0]) for a in args_list])
+            temp = ', '.join(['{} a{}'.format(get_type(a[1], typename),
+                              a[0]) for a in args_list])
             temp += ', ' if temp != '' else ''
-            if not self.closed :
+            if not self.closed:
                 func_args = temp + 'F, T'
+                if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
+                    cxx20_require = \
+                        'NSIMD_REQUIRES(sizeof_v<F> == sizeof_v<T>) '
+                elif self.output_to == common.OUTPUT_TO_UP_TYPES:
+                    cxx20_require = \
+                        'NSIMD_REQUIRES(2 * sizeof_v<F> == sizeof_v<T>) '
+                else:
+                    cxx20_require = \
+                        'NSIMD_REQUIRES(sizeof_v<F> == 2 * sizeof_v<T>) '
             else:
                 func_args = temp + 'T'
+                cxx20_require = ''
 
-            return \
-            'template <{tmpl_args}> {return_typ} {name}({func_args});'. \
-            format(return_typ=return_typ, tmpl_args=tmpl_args,
-                   func_args=func_args, name=self.name)
+            return 'template <{tmpl_args}> {cxx20_require}{return_typ} ' \
+                   'NSIMD_VECTORCALL {name}({func_args});'. \
+                   format(return_typ=return_typ, tmpl_args=tmpl_args,
+                          func_args=func_args, name=self.name,
+                          cxx20_require=cxx20_require)
         elif lang == 'cxx_adv':
-            def get_pack(param):
-                return 'pack{}'.format(param[1:]) if param[0] == 'v' \
-                                                  else 'packl'
+            def get_type(param, typename, N):
+                if param == '_':
+                    return 'void'
+                elif param == 'p':
+                    return 'int'
+                elif param == 's':
+                    return typename
+                elif param == '*':
+                    return '{}*'.format(typename)
+                elif param == 'c*':
+                    return '{} const*'.format(typename)
+                elif param == 'vi':
+                    return 'pack<typename traits<{}>::itype, {}, SimdExt>'. \
+                           format(typename, N)
+                elif param == 'l':
+                    return 'packl<{}, {}, SimdExt>'.format(typename, N)
+                elif param.startswith('v'):
+                    return 'pack{}<{}, {}, SimdExt>'. \
+                    format(param[1:], typename, N)
+                else:
+                    raise ValueError("Unknown param '{}'".format(param))
             args_list = common.enum(self.params[1:])
-            inter = [i for i in ['v', 'l', 'vx2', 'vx3', 'vx4'] \
-                     if i in self.params[1:]]
             # Do we need tag dispatching on pack<>? e.g. len, set1 and load*
-            need_tmpl_pack = get_pack(self.params[0]) if inter == [] else None
+            inter = [i for i in ['v', 'l', 'vi', 'vx2', 'vx3', 'vx4'] \
+                     if i in self.params[1:]]
+            tag_dispatching = (inter == [])
 
             # Compute template arguments
-            tmpl_args = []
+            tmpl_args1 = ['NSIMD_CONCEPT_VALUE_TYPE T',
+                          'NSIMD_CONCEPT_SIMD_EXT SimdExt']
+            tmpl_argsN = ['NSIMD_CONCEPT_VALUE_TYPE T', 'int N',
+                          'NSIMD_CONCEPT_SIMD_EXT SimdExt']
+            def get_PACK(arg):
+                if arg == 'l':
+                    return 'PACKL'
+                elif arg == 'v':
+                    return 'PACK'
+                else:
+                    return 'PACK{}'.format(arg[1:].upper())
             if not self.closed:
-                tmpl_args += ['typename ToPackType']
-            tmpl_args1 = tmpl_args + ['typename T', 'typename SimdExt']
-            tmpl_argsN = tmpl_args + ['typename T', 'int N', 'typename SimdExt']
-            other_tmpl_args = ['typename A{}'.format(i[0]) for i in args_list \
-                               if i[1] not in ['v', 'l']]
-            tmpl_args1 += other_tmpl_args
-            tmpl_argsN += other_tmpl_args
+                tmpl = 'NSIMD_CONCEPT_{} ToPackType'. \
+                       format(get_PACK(self.params[0]))
+                tmpl_args1 = [tmpl] + tmpl_args1
+                tmpl_argsN = [tmpl] + tmpl_argsN
             tmpl_args1 = ', '.join(tmpl_args1)
             tmpl_argsN = ', '.join(tmpl_argsN)
 
             # Compute function arguments
-            def arg_type(arg, N):
-                if arg[1] in ['v', 'l']:
-                    pack_typ = 'pack' if arg[1] == 'v' else 'packl'
-                    return '{}<T, {}, SimdExt> const&'.format(pack_typ, N)
+            def arg_type(arg, typename, N):
+                if arg in ['v', 'vi', 'vx2', 'vx3', 'vx4', 'l']:
+                    return '{} const&'.format(get_type(arg, typename, N))
                 else:
-                    return 'A{}'.format(arg[0])
-            args1 = ['{} a{}'.format(arg_type(i, '1'), i[0]) for i in args_list]
-            argsN = ['{} a{}'.format(arg_type(i, 'N'), i[0]) for i in args_list]
+                    return get_type(arg, typename, N)
+            args1 = ['{} a{}'.format(arg_type(i[1], 'T', '1'), i[0]) \
+                     for i in args_list]
+            argsN = ['{} a{}'.format(arg_type(i[1], 'T', 'N'), i[0]) \
+                     for i in args_list]
+
             # Arguments without tag dispatching on pack
             other_argsN = ', '.join(argsN)
+
+            # If we need tag dispatching, then the first argument type
+            # is the output type:
+            #   1. If not closed, then the output type is ToPackType
+            #   2. If closed, then the output type is pack<T, N, SimdExt>
             if not self.closed:
-                args1 = ['ToPackType'] + args1
-                argsN = ['ToPackType'] + argsN
-            if need_tmpl_pack != None:
-                args1 = ['{}<T, 1, SimdExt> const&'.format(need_tmpl_pack)] + \
-                        args1
-                argsN = ['{}<T, N, SimdExt> const&'.format(need_tmpl_pack)] + \
-                        argsN
+                args1 = ['ToPackType const&'] + args1
+                argsN = ['ToPackType const&'] + argsN
+            elif tag_dispatching:
+                args1 = [arg_type(self.params[0], 'T', '1')] + args1
+                argsN = [arg_type(self.params[0], 'T', 'N')] + argsN
             args1 = ', '.join(args1)
             argsN = ', '.join(argsN)
 
             # Compute return type
-            ret1 = 'ToPackType' if not self.closed \
-                   else common.get_one_type_generic_adv_cxx(self.params[0],
-                                                            'T', '1')
-            retN = 'ToPackType' if not self.closed \
-                   else common.get_one_type_generic_adv_cxx(self.params[0],
-                                                            'T', 'N')
+            if not self.closed:
+                ret1 = 'ToPackType'
+                retN = 'ToPackType'
+            else:
+                ret1 = get_type(self.params[0], 'T', '1')
+                retN = get_type(self.params[0], 'T', 'N')
+
+            # For non closed operators that need tag dispatching we have a
+            # require clause
+            cxx20_require = ''
+            if not self.closed:
+                tmpl = 'NSIMD_REQUIRES((' \
+                    '{}sizeof_v<typename ToPackType::value_type> == ' \
+                        '{}sizeof_v<T> && ' \
+                    'ToPackType::unroll == {{}} && '\
+                    'std::is_same_v<typename ToPackType::simd_ext, SimdExt>))'
+                if self.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES:
+                    cxx20_require = tmpl.format('', '')
+                elif self.output_to == common.OUTPUT_TO_UP_TYPES:
+                    cxx20_require = tmpl.format('', '2 * ')
+                else:
+                    cxx20_require = tmpl.format('2 * ', '')
 
             ret = { \
-                '1': 'template <{tmpl_args1}> {ret1} {cxx_name}({args1});'. \
-                     format(tmpl_args1=tmpl_args1, ret1=ret1, args1=args1,
-                            cxx_name=self.name),
-                'N': 'template <{tmpl_argsN}> {retN} {cxx_name}({argsN});'. \
-                     format(tmpl_argsN=tmpl_argsN, retN=retN, argsN=argsN,
-                            cxx_name=self.name)
+                '1': 'template <{tmpl_args1}> {cxx20_require}{ret1} ' \
+                     '{cxx_name}({args1});'. \
+                     format(tmpl_args1=tmpl_args1,
+                            cxx20_require=cxx20_require.format('1'),
+                            ret1=ret1, args1=args1, cxx_name=self.name),
+                'N': 'template <{tmpl_argsN}> {cxx20_require}{retN} ' \
+                     '{cxx_name}({argsN});'. \
+                     format(tmpl_argsN=tmpl_argsN,
+                            cxx20_require=cxx20_require.format('N'),
+                            retN=retN, argsN=argsN, cxx_name=self.name)
             }
             if self.cxx_operator:
                 ret.update({ \
                     'op1':
-                    'template <{tmpl_args1}> {ret1} {cxx_name}({args1});'. \
+                    '''template <{tmpl_args1}>
+                    {ret1} operator{cxx_name}({args1});'''. \
                     format(tmpl_args1=tmpl_args1, ret1=ret1, args1=args1,
                            cxx_name=self.cxx_operator),
                     'opN':
-                    'template <{tmpl_argsN}> {retN} {cxx_name}({argsN});'. \
+                    '''template <{tmpl_argsN}>
+                    {retN} operator{cxx_name}({argsN});'''. \
                     format(tmpl_argsN=tmpl_argsN, retN=retN, argsN=argsN,
                            cxx_name=self.cxx_operator)
                 })
             if not self.closed:
                 ret['dispatch'] = \
-                'template <{tmpl_argsN}> {retN} {cxx_name}({other_argsN});'. \
-                format(tmpl_argsN=tmpl_argsN, other_argsN=other_argsN,
-                       retN=retN, cxx_name=self.name)
-            elif need_tmpl_pack != None:
-                other_tmpl_args = ', '.join(['typename SimdVector'] + \
-                                            other_tmpl_args)
+                'template <{tmpl_argsN}> {cxx20_require}{retN} ' \
+                '{cxx_name}({other_argsN});'. \
+                format(tmpl_argsN=tmpl_argsN,
+                       cxx20_require=cxx20_require.format('N'),
+                       other_argsN=other_argsN, retN=retN, cxx_name=self.name)
+            elif tag_dispatching:
+                if [i for i in ['s', '*', 'c*'] if i in self.params[1:]] == []:
+                    tmpl_T = ''
+                    requires = ''
+                else:
+                    tmpl_T = ', NSIMD_CONCEPT_VALUE_TYPE T'
+                    requires = 'NSIMD_REQUIRES((' \
+                        'std::is_same_v<typename SimdVector::value_type, T>))'
                 ret['dispatch'] = \
-                '''template <{other_tmpl_args}>
-                   SimdVector {cxx_name}({other_argsN});'''. \
-                   format(other_tmpl_args=other_tmpl_args,
-                          other_argsN=other_argsN, cxx_name=self.name)
+                '''template <NSIMD_CONCEPT_{PACK} SimdVector{tmpl_T}>{requires}
+                   SimdVector {cxx_name}({other_argsN});'''.format(
+                   PACK=get_PACK(self.params[0]), requires=requires,
+                   other_argsN=other_argsN, cxx_name=self.name, tmpl_T=tmpl_T)
             return ret
         else:
             raise Exception('Lang must be one of c_base, cxx_base, cxx_adv')
@@ -409,16 +530,37 @@ class Operator(object, metaclass=MAddToOperators):
         fmtspec = self.get_fmtspec(typename, typename, simd_ext)
 
         if lang == 'c_base':
-            sig = '{return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args})'. \
-                  format(**fmtspec)
+            sig = '{return_typ} NSIMD_VECTORCALL ' \
+                  'nsimd_{name}_{simd_ext}_{suf}({c_args})'.format(**fmtspec)
         elif lang == 'cxx_base':
-            sig = '{return_typ} {name}({cxx_args})'.format(**fmtspec)
+            sig = '{return_typ} NSIMD_VECTORCALL ' \
+                  '{name}({cxx_args})'.format(**fmtspec)
         elif lang == 'cxx_adv':
             sig = ''
             raise Exception('TODO cxx_adv for {}'.format(lang))
         else:
             raise Exception('Unknown langage {}'.format(lang))
 
+        return sig
+
+    def get_scalar_signature(self, cpu_gpu, t, tt, lang):
+        sig = '__device__ ' if cpu_gpu == 'gpu' else ''
+        sig += common.get_one_type_scalar(self.params[0], tt) + ' '
+        func_name = 'nsimd_' if lang == 'c' else ''
+        func_name += 'gpu_' if cpu_gpu == 'gpu' else 'scalar_'
+        func_name += self.name
+        operator_on_logicals = (self.params == ['l'] * len(self.params))
+        if lang == 'c' and not operator_on_logicals:
+            func_name += '_{}_{}'.format(tt, t) if not self.closed \
+                                                else '_{}'.format(t)
+        sig += func_name
+        args_list = common.enum([common.get_one_type_scalar(p, t)
+                                 for p in self.params[1:]])
+        args = ['{} a{}'.format(i[1], i[0]) for i in args_list]
+        if lang == 'cxx' and (not self.closed or \
+           ('v' not in self.params[1:] and not operator_on_logicals)):
+            args = [tt] + args
+        sig += '(' + ', '.join(args) + ')'
         return sig
 
 class SrcOperator(Operator):
@@ -440,11 +582,30 @@ class Set1(Operator):
     categories = [DocMisc]
     desc = 'Returns a vector whose all elements are set to the given value.'
 
+class Set1l(Operator):
+    full_name = 'logical value broadcast'
+    signature = 'l set1l p'
+    categories = [DocMisc]
+    desc = 'Returns a vector whose all elements are set to the given ' \
+           'boolean value: zero means false and nonzero means true.'
+
 class Loadu(Operator):
     signature = 'v loadu c*'
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from unaligned memory.'
+
+class MaskoLoadu1(Operator):
+    signature = 'v masko_loadu1 l c* v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from unaligned memory corresponding to True elements.'
+
+class MaskzLoadu1(Operator):
+    signature = 'v maskz_loadu1 l c*'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from unaligned memory corresponding to True elements.'
 
 class Load2u(Operator):
     full_name = 'load array of structure'
@@ -472,6 +633,18 @@ class Loada(Operator):
     load_store = True
     categories = [DocLoadStore]
     desc = 'Load data from aligned memory.'
+
+class MaskoLoada(Operator):
+    signature = 'v masko_loada1 l c* v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from aligned memory.'
+
+class MaskzLoada(Operator):
+    signature = 'v maskz_loada1 l c*'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Load data from aligned memory corresponding to True elements.'
 
 class Load2a(Operator):
     full_name = 'load array of structure'
@@ -516,8 +689,13 @@ class Storeu(Operator):
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into unaligned memory.'
 
+class MaskStoreu1(Operator):
+    signature = '_ mask_storeu1 l * v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Store active SIMD vector elements into unaligned memory.'
+
 class Store2u(Operator):
-    full_name = 'store into array of structures'
     signature = '_ store2u * v v'
     load_store = True
     domain = Domain('RxR')
@@ -549,6 +727,12 @@ class Storea(Operator):
     categories = [DocLoadStore]
     desc = 'Store SIMD vector into aligned memory.'
 
+class MaskStorea1(Operator):
+    signature = '_ mask_storea1 l * v'
+    load_store = True
+    categories = [DocLoadStore]
+    desc = 'Store active SIMD vector elements into aligned memory.'
+
 class Store2a(Operator):
     full_name = 'store into array of structures'
     signature = '_ store2a * v v'
@@ -576,6 +760,78 @@ class Store4a(Operator):
     desc = 'Store 4 SIMD vectors as array of structures of 4 members into ' + \
            'aligned memory.'
 
+class Gather(Operator):
+    full_name = 'gather elements from memory into a SIMD vector'
+    signature = 'v gather c* vi'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+    desc = 'Gather elements from memory with base address given as first ' \
+           'argument and offsets given as second argument.'
+
+class GatherLinear(Operator):
+    full_name = 'gather elements from memory into a SIMD vector'
+    signature = 'v gather_linear c* p'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.types
+    desc = 'Gather elements from memory with base address given as first ' \
+           'argument and steps given as second argument. This operator ' \
+           'using a SIMD register.'
+
+#class MaskzGather(Operator):
+#    full_name = 'gather active elements from SIMD vector to memory and put ' \
+#                'zeros in inactive elements.'
+#    signature = 'v maskz_gather l * vi'
+#    load_store = True
+#    categories = [DocLoadStore]
+#    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+#    desc = 'Gather elements from memory with base address given as second ' \
+#           'argument and offsets given as third argument. Inactive elements ' \
+#           '(first argument) are set to zero.'
+
+#class MaskoGather(Operator):
+#    full_name = 'gather active elements from SIMD vector to memory and put ' \
+#                'zeros in inactive elements.'
+#    signature = 'v masko_gather l * vi v'
+#    load_store = True
+#    categories = [DocLoadStore]
+#    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+#    desc = 'Gather elements from memory with base address given as second ' \
+#           'argument and offsets given as third argument. Inactive elements ' \
+#           '(first argument) are set to corresponding elements from fourth ' \
+#           'argument.'
+
+class Scatter(Operator):
+    full_name = 'scatter elements from SIMD vector to memory'
+    signature = '_ scatter * vi v'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+    desc = 'Scatter elements from third argument to memory with base ' \
+           'address given as first argument and offsets given as second ' \
+           'argument.'
+
+class ScatterLinear(Operator):
+    full_name = 'scatter elements from SIMD vector to memory'
+    signature = '_ scatter_linear * p v'
+    load_store = True
+    categories = [DocLoadStore]
+    types = common.types
+    desc = 'Scatter elements from third argument to memory with base ' \
+           'address given as first argument and steps given as second ' \
+           'argument. This operator avoids using a SIMD register.'
+
+#class MaskScatter(Operator):
+#    full_name = 'scatter active elements from SIMD vector to memory'
+#    signature = '_ mask_scatter l * vi v'
+#    load_store = True
+#    categories = [DocLoadStore]
+#    types = common.ftypes + ['i16', 'u16', 'u32', 'i32', 'i64', 'u64']
+#    desc = 'Scatter active (first argument) elements from fourth argument ' \
+#           'to memory with base address given as second argument and ' \
+#           'offsets given as third argument.'
+
 class Storelu(Operator):
     full_name = 'store vector of logicals'
     signature = '_ storelu * l'
@@ -597,7 +853,7 @@ class Storela(Operator):
 class Orb(Operator):
     full_name = 'bitwise or'
     signature = 'v orb v v'
-    cxx_operator = 'operator|'
+    cxx_operator = '|'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -606,7 +862,7 @@ class Orb(Operator):
 class Andb(Operator):
     full_name = 'bitwise and'
     signature = 'v andb v v'
-    cxx_operator = 'operator&'
+    cxx_operator = '&'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -625,7 +881,7 @@ class Andnotb(Operator):
 class Notb(Operator):
     full_name = 'bitwise not'
     signature = 'v notb v'
-    cxx_operator = 'operator~'
+    cxx_operator = '~'
     domain = Domain('R')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -634,7 +890,7 @@ class Notb(Operator):
 class Xorb(Operator):
     full_name = 'bitwise xor'
     signature = 'v xorb v v'
-    cxx_operator = 'operator^'
+    cxx_operator = '^'
     domain = Domain('RxR')
     categories = [DocBitsOperators]
     #bench_auto_against_std = True ## TODO: Add check to floating-types
@@ -643,7 +899,7 @@ class Xorb(Operator):
 class Orl(Operator):
     full_name = 'logical or'
     signature = 'l orl l l'
-    cxx_operator = 'operator||'
+    cxx_operator = '||'
     domain = Domain('BxB')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
@@ -651,7 +907,7 @@ class Orl(Operator):
 class Andl(Operator):
     full_name = 'logical and'
     signature = 'l andl l l'
-    cxx_operator = 'operator&&'
+    cxx_operator = '&&'
     domain = Domain('BxB')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
@@ -671,7 +927,7 @@ class Xorl(Operator):
 class Notl(Operator):
     full_name = 'logical not'
     signature = 'l notl l'
-    cxx_operator = 'operator!'
+    cxx_operator = '!'
     domain = Domain('B')
     categories = [DocLogicalOperators]
     bench_auto_against_std = True
@@ -679,7 +935,7 @@ class Notl(Operator):
 class Add(Operator):
     full_name = 'addition'
     signature = 'v add v v'
-    cxx_operator = 'operator+'
+    cxx_operator = '+'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -688,7 +944,7 @@ class Add(Operator):
 class Sub(Operator):
     full_name = 'subtraction'
     signature = 'v sub v v'
-    cxx_operator = 'operator-'
+    cxx_operator = '-'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -706,7 +962,7 @@ class Addv(Operator):
 class Mul(Operator):
     full_name = 'multiplication'
     signature = 'v mul v v'
-    cxx_operator = 'operator*'
+    cxx_operator = '*'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -715,7 +971,7 @@ class Mul(Operator):
 class Div(Operator):
     full_name = 'division'
     signature = 'v div v v'
-    cxx_operator = 'operator/'
+    cxx_operator = '/'
     domain = Domain('RxR\{0}')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -724,7 +980,7 @@ class Div(Operator):
 class Neg(Operator):
     full_name = 'opposite'
     signature = 'v neg v'
-    cxx_operator = 'operator-'
+    cxx_operator = '-'
     domain = Domain('R')
     categories = [DocBasicArithmetic]
     bench_auto_against_std = True
@@ -746,7 +1002,7 @@ class Shr(Operator):
     full_name = 'right shift in zeros'
     signature = 'v shr v p'
     types = common.iutypes
-    cxx_operator = 'operator>>'
+    cxx_operator = '>>'
     domain = Domain('RxN')
     categories = [DocBitsOperators]
     bench_auto_against_mipp = True
@@ -758,7 +1014,7 @@ class Shl(Operator):
     full_name = 'left shift'
     signature = 'v shl v p'
     types = common.iutypes
-    cxx_operator = 'operator<<'
+    cxx_operator = '<<'
     domain = Domain('RxN')
     categories = [DocBitsOperators]
     bench_auto_against_mipp = True
@@ -777,7 +1033,7 @@ class Shra(Operator):
 class Eq(Operator):
     full_name = 'compare for equality'
     signature = 'l eq v v'
-    cxx_operator = 'operator=='
+    cxx_operator = '=='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -790,7 +1046,7 @@ class Eq(Operator):
 class Ne(Operator):
     full_name = 'compare for inequality'
     signature = 'l ne v v'
-    cxx_operator = 'operator!='
+    cxx_operator = '!='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -803,7 +1059,7 @@ class Ne(Operator):
 class Gt(Operator):
     full_name = 'compare for greater-than'
     signature = 'l gt v v'
-    cxx_operator = 'operator>'
+    cxx_operator = '>'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -816,7 +1072,7 @@ class Gt(Operator):
 class Ge(Operator):
     full_name = 'compare for greater-or-equal-than'
     signature = 'l ge v v'
-    cxx_operator = 'operator>='
+    cxx_operator = '>='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -829,7 +1085,7 @@ class Ge(Operator):
 class Lt(Operator):
     full_name = 'compare for lesser-than'
     signature = 'l lt v v'
-    cxx_operator = 'operator<'
+    cxx_operator = '<'
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -842,7 +1098,7 @@ class Lt(Operator):
 class Le(Operator):
     full_name = 'compare for lesser-or-equal-than'
     signature = 'l le v v'
-    cxx_operator = 'operator<='
+    cxx_operator = '<='
     domain = Domain('RxR')
     categories = [DocComparison]
     bench_auto_against_std = True
@@ -980,6 +1236,7 @@ class Reinterpretl(Operator):
     domain = Domain('B')
     categories = [DocConversion]
     output_to = common.OUTPUT_TO_SAME_SIZE_TYPES
+    has_scalar_impl = False
     ## Disable bench
     do_bench = False
     desc = 'Reinterpret input vector of logicals into a different vector ' + \
@@ -1034,7 +1291,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
+    tests_ulps = common.ulps_from_relative_distance_power(11)
 
 class Rec8(Operator):
     full_name = 'reciprocal with relative error at most 2^{-8}'
@@ -1042,7 +1299,7 @@ class Rec8(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
+    tests_ulps = common.ulps_from_relative_distance_power(8)
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -1061,7 +1318,7 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'9', 'f32':'11', 'f64':'11'}
+    tests_ulps = common.ulps_from_relative_distance_power(11)
 
 class Rsqrt8(Operator):
     full_name = 'square root with relative error at most $2^{-8}$'
@@ -1069,7 +1326,7 @@ class Rsqrt8(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'8', 'f32':'8', 'f64':'8'}
+    tests_ulps = common.ulps_from_relative_distance_power(8)
 
 class Ziplo(Operator):
     full_name = 'zip low halves'
@@ -1142,6 +1399,24 @@ class ToLogical(Operator):
            'elements are non zero (at least one bit to 1) and false ' + \
            'otherwise.'
 
+class Iota(Operator):
+    full_name = 'fill vector with increasing values'
+    signature = 'v iota'
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Returns a vectors whose first element is zero, the second is ' \
+           'one and so on.'
+
+class MaskForLoopTail(Operator):
+    full_name = 'build mask for ending loops'
+    signature = 'l mask_for_loop_tail p p'
+    categories = [DocMisc]
+    do_bench = False
+    desc = 'Returns a mask for loading/storing data at loop tails by ' \
+           'setting the first elements to True and the last to False. ' \
+           'The first argument is index in a loop whose number of elements ' \
+           'is given by the second argument.'
+
 class Adds(Operator):
     full_name = 'addition using saturation'
     signature = 'v adds v v'
@@ -1157,8 +1432,8 @@ class Subs(Operator):
     desc = 'Returns the saturated subtraction of the two vectors given as arguments'
 
 # -----------------------------------------------------------------------------
-# Import other operators if present: this is not Pythonic and an issue was
-# opened for this
+# Import other operators if present: this is not very Pythonic but it is
+# simple and it works!
 
 import os
 import sys

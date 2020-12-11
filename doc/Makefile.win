@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2020 Agenium Scale
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,21 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-NS2_ROOT         = ..\..\..\_install
-NS2_INCLUDE_DIR  = $(NS2_ROOT)\include
-NS2_LIBRARY_DIR  = $(NS2_ROOT)\lib
-CXX              = cl
-CXX_FLAGS        = /Ox /W3 /EHsc /Fotemp\ /I$(NS2_INCLUDE_DIR) 
-CXX_LDFLAGS      = libns2.lib
+NS2_ROOT  = ..\nstools\ns2
+CXX       = cl
+CXX_FLAGS = /nologo /Ox /W3 /EHsc /DNS_NO_DLLSPEC /D_CRT_SECURE_NO_WARNINGS
 
-all: md2html.exe
+all: md2html.exe what_is_wrapped.exe
 
-md2html.exe: libns2.dll libns2.lib md2html.cpp Makefile.win
-	if not exist temp md temp
-	$(CXX) $(CXX_FLAGS) $(CXX_LDFLAGS) md2html.cpp /Fe$@
+libns2.lib: $(NS2_ROOT)\..\.git\logs\HEAD Makefile.win
+	if exist libns2 rd /Q /S libns2
+	md libns2
+	copy /Y $(NS2_ROOT)\lib\*.cpp libns2
+	(cd libns2 && $(CXX) $(CXX_FLAGS) -I..\$(NS2_ROOT)\include /c *.cpp)
+	lib /nologo /out:libns2.lib libns2\*.obj
+	rd /Q /S libns2
 
-libns2.lib: $(NS2_LIBRARY_DIR)\libns2.lib Makefile.win
-	copy "$(NS2_LIBRARY_DIR)\libns2.lib" "$@"
+md2html.exe: libns2.lib md2html.cpp Makefile.win
+	$(CXX) $(CXX_FLAGS) /I$(NS2_ROOT)\include md2html.cpp libns2.lib \
+	       Shlwapi.lib Dbghelp.lib /Fe$@
 
-libns2.dll: $(NS2_LIBRARY_DIR)\libns2.dll Makefile.win
-	copy "$(NS2_LIBRARY_DIR)\libns2.dll" "$@"
+what_is_wrapped.exe: libns2.lib what_is_wrapped.cpp Makefile.win
+	$(CXX) $(CXX_FLAGS) /I$(NS2_ROOT)\include what_is_wrapped.cpp \
+	       libns2.lib Shlwapi.lib Dbghelp.lib /Fe$@

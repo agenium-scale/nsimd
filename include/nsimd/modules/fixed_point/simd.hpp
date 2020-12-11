@@ -42,6 +42,8 @@ template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimd_t {
 
   fpsimd_t() {}
 
+  fpsimd_t(const fpsimd_t<_lf, _rt> &cp) : _raw(cp._raw) {}
+
   fpsimd_t(const fp_t<_lf, _rt> &cp) {
     _raw = nsimd::set1(cp._raw, base_type());
   }
@@ -50,6 +52,8 @@ template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimd_t {
     _raw = cp._raw;
     return *this;
   }
+
+  ~fpsimd_t() {}
 };
 
 template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimdl_t {
@@ -60,10 +64,14 @@ template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimdl_t {
 
   fpsimdl_t() {}
 
+  fpsimdl_t(const fpsimdl_t<_lf, _rt> &cp) : _raw(cp._raw) {}
+
   fpsimdl_t &operator=(const fpsimdl_t<_lf, _rt> &cp) {
     _raw = cp._raw;
     return *this;
   }
+
+  ~fpsimdl_t() {}
 };
 
 // Number of elements that fit into a SIMD register

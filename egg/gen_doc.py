@@ -46,8 +46,6 @@ def get_command_output(args):
 # -----------------------------------------------------------------------------
 
 def gen_overview(opts):
-    # filename = os.path.join(opts.script_dir, '..', 'doc', 'markdown',
-    #                         'overview.md')
     filename = common.get_markdown_file(opts, 'overview')
     if not common.can_create_filename(opts, filename):
         return
@@ -267,7 +265,8 @@ Here is the list of functions that act on packs.
                     fout.write('  ({}) ∈ {}\n'.format(param, operator.domain))
 
             if operator.cxx_operator:
-                fout.write('  Available as `{}`\n'.format(operator.cxx_operator))
+                fout.write('  Available as `{}`\n'. \
+                    format('operator'+operator.cxx_operator))
 
             if len(operator.types) < len(common.types):
                 typs = ', '.join(['{}'.format(t) for t in operator.types])
@@ -275,137 +274,8 @@ Here is the list of functions that act on packs.
 
 # -----------------------------------------------------------------------------
 
-#def gen_doc_json(opts):
-#    sys.stdout.write('-- Generating doc for each functions\n')
-#    dirname = os.path.join(opts.script_dir, '..','doc')
-#    common.mkdir_p(dirname)
-#
-#    # Root node first
-#    obj = collections.OrderedDict()
-#    obj['title'] = 'Root node'
-#    obj['sig'] = []
-#    obj['lang'] = ''
-#    obj['categories'] = []
-#    obj['desc'] = []
-#    obj['parent'] = ''
-#    obj['id'] = '/'
-#    obj['type'] = 'root'
-#    obj['title'] = 'Root node'
-#    filename = os.path.join(dirname, 'root.json')
-#    if common.can_create_filename(opts, filename):
-#        with io.open(filename, mode='w', encoding='utf-8') as fout:
-#            fout.write(json.dumps(obj, ensure_ascii=False))
-#
-#    # Categories first
-#    for name, cat in categories.items():
-#        filename = os.path.join(dirname, '{}.json'.format(name))
-#        ## Check if we need to create the file
-#        if not common.can_create_filename(opts, filename):
-#            continue
-#
-#        obj = collections.OrderedDict()
-#        obj['title'] = cat.name
-#        obj['sig'] = []
-#        obj['lang'] = ''
-#        obj['categories'] = []
-#        obj['desc'] = []
-#        obj['parent'] = '/'
-#        obj['id'] = '/{}'.format(name)
-#        obj['type'] = 'category'
-#        obj['title'] = cat.title
-#        with io.open(filename, mode='w', encoding='utf-8') as fout:
-#            fout.write(json.dumps(obj, ensure_ascii=False))
-#
-#    # APIs
-#    for api in ['c_base', 'cxx_base', 'cxx_adv']:
-#        filename = os.path.join(dirname, '{}.json'.format(api))
-#        if common.can_create_filename(opts, filename):
-#            l = collections.OrderedDict()
-#            l['title'] = {'c_base': 'C API', 'cxx_base': 'C++ base API',
-#                          'cxx_adv': 'C++ advanced API'}[api]
-#            l['id'] = '/{}'.format(api)
-#            l['parent'] = '/'
-#            l['sig'] = []
-#            l['type'] = ''
-#            l['desc'] = []
-#            l['categories'] = []
-#            l['lang'] = 'C' if api == 'c' else 'C++'
-#            with io.open(filename, mode='w', encoding='utf-8') as fout:
-#                fout.write(json.dumps(l, ensure_ascii=False))
-#
-#    # Operators (one file per operator otherwise too much files)
-#    for op_name, operator in operators.items():
-#        ## Skip non-matching doc
-#        if opts.match and not opts.match.match(op_name):
-#            continue
-#
-#        filename = os.path.join(dirname, '{}.json'.format(op_name))
-#        cats = ['/{}'.format(c.name) for c in operator.categories]
-#        withdoc_id = '/{}'.format(op_name)
-#        doc_blocks = []
-#        obj = collections.OrderedDict()
-#
-#        # All is withdoc'ed with this docblock which has no desc, no sig...
-#        obj = collections.OrderedDict()
-#        obj['id'] = withdoc_id
-#        obj['desc'] = [operator.desc]
-#        obj['sig'] = []
-#        obj['parent'] = '/'
-#        obj['categories'] = cats
-#        obj['type'] = 'function'
-#        obj['title'] = operator.full_name
-#        obj['lang'] = ''
-#        doc_blocks.append(obj)
-#
-#        def to_list(var):
-#            ret = [var] if type(var) == str or not hasattr(var, '__iter__') \
-#                        else list(var)
-#            for i in range(0, len(ret)):
-#                ret[i] = re.sub('[ \n\t\r]+', ' ', ret[i])
-#            return ret
-#
-#        # All base C/C++ functions (for each architecture and type)
-#        for api in ['c_base', 'cxx_base']:
-#            for simd_ext in common.simds:
-#                for typ in operator.types:
-#                    obj = collections.OrderedDict()
-#                    obj['id'] = '/{}-{}-{}-{}'.format(op_name, api, simd_ext,
-#                                                      typ)
-#                    obj['desc'] = []
-#                    obj['parent'] = '/{}'.format(api)
-#                    obj['categories'] = cats
-#                    obj['type'] = 'function'
-#                    obj['withdoc'] = withdoc_id
-#                    obj['sig'] = to_list(operator.get_signature(typ, api,
-#                                                                simd_ext))
-#                    obj['title'] = ''
-#                    obj['lang'] = common.ext_from_lang(api)
-#                    doc_blocks.append(obj)
-#
-#        # C/C++ base/advanced generic functions
-#        for api in ['c_base', 'cxx_base', 'cxx_adv']:
-#            obj = collections.OrderedDict()
-#            obj['id'] = '/{}-{}'.format(op_name, api)
-#            obj['desc'] = []
-#            obj['parent'] = '/{}'.format(api)
-#            obj['categories'] = cats
-#            obj['type'] = 'function'
-#            obj['withdoc'] = withdoc_id
-#            obj['sig'] = to_list(operator.get_generic_signature(api) \
-#                                 if api != 'cxx_adv' else \
-#                                 operator.get_generic_signature(api).values())
-#            obj['title'] = ''
-#            obj['lang'] = common.ext_from_lang(api)
-#            doc_blocks.append(obj)
-#
-#        # Finally dump JSON
-#        with io.open(filename, mode='w', encoding='utf-8') as fout:
-#            fout.write(json.dumps(doc_blocks, ensure_ascii=False))
-
-# -----------------------------------------------------------------------------
-
 def gen_doc(opts):
-    sys.stdout.write('-- Generating doc for each function\n')
+    common.myprint(opts, 'Generating doc for each function')
 
     # Build tree for api.md
     api = dict()
@@ -416,20 +286,18 @@ def gen_doc(opts):
             else:
                 api[c].append(operator)
 
-    # helper to construct filename for operator
-    # def to_filename(op_name):
-    #     valid = string.ascii_letters + string.digits
-    #     ret = ''
-    #     for c in op_name:
-    #         ret += '-' if c not in valid else c
-    #     return ret
-
     # api.md
     # filename = os.path.join(opts.script_dir, '..','doc', 'markdown', 'api.md')
     filename = common.get_markdown_file(opts, 'api')
     if common.can_create_filename(opts, filename):
         with common.open_utf8(opts, filename) as fout:
-            fout.write('# API\n')
+            fout.write('# General API\n\n')
+            fout.write('- [Memory function](memory.md)\n')
+            fout.write('- [Float16 related functions](fp16.md)\n')
+            fout.write('- [Defines provided by NSIMD](defines.md)\n')
+            fout.write('- [NSIMD pack and related functions](pack.md)\n\n')
+            fout.write('- [NSIMD C++20 concepts](concepts.md)\n\n')
+            fout.write('# SIMD operators\n')
             for c, ops in api.items():
                 if len(ops) == 0:
                     continue
@@ -498,13 +366,333 @@ def gen_doc(opts):
 
 # -----------------------------------------------------------------------------
 
+def gen_modules_md(opts):
+    common.myprint(opts, 'Generating modules.md')
+    mods = common.get_modules(opts)
+    ndms = []
+    for mod in mods:
+        name = eval('mods[mod].{}.hatch.name()'.format(mod))
+        desc = eval('mods[mod].{}.hatch.desc()'.format(mod))
+        ndms.append([name, desc, mod])
+    filename = common.get_markdown_file(opts, 'modules')
+    if not common.can_create_filename(opts, filename):
+        return
+    with common.open_utf8(opts, filename) as fout:
+        fout.write('''# Modules
+
+NSIMD comes with several additional modules. A module provides a set of
+functionnalities that are usually not at the same level as SIMD intrinsics
+and/or that do not provide all C and C++ APIs. These functionnalities are
+given with the library because they make heavy use of NSIMD core which
+abstract SIMD intrinsics. Below is the exhaustive list of modules.
+
+''')
+        for ndm in ndms:
+            fout.write('- [{}](module_{}_overview.md)  \n'.format(ndm[0],
+                                                                  ndm[2]))
+            fout.write('\n'.join(['  {}'.format(line.strip()) \
+                                  for line in ndm[1].split('\n')]))
+            fout.write('\n\n')
+
+# -----------------------------------------------------------------------------
+
+def build_exe_for_doc(opts):
+    if not opts.list_files:
+        doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+        if platform.system() == 'Windows':
+            code = os.system('cd {} && nmake /F Makefile.win'. \
+                             format(os.path.normpath(doc_dir)))
+        else:
+            code = os.system('cd {} && make -f Makefile.nix'. \
+                             format(os.path.normpath(doc_dir)))
+        if code == 0:
+            common.myprint(opts, 'Build successful')
+        else:
+            common.myprint(opts, 'Build failed')
+
+# -----------------------------------------------------------------------------
+
+def gen_what_is_wrapped(opts):
+    common.myprint(opts, 'Generating "which intrinsics are wrapped"')
+    build_exe_for_doc(opts)
+    wrapped = 'what_is_wrapped.exe' if platform.system() == 'Windows' \
+                                    else 'what_is_wrapped'
+    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+    full_path_wrapped = os.path.join(doc_dir, wrapped)
+    if not os.path.isfile(full_path_wrapped):
+        common.myprint(opts, '{} not found'.format(wrapped))
+        return
+
+    # Content for indexing files created in this function
+    index = '# Intrinsics that are wrapped\n'
+
+    # Build command line
+    cmd0 = '{} {},{},{},{},{},{}'.format(full_path_wrapped, common.in0,
+                                         common.in1, common.in2, common.in3,
+                                         common.in4, common.in5)
+
+    # For now we only list Intel and Arm intrinsics
+    simd_exts = common.x86_simds + common.arm_simds
+    for p in common.get_platforms(opts):
+        index_simds = ''
+        for simd_ext in opts.platforms_list[p].get_simd_exts():
+            if simd_ext not in simd_exts:
+                continue
+            md = os.path.join(common.get_markdown_dir(opts),
+                              'wrapped_intrinsics_for_{}.md'.format(simd_ext))
+            index_simds += '- [{}](wrapped_intrinsics_for_{}.md)\n'. \
+                           format(simd_ext.upper(), simd_ext)
+            ops = [[], [], [], []]
+            for op_name, operator in operators.items():
+                c_src = os.path.join(opts.include_dir, p, simd_ext,
+                                     '{}.h'.format(op_name))
+                ops[operator.output_to].append('{} "{}"'. \
+                                               format(op_name, c_src))
+            if not common.can_create_filename(opts, md):
+                continue
+            with common.open_utf8(opts, md) as fout:
+                fout.write('# Intrinsics wrapped for {}\n\n'. \
+                           format(simd_ext.upper()))
+                fout.write('Notations are as follows:\n'
+                           '- `T` for trick usually using other intrinsics\n'
+                           '- `E` for scalar emulation\n'
+                           '- `NOOP` for no operation\n'
+                           '- `NA` means the operator does not exist for '
+                              'the given type\n'
+                           '- `intrinsic` for the actual wrapped intrinsic\n'
+                           '\n')
+            cmd = '{} {} same {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_SAME_TYPE]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"same"')
+                continue
+
+            cmd = '{} {} same_size {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_SAME_SIZE_TYPES]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"same_size"')
+                continue
+
+            cmd = '{} {} bigger_size {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_UP_TYPES]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"bigger_size"')
+                continue
+
+            cmd = '{} {} lesser_size {} >> "{}"'.format(cmd0, simd_ext,
+                    ' '.join(ops[common.OUTPUT_TO_DOWN_TYPES]), md)
+            if os.system(cmd) != 0:
+                common.myprint(opts, 'Unable to generate markdown for '
+                                     '"lesser_size"')
+                continue
+        if index_simds != '':
+            index += '\n## Platform {}\n\n'.format(p)
+            index += index_simds
+
+    md = os.path.join(common.get_markdown_dir(opts), 'wrapped_intrinsics.md')
+    if common.can_create_filename(opts, md):
+        with common.open_utf8(opts, md) as fout:
+            fout.write(index)
+
+# -----------------------------------------------------------------------------
+
+def get_html_dir(opts):
+    return os.path.join(opts.script_dir, '..', 'doc', 'html')
+
+def get_html_api_file(opts, name, module=''):
+    root = get_html_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, 'api_{}.html'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_api_{}.html'. \
+                                  format(module, op_name))
+
+def get_html_file(opts, name, module=''):
+    root = get_html_dir(opts)
+    op_name = to_filename(name)
+    if module == '':
+        return os.path.join(root, '{}.html'.format(op_name))
+    else:
+        return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
+
+doc_header = '''\
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset=\"utf-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+    <title>{}</title>
+    <style type=\"text/css\">
+      body {{
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }}
+      h1,h2,h3 {{
+        line-height: 1.2;
+      }}
+      table {{
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }}
+      th, td {{
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }}
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src=\"assets/polyfill.min.js\"></script>
+    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\">
+    </script>
+    <!-- Highlight.js -->
+    <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
+    <script src=\"assets/highlight.min.js\"></script>
+    <script src=\"assets/cpp.min.js\"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src=\"img/logo.svg\">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href=\"index.html\">Index</a> |
+  <a href=\"tutorial.html\">Tutorial</a> |
+  <a href=\"faq.html\">FAQ</a> |
+  <a href=\"contribute.html\">Contribute</a> |
+  <a href=\"overview.html\">API overview</a> |
+  <a href=\"api.html\">API reference</a> |
+  <a href=\"wrapped_intrinsics.html\">Wrapped intrinsics</a> |
+  <a href=\"modules.html\">Modules</a>
+  <hr>
+</div>
+{}
+'''
+
+doc_footer = '''\
+  </body>
+</html>
+'''
+
+def get_html_header(opts, title, filename):
+    # check if filename is part of a module doc
+    for mod in opts.modules_list:
+        if filename.startswith('module_{}_'.format(mod)):
+            links = eval('opts.modules_list[mod].{}.hatch.doc_menu()'. \
+                         format(mod))
+            name = eval('opts.modules_list[mod].{}.hatch.name()'.format(mod))
+            html = '<div style="text-align: center; margin-bottom: 1em;">\n'
+            html += '<b>{} module documentation</b>\n'.format(name)
+            if len(links) > 0:
+                html += '</div>\n'
+                html += \
+                '<div style="text-align: center; margin-bottom: 1em;">\n'
+                html += ' | '.join(['<a href=\"module_{}_{}.html\">{}</a>'. \
+                                    format(mod, href, label) \
+                                    for label, href in links.items()])
+            html += '\n<hr>\n</div>\n'
+            return doc_header.format(title, html)
+    return doc_header.format(title, '')
+
+def get_html_footer():
+    return doc_footer
+
+# -----------------------------------------------------------------------------
+
+def gen_doc_html(opts, title):
+    if not opts.list_files:
+        build_exe_for_doc(opts)
+        md2html = 'md2html.exe' if platform.system() == 'Windows' \
+                                else 'md2html'
+        doc_dir = os.path.join(opts.script_dir, '..', 'doc')
+        full_path_md2html = os.path.join(doc_dir, md2html)
+        if not os.path.isfile(full_path_md2html):
+            common.myprint(opts, '{} not found'.format(md2html))
+            return
+
+    # get all markdown files
+    md_dir = common.get_markdown_dir(opts)
+    html_dir = get_html_dir(opts)
+
+    if not os.path.isdir(html_dir):
+        mkdir_p(html_dir)
+
+    doc_files = []
+    for filename in os.listdir(md_dir):
+        name =  os.path.basename(filename)
+        if name.endswith('.md'):
+            doc_files.append(os.path.splitext(name)[0])
+
+    if opts.list_files:
+        ## list gen files
+        for filename in doc_files:
+            input_name = os.path.join(md_dir, filename + '.md')
+            output_name = os.path.join(html_dir, filename + '.html')
+            print(output_name)
+    else:
+        ## gen html files
+        footer = get_html_footer()
+        tmp_file = os.path.join(doc_dir, 'tmp.html')
+        for filename in doc_files:
+            header = get_html_header(opts, title, filename)
+            input_name = os.path.join(md_dir, filename + '.md')
+            output_name = os.path.join(html_dir, filename + '.html')
+            os.system('{} "{}" "{}"'.format(full_path_md2html, input_name,
+                                            tmp_file))
+            with common.open_utf8(opts, output_name) as fout:
+                fout.write(header)
+                with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
+                    fout.write(fin.read())
+                fout.write(footer)
+
 def gen_html(opts):
-    print('-- Generating HTML documentation')
-    common.gen_doc_html(opts, 'NSIMD documentation')
- 
+    common.myprint(opts, 'Generating HTML documentation')
+    gen_doc_html(opts, 'NSIMD documentation')
+
+# -----------------------------------------------------------------------------
+
+def copy_github_file_to_doc(opts, github_filename, doc_filename):
+    common.myprint(opts, 'Copying {} ---> {}'. \
+                   format(github_filename, doc_filename))
+    if not common.can_create_filename(opts, doc_filename):
+        return
+    with io.open(github_filename, mode='r', encoding='utf-8') as fin:
+        file_content = fin.read()
+    # we replace all links to doc/... by nsimd/...
+    file_content = file_content.replace('doc/markdown/', 'nsimd/')
+    file_content = file_content.replace('doc/', 'nsimd/')
+    # we do not use common.open_utf8 as the copyright is already in content
+    with io.open(doc_filename, mode='w', encoding='utf-8') as fout:
+        fout.write(file_content)
+
 # -----------------------------------------------------------------------------
 
 def doit(opts):
     gen_overview(opts)
     gen_doc(opts)
-    gen_html(opts)
+    gen_modules_md(opts)
+    gen_what_is_wrapped(opts)
+    root_dir = os.path.join(opts.script_dir, '..')
+    copy_github_file_to_doc(opts,
+                            os.path.join(root_dir, 'README.md'),
+                            common.get_markdown_file(opts, 'index'))
+    copy_github_file_to_doc(opts,
+                            os.path.join(root_dir, 'CONTRIBUTING.md'),
+                            common.get_markdown_file(opts, 'contribute'))
+    gen_html(opts) # This must be last

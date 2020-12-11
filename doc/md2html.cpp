@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,9 @@ std::pair<int, int> extract_lines(std::string const &s) {
     try {
       r.first = std::stoi(lines[1]);
       r.second = std::stoi(lines[2]);
-    } catch (std::exception const &e) {
-      // r.first and r.second are -1
+    } catch (std::exception const &) {
+      r.first = -1;
+      r.second = -1;
     }
   }
   return r;

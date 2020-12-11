@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,131 +25,198 @@ SOFTWARE.
 #ifndef NSIMD_H
 #define NSIMD_H
 
-/* ------------------------------------------------------------------------- */
-/* Compiler detection (order matters https://stackoverflow.com/a/28166605) */
+/* clang-format off */
 
+/* ------------------------------------------------------------------------- */
+/* Compiler detection (order matters https://stackoverflow.com/a/28166605)   */
+
+/* Detect host compiler */
 #if defined(_MSC_VER)
-#define NSIMD_IS_MSVC
+  #define NSIMD_IS_MSVC
 #elif defined(__INTEL_COMPILER)
-#define NSIMD_IS_ICC
+  #define NSIMD_IS_ICC
 #elif defined(__clang__)
-#define NSIMD_IS_CLANG
+  #define NSIMD_IS_CLANG
 #elif defined(__GNUC__) || defined(__GNUG__)
-#define NSIMD_IS_GCC
+  #define NSIMD_IS_GCC
+#endif
+
+/* Detect device compiler, if any */
+#if defined(__HIPCC__)
+  #define NSIMD_IS_HIPCC
+#elif defined(__INTEL_CLANG_COMPILER) || defined(__INTEL_LLVM_COMPILER)
+  #define NSIMD_IS_DPCPP
 #elif defined(__NVCC__)
-#define NSIMD_IS_NVCC
-#endif
-
-/* ------------------------------------------------------------------------- */
-/* Register size detection */
-
-#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||          \
-    defined(__amd64) || defined(_M_AMD64) || defined(__aarch64__) ||           \
-    defined(_M_ARM64) || defined(__PPC64__)
-#define NSIMD_WORD_SIZE 64
-#else
-#define NSIMD_WORD_SIZE 32
-#endif
-
-/* ------------------------------------------------------------------------- */
-/* Architecture detection */
-
-#if defined(i386) || defined(__i386__) || defined(__i486__) ||                 \
-    defined(__i586__) || defined(__i686__) || defined(__i386) ||               \
-    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||            \
-    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||             \
-    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||           \
-    defined(_M_X64)
-#define NSIMD_X86
-#elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||            \
-    defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||              \
-    defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
-#define NSIMD_ARM
-#elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
-#define NSIMD_POWERPC
-#else
-#define NSIMD_CPU
+  #define NSIMD_IS_NVCC
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* C standard detection */
 
 #ifdef NSIMD_IS_MSVC
-#define NSIMD_C 1999
+  #define NSIMD_C 1999
 #else
-#ifdef __STDC_VERSION__
-#if __STDC_VERSION__ == 199901L
-#define NSIMD_C 1999
-#elif __STDC_VERSION__ >= 201112L
-#define NSIMD_C 2011
-#else
-#define NSIMD_C 1989
-#endif
-#else
-#define NSIMD_C 1989
-#endif
+  #ifdef __STDC_VERSION__
+    #if __STDC_VERSION__ == 199901L
+      #define NSIMD_C 1999
+    #elif __STDC_VERSION__ >= 201112L
+      #define NSIMD_C 2011
+    #else
+      #define NSIMD_C 1989
+    #endif
+  #else
+    #define NSIMD_C 1989
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* C++ standard detection */
 
 #ifdef NSIMD_IS_MSVC
-#define NSIMD__cplusplus _MSVC_LANG
+  #ifdef _MSVC_LANG
+    #define NSIMD__cplusplus _MSVC_LANG
+  #else
+    #define NSIMD__cplusplus __cplusplus
+  #endif
 #else
-#ifdef __cplusplus
-#define NSIMD__cplusplus __cplusplus
-#else
-#define NSIMD__cplusplus 0
-#endif
+  #ifdef __cplusplus
+    #define NSIMD__cplusplus __cplusplus
+  #else
+    #define NSIMD__cplusplus 0
+  #endif
 #endif
 
 #if NSIMD__cplusplus > 0 && NSIMD__cplusplus < 201103L
-#define NSIMD_CXX 1998
+  #define NSIMD_CXX 1998
 #elif NSIMD__cplusplus >= 201103L && NSIMD__cplusplus < 201402L
-#define NSIMD_CXX 2011
+  #define NSIMD_CXX 2011
 #elif NSIMD__cplusplus >= 201402L && NSIMD__cplusplus < 201703L
-#define NSIMD_CXX 2014
-#elif NSIMD__cplusplus >= 201703L
-#define NSIMD_CXX 2017
+  #define NSIMD_CXX 2014
+#elif NSIMD__cplusplus == 201703L
+  #define NSIMD_CXX 2017
+#elif NSIMD__cplusplus >= 201704L
+  #define NSIMD_CXX 2020
 #else
-#define NSIMD_CXX 0
+  #define NSIMD_CXX 0
+#endif
+
+#if NSIMD_CXX >= 2020
+  #include <concepts>
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Use of long long for GCC even in C89 and C++98. Note that for some reason */
+/* the use of the __extension__ keyword does not prevent warning so we deal  */
+/* with them now. We keep the __extension__ keyword in case.                 */
+
+#if NSIMD_CXX < 2011 && NSIMD_C < 1999
+  #define NSIMD_LONGLONG_IS_EXTENSION
+#endif
+
+#ifdef NSIMD_LONGLONG_IS_EXTENSION
+  #if defined(NSIMD_IS_GCC)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wlong-long"
+  #elif defined(NSIMD_IS_CLANG)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wlong-long"
+  #endif
+#endif
+
+typedef long long nsimd_longlong;
+typedef unsigned long long nsimd_ulonglong;
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+  typedef long long longlong;
+  typedef unsigned long long ulonglong;
+} // namespace nsimd
+#endif
+
+#ifdef NSIMD_LONGLONG_IS_EXTENSION
+  #if defined(NSIMD_IS_GCC)
+    #pragma GCC diagnostic pop
+  #elif defined(NSIMD_IS_CLANG)
+    #pragma clang diagnostic pop
+  #endif
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Register size detection */
+
+#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||         \
+    defined(__amd64) || defined(_M_AMD64) || defined(__aarch64__) ||          \
+    defined(_M_ARM64) || defined(__PPC64__)
+  #define NSIMD_WORD_SIZE 64
+#else
+  #define NSIMD_WORD_SIZE 32
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Architecture detection */
+
+#if defined(i386) || defined(__i386__) || defined(__i486__) ||                \
+    defined(__i586__) || defined(__i686__) || defined(__i386) ||              \
+    defined(_M_IX86) || defined(_X86_) || defined(__THW_INTEL__) ||           \
+    defined(__I86__) || defined(__INTEL__) || defined(__x86_64) ||            \
+    defined(__x86_64__) || defined(__amd64__) || defined(__amd64) ||          \
+    defined(_M_X64)
+  #define NSIMD_X86
+#elif defined(__arm__) || defined(__arm64) || defined(__thumb__) ||           \
+    defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
+    defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
+  #define NSIMD_ARM
+#elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
+  #define NSIMD_POWERPC
+#else
+  #define NSIMD_CPU
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* Microsoft DLL specifics */
 
 #ifdef NSIMD_IS_MSVC
-#define NSIMD_DLLEXPORT __declspec(dllexport)
-#define NSIMD_DLLIMPORT __declspec(dllimport)
+  #define NSIMD_DLLEXPORT __declspec(dllexport)
+  #define NSIMD_DLLIMPORT __declspec(dllimport)
 #else
-#define NSIMD_DLLEXPORT
-#define NSIMD_DLLIMPORT extern
+  #define NSIMD_DLLEXPORT
+  #define NSIMD_DLLIMPORT extern
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* DLL specifics when inside/outside the library */
 
 #ifdef NSIMD_INSIDE
-#define NSIMD_DLLSPEC NSIMD_DLLEXPORT
+  #define NSIMD_DLLSPEC NSIMD_DLLEXPORT
 #else
-#define NSIMD_DLLSPEC NSIMD_DLLIMPORT
+  #define NSIMD_DLLSPEC NSIMD_DLLIMPORT
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Vector calling convention: https://devblogs.microsoft.com/cppblog
+                                  /introducing-vector-calling-convention/ */
+
+#if defined(NSIMD_IS_MSVC) && NSIMD_WORD_SIZE == 32
+  #define NSIMD_VECTORCALL __vectorcall
+#else
+  #define NSIMD_VECTORCALL
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* inline in nsimd is ONLY useful for linkage */
 
 #if NSIMD_CXX > 0 || NSIMD_C > 1989
-#if NSIMD_C > 0 && defined(NSIMD_IS_MSVC)
-#define NSIMD_INLINE static __inline
+  #if NSIMD_C > 0 && defined(NSIMD_IS_MSVC)
+    #define NSIMD_INLINE static __inline
+  #else
+    #define NSIMD_INLINE static inline
+  #endif
 #else
-#define NSIMD_INLINE static inline
-#endif
-#else
-#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-#define NSIMD_INLINE __extension__ __inline__
-#else
-#define NSIMD_INLINE
-#endif
+  #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+    #define NSIMD_INLINE __extension__ static __inline
+  #else
+    #define NSIMD_INLINE
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -179,69 +246,75 @@ SOFTWARE.
 /* Intel */
 
 #if defined(SSE2) && !defined(NSIMD_SSE2)
-#define NSIMD_SSE2
+  #define NSIMD_SSE2
 #endif
 
 #if defined(SSE42) && !defined(NSIMD_SSE42)
-#define NSIMD_SSE42
+  #define NSIMD_SSE42
 #endif
 
 #if defined(AVX) && !defined(NSIMD_AVX)
-#define NSIMD_AVX
+  #define NSIMD_AVX
 #endif
 
 #if defined(AVX2) && !defined(NSIMD_AVX2)
-#define NSIMD_AVX2
+  #define NSIMD_AVX2
 #endif
 
 #if defined(AVX512_KNL) && !defined(NSIMD_AVX512_KNL)
-#define NSIMD_AVX512_KNL
+  #define NSIMD_AVX512_KNL
 #endif
 
 #if defined(AVX512_SKYLAKE) && !defined(NSIMD_AVX512_SKYLAKE)
-#define NSIMD_AVX512_SKYLAKE
+  #define NSIMD_AVX512_SKYLAKE
 #endif
 
 #if defined(FP16) && !defined(NSIMD_FP16)
-#define NSIMD_FP16
+  #define NSIMD_FP16
 #endif
 
 #if defined(FMA) && !defined(NSIMD_FMA)
-#define NSIMD_FMA
+  #define NSIMD_FMA
 #endif
 
 /* ARM */
 
 #if defined(NEON128) && !defined(NSIMD_NEON128)
-#define NSIMD_NEON128
+  #define NSIMD_NEON128
 #endif
 
 #if defined(AARCH64) && !defined(NSIMD_AARCH64)
-#define NSIMD_AARCH64
+  #define NSIMD_AARCH64
 #endif
 
 #if defined(SVE) && !defined(NSIMD_SVE)
-#define NSIMD_SVE
+  #define NSIMD_SVE
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE128) && !defined(NSIMD_SVE128)
   #define NSIMD_SVE128
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE256) && !defined(NSIMD_SVE256)
   #define NSIMD_SVE256
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE512) && !defined(NSIMD_SVE512)
   #define NSIMD_SVE512
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE1024) && !defined(NSIMD_SVE1024)
   #define NSIMD_SVE1024
+  #define NSIMD_SVE_FAMILY
 #endif
 
 #if defined(SVE2048) && !defined(NSIMD_SVE2048)
   #define NSIMD_SVE2048
+  #define NSIMD_SVE_FAMILY
 #endif
 
 /* PPC */
@@ -257,7 +330,19 @@ SOFTWARE.
 /* CUDA */
 
 #if defined(CUDA) && !defined(NSIMD_CUDA)
-#define NSIMD_CUDA
+  #define NSIMD_CUDA
+#endif
+
+/* ROCm */
+
+#if defined(ROCM) && !defined(NSIMD_ROCM)
+  #define NSIMD_ROCM
+#endif
+
+/* oneAPI */
+
+#if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
+  #define NSIMD_ONEAPI
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -265,104 +350,227 @@ SOFTWARE.
 
 #if defined(NSIMD_SSE2)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD sse2
-#include <emmintrin.h>
-#if defined(NSIMD_FMA) || defined(NSIMD_FP16)
-#include <immintrin.h>
-#endif
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD sse2
+  #include <emmintrin.h>
+  #if defined(NSIMD_FMA) || defined(NSIMD_FP16)
+    #include <immintrin.h>
+  #endif
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct sse2 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::sse2>;
+        #define NSIMD_LIST_SIMD_EXT cpu, sse2
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_SSE42)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD sse42
-#include <nmmintrin.h>
-#if defined(NSIMD_FMA) || defined(NSIMD_FP16)
-#include <immintrin.h>
-#endif
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD sse42
+  #include <nmmintrin.h>
+  #if defined(NSIMD_FMA) || defined(NSIMD_FP16)
+    #include <immintrin.h>
+  #endif
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct sse2 {};
+      struct sse42 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::sse2> ||
+                             std::is_same_v<T, nsimd::sse42>;
+        #define NSIMD_LIST_SIMD_EXT cpu, sse2, sse42
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_AVX)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx
-#include <immintrin.h>
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx
+  #include <immintrin.h>
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct sse2 {};
+      struct sse42 {};
+      struct avx {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::sse2> ||
+                             std::is_same_v<T, nsimd::sse42> ||
+                             std::is_same_v<T, nsimd::avx>;
+        #define NSIMD_LIST_SIMD_EXT cpu, sse2, sse42, avx
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_AVX2)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx2
-#include <immintrin.h>
-/* For some reason MSVC <= 2015 has intrinsics defined in another header */
-#ifdef NSIMD_IS_MSVC
-#include <intrin.h>
-#endif
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx2
+  #include <immintrin.h>
+  /* For some reason MSVC <= 2015 has intrinsics defined in another header */
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct sse2 {};
+      struct sse42 {};
+      struct avx {};
+      struct avx2 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::sse2> ||
+                             std::is_same_v<T, nsimd::sse42> ||
+                             std::is_same_v<T, nsimd::avx> ||
+                             std::is_same_v<T, nsimd::avx2>;
+        #define NSIMD_LIST_SIMD_EXT cpu, sse2, sse42, avx, avx2
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_AVX512_KNL)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx512_knl
-#include <immintrin.h>
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx512_knl
+  #include <immintrin.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct sse2 {};
+      struct sse42 {};
+      struct avx {};
+      struct avx2 {};
+      struct avx512_knl {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::sse2> ||
+                             std::is_same_v<T, nsimd::sse42> ||
+                             std::is_same_v<T, nsimd::avx> ||
+                             std::is_same_v<T, nsimd::avx2> ||
+                             std::is_same_v<T, nsimd::avx512_knl>;
+        #define NSIMD_LIST_SIMD_EXT cpu, sse2, sse42, avx, avx2, avx512_knl
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_AVX512_SKYLAKE)
 
-#define NSIMD_PLATFORM x86
-#define NSIMD_SIMD avx512_skylake
-#include <immintrin.h>
+  #define NSIMD_PLATFORM x86
+  #define NSIMD_SIMD avx512_skylake
+  #include <immintrin.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct sse2 {};
+      struct sse42 {};
+      struct avx {};
+      struct avx2 {};
+      struct avx512_skylake {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::sse2> ||
+                             std::is_same_v<T, nsimd::sse42> ||
+                             std::is_same_v<T, nsimd::avx> ||
+                             std::is_same_v<T, nsimd::avx2> ||
+                             std::is_same_v<T, nsimd::avx512_skylake>;
+        #define NSIMD_LIST_SIMD_EXT cpu, sse2, sse42, avx, avx2, avx512_skylake
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_NEON128)
 
-#define NSIMD_PLATFORM arm
-#define NSIMD_SIMD neon128
-#include <arm_neon.h>
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD neon128
+  #include <arm_neon.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct neon128 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::neon128>;
+        #define NSIMD_LIST_SIMD_EXT cpu, neon128
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_AARCH64)
 
-#define NSIMD_PLATFORM arm
-#define NSIMD_SIMD aarch64
-#include <arm_neon.h>
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD aarch64
+  #include <arm_neon.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_SVE)
 
-#define NSIMD_PLATFORM arm
-#define NSIMD_SIMD sve
-#include <arm_neon.h>
-#include <arm_sve.h>
+  #define NSIMD_PLATFORM arm
+  #define NSIMD_SIMD sve
+  #include <arm_neon.h>
+  #include <arm_sve.h>
 
-#elif defined(NSIMD_POWER7)
-
-#define NSIMD_PLATFORM ppc
-#define NSIMD_SIMD power7
-
-#ifdef NSIMD_IS_CLANG
-// New version of clang are spamming useless warning comming from their
-// altivec.h file
-#pragma clang diagnostic ignored "-Wc11-extensions"
-#pragma clang diagnostic ignored "-Wc++11-long-long"
-#endif
-#include <altivec.h>
-#ifdef NSIMD_IS_CLANG
-#endif
-#ifdef bool
-#undef bool
-#endif
-#ifdef pixel
-#undef pixel
-#endif
-#ifdef vector
-#undef vector
-#endif
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      struct sve {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64> ||
+                             std::is_same_v<T, nsimd::sve>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_SVE128)
 
@@ -371,12 +579,42 @@ SOFTWARE.
   #include <arm_neon.h>
   #include <arm_sve.h>
 
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      struct sve128 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64> ||
+                             std::is_same_v<T, nsimd::sve128>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve128
+      #endif
+    } // namespace nsimd
+  #endif
+
 #elif defined(NSIMD_SVE256)
 
   #define NSIMD_PLATFORM arm
   #define NSIMD_SIMD sve256
   #include <arm_neon.h>
   #include <arm_sve.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      struct sve256 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64> ||
+                             std::is_same_v<T, nsimd::sve256>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve256
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_SVE512)
 
@@ -385,12 +623,42 @@ SOFTWARE.
   #include <arm_neon.h>
   #include <arm_sve.h>
 
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      struct sve512 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64> ||
+                             std::is_same_v<T, nsimd::sve512>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve512
+      #endif
+    } // namespace nsimd
+  #endif
+
 #elif defined(NSIMD_SVE1024)
 
   #define NSIMD_PLATFORM arm
   #define NSIMD_SIMD sve1024
   #include <arm_neon.h>
   #include <arm_sve.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      struct sve1024 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64> ||
+                             std::is_same_v<T, nsimd::sve1024>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve1024
+      #endif
+    } // namespace nsimd
+  #endif
 
 #elif defined(NSIMD_SVE2048)
 
@@ -399,198 +667,393 @@ SOFTWARE.
   #include <arm_neon.h>
   #include <arm_sve.h>
 
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct aarch64 {};
+      struct sve2048 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::aarch64> ||
+                             std::is_same_v<T, nsimd::sve2048>;
+        #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve2048
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_POWER7)
+
+  #define NSIMD_PLATFORM ppc
+  #define NSIMD_SIMD power7
+
+  #ifdef NSIMD_IS_CLANG
+  // New version of clang are spamming useless warning comming from their
+  // altivec.h file
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wc++11-long-long"
+  #endif
+
+  #include <altivec.h>
+
+  #ifdef bool
+    #undef bool
+  #endif
+  #ifdef pixel
+    #undef pixel
+  #endif
+  #ifdef vector
+    #undef vector
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct power7 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::power7>;
+        #define NSIMD_LIST_SIMD_EXT cpu, power7
+      #endif
+    } // namespace nsimd
+  #endif
+
 #else
 
-#define NSIMD_SIMD cpu
-#define NSIMD_PLATFORM cpu
+  #ifdef NSIMD_CUDA
+    #if defined(NSIMD_IS_GCC)
+      #pragma GCC diagnostic push
+      #pragma GCC diagnostic ignored "-Wunused-function"
+    #elif defined(NSIMD_IS_CLANG)
+      #pragma clang diagnostic push
+      #pragma clang diagnostic ignored "-Wunused-function"
+    #endif
+    #include <cuda_fp16.h>
+    #if defined(NSIMD_IS_GCC)
+      #pragma GCC diagnostic pop
+    #elif defined(NSIMD_IS_CLANG)
+      #pragma clang diagnostic pop
+    #endif
+  #endif
+
+  #ifdef NSIMD_ROCM
+    #include <hip/hip_fp16.h>
+    #include <hip/hip_runtime.h>
+  #endif
+
+  #ifdef NSIMD_ONEAPI
+    #include <CL/sycl.hpp>
+  #endif
+
+  #define NSIMD_SIMD cpu
+  #define NSIMD_PLATFORM cpu
+
+  #ifdef NSIMD_IS_MSVC
+    #include <intrin.h>
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu>;
+        #define NSIMD_LIST_SIMD_EXT cpu
+      #endif
+    } // namespace nsimd
+  #endif
 
 #endif
 
+#if NSIMD_CXX >= 2020
+  #define NSIMD_CONCEPT_SIMD_EXT nsimd::simd_ext_c
+#else
+  #define NSIMD_CONCEPT_SIMD_EXT typename
+#endif
+
 /* ------------------------------------------------------------------------- */
-/* Shorter typedefs for integers */
+/* For ARM SVE we need a special struct */
+
+#ifdef NSIMD_SVE
+  #define NSIMD_STRUCT __sizeless_struct
+#else
+  #define NSIMD_STRUCT struct
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Shorter typedefs for integers and their limits */
+
+#if NSIMD_CXX > 0
+  #include <climits>
+#else
+  #include <limits.h>
+#endif
 
 #ifdef NSIMD_IS_MSVC
-typedef unsigned __int8 u8;
-typedef signed __int8 i8;
-typedef unsigned __int16 u16;
-typedef signed __int16 i16;
-typedef unsigned __int32 u32;
-typedef signed __int32 i32;
-typedef unsigned __int64 u64;
-typedef signed __int64 i64;
+  typedef unsigned __int8  u8;
+  typedef signed   __int8  i8;
+  typedef unsigned __int16 u16;
+  typedef signed   __int16 i16;
+  typedef unsigned __int32 u32;
+  typedef signed   __int32 i32;
+  typedef unsigned __int64 u64;
+  typedef signed   __int64 i64;
 #else
-typedef unsigned char u8;
-typedef signed char i8;
-typedef unsigned short u16;
-typedef signed short i16;
-typedef unsigned int u32;
-typedef signed int i32;
-#if NSIMD_WORD_SIZE == 64
-typedef unsigned long u64;
-typedef signed long i64;
-#else
-#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-__extension__ typedef unsigned long long u64;
-__extension__ typedef signed long long i64;
-#else
-typedef unsigned long long u64;
-typedef signed long long i64;
+  typedef unsigned char  u8;
+  typedef signed   char  i8;
+  typedef unsigned short u16;
+  typedef signed   short i16;
+  typedef unsigned int   u32;
+  typedef signed   int   i32;
+  #if NSIMD_WORD_SIZE == 64
+    typedef unsigned long u64;
+    typedef signed long   i64;
+  #else
+    #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+      __extension__ typedef nsimd_ulonglong u64;
+      __extension__ typedef nsimd_longlong i64;
+    #else
+      typedef unsigned long long u64;
+      typedef signed long long   i64;
+    #endif
+  #endif
 #endif
-#endif
+
+#define NSIMD_U8_MIN ((u8)0)
+#define NSIMD_U8_MAX UCHAR_MAX
+#define NSIMD_I8_MIN SCHAR_MIN
+#define NSIMD_I8_MAX SCHAR_MAX
+#define NSIMD_U16_MIN ((u16)0)
+#define NSIMD_U16_MAX USHRT_MAX
+#define NSIMD_I16_MIN SHRT_MIN
+#define NSIMD_I16_MAX SHRT_MAX
+#define NSIMD_U32_MIN ((u32)0)
+#define NSIMD_U32_MAX UINT_MAX
+#define NSIMD_I32_MIN INT_MIN
+#define NSIMD_I32_MAX INT_MAX
+
+#ifdef NSIMD_IS_MSVC
+  #define NSIMD_U64_MIN ((u64)0)
+  #define NSIMD_U64_MAX ULLONG_MAX
+  #define NSIMD_I64_MIN LLONG_MIN
+  #define NSIMD_I64_MAX LLONG_MAX
+#else
+  #if NSIMD_WORD_SIZE == 64
+    #define NSIMD_U64_MIN ((u64)0)
+    #define NSIMD_U64_MAX ULONG_MAX
+    #define NSIMD_I64_MIN LONG_MIN
+    #define NSIMD_I64_MAX LONG_MAX
+  #else
+    #define NSIMD_U64_MIN ((u64)0)
+    #define NSIMD_U64_MAX (~((u64)0))
+    #define NSIMD_I64_MIN ((i64)1 << 63)
+    #define NSIMD_I64_MAX (~((i64)1 << 63))
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Sorter typedefs for floatting point types */
+/* Shorter typedefs for floatting point types */
 
-#if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) && \
-     defined(NSIMD_FP16)) || defined(NSIMD_SVE) || defined(NSIMD_SVE128) || \
-     defined(NSIMD_SVE256) || defined(NSIMD_SVE512) || \
-     defined(NSIMD_SVE1024) || defined(NSIMD_SVE2048)
-  #define NSIMD_NATIVE_FP16
+#if ((defined(NSIMD_NEON128) || defined(NSIMD_AARCH64)) &&                    \
+     defined(NSIMD_FP16)) || defined(NSIMD_SVE_FAMILY)
+  #define NSIMD_ARM_FP16
 #endif
 
-#ifdef NSIMD_NATIVE_FP16
-typedef __fp16 f16;
+#ifdef NSIMD_ARM_FP16
+  typedef __fp16 f16;
+#elif defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+  typedef __half f16;
+#elif defined(NSIMD_ONEAPI)
+  typedef half f16;
 #else
-typedef struct {
-  u16 u;
-} f16;
+  typedef struct { u16 u; } f16;
 #endif
 
-typedef float f32;
+typedef float  f32;
 typedef double f64;
 
 /* ------------------------------------------------------------------------- */
 /* Native register size (for now only 32 and 64 bits) types */
 
 #if NSIMD_WORD_SIZE == 64
-typedef i64 nat;
+  typedef i64 nsimd_nat;
 #else
-typedef i32 nat;
+  typedef i32 nsimd_nat;
+#endif
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+typedef nsimd_nat nat;
+} // namespace nsimd
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* typedefs for integers limits */
+/* C++ traits for base types */
 
-#ifdef NSIMD_IS_MSVC
+#if NSIMD_CXX > 0
 
-#include <limits.h>
+namespace nsimd {
 
-/* 8 bits */
-#define NSIMD_I8_MAX SCHAR_MAX
-#define NSIMD_U8_MAX UCHAR_MAX
+// Some C++20 concepts first
 
-#define NSIMD_I8_MIN SCHAR_MIN
-#define NSIMD_U8_MIN ((u8)0)
+#if NSIMD_CXX >= 2020
+  template <typename T> concept simd_value_type_c =
+      std::is_same_v<T, u8> || std::is_same_v<T, i8> ||
+      std::is_same_v<T, u16> || std::is_same_v<T, i16> ||
+      std::is_same_v<T, u32> || std::is_same_v<T, i32> ||
+      std::is_same_v<T, u64> || std::is_same_v<T, i64> ||
+      std::is_same_v<T, f16> || std::is_same_v<T, f32> ||
+      std::is_same_v<T, f64>;
+  #define NSIMD_CONCEPT_VALUE_TYPE nsimd::simd_value_type_c
 
-/* 16 bits */
-#define NSIMD_I16_MAX SHRT_MAX
-#define NSIMD_U16_MAX USHRT_MAX
+  template <typename T> concept simd_value_type_or_bool_c =
+      simd_value_type_c<T> || std::is_same_v<T, bool>;
+  #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL nsimd::simd_value_type_or_bool_c
 
-#define NSIMD_I16_MIN SHRT_MIN
-#define NSIMD_U16_MIN ((u16)0)
+  // We need our own sizeof because of f16 which can be 4 bytes (i.e. a
+  // float) on systems where there is no support for native f16.
+  template <typename T> struct sizeof_t {
+    static const size_t value = sizeof(T);
+  };
+  template <> struct sizeof_t<f16> { static const size_t value = 2; };
 
-/* 32 bits */
-#define NSIMD_I32_MAX INT_MAX
-#define NSIMD_U32_MAX UINT_MAX
+  template <typename T> const size_t sizeof_v = sizeof_t<T>::value;
 
-#define NSIMD_I32_MIN INT_MIN
-#define NSIMD_U32_MIN ((u32)0)
-
-/* 64 bits */
-#define NSIMD_I64_MAX LLONG_MAX
-#define NSIMD_U64_MAX ULLONG_MAX
-
-#define NSIMD_I64_MIN LLONG_MIN
-#define NSIMD_U64_MIN ((u64)0)
-
+  #define NSIMD_REQUIRES(cond) requires(cond)
 #else
+  #define NSIMD_CONCEPT_VALUE_TYPE typename
+  #define NSIMD_CONCEPT_VALUE_TYPE_OR_BOOL typename
+  #define NSIMD_REQUIRES(cond)
+#endif
 
-/* 8 bits */
-#define NSIMD_I8_MAX ((i8)0x7f)
-#define NSIMD_U8_MAX ((u8)((u8)NSIMD_I8_MAX * 2 + 1))
+template <NSIMD_CONCEPT_VALUE_TYPE T> struct traits {};
 
-#define NSIMD_I8_MIN ((i8)(-NSIMD_I8_MAX - 1))
-#define NSIMD_U8_MIN ((u8)0)
+// 8-bits
 
-/* 16 bits */
-#define NSIMD_I16_MAX ((i16)0x7fff)
-#define NSIMD_U16_MAX ((u16)((u16)NSIMD_I16_MAX * 2 + 1))
+template <> struct traits<i8> {
+  typedef i8 itype;
+  typedef u8 utype;
+};
 
-#define NSIMD_I16_MIN ((i16)(-NSIMD_I16_MAX - 1))
-#define NSIMD_U16_MIN ((u16)0)
+template <> struct traits<u8> {
+  typedef i8 itype;
+  typedef u8 utype;
+};
 
-/* 32 bits */
-#define NSIMD_I32_MAX ((i32)0x7fffffff)
-#define NSIMD_U32_MAX (((u32)NSIMD_I32_MAX * 2 + 1))
+// 16-bits
 
-#define NSIMD_I32_MIN (-NSIMD_I32_MAX - 1)
-#define NSIMD_U32_MIN ((u32)0)
+template <> struct traits<i16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+};
 
-/* 64 bits */
-#define NSIMD_I64_MAX (~(((i64)1) << 63))
-#define NSIMD_U64_MAX (((u64)NSIMD_I64_MAX * 2 + 1))
+template <> struct traits<u16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+};
 
-#define NSIMD_I64_MIN (-NSIMD_I64_MAX - 1)
-#define NSIMD_U64_MIN ((u64)0)
+template <> struct traits<f16> {
+  typedef i16 itype;
+  typedef u16 utype;
+  typedef f16 ftype;
+};
+
+// 32-bits
+
+template <> struct traits<i32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+};
+
+template <> struct traits<u32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+};
+
+template <> struct traits<f32> {
+  typedef i32 itype;
+  typedef u32 utype;
+  typedef f32 ftype;
+};
+
+// 64-bits
+
+template <> struct traits<i64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+};
+
+template <> struct traits<u64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+};
+
+template <> struct traits<f64> {
+  typedef i64 itype;
+  typedef u64 utype;
+  typedef f64 ftype;
+};
+
+} // namespace nsimd
 
 #endif
 
 /* ------------------------------------------------------------------------- */
 /* Set if denormalized float are set to 0                                    */
+
 #ifdef NSIMD_NEON128
-#define NSIMD_DNZ_FLUSH_TO_ZERO
+  #define NSIMD_DNZ_FLUSH_TO_ZERO
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 /* POPCNT: GCC and Clang have intrinsics */
 
+NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
 #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-
-NSIMD_INLINE int nsimd_popcnt32_(u32 a) { return __builtin_popcount(a); }
+  return __builtin_popcount(a);
+#elif defined(NSIMD_IS_MSVC)
+  return (int)__popcnt(a);
+#else
+  int i, ret = 0;
+  for (i = 0; i < 32; i++) {
+    ret += (int)((a >> i) & 1);
+  }
+  return ret;
+#endif
+}
 
 NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
+#if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
 #if __SIZEOF_LONG__ == 4
   return __builtin_popcountl((u32)(a & 0xFFFFFFFF)) +
          __builtin_popcountl((u32)(a >> 32));
 #else
   return __builtin_popcountl(a);
 #endif
-}
-
-/* ------------------------------------------------------------------------- */
-/* POPCNT: MSVC has also an intrinsic for that */
-
 #elif defined(NSIMD_IS_MSVC)
-
-#include <intrin.h>
-
-NSIMD_INLINE int nsimd_popcnt32_(u32 a) { return (int)__popcnt(a); }
-
-NSIMD_INLINE int nsimd_popcnt64_(u64 a) { return (int)__popcnt64(a); }
-
-/* ------------------------------------------------------------------------- */
-/* POPCNT: Default naive implementation */
-
+  #if NSIMD_WORD_SIZE == 64
+    return (int)__popcnt64(a);
+  #else
+    return (int)__popcnt((u32)(a & 0xFFFFFFFF)) +
+           (int)__popcnt((u32)(a >> 32));
+  #endif
 #else
-
-NSIMD_INLINE int nsimd_popcnt32_(u32 a) {
-  int i, ret = 0;
-  for (i = 0; i < 32; i++) {
-    ret += (int)((a >> i) & 1);
-  }
-  return ret;
-}
-
-NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
     ret += (int)((a >> i) & 1);
   }
   return ret;
-}
-
 #endif
+}
 
 /* ------------------------------------------------------------------------- */
 /* Macro to automatically include function depending on detected
@@ -601,13 +1064,17 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
 /* ------------------------------------------------------------------------- */
 /* Standard includes */
 
+/* clang-format off */
+
 #if NSIMD_CXX > 0
-#include <cerrno>
-#include <cstdlib>
+  #include <cerrno>
+  #include <cstdlib>
 #else
-#include <errno.h>
-#include <stdlib.h>
+  #include <errno.h>
+  #include <stdlib.h>
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 /* Now includes detected SIMD types */
@@ -615,8 +1082,21 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
 #if NSIMD_CXX > 0
 
 namespace nsimd {
-template <typename T, typename SimdExt> struct simd_traits {};
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+struct simd_traits {};
 } // namespace nsimd
+
+// Those are for writing shorter code
+#define NSIMD_NSV(T, SIMD_EXT)                                                \
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vector
+#define NSIMD_NSVX2(T, SIMD_EXT)                                              \
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vectorx2
+#define NSIMD_NSVX3(T, SIMD_EXT)                                              \
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vectorx3
+#define NSIMD_NSVX4(T, SIMD_EXT)                                              \
+  typename nsimd::simd_traits<T, SIMD_EXT>::simd_vectorx4
+#define NSIMD_NSVL(L, SIMD_EXT)                                               \
+  typename nsimd::simd_traits<L, SIMD_EXT>::simd_vectorl
 
 #endif
 
@@ -703,12 +1183,21 @@ namespace nsimd {
 struct aligned {};
 struct unaligned {};
 
+#if NSIMD_CXX >= 2020
+template <typename T>
+concept alignment_c = std::is_same_v<T, aligned> ||
+                      std::is_same_v<T, unaligned>;
+#define NSIMD_CONCEPT_ALIGNMENT nsimd::alignment_c
+#else
+#define NSIMD_CONCEPT_ALIGNMENT typename
+#endif
+
 #if NSIMD_CXX >= 2011
 
-template <typename T>
+template <NSIMD_CONCEPT_VALUE_TYPE T>
 using simd_vector = typename simd_traits<T, NSIMD_SIMD>::simd_vector;
 
-template <typename T>
+template <NSIMD_CONCEPT_VALUE_TYPE T>
 using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 
 #endif
@@ -717,15 +1206,19 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 
 #endif
 
+/* clang-format off */
+
 #if defined(NSIMD_X86)
-#define NSIMD_MAX_ALIGNMENT 64
+  #define NSIMD_MAX_ALIGNMENT 64
 #elif defined(NSIMD_ARM)
-#define NSIMD_MAX_ALIGNMENT 256
+  #define NSIMD_MAX_ALIGNMENT 256
 #elif defined(NSIMD_POWERPC)
-#define NSIMD_MAX_ALIGNMENT 64
+  #define NSIMD_MAX_ALIGNMENT 64
 #else
-#define NSIMD_MAX_ALIGNMENT 16
+  #define NSIMD_MAX_ALIGNMENT 16
 #endif
+
+/* clang-format on */
 
 #define NSIMD_NB_REGISTERS NSIMD_PP_CAT_3(NSIMD_, NSIMD_SIMD, _NB_REGISTERS)
 
@@ -749,7 +1242,7 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-template <typename T> struct max_len_t {};
+template <NSIMD_CONCEPT_VALUE_TYPE T> struct max_len_t {};
 
 template <> struct max_len_t<i8> {
   static const int value = NSIMD_MAX_LEN_BIT / 8;
@@ -786,7 +1279,8 @@ template <> struct max_len_t<f64> {
 };
 
 #if NSIMD_CXX >= 2014
-template <typename T> constexpr int max_len = max_len_t<T>::value;
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+constexpr int max_len = max_len_t<T>::value;
 #endif
 
 } // namespace nsimd
@@ -795,10 +1289,15 @@ template <typename T> constexpr int max_len = max_len_t<T>::value;
 /* ------------------------------------------------------------------------- */
 /* Memory functions */
 
+/* clang-format off */
+
 #if NSIMD_CXX > 0
-#include <cstddef>
-#include <new>
+  #include <cstddef>
+  #include <new>
+  #include <vector>
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 
@@ -806,7 +1305,7 @@ template <typename T> constexpr int max_len = max_len_t<T>::value;
 extern "C" {
 #endif
 
-NSIMD_DLLSPEC void *nsimd_aligned_alloc(nat);
+NSIMD_DLLSPEC void *nsimd_aligned_alloc(nsimd_nat);
 NSIMD_DLLSPEC void nsimd_aligned_free(void *);
 
 #if NSIMD_CXX > 0
@@ -819,106 +1318,16 @@ NSIMD_DLLSPEC void nsimd_aligned_free(void *);
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-NSIMD_DLLSPEC void *aligned_alloc(nat);
+NSIMD_DLLSPEC void *aligned_alloc(nsimd_nat);
 NSIMD_DLLSPEC void aligned_free(void *);
 
-template <typename T> T *aligned_alloc_for(nat n) {
-  return (T *)aligned_alloc(n * (nat)sizeof(T));
+template <NSIMD_CONCEPT_VALUE_TYPE T> T *aligned_alloc_for(nsimd_nat n) {
+  return (T *)aligned_alloc(n * (nsimd_nat)sizeof(T));
 }
 
-template <typename T> void aligned_free_for(void *ptr) {
+template <NSIMD_CONCEPT_VALUE_TYPE T> void aligned_free_for(void *ptr) {
   return aligned_free((T *)ptr);
 }
-
-template <typename T> class scoped_aligned_mem_helper {
-protected:
-  scoped_aligned_mem_helper(T *const ptr) : m_ptr(ptr) {
-    if (NULL == m_ptr) {
-      throw std::bad_alloc();
-    }
-  }
-
-  static void swap(T **lhs, T **rhs) {
-    T *temp = *lhs;
-    *lhs = *rhs;
-    *rhs = temp;
-  }
-
-public:
-  T *release() {
-    T *ret_ptr = m_ptr;
-    m_ptr = NULL;
-    return ret_ptr;
-  }
-
-  void reset(T *new_ptr) {
-    T *old_ptr = m_ptr;
-    m_ptr = new_ptr;
-    if (NULL != old_ptr) {
-      aligned_free(old_ptr);
-    }
-  }
-
-  T *get() const { return m_ptr; }
-
-protected:
-  T *m_ptr;
-
-private:
-  scoped_aligned_mem_helper(const scoped_aligned_mem_helper &other) {
-    (void)other;
-  }
-
-  scoped_aligned_mem_helper &operator=(const scoped_aligned_mem_helper &rhs) {
-    (void)rhs;
-  }
-};
-
-template <typename T, nat MemAlignedSizeBytes = NSIMD_MAX_LEN_BIT / 8>
-class scoped_aligned_mem : public scoped_aligned_mem_helper<T> {
-public:
-  scoped_aligned_mem()
-      : scoped_aligned_mem_helper<T>((T *)aligned_alloc(MemAlignedSizeBytes)) {}
-
-  ~scoped_aligned_mem() {
-    if (NULL != this->m_ptr) {
-      aligned_free(this->m_ptr);
-    }
-  }
-
-  void swap(scoped_aligned_mem<T, MemAlignedSizeBytes> *rhs) {
-    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
-  }
-
-  static void free(T **ptr) {
-    aligned_free(*ptr);
-    *ptr = NULL;
-  }
-  static const nat num_elems = MemAlignedSizeBytes / sizeof(T);
-};
-
-template <typename T, nat NumElems>
-class scoped_aligned_mem_for : public scoped_aligned_mem_helper<T> {
-public:
-  scoped_aligned_mem_for()
-      : scoped_aligned_mem_helper<T>(aligned_alloc_for<T>(NumElems)) {}
-
-  ~scoped_aligned_mem_for() {
-    if (NULL != this->m_ptr) {
-      aligned_free_for<T>(this->m_ptr);
-    }
-  }
-
-  void swap(scoped_aligned_mem_for<T, NumElems> *rhs) {
-    scoped_aligned_mem_helper<T>::swap(&(this->m_ptr), &(rhs->m_ptr));
-  }
-
-  static void free(T **ptr) {
-    aligned_free_for<T>(*ptr);
-    *ptr = NULL;
-  }
-  static const nat num_elems = NumElems;
-};
 
 } // namespace nsimd
 #endif
@@ -943,30 +1352,30 @@ public:
   template <typename U> struct rebind { typedef allocator<U> other; };
 
 public:
-  inline allocator() {}
-  inline ~allocator() {}
-  inline allocator(allocator const &) {}
+  allocator() {}
+  ~allocator() {}
+  allocator(allocator const &) {}
 
   template <typename U> inline explicit allocator(allocator<U> const &) {}
 
-  inline pointer address(reference r) { return &r; }
-  inline const_pointer address(const_reference r) { return &r; }
+  pointer address(reference r) { return &r; }
+  const_pointer address(const_reference r) { return &r; }
 
-  inline pointer allocate(size_type n) {
-    return reinterpret_cast<pointer>(aligned_alloc_for<T>((nat)n));
+  pointer allocate(size_type n) {
+    return reinterpret_cast<pointer>(aligned_alloc_for<T>((nsimd_nat)n));
   }
 
-  inline pointer allocate(size_type n, const void *) { return allocate(n); }
+  pointer allocate(size_type n, const void *) { return allocate(n); }
 
-  inline void deallocate(pointer p, size_type) { aligned_free_for<T>(p); }
+  void deallocate(pointer p, size_type) { aligned_free_for<T>(p); }
 
-  inline size_type max_size() const { return size_type(-1) / sizeof(T); }
+  size_type max_size() const { return size_type(-1) / sizeof(T); }
 
-  inline void construct(pointer p, const T &t) { new (p) T(t); }
-  inline void destroy(pointer p) { p->~T(); }
+  void construct(pointer p, const T &t) { new (p) T(t); }
+  void destroy(pointer p) { p->~T(); }
 
-  inline bool operator==(allocator const &) { return true; }
-  inline bool operator!=(allocator const &a) { return !operator==(a); }
+  bool operator==(allocator const &) { return true; }
+  bool operator!=(allocator const &a) { return !operator==(a); }
 };
 
 } // namespace nsimd
@@ -978,7 +1387,7 @@ public:
 #if NSIMD_CXX >= 2011
 namespace nsimd {
 
-template <typename T> struct allocator {
+template <NSIMD_CONCEPT_VALUE_TYPE T> struct allocator {
   using value_type = T;
 
   allocator() = default;
@@ -989,7 +1398,7 @@ template <typename T> struct allocator {
     if (n > std::size_t(-1) / sizeof(T)) {
       throw std::bad_alloc();
     }
-    T *ptr = aligned_alloc_for<T>((nat)n);
+    T *ptr = aligned_alloc_for<T>((nsimd_nat)n);
     if (ptr != NULL) {
       return ptr;
     }
@@ -1013,24 +1422,60 @@ bool operator!=(allocator<T> const &, allocator<S> const &) {
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Conversion functions f16 <---> f32 for C */
+/* scoped allocator */
 
 #if NSIMD_CXX > 0
+namespace nsimd {
+
+template <NSIMD_CONCEPT_VALUE_TYPE T> struct scoped_aligned_mem_for {
+  std::vector<T, nsimd::allocator<T> > data;
+
+  template <typename I>
+#if NSIMD_CXX >= 2020
+  requires std::integral<I>
+#endif
+  scoped_aligned_mem_for(I n) {
+    data.resize(size_t(n));
+  }
+
+  const T *get() const { return &data[0]; }
+  T *get() { return &data[0]; }
+};
+
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Conversion functions f16 <---> f32 for C but only when compiling with a   */
+/* host compiler. Otherwise we must have C++ linkage as fp16 types are       */
+/* defined as C++ classes . */
+
+#if NSIMD_CXX > 0 && !defined(NSIMD_IS_NVCC) && !defined(NSIMD_IS_HIPCC)
+  #define NSIMD_C_LINKAGE_FOR_F16
+#endif
+
+#ifdef NSIMD_C_LINKAGE_FOR_F16
 extern "C" {
 #endif
 
 NSIMD_DLLSPEC u16 nsimd_f32_to_u16(f32);
 NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 
-#ifdef NSIMD_NATIVE_FP16
+#ifdef NSIMD_ARM_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
+#elif defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
+inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
+#elif defined(NSIMD_ONEAPI)
+inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
+inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
 NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 #endif
 
-#if NSIMD_CXX > 0
+#ifdef NSIMD_C_LINKAGE_FOR_F16
 } // extern "C"
 #endif
 
@@ -1041,8 +1486,7 @@ NSIMD_DLLSPEC f32 nsimd_f16_to_f32(f16);
 namespace nsimd {
 NSIMD_DLLSPEC u16 f32_to_u16(f32);
 NSIMD_DLLSPEC f32 u16_to_f32(u16);
-
-#ifdef NSIMD_NATIVE_FP16
+#ifdef NSIMD_ARM_FP16
 NSIMD_INLINE f16 f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 f16_to_f32(f16 a) { return (f32)a; }
 #else
@@ -1053,49 +1497,122 @@ NSIMD_DLLSPEC f32 f16_to_f32(f16);
 #endif
 
 /* ------------------------------------------------------------------------- */
+/* General conversion for C++ */
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_VALUE_TYPE S>
+struct to_helper {
+  static T to(T, S value) { return (T)value; }
+};
+
+template <> struct to_helper<f16, f16> {
+  static f16 to(f16, f16 value) { return value; }
+};
+
+template <NSIMD_CONCEPT_VALUE_TYPE S> struct to_helper<f16, S> {
+  static f16 to(f16, S value) { return nsimd_f32_to_f16((f32)value); }
+};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T> struct to_helper<T, f16> {
+  static T to(T, f16 value) { return (T)nsimd_f16_to_f32(value); }
+};
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_VALUE_TYPE S>
+T to(S value) {
+  return to_helper<T, S>::to(T(), value);
+}
+
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
 /* SIMD-related functions */
 
-#ifdef NSIMD_IS_MSVC
-#pragma warning(push)
-/* We do not want MSVC to warn us about unary minus on an unsigned type.
-   It is well defined in standards: unsigned arithmetic is done modulo
-   2^n. */
-#pragma warning(disable : 4146)
+/* clang-format off */
+
+#if defined(NSIMD_IS_MSVC)
+  /* We do not want MSVC to warn us about unary minus on an unsigned type.
+     It is well defined in standards: unsigned arithmetic is done modulo
+     2^n. */
+  #pragma warning(push)
+  #pragma warning(disable : 4146)
+
+  /* Some intrinsics are not available in 32-bits mode so we give an
+     implementation here. */
+
+  #if defined(NSIMD_IS_MSVC) && NSIMD_WORD_SIZE == 32
+    static inline i64 __vectorcall _mm_cvtsi128_si64(__m128i a) {
+      return ((i64)_mm_cvtsi128_si32(a) |
+              ((i64)(_mm_cvtsi128_si32(_mm_shuffle_epi32(a, 1))) << 32));
+    }
+
+    static inline __m128i __vectorcall _mm_cvtsi64_si128(i64 a) {
+      __m128i lo = _mm_cvtsi32_si128((i32)(a & 0xFFFFFFFF));
+      __m128i hi = _mm_shuffle_epi32(
+                       _mm_cvtsi32_si128((i32)((u64)a >> 32)), 9);
+      return _mm_or_si128(hi, lo);
+    }
+  #endif
+#elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
+  /* When compiling with Clang with C++98 or C++03, some Intel intrinsics are
+     implemented as macros which contain long long but long long are not
+     standard. To get rid of a lot of warning we push the corresponding
+     warning here. */
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wc++11-long-long"
+#elif defined(NSIMD_IS_GCC) && defined(NSIMD_SVE_FAMILY)
+  /* Using SVE intrinsics svundef_XXX() is supposed to silence the
+     -Wuninitialized warnings but it does not with GCC 10.0 up to GCC 10.2
+     so we silence the warning manually for now. */
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wuninitialized"
 #endif
 
 #include <nsimd/functions.h>
 
-#ifdef NSIMD_IS_MSVC
-#pragma warning(pop)
+#if defined(NSIMD_IS_MSVC)
+  #pragma warning(pop)
+#elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
+  #pragma clang diagnostic pop
+#elif defined(NSIMD_IS_GCC) && defined(NSIMD_SVE_FAMILY)
+  #pragma GCC diagnostic pop
 #endif
+
+/* clang-format on */
 
 /* ------------------------------------------------------------------------- */
 /* If_else cannot be auto-generated */
 
-#define vif_else(a0, a1, a2, typel, type)                                      \
-  NSIMD_PP_CAT_4(nsimd_if_else1_, NSIMD_SIMD, _, type)                         \
-  (NSIMD_PP_CAT_6(nsimd_vreinterpretl_, NSIMD_SIMD, _, type, _, typel)(a0),    \
+#define vif_else(a0, a1, a2, typel, type)                                     \
+  NSIMD_PP_CAT_4(nsimd_if_else1_, NSIMD_SIMD, _, type)                        \
+  (NSIMD_PP_CAT_6(nsimd_vreinterpretl_, NSIMD_SIMD, _, type, _, typel)(a0),   \
    a1, a2)
 
-#define vif_else_e(a0, a1, a2, typel, type, simd_ext)                          \
-  NSIMD_PP_CAT_4(nsimd_if_else1_, simd_ext, _, type)                           \
-  (NSIMD_PP_CAT_6(nsimd_vreinterpretl_, simd_ext, _, type, _, typel)(a0), a1,  \
+#define vif_else_e(a0, a1, a2, typel, type, simd_ext)                         \
+  NSIMD_PP_CAT_4(nsimd_if_else1_, simd_ext, _, type)                          \
+  (NSIMD_PP_CAT_6(nsimd_vreinterpretl_, simd_ext, _, type, _, typel)(a0), a1, \
    a2)
 
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-template <typename A0, typename A1, typename A2, typename L, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vector if_else(A0 a0, A1 a1, A2 a2, L,
-                                                         T) {
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+NSIMD_NSV(T, NSIMD_SIMD)
+if_else(NSIMD_NSVL(L, NSIMD_SIMD) a0, NSIMD_NSV(T, NSIMD_SIMD) a1,
+        NSIMD_NSV(T, NSIMD_SIMD) a2, L, T) {
   return if_else1(reinterpretl(a0, L(), T(), NSIMD_SIMD()), a1, a2, T(),
                   NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename L, typename T,
-          typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vector if_else(A0 a0, A1 a1, A2 a2, L, T,
-                                                      SimdExt) {
+template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T,
+          NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
+NSIMD_NSV(T, SimdExt)
+if_else(NSIMD_NSVL(L, SimdExt) a0, NSIMD_NSV(T, SimdExt) a1,
+        NSIMD_NSV(T, SimdExt) a2, L, T, SimdExt) {
   return if_else1(reinterpretl(a0, L(), T(), SimdExt()), a1, a2, T(),
                   SimdExt());
 }
@@ -1109,294 +1626,465 @@ typename simd_traits<T, SimdExt>::simd_vector if_else(A0 a0, A1 a1, A2 a2, L, T,
 #define NSIMD_ALIGNED a
 #define NSIMD_UNALIGNED u
 
-#define vload(a0, type, alignment)                                             \
+#define vload(a0, type, alignment)                                            \
   NSIMD_PP_CAT_6(nsimd_load, alignment, _, NSIMD_SIMD, _, type)(a0)
 
-#define vload_e(a0, type, simd_ext, alignment)                                 \
+#define vload_e(a0, type, simd_ext, alignment)                                \
   NSIMD_PP_CAT_6(nsimd_load, alignment, _, simd_ext, _, type)(a0)
 
-#define vload2(a0, type, alignment)                                            \
+#define vload2(a0, type, alignment)                                           \
   NSIMD_PP_CAT_6(nsimd_load2, alignment, _, NSIMD_SIMD, _, type)(a0)
 
-#define vload2_e(a0, type, simd_ext, alignment)                                \
+#define vload2_e(a0, type, simd_ext, alignment)                               \
   NSIMD_PP_CAT_6(nsimd_load2, alignment, _, simd_ext, _, type)(a0)
 
-#define vload3(a0, type, alignment)                                            \
+#define vload3(a0, type, alignment)                                           \
   NSIMD_PP_CAT_6(nsimd_load3, alignment, _, NSIMD_SIMD, _, type)(a0)
 
-#define vload3_e(a0, type, simd_ext, alignment)                                \
+#define vload3_e(a0, type, simd_ext, alignment)                               \
   NSIMD_PP_CAT_6(nsimd_load3, alignment, _, simd_ext, _, type)(a0)
 
-#define vload4(a0, type, alignment)                                            \
+#define vload4(a0, type, alignment)                                           \
   NSIMD_PP_CAT_6(nsimd_load4, alignment, _, NSIMD_SIMD, _, type)(a0)
 
-#define vload4_e(a0, type, simd_ext, alignment)                                \
+#define vload4_e(a0, type, simd_ext, alignment)                               \
   NSIMD_PP_CAT_6(nsimd_load4, alignment, _, simd_ext, _, type)(a0)
 
-#define vloadl(a0, type, alignment)                                            \
+#define vloadl(a0, type, alignment)                                           \
   NSIMD_PP_CAT_6(nsimd_loadl, alignment_, NSIMD_SIMD, _, type)(a0)
 
-#define vloadl_e(a0, type, simd_ext, alignment)                                \
+#define vloadl_e(a0, type, simd_ext, alignment)                               \
   NSIMD_PP_CAT_6(nsimd_loadl, alignment_, simd_ext, _, type)(a0)
 
-#define vstore(a0, a1, type, alignment)                                        \
+#define vstore(a0, a1, type, alignment)                                       \
   NSIMD_PP_CAT_6(nsimd_store, alignment, _, NSIMD_SIMD, _, type)(a0, a1)
 
-#define vstore_e(a0, a1, type, simd_ext, alignment)                            \
+#define vstore_e(a0, a1, type, simd_ext, alignment)                           \
   NSIMD_PP_CAT_6(nsimd_store, alignment, _, simd_ext, _, type)(a0, a1)
 
-#define vstore2(a0, a1, a2, type, alignment)                                   \
+#define vstore2(a0, a1, a2, type, alignment)                                  \
   NSIMD_PP_CAT_4(nsimd_store2, alignment, _, NSIMD_SIMD, _, type)(a0, a1, a2)
 
-#define vstore2_e(a0, a1, a2, type, simd_ext, alignment)                       \
+#define vstore2_e(a0, a1, a2, type, simd_ext, alignment)                      \
   NSIMD_PP_CAT_4(nsimd_store2, alignment, _, simd_ext, _, type)(a0, a1, a2)
 
-#define vstore3(a0, a1, a2, a3, type, alignment)                               \
-  NSIMD_PP_CAT_4(nsimd_store3, alignment, _, NSIMD_SIMD, _, type)              \
+#define vstore3(a0, a1, a2, a3, type, alignment)                              \
+  NSIMD_PP_CAT_4(nsimd_store3, alignment, _, NSIMD_SIMD, _, type)             \
   (a0, a1, a2, a3)
 
-#define vstore3_e(a0, a1, a2, a3, type, simd_ext, alignment)                   \
+#define vstore3_e(a0, a1, a2, a3, type, simd_ext, alignment)                  \
   NSIMD_PP_CAT_4(nsimd_store3, alignment, _, simd_ext, _, type)(a0, a1, a2, a3)
 
-#define vstore4(a0, a1, a2, a3, a4, type, alignment)                           \
-  NSIMD_PP_CAT_4(nsimd_store3, alignment, _, NSIMD_SIMD, _, type)              \
+#define vstore4(a0, a1, a2, a3, a4, type, alignment)                          \
+  NSIMD_PP_CAT_4(nsimd_store3, alignment, _, NSIMD_SIMD, _, type)             \
   (a0, a1, a2, a3, a4)
 
-#define vstore4_e(a0, a1, a2, a3, a4, type, simd_ext, alignment)               \
-  NSIMD_PP_CAT_4(nsimd_store3, alignment, _, simd_ext, _, type)                \
+#define vstore4_e(a0, a1, a2, a3, a4, type, simd_ext, alignment)              \
+  NSIMD_PP_CAT_4(nsimd_store3, alignment, _, simd_ext, _, type)               \
   (a0, a1, a2, a3, a4)
 
-#define vstorel(a0, a1, type, alignment)                                       \
+#define vstorel(a0, a1, type, alignment)                                      \
   NSIMD_PP_CAT_6(nsimd_storel, alignment, _, NSIMD_SIMD, _, type)(a0, a1)
 
-#define vstorel_e(a0, a1, type, simd_ext, alignment)                           \
+#define vstorel_e(a0, a1, type, simd_ext, alignment)                          \
   NSIMD_PP_CAT_6(nsimd_storel, alignment, _, simd_ext, _, type)(a0, a1)
 
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vector load(A0 a0, T, aligned) {
-  return loada(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSV(T, NSIMD_SIMD)
+load(const T *ptr, T, aligned) {
+  return loada(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vector load(A0 a0, T, unaligned) {
-  return loadu(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSV(T, NSIMD_SIMD)
+load(const T *ptr, T, unaligned) {
+  return loadu(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vector load(A0 a0, T, SimdExt, aligned) {
-  return loada(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSV(T, SimdExt)
+load(const T *ptr, T, SimdExt, aligned) {
+  return loada(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vector load(A0 a0, T, SimdExt,
-                                                   unaligned) {
-  return loadu(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSV(T, SimdExt)
+load(const T *ptr, T, SimdExt, unaligned) {
+  return loadu(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorx2 load2(A0 a0, T, aligned) {
-  return load2a(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVX2(T, NSIMD_SIMD)
+load2(const T *ptr, T, aligned) {
+  return load2a(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorx2 load2(A0 a0, T, unaligned) {
-  return load2u(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVX2(T, NSIMD_SIMD)
+load2(const T *ptr, T, unaligned) {
+  return load2u(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorx2 load2(A0 a0, T, SimdExt,
-                                                      aligned) {
-  return load2a(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVX2(T, SimdExt)
+load2(const T *ptr, T, SimdExt, aligned) {
+  return load2a(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorx2 load2(A0 a0, T, SimdExt,
-                                                      unaligned) {
-  return load2u(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVX2(T, SimdExt)
+load2(const T *ptr, T, SimdExt, unaligned) {
+  return load2u(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorx3 load3(A0 a0, T, aligned) {
-  return load3a(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVX3(T, NSIMD_SIMD)
+load3(const T *ptr, T, aligned) {
+  return load3a(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorx3 load3(A0 a0, T, unaligned) {
-  return load3u(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVX3(T, NSIMD_SIMD)
+load3(const T *ptr, T, unaligned) {
+  return load3u(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorx3 load3(A0 a0, T, SimdExt,
-                                                      aligned) {
-  return load3a(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVX3(T, SimdExt)
+load3(const T *ptr, T, SimdExt, aligned) {
+  return load3a(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorx3 load3(A0 a0, T, SimdExt,
-                                                      unaligned) {
-  return load3u(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVX3(T, SimdExt)
+load3(const T *ptr, T, SimdExt, unaligned) {
+  return load3u(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorx4 load4(A0 a0, T, aligned) {
-  return load4a(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVX4(T, NSIMD_SIMD)
+load4(const T *ptr, T, aligned) {
+  return load4a(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorx4 load4(A0 a0, T, unaligned) {
-  return load4u(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVX4(T, NSIMD_SIMD)
+load4(const T *ptr, T, unaligned) {
+  return load4u(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorx4 load4(A0 a0, T, SimdExt,
-                                                      aligned) {
-  return load4a(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVX4(T, SimdExt)
+load4(const T *ptr, T, SimdExt, aligned) {
+  return load4a(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorx4 load4(A0 a0, T, SimdExt,
-                                                      unaligned) {
-  return load4u(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVX4(T, SimdExt)
+load4(const T *ptr, T, SimdExt, unaligned) {
+  return load4u(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorl loadlu(A0 a0, T, aligned) {
-  return loadla(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVL(T, NSIMD_SIMD)
+loadlu(const T *ptr, T, aligned) {
+  return loadla(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T>
-typename simd_traits<T, NSIMD_SIMD>::simd_vectorl loadlu(A0 a0, T, unaligned) {
-  return loadlu(a0, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+NSIMD_NSVL(T, NSIMD_SIMD)
+loadlu(const T *ptr, T, unaligned) {
+  return loadlu(ptr, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorl loadlu(A0 a0, T, SimdExt,
-                                                      aligned) {
-  return loadla(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVL(T, NSIMD_SIMD)
+loadlu(const T *ptr, T, SimdExt, aligned) {
+  return loadla(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename T, typename SimdExt>
-typename simd_traits<T, SimdExt>::simd_vectorl loadlu(A0 a0, T, SimdExt,
-                                                      unaligned) {
-  return loadlu(a0, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+NSIMD_NSVL(T, NSIMD_SIMD)
+loadlu(const T *ptr, T, SimdExt, unaligned) {
+  return loadlu(ptr, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename T>
-void store(A0 a0, A1 a1, T, aligned) {
-  storea(a0, a1, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, T, aligned) {
+  storea(ptr, a1, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename T>
-void store(A0 a0, A1 a1, T, unaligned) {
-  storeu(a0, a1, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, T, unaligned) {
+  storeu(ptr, a1, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename T, typename SimdExt>
-void store(A0 a0, A1 a1, T, SimdExt, aligned) {
-  storea(a0, a1, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, aligned) {
+  storea(ptr, a1, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename T, typename SimdExt>
-void store(A0 a0, A1 a1, T, SimdExt, unaligned) {
-  storeu(a0, a1, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
+  storeu(ptr, a1, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename A2, typename T>
-void store2(A0 a0, A1 a1, A2 a2, T, aligned) {
-  store2a(a0, a1, a2, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store2(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, NSIMD_NSV(T, NSIMD_SIMD) a2,
+            T, aligned) {
+  store2a(ptr, a1, a2, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename T>
-void store2(A0 a0, A1 a1, A2 a2, T, unaligned) {
-  store2u(a0, a1, a2, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store2(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, NSIMD_NSV(T, NSIMD_SIMD) a2,
+            T, unaligned) {
+  store2u(ptr, a1, a2, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename T, typename SimdExt>
-void store2(A0 a0, A1 a1, A2 a2, T, SimdExt, aligned) {
-  store2a(a0, a1, a2, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store2(T *ptr, NSIMD_NSV(T, SimdExt) a1, NSIMD_NSV(T, SimdExt) a2, T,
+            SimdExt, aligned) {
+  store2a(ptr, a1, a2, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename A2, typename T, typename SimdExt>
-void store2(A0 a0, A1 a1, A2 a2, T, SimdExt, unaligned) {
-  store2u(a0, a1, a2, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store2(T *ptr, NSIMD_NSV(T, SimdExt) a1, NSIMD_NSV(T, SimdExt) a2, T,
+            SimdExt, unaligned) {
+  store2u(ptr, a1, a2, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename T>
-void store3(A0 a0, A1 a1, A2 a2, A3 a3, T, aligned) {
-  store3a(a0, a1, a2, a3, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store3(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, NSIMD_NSV(T, NSIMD_SIMD) a2,
+            NSIMD_NSV(T, NSIMD_SIMD) a3, T, aligned) {
+  store3a(ptr, a1, a2, a3, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename T>
-void store3(A0 a0, A1 a1, A2 a2, A3 a3, T, unaligned) {
-  store3u(a0, a1, a2, a3, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store3(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, NSIMD_NSV(T, NSIMD_SIMD) a2,
+            NSIMD_NSV(T, NSIMD_SIMD) a3, T, unaligned) {
+  store3u(ptr, a1, a2, a3, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename T,
-          typename SimdExt>
-void store3(A0 a0, A1 a1, A2 a2, A3 a3, T, SimdExt, aligned) {
-  store3a(a0, a1, a2, a3, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store3(T *ptr, NSIMD_NSV(T, SimdExt) a1, NSIMD_NSV(T, SimdExt) a2,
+            NSIMD_NSV(T, SimdExt) a3, T, SimdExt, aligned) {
+  store3a(ptr, a1, a2, a3, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename T,
-          typename SimdExt>
-void store3(A0 a0, A1 a1, A2 a2, A3 a3, T, SimdExt, unaligned) {
-  store3u(a0, a1, a2, a3, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store3(T *ptr, NSIMD_NSV(T, SimdExt) a1, NSIMD_NSV(T, SimdExt) a2,
+            NSIMD_NSV(T, SimdExt) a3, T, SimdExt, unaligned) {
+  store3u(ptr, a1, a2, a3, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename A4,
-          typename T>
-void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, T, aligned) {
-  store4a(a0, a1, a2, a3, a4, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store4(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, NSIMD_NSV(T, NSIMD_SIMD) a2,
+            NSIMD_NSV(T, NSIMD_SIMD) a3, NSIMD_NSV(T, NSIMD_SIMD) a4, T,
+            aligned) {
+  store4a(ptr, a1, a2, a3, a4, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename A4,
-          typename T>
-void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, T, unaligned) {
-  store4u(a0, a1, a2, a3, a4, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void store4(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, NSIMD_NSV(T, NSIMD_SIMD) a2,
+            NSIMD_NSV(T, NSIMD_SIMD) a3, NSIMD_NSV(T, NSIMD_SIMD) a4, T,
+            unaligned) {
+  store4u(ptr, a1, a2, a3, a4, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename A4,
-          typename T, typename SimdExt>
-void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, T, SimdExt, aligned) {
-  store4a(a0, a1, a2, a3, a4, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store4(T *ptr, NSIMD_NSV(T, SimdExt) a1, NSIMD_NSV(T, SimdExt) a2,
+            NSIMD_NSV(T, SimdExt) a3, NSIMD_NSV(T, SimdExt) a4, T, SimdExt,
+            aligned) {
+  store4a(ptr, a1, a2, a3, a4, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename A2, typename A3, typename A4,
-          typename T, typename SimdExt>
-void store4(A0 a0, A1 a1, A2 a2, A3 a3, A4 a4, T, SimdExt, unaligned) {
-  store4u(a0, a1, a2, a3, a4, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void store4(T *ptr, NSIMD_NSV(T, SimdExt) a1, NSIMD_NSV(T, SimdExt) a2,
+            NSIMD_NSV(T, SimdExt) a3, NSIMD_NSV(T, SimdExt) a4, T, SimdExt,
+            unaligned) {
+  store4u(ptr, a1, a2, a3, a4, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename T>
-void storel(A0 a0, A1 a1, T, aligned) {
-  storela(a0, a1, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void storel(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, T, aligned) {
+  storela(ptr, a1, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename T>
-void storel(A0 a0, A1 a1, T, unaligned) {
-  storelu(a0, a1, T(), NSIMD_SIMD());
+template <NSIMD_CONCEPT_VALUE_TYPE T>
+void storel(T *ptr, NSIMD_NSV(T, NSIMD_SIMD) a1, T, unaligned) {
+  storelu(ptr, a1, T(), NSIMD_SIMD());
 }
 
-template <typename A0, typename A1, typename T, typename SimdExt>
-void storel(A0 a0, A1 a1, T, SimdExt, aligned) {
-  storela(a0, a1, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, aligned) {
+  storela(ptr, a1, T(), SimdExt());
 }
 
-template <typename A0, typename A1, typename T, typename SimdExt>
-void storel(A0 a0, A1 a1, T, SimdExt, unaligned) {
-  storelu(a0, a1, T(), SimdExt());
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
+  storelu(ptr, a1, T(), SimdExt());
 }
 
 } // namespace nsimd
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Endianess */
-/* TODO */
-#define ENDIAN_LITTLE_BYTE 1
+/* Scalar utilisties */
+
+#include <nsimd/scalar_utilities.h>
+
+/* ------------------------------------------------------------------------- */
+/* Some undefs */
+
+#if NSIMD_CXX > 0
+#undef NSIMD_NSV
+#undef NSIMD_NSVX2
+#undef NSIMD_NSVX3
+#undef NSIMD_NSVX4
+#undef NSIMD_NSVL
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* isnan, isnormal and isinf functions */
+
+NSIMD_INLINE int nsimd_isnan_f16(f16 a) {
+  /* We assume IEEE representation for f16's */
+  u16 b = nsimd_scalar_reinterpret_u16_f16(a);
+  if ((((((u32)b) >> 10) & 0x1F) == 0x1F) && ((((u32)b) << 6) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isnan_f32(f32 a) {
+  /* We assume IEEE representation for f32's */
+  u32 b = nsimd_scalar_reinterpret_u32_f32(a);
+  if ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isnan_f64(f64 a) {
+  /* We assume IEEE representation for f64's */
+  u64 b = nsimd_scalar_reinterpret_u64_f64(a);
+  if ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isinf_f16(f16 a) {
+  /* We assume IEEE representation for f16's */
+  u16 b = nsimd_scalar_reinterpret_u16_f16(a);
+  if ((((((u32)b) >> 10) & 0x1F) == 0x1F) && ((((u32)b) << 6) == 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isinf_f32(f32 a) {
+  /* We assume IEEE representation for f32's */
+  u32 b = nsimd_scalar_reinterpret_u32_f32(a);
+  if ((((b >> 23) & 0xFF) == 0xFF) && ((b << 9) == 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isinf_f64(f64 a) {
+  /* We assume IEEE representation for f64's */
+  u64 b = nsimd_scalar_reinterpret_u64_f64(a);
+  if ((((b >> 52) & 0x7FF) == 0x7FF) && ((b << 12) == 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isnormal_f16(f16 a) {
+  /* We assume IEEE representation for f16's */
+  u16 b = nsimd_scalar_reinterpret_u16_f16(a);
+  if ((((((u32)b) >> 10) & 0x1F) == 0u) && ((((u32)b) << 6) != 0u)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isnormal_f32(f32 a) {
+  /* We assume IEEE representation for f32's */
+  u32 b = nsimd_scalar_reinterpret_u32_f32(a);
+  if (!((((b >> 23) & 0xFF) == 0u) && ((b << 9) != 0u))) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+NSIMD_INLINE int nsimd_isnormal_f64(f64 a) {
+  /* We assume IEEE representation for f64's */
+  u64 b = nsimd_scalar_reinterpret_u64_f64(a);
+  if (!((((b >> 52) & 0x7FF) == 0u) && ((b << 12) != 0u))) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+NSIMD_INLINE int isnan(f16 a) { return nsimd_isnan_f16(a); }
+NSIMD_INLINE int isnan(f32 a) { return nsimd_isnan_f32(a); }
+NSIMD_INLINE int isnan(f64 a) { return nsimd_isnan_f64(a); }
+NSIMD_INLINE int isinf(f16 a) { return nsimd_isinf_f16(a); }
+NSIMD_INLINE int isinf(f32 a) { return nsimd_isinf_f32(a); }
+NSIMD_INLINE int isinf(f64 a) { return nsimd_isinf_f64(a); }
+NSIMD_INLINE int isnormal(f16 a) { return nsimd_isnormal_f16(a); }
+NSIMD_INLINE int isnormal(f32 a) { return nsimd_isnormal_f32(a); }
+NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Difference in log ulps, returns an int. */
+
+#if NSIMD_CXX > 0
+extern "C" {
+#endif
+
+NSIMD_DLLSPEC int nsimd_diff_in_logulps_f16(f16, f16);
+NSIMD_DLLSPEC int nsimd_diff_in_logulps_f32(f32, f32);
+NSIMD_DLLSPEC int nsimd_diff_in_logulps_f64(f64, f64);
+
+#if NSIMD_CXX > 0
+} // extern "C"
+#endif
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+NSIMD_INLINE int diff_in_logulps(f16 a, f16 b) {
+  return nsimd_diff_in_logulps_f16(a, b);
+}
+
+NSIMD_INLINE int diff_in_logulps(f32 a, f32 b) {
+  return nsimd_diff_in_logulps_f32(a, b);
+}
+
+NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
+  return nsimd_diff_in_logulps_f64(a, b);
+}
+} // namespace nsimd
+#endif
+
 /* ------------------------------------------------------------------------- */
 
 #endif

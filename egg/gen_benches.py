@@ -556,7 +556,7 @@ class BenchOperator(object, metaclass=type):
                     if signature:
                         if self.cxx_operator:
                             bench[simd][typ]['std'] = std_operator_from_sig(signature,
-                                    self.cxx_operator_symbol)
+                                    self.cxx_operator)
                         else:
                             bench[simd][typ]['std'] = std_fun_from_sig(signature)
         return bench
@@ -673,7 +673,7 @@ _lang = 'cxx_adv'
 
 def TODO(f):
     if _opts.verbose:
-        print('-- @@ TODO: ' + f.name)
+        common.myprint(opts, '@@ TODO: ' + f.name)
 
 def gen_filename(f, simd, typ):
     ## Retrieve directory from global options
@@ -975,7 +975,11 @@ def gen_code(f, simd, typ, category):
         code = gen_bench_from_basic_fun(f, simd, typ, category=category)
     if f.match_sig('p * l'):
         return TODO(f)
+    if f.match_sig('l * p'):
+        return TODO(f)
     if f.match_sig('v * s'):
+        return TODO(f)
+    if f.match_sig('l * p'):
         return TODO(f)
     if f.match_sig('p *'):
         return TODO(f)
@@ -1175,11 +1179,11 @@ def gen_bench(f, simd, typ):
 def doit(opts):
     global _opts
     _opts = opts
-    print ('-- Generating benches')
+    common.myprint(opts, 'Generating benches')
     for f in functions.values():
         if not f.do_bench:
             if opts.verbose:
-                print('-- Skipping bench: {}'.format(f.name))
+                common.myprint(opts, 'Skipping bench: {}'.format(f.name))
             continue
         # WE MUST GENERATE CODE FOR EACH SIMD EXTENSION AS OTHER LIBRARY
         # USUALLY DO NOT PROPOSE A GENERIC INTERFACE

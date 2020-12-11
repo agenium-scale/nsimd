@@ -29,16 +29,21 @@ import sys
 
 def get_cxx_advanced_generic(operator):
     def get_pack(param):
-        return 'pack{}'.format(param[1:]) if param[0] == 'v' else 'packl'
+        if param in ['v', 'vi']:
+            return 'pack'
+        elif param == 'l':
+            return 'pack'
+        else:
+            return 'pack{}'.format(param[1:])
     args_list = common.enum(operator.params[1:])
-    inter = [i for i in ['v', 'l', 'vx2', 'vx3', 'vx4'] \
+    inter = [i for i in ['v', 'vi', 'l', 'vx1', 'vx2', 'vx3', 'vx4'] \
              if i in operator.params[1:]]
     need_tmpl_pack = get_pack(operator.params[0]) if inter == [] else None
 
     # Compute parameters passed to the base C++ API functions
     def var(arg, N):
         member = 'car' if N == '1' else 'cdr'
-        if arg[1] in ['v', 'l']:
+        if arg[1] in ['vi', 'v', 'l']:
             return 'a{}.{}'.format(arg[0], member)
         elif (arg[1] in ['*', 'c*']) and N != '1':
             return 'a{} + len_'.format(arg[0])
@@ -49,6 +54,8 @@ def get_cxx_advanced_generic(operator):
              else []) + ['SimdExt()']
     varsN = [var(i, 'N') for i in args_list]
     other_varsN = ', '.join(['a{}'.format(i[0]) for i in args_list])
+    if other_varsN != '':
+        other_varsN = ', ' + other_varsN
     if not operator.closed:
         varsN = ['typename ToPackType::value_type()'] + varsN
     if need_tmpl_pack != None:
@@ -65,7 +72,7 @@ def get_cxx_advanced_generic(operator):
                                                             'T', 'N')
 
     # Dump C++
-    if operator.params[0] in ['v', 'l']:
+    if operator.params[0] in ['v', 'vi', 'l']:
         return_ret = 'return ret;'
         ret_car = 'ret.car = '
         ret_cdr = 'ret.cdr = '
@@ -73,7 +80,7 @@ def get_cxx_advanced_generic(operator):
         post_cdr = ''
         pack1_ret = '{} ret;'.format(ret1)
         packN_ret = '{} ret;'.format(retN)
-    elif operator.params[0] in ['vx2', 'vx3', 'vx4']:
+    elif operator.params[0] in ['vx1', 'vx2', 'vx3', 'vx4']:
         num = operator.params[0][-1:]
         return_ret = 'return ret;'
         if operator.closed:
@@ -135,7 +142,7 @@ def get_cxx_advanced_generic(operator):
 
     ret = ''
     if operator.cxx_operator:
-        ret += tmpl.format(cxx_name=operator.cxx_operator,
+        ret += tmpl.format(cxx_name='operator'+operator.cxx_operator,
                            sig1=sig['op1'], sigN=sig['opN']) + '\n\n'
     ret += tmpl.format(cxx_name=operator.name,
                        sig1=sig['1'], sigN=sig['N']) + '\n\n'
@@ -144,24 +151,30 @@ def get_cxx_advanced_generic(operator):
         return_ins = 'return ' if operator.params[0] != '_' else ''
         ret += '\n\n'
         ret += '''{sig} {{
-                    {return_ins} {cxx_name}(ToPackType(), {other_varsN});
+                    {return_ins}{cxx_name}(ToPackType(){other_varsN});
                   }}'''. \
                   format(cxx_name=operator.name, sig=sig['dispatch'],
                          other_varsN=other_varsN, return_ins=return_ins)
     if need_tmpl_pack != None:
         ret += '\n\n'
         ret += '''{sig} {{
-                    return {cxx_name}(SimdVector(), {other_varsN});
+                    return {cxx_name}(SimdVector(){other_varsN});
                   }}'''. \
                   format(sig=sig['dispatch'], cxx_name=operator.name,
                          other_varsN=other_varsN)
     return ret
 
 # -----------------------------------------------------------------------------
+# Generate assignments operator (+=, *=, &=, ...)
+def gen_assignment_operators(op):
+    #return '''{sig} {{ }}'''
+    return ''
+
+# -----------------------------------------------------------------------------
 # Generate advanced C++ API
 
 def doit(opts):
-    print ('-- Generating advanced C++ API')
+    common.myprint(opts, 'Generating advanced C++ API')
     filename = os.path.join(opts.include_dir, 'cxx_adv_api_functions.hpp')
     if not common.can_create_filename(opts, filename):
         return
@@ -183,6 +196,12 @@ def doit(opts):
 
                          '''.format(hbar=common.hbar,
                                     code=get_cxx_advanced_generic(operator)))
+
+            if operator.cxx_operator and \
+                (operator.args in [['v', 'v'], ['v', 'p']]):
+              out.write('{hbar}\n{code}'. \
+                      format(hbar=common.hbar,
+                             code=gen_assignment_operators(operator)))
 
 
         out.write('''{hbar}

@@ -1,0 +1,60 @@
+camelot.numscale.com (sse2-sse42-gcc)
+- bash scripts/build-tests.sh for sse2/sse42 with gcc
+- cd build-sse2-gcc
+- ../nstools/bin/nstest -j80
+- cd ../build-sse42-gcc
+- ../nstools/bin/nstest -j80
+
+glastonbury.numscale.com (avx512_skylake-gcc)
+- bash scripts/build-tests.sh for avx512_skylake with gcc
+- cd build-avx512_skylake-gcc
+- ../nstools/bin/nstest -j40
+
+carduel.numscale.com (avx512_knl-gcc)
+- bash scripts/build-tests.sh for avx512_knl with gcc
+- cd build-avx512_knl-gcc
+- ../nstools/bin/nstest -j80
+
+gaunes.numscale.com (avx-avx2-gcc)
+- bash scripts/build-tests.sh for avx/avx2 with gcc
+- cd build-avx-gcc
+- ../nstools/bin/nstest -j80
+- cd ../build-avx2-gcc
+- ../nstools/bin/nstest -j80
+
+logres.numscale.com (cpu-gcc-cuda-nvcc)
+- bash scripts/build-tests.sh for cpu with gcc
+- cd build-cpu-gcc
+- ../nstools/bin/nstest -j80
+- export PATH=${PATH}:/usr/local/cuda/bin
+- export LD_LIBRARY_PATH=/usr/local/cuda/lib64
+- mkdir ../build-cuda-nvcc
+- cd ../build-cuda-nvcc
+- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -comp=nvcc
+- ninja tests
+- ../nstools/bin/nstest -j20
+
+bowden.numscale.com (rocm-hipcc)
+- bash scripts/build-tests.sh for rocm with hipcc
+- cd build-rocm-hipcc
+- ../nstools/bin/nstest -j80
+
+caradigan.numscale.com (neon128-aarch64-gcc)
+- bash scripts/build-tests.sh for aarch64 with gcc
+- cd build-aarch64-gcc
+- ../nstools/bin/nstest -j80
+- cd ..
+- mkdir build-neon128-gcc
+- cd build-neon128-gcc
+- ../nstools/bin/nsconfig .. -Dsimd=neon128 -ccomp=gcc,arm-linux-gnueabihf-gcc,5,neon128 -cppcomp=gcc,arm-linux-gnueabihf-g++,5,neon128
+- ninja tests
+- ../nstools/bin/nstest -j80
+
+carahes.numscale.com (sve128-gcc)
+- source /etc/profile.d/profile.sh
+- module load gcc/10.2.0
+- bash scripts/build-tests.sh for sve128 with gcc
+- cd build-sve128-gcc
+- module load qemu/4.2.0
+- ../nstools/bin/nstest -j80 --prefix="qemu-aarch64 -cpu max,sve-max-vq=1"
+

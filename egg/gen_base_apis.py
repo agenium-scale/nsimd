@@ -90,7 +90,7 @@ def get_put_decl():
 # Generate base APIs
 
 def doit(opts):
-    print ('-- Generating base APIs')
+    common.myprint(opts, 'Generating base APIs')
     common.mkdir_p(opts.include_dir)
     filename = os.path.join(opts.include_dir, 'functions.h')
     if not common.can_create_filename(opts, filename):

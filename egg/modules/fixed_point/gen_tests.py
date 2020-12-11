@@ -20,14 +20,14 @@
 
 import os
 import sys
-sys.path.append("..")
+#sys.path.append("..")
 import common
 
 # -------------------------------------------------------------------------------
 
 def get_filename(opts, op, lf, rt):
     tests_dir = os.path.join(opts.tests_dir, "modules/fixed_point")
-    common.mkdir_p(tests_dir) 
+    common.mkdir_p(tests_dir)
     filename = os.path.join(tests_dir, '{}.fp_{}_{}.cpp'.format(op, lf, rt))
     if os.path.exists(filename):
         os.remove(filename)
@@ -36,7 +36,7 @@ def get_filename(opts, op, lf, rt):
     else:
         return None
 
-includes = """\
+includes = """
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +48,7 @@ includes = """\
 #include <nsimd/modules/fixed_point.hpp>
 """
 
-arithmetic_aliases = """\
+arithmetic_aliases = """
 typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
 typedef nsimd::fixed_point::pack<fp_t> vec_t;
 typedef nsimd::fixed_point::packl<fp_t> vecl_t;
@@ -60,7 +60,7 @@ const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
 # ------------------------------------------------------------------------------
 # Utility functions
 
-check = """\
+check = """
 #define CHECK(a) {{ \\
   if (!(a)) {{ \\
     fprintf(stderr, "ERROR: " #a ":%s: %d\\n", __FILE__, __LINE__); \\
@@ -71,7 +71,7 @@ check = """\
 
 """
 
-limits = """\
+limits = """
 template <uint8_t lf, uint8_t rt>
 static double __get_numeric_precision() {
   return (double)ldexpf(1.0, -(int)rt);
@@ -79,26 +79,27 @@ static double __get_numeric_precision() {
 
 """
 
-comparison_fp = """\
+comparison_fp = """
 template <uint8_t lf, uint8_t rt>
 bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
-  return abs(double(val) - ref) <= __get_numeric_precision<lf, rt>();
+  return nsimd_scalar_abs_f64(double(val) - ref) <=
+           __get_numeric_precision<lf, rt>();
 }
 
 """
 
-comparison_log = """\
+comparison_log = """
 template <typename T, uint8_t lf, uint8_t rt>
-bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0, 
+bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
     nsimd::fixed_point::fp_t<lf, rt> v1)
 {{
-  return (((v0._raw {op_val} v1._raw) && (val != 0)) 
+  return (((v0._raw {op_val} v1._raw) && (val != 0))
       || (!(v0._raw {op_val} v1._raw) && (val == 0)));
 }}
 
 """
 
-gen_random_val = """\
+gen_random_val = """
 template <uint8_t lf, uint8_t rt>
 nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
   float tmp = (float) rand() / (float) RAND_MAX;
@@ -110,11 +111,13 @@ nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
 # ------------------------------------------------------------------------------
 # Template for arithmetic binary operators
 
-arithmetic_test_template = """\
+arithmetic_test_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -151,13 +154,14 @@ int main() {{
   for(size_t i = 0; i < v_size; i++) {{
     CHECK(__compare_values(res_fp[i], res_f[i]));
   }}
- 
+
   fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
 """
 
 arithmetic_ops = [("add", "+"), ("sub", "-"), ("mul", "*"), ("div","/")]
+
 def gen_arithmetic_ops_tests(lf, rt, opts):
     for op_name, op_val in arithmetic_ops:
         decls = check + limits + comparison_fp + gen_random_val
@@ -165,6 +169,8 @@ def gen_arithmetic_ops_tests(lf, rt, opts):
             op_name=op_name, op_val=op_val, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
+        if filename == None:
+            continue
         with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
@@ -172,7 +178,7 @@ def gen_arithmetic_ops_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Min max operators template
 
-minmax_test_template = """\
+minmax_test_template = """
 {includes}
 #define op_min(a, b) ((a) < (b) ?(a) : (b))
 #define op_max(a, b) ((a) > (b) ?(a) : (b))
@@ -180,6 +186,7 @@ minmax_test_template = """\
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -211,7 +218,7 @@ int main() {{
   for(size_t i = 0; i < v_size; i++) {{
     CHECK(res_fp[i]._raw == res_ref[i]);
   }}
- 
+
   fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
@@ -225,25 +232,29 @@ def gen_minmax_ops_tests(lf, rt, opts):
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
+        if filename == None:
+            continue
         with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
-        
+
 # ------------------------------------------------------------------------------
 # Ternary ops (FMA and co)
 
-ternary_ops_template = """\
+ternary_ops_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
   typedef nsimd::fixed_point::fp_t<{lf}, {rt}> fp_t;
   typedef nsimd::fixed_point::pack<fp_t> vec_t;
   const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
- 
+
   // FP vectors
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -274,15 +285,15 @@ int main() {{
   for(size_t i = 0; i < v_size; i++) {{
     const double a = tab0_f[i];
     const double b = tab1_f[i];
-    const double c = tab2_f[i];     
-    
+    const double c = tab2_f[i];
+
     {check_statement}
   }}
 
   for(size_t i = 0; i < v_size; i++) {{
     CHECK(__compare_values(res_fp[i], res_f[i]));
   }}
- 
+
   fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
@@ -296,6 +307,8 @@ def gen_ternary_ops_tests(lf, rt, opts):
             op_name=op_name, check_statement=statement.format(lf=lf, rt=rt),
             lf=lf, rt=rt,includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
+        if filename == None:
+            continue
         with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
@@ -303,13 +316,14 @@ def gen_ternary_ops_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Template for math operators
 
-rec_reference = """\
+rec_reference = """
 // Rec operator on floating points (avoids to write a particular test for rec)
-static inline double rec(const double x){{return 1.0 / x;}}
+static inline double rec(const double x) {{ return 1.0 / x; }}
 """
 
-math_test_template = """\
+math_test_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
@@ -339,13 +353,13 @@ int main() {{
   nsimd::fixed_point::storeu(res_fp, vres_fp);
 
   for (size_t i = 0; i < v_size; i++) {{
-    res_f[i] = {op_name}(tab0_f[i]);
+    res_f[i] = {ref_op_name}(tab0_f[i]);
   }}
 
   for(size_t i = 0; i < v_size; i++) {{
     CHECK(__compare_values(res_fp[i], res_f[i]));
   }}
- 
+
   fprintf(stdout, \"test of {op_name} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
@@ -355,11 +369,17 @@ math_ops = ["rec", "abs"]
 def gen_math_functions_tests(lf, rt, opts):
     for op_name in math_ops:
         decls = check + limits + comparison_fp + gen_random_val
-        if op_name == "rec": decls += rec_reference
-        content_src = math_test_template.format(
-            op_name=op_name, lf=lf, rt=rt,
-            includes=includes, decls=decls)
+        if op_name == "rec":
+            decls += rec_reference
+            ref_op_name = 'rec'
+        else:
+            ref_op_name = 'nsimd_scalar_abs_f64'
+        content_src = math_test_template.format(op_name=op_name, lf=lf, rt=rt,
+                                                ref_op_name=ref_op_name,
+                                                includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
+        if filename == None:
+            continue
         with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
@@ -367,11 +387,13 @@ def gen_math_functions_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Comparison operators
 
-comparison_test_template = """\
+comparison_test_template = """
 {includes}
+
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main(){{
@@ -380,7 +402,7 @@ int main(){{
   typedef nsimd::fixed_point::packl<fp_t> vecl_t;
   typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
   const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
-  
+
   // FP vectors
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -392,7 +414,7 @@ int main(){{
   }}
   // Be sure there is at least one equality to test all the cases.
   tab0_fp[0] = tab1_fp[0];
-  
+
   vec_t v0_fp = nsimd::fixed_point::loadu<vec_t>(tab0_fp);
   vec_t v1_fp = nsimd::fixed_point::loadu<vec_t>(tab1_fp);
   vecl_t vres_fp = nsimd::fixed_point::{op_name}(v0_fp, v1_fp);
@@ -413,11 +435,13 @@ comparison_ops = [("eq","=="), ("ne","!="), ("le","<="), ("lt","<"),
 
 def gen_comparison_tests(lf, rt, opts):
     for op_name, op_val in comparison_ops:
-        decls = check + limits + comparison_log.format(op_val=op_val) + gen_random_val  
+        decls = check + limits + comparison_log.format(op_val=op_val) + gen_random_val
         content_src = comparison_test_template.format(
             op_name=op_name, op_val=op_val, lf=lf, rt=rt,
             includes=includes, decls=decls)
         filename = get_filename(opts, op_name, lf, rt)
+        if filename == None:
+            continue
         with common.open_utf8(opts, filename) as fp:
             fp.write(content_src)
         common.clang_format(opts, filename)
@@ -425,13 +449,14 @@ def gen_comparison_tests(lf, rt, opts):
 # ------------------------------------------------------------------------------
 # Bitwise binary operators
 
-bitwise_binary_test_template = """\
+bitwise_binary_test_template = """
 {includes}
 #include <limits>
 
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -443,7 +468,7 @@ int main() {{
   raw_t *tab0 = (raw_t *) malloc(v_size * sizeof(raw_t));
   raw_t *tab1 = (raw_t *) malloc(v_size * sizeof(raw_t));
   raw_t *res  = (raw_t *) malloc(v_size * sizeof(raw_t));
- 
+
   for(size_t i = 0; i < v_size; i++)
   {{
     tab0[i] = {rand_statement}
@@ -463,8 +488,8 @@ int main() {{
     raw_t b = tab1[i];
     raw_t c = res[i];
     CHECK({test_statement});
-  }}  
- 
+  }}
+
   fprintf(stdout, \"test of {op_name}{term} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
@@ -485,10 +510,11 @@ def gen_bitwise_ops_tests(lf, rt, opts):
             rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
             test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
-        with common.open_utf8(opts, filename) as fp:
-            fp.write(content_src)
-        common.clang_format(opts, filename)
-        
+        if filename != None:
+            with common.open_utf8(opts, filename) as fp:
+                fp.write(content_src)
+            common.clang_format(opts, filename)
+
         # {op}l
         content_src = bitwise_binary_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
@@ -496,19 +522,21 @@ def gen_bitwise_ops_tests(lf, rt, opts):
             rand_statement="(raw_t)(rand() % 2);".format(lf=lf, rt=rt),
             test_statement=s1, l="l", term="l")
         filename = get_filename(opts, op_name + "l", lf, rt)
-        with common.open_utf8(opts, filename) as fp:
-            fp.write(content_src)
-        common.clang_format(opts, filename)
+        if filename != None:
+            with common.open_utf8(opts, filename) as fp:
+                fp.write(content_src)
+            common.clang_format(opts, filename)
 
 # ------------------------------------------------------------------------------
 # Bitwise unary operators
 
-bitwise_unary_test_template = """\
+bitwise_unary_test_template = """
 {includes}
 
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -516,7 +544,7 @@ int main() {{
   typedef nsimd::fixed_point::pack{l}<fp_t> vec{l}_t;
   typedef nsimd::fixed_point::pack{l}<fp_t>::value_type raw_t;
   const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
-  
+
   raw_t *tab0 = (raw_t *) malloc(v_size * sizeof(raw_t));;
   raw_t *res  = (raw_t *) malloc(v_size * sizeof(raw_t));;
 
@@ -534,8 +562,8 @@ int main() {{
     raw_t a = tab0[i];
     raw_t b = res[i];
     CHECK({test_statement});
-  }}  
- 
+  }}
+
   fprintf(stdout, \"test of {op_name}{term} over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
@@ -545,17 +573,18 @@ bitwise_unary_ops = [("not", "b._raw == ~a._raw",
                       "((b == 0) && (a == 1)) | ((b == 1) && (a == 0))")]
 def gen_unary_ops_tests(lf, rt, opts):
     for op_name, s0, s1 in bitwise_unary_ops:
-        decls = check + limits + gen_random_val  
+        decls = check + limits + gen_random_val
         # {op}b
         content_src = bitwise_unary_test_template.format(
             op_name=op_name, lf=lf, rt=rt,
             includes=includes, decls=decls,
-            rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf, rt=rt),
-            test_statement=s0, l="", term="b")
+            rand_statement="__gen_random_val<{lf}, {rt}>();".format(lf=lf,
+            rt=rt), test_statement=s0, l="", term="b")
         filename = get_filename(opts, op_name + "b", lf, rt)
-        with common.open_utf8(opts, filename) as fp:
-            fp.write(content_src)
-        common.clang_format(opts, filename)
+        if filename != None:
+            with common.open_utf8(opts, filename) as fp:
+                fp.write(content_src)
+            common.clang_format(opts, filename)
 
         # {op}l
         content_src = bitwise_unary_test_template.format(
@@ -564,19 +593,21 @@ def gen_unary_ops_tests(lf, rt, opts):
             rand_statement="(raw_t)(rand() % 2);".format(lf=lf, rt=rt),
             test_statement=s1, l="l", term="l")
         filename = get_filename(opts, op_name + "l", lf, rt)
-        with common.open_utf8(opts, filename) as fp:
-            fp.write(content_src)
-        common.clang_format(opts, filename)
-        
+        if filename != None:
+            with common.open_utf8(opts, filename) as fp:
+                fp.write(content_src)
+            common.clang_format(opts, filename)
+
 # -----------------------------------------------------------------------------
 # if_else
 
-if_else_test_template = """\
+if_else_test_template = """
 {includes}
 
 // -----------------------------------------------------------------------------
 
 {decls}
+
 // -----------------------------------------------------------------------------
 
 int main() {{
@@ -585,7 +616,7 @@ int main() {{
   typedef nsimd::fixed_point::packl<fp_t> vecl_t;
   typedef nsimd::fixed_point::packl<fp_t>::value_type log_t;
   const size_t v_size = (size_t) nsimd::fixed_point::len(fp_t());
-  
+
   fp_t *tab0_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *tab1_fp = (fp_t *) malloc(v_size * sizeof(fp_t));
   fp_t *res_fp  = (fp_t *) malloc(v_size * sizeof(fp_t));
@@ -608,7 +639,7 @@ int main() {{
     fp_t ref = mask[i] ? tab0_fp[i] : tab1_fp[i];
     CHECK(ref._raw == res_fp[i]._raw);
   }}
- 
+
   fprintf(stdout, \"test of if_else1 over fp_t<{lf},{rt}>... OK\\n\");
   return EXIT_SUCCESS;
 }}
@@ -619,6 +650,8 @@ def gen_if_else_tests(lf, rt, opts):
     content_src = if_else_test_template.format(
         lf=lf, rt=rt, includes=includes, decls=decls)
     filename = get_filename(opts, "if_else", lf, rt)
+    if filename == None:
+        return
     with common.open_utf8(opts, filename) as fp:
         fp.write(content_src)
     common.clang_format(opts, filename)
@@ -632,8 +665,9 @@ store_ops = ["storeu", "storelu", "storea", "storela"]
 
 lf_vals = ["4", "8", "16"]
 rt_vals = ["1", "2", "3", "4", "5", "6", "7", "8"]
+
 def doit(opts):
-    print ('-- Generating tests for module fixed_point')
+    common.myprint(opts, 'Generating tests for module fixed_point')
     for lf in lf_vals:
         for rt in rt_vals:
             ## Arithmetic operators
@@ -644,16 +678,16 @@ def doit(opts):
 
             ## Ternary_operators
             gen_ternary_ops_tests(lf, rt, opts)
-    
+
             ## Math functions
-            gen_math_functions_tests(lf, rt, opts) 
-            
+            gen_math_functions_tests(lf, rt, opts)
+
             ## Comparison operators
             gen_comparison_tests(lf, rt, opts)
 
             ## Bitwise binary operators
             gen_bitwise_ops_tests(lf, rt, opts)
-            
+
             ## Bitwise unary operators
             gen_unary_ops_tests(lf, rt, opts)
 

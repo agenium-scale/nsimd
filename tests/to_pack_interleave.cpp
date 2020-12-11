@@ -9,8 +9,10 @@ template <typename T> bool to_pack_interleave_from_pack_1_N_1() {
   nsimd::pack<T, 1> pack_from(42);
   nsimd::pack<T, 1> pack_to = nsimd::to_pack_interleave(pack_from);
 
-  nsimd::scoped_aligned_mem<T> expected;
-  nsimd::scoped_aligned_mem<T> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   return nsimd_tests::check_pack_expected_vs_computed(
       pack_from, pack_to, "nsimd::pack<T, 1>", "nsimd::pack<T, 1>",
@@ -28,8 +30,10 @@ template <typename T> bool to_pack_interleave_from_packx2_N_1() {
   pack_from.v0 = v0;
   pack_from.v1 = v1;
 
-  nsimd::scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 2 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(2 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(2 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx2<T, 1>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
@@ -60,8 +64,10 @@ template <typename T> bool to_pack_interleave_from_packx2_N_2() {
   pack_from.v0 = v0;
   pack_from.v1 = v1;
 
-  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(4 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(4 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx2<T, 2>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
@@ -101,8 +107,10 @@ template <typename T> bool to_pack_interleave_from_packx3_N_2() {
   pack_from.v1 = v1;
   pack_from.v2 = v2;
 
-  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 6 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(6 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(6 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx3<T, 2>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
@@ -148,8 +156,10 @@ template <typename T> bool to_pack_interleave_from_packx3_N_3() {
   pack_from.v1 = v1;
   pack_from.v2 = v2;
 
-  nsimd::scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 9 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(9 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(9 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx3<T, 3>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
@@ -206,8 +216,10 @@ template <typename T> bool to_pack_interleave_from_packx4_N_1() {
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 4 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(4 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(4 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx4<T, 1>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
@@ -249,8 +261,10 @@ template <typename T> bool to_pack_interleave_from_packx4_N_2() {
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  nsimd::scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 8 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(8 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(8 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx4<T, 2>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);
@@ -304,8 +318,10 @@ template <typename T> bool to_pack_interleave_from_packx4_N_3() {
   pack_from.v2 = v2;
   pack_from.v3 = v3;
 
-  nsimd::scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> expected;
-  nsimd::scoped_aligned_mem<T, 12 * NSIMD_MAX_REGISTER_SIZE_BYTES> computed;
+  nsimd::scoped_aligned_mem_for<T>
+    expected(12 * NSIMD_MAX_REGISTER_SIZE_BYTES);
+  nsimd::scoped_aligned_mem_for<T>
+    computed(12 * NSIMD_MAX_REGISTER_SIZE_BYTES);
 
   const int len_ = nsimd::len(nsimd::packx4<T, 3>());
   nsimd_tests::init_arrays(expected.get(), computed.get(), len_);

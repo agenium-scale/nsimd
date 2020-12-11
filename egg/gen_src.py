@@ -29,43 +29,37 @@ import sys
 
 def get_put_impl(simd_ext):
     args = {
-      'i8' :      ['"%d"', '(int)buf[i]'],
-      'u8' :      ['"%d"', '(int)buf[i]'],
-      'i16':      ['"%d"', '(int)buf[i]'],
-      'u16':      ['"%d"', '(int)buf[i]'],
-      'i32':      ['"%d"', 'buf[i]'],
-      'u32':      ['"%u"', 'buf[i]'],
-      'i64':      ['"%ld"', 'buf[i]'],
-      'u64':      ['"%lu"', 'buf[i]'],
-      'i64_msvc': ['"%lld"', 'buf[i]'],
-      'u64_msvc': ['"%llu"', 'buf[i]'],
-      'f16':      ['"%e"', '(double)nsimd_f16_to_f32(buf[i])'],
-      'f32':      ['"%e"', '(double)buf[i]'],
-      'f64':      ['"%e"', 'buf[i]'],
+      'i8' : ['"%d"', '(int)buf[i]'],
+      'u8' : ['"%d"', '(int)buf[i]'],
+      'i16': ['"%d"', '(int)buf[i]'],
+      'u16': ['"%d"', '(int)buf[i]'],
+      'i32': ['"%d"', 'buf[i]'],
+      'u32': ['"%u"', 'buf[i]'],
+      'i64': ['"%lld"', 'buf[i]'],
+      'u64': ['"%llu"', 'buf[i]'],
+      'f16': ['"%e"', '(double)nsimd_f16_to_f32(buf[i])'],
+      'f32': ['"%e"', '(double)buf[i]'],
+      'f64': ['"%e"', 'buf[i]'],
     }
-    ret = '''extern "C" {
+    ret = '''#ifdef NSIMD_LONGLONG_IS_EXTENSION
+               #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
+                 #pragma GCC diagnostic ignored "-Wformat"
+               #endif
+             #endif
 
              #include <cstdio>
+
+             extern "C" {
 
              '''
     for typ in common.types:
 
-        if typ in ['i64', 'u64']:
-            fprintf = '''#if defined(NSIMD_IS_MSVC ) || (NSIMD_WORD_SIZE == 32)
-                           code = fprintf(out, {fmt_msvc}, {val});
-                         #else
-                           code = fprintf(out, {fmt}, {val});
-                         #endif'''.format(fmt_msvc=args[typ + '_msvc'][0],
-                                          fmt=args[typ][0], val=args[typ][1])
-        else:
-            fprintf = 'code = fprintf(out, {fmt}, {val});'. \
-                      format(fmt=args[typ][0], val=args[typ][1])
-
-        fmt = '''NSIMD_DLLEXPORT
-           int nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
-                                          nsimd_{simd_ext}_v{l}{typ} v) {{
+        fmt = \
+        '''NSIMD_DLLEXPORT int NSIMD_VECTORCALL
+           nsimd_put_{simd_ext}_{l}{typ}(FILE *out, const char *fmt,
+                                         nsimd_{simd_ext}_v{l}{typ} v) {{
              using namespace nsimd;
-             {typ} buf[max_len<{typ}>];
+             {typ} buf[NSIMD_MAX_LEN({typ})];
 
              int n = len({typ}(), {simd_ext}());
              store{l}u(buf, v, {typ}(), {simd_ext}());
@@ -78,7 +72,7 @@ def get_put_impl(simd_ext):
                if (fmt != NULL) {{
                  code = fprintf(out, fmt, {val});
                }} else {{
-                 {fprintf}
+                 code = fprintf(out, {fmt}, {val});
                }}
                if (code < 0) {{
                  return -1;
@@ -99,16 +93,11 @@ def get_put_impl(simd_ext):
            {hbar}
            '''
 
-        ret += fmt\
-        .format(typ=typ, l='', simd_ext=simd_ext, hbar=common.hbar,
-                      fprintf=fprintf, val=args[typ][1])
-
-        ret += fmt\
-        .format(typ=typ, l='l', simd_ext=simd_ext, hbar=common.hbar,
-                      fprintf=fprintf, val=args[typ][1])
-    ret += \
-    '''} // extern "C"
-       '''
+        ret += fmt.format(typ=typ, l='', simd_ext=simd_ext, hbar=common.hbar,
+                          fmt=args[typ][0], val=args[typ][1])
+        ret += fmt.format(typ=typ, l='l', simd_ext=simd_ext, hbar=common.hbar,
+                          fmt=args[typ][0], val=args[typ][1])
+    ret += '} // extern "C"\n'
     return ret
 
 # -----------------------------------------------------------------------------
@@ -176,8 +165,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_cpu_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_cpu_{suf}({c_args}) {{
                      nsimd_cpu_v{logical}f16 ret;
                      nsimd::pack{logical}<f32> tmp;
                      tmp = nsimd::impl::{name}({args1});
@@ -199,8 +188,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      nsimd_{simd_ext}_v{logical}f16 ret;
                      auto buf = nsimd::impl::{name}({args1});
                      ret.v0 = buf.car;
@@ -218,8 +207,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
         else:
             if t == 'f16':
                 inputs = \
-                '\n'.join(['''f16 buf{i}_f16[max_len<f16>];
-                              f32 buf{i}_f32[max_len<f16>];
+                '\n'.join(['''f16 buf{i}_f16[NSIMD_MAX_LEN(f16)];
+                              f32 buf{i}_f32[NSIMD_MAX_LEN(f16)];
                               storeu(buf{i}_f16, a{i}, f16(), {simd_ext}());
                               for (int i = 0; i < len_f16; i++) {{
                                 buf{i}_f32[i] = (f32)buf{i}_f16[i];
@@ -237,8 +226,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      using namespace nsimd;
                      int len_f16 = len(pack<f16>());
                      int len_f32 = len(pack<f32>());
@@ -263,8 +252,8 @@ def get_impl(operator, emulate_fp16, simd_ext):
 
                    extern "C" {{
 
-                   NSIMD_DLLEXPORT
-                   {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                   NSIMD_DLLEXPORT {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                      auto buf = nsimd::impl::{name}({args});
                      return buf.car;
                    }}
@@ -302,7 +291,7 @@ def write_cpp(opts, simd_ext, emulate_fp16):
 
 def doit(opts):
     common.mkdir_p(opts.src_dir)
-    print ('-- Generating source for binary')
+    common.myprint(opts, 'Generating source for binary')
     opts.platforms = common.get_platforms(opts)
     for platform in opts.platforms:
         mod = opts.platforms[platform]

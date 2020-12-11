@@ -258,7 +258,7 @@ int main(void) {{
 # (to avoid vector filled with similar numbers)
 
 def doit(opts):
-    print ('-- Generating ulps')
+    common.myprint(opts, 'Generating ulps')
     common.mkdir_p(opts.ulps_dir)
     for op_name, operator in operators.operators.items():
         if not operator.tests_mpfr:

@@ -41,11 +41,23 @@ import io
 import collections
 import platform
 import string
+import shutil
+
+# -----------------------------------------------------------------------------
+# print
+
+def myprint(opts, obj):
+    if opts.list_files:
+        return
+    print('-- {}'.format(obj))
 
 # -----------------------------------------------------------------------------
 # check if file exists
 
 def can_create_filename(opts, filename):
+    if opts.list_files:
+        print(filename)
+        return False
     if opts.verbose:
         sys.stdout.write('-- {}: '.format(filename))
     if os.path.isfile(filename) and not opts.force:
@@ -114,20 +126,25 @@ SOFTWARE.
 
         fout.write('{} This file has been auto-generated {}\n\n'.\
             format(begin_comment, end_comment))
-    
+
     return io.open(filename, mode='a', encoding='utf-8')
 
 # -----------------------------------------------------------------------------
 # clang-format
 
-def clang_format(opts, filename):
-    if opts.disable_clang_format:
-        return
-    # TODO: not sure if needed to implement a smarter call to clang-format
-    os.system('clang-format -style="{{ Standard: Cpp03 }}" -i {}'. \
-              format(filename))
-    with open(filename, 'a') as fout:
+def clang_format(opts, filename, cuda=False):
+    with io.open(filename, 'a', encoding='utf-8') as fout:
         fout.write('\n')
+    if not opts.enable_clang_format:
+        # TODO: not sure if needed to implement a smarter call to clang-format
+        if cuda:
+            os.system('clang-format -style="{{ Standard: Cpp11 }}" -i {}'. \
+                      format(filename))
+        else:
+            os.system('clang-format -style="{{ Standard: Cpp03 }}" -i {}'. \
+                      format(filename))
+    if cuda:
+        shutil.copyfile(filename, filename[:-4] + '.cu')
 
 # -----------------------------------------------------------------------------
 # Not implemented response
@@ -243,10 +260,10 @@ in3 = 'a3'
 in4 = 'a4'
 in5 = 'a5'
 
-CPU_NBITS = 64
+CPU_NBITS = 128
 
-if CPU_NBITS != 64 and CPU_NBITS != 128:
-    raise ValueError('CPU_NBITS must be 64 or 128')
+if CPU_NBITS != 128:
+    raise ValueError('CPU_NBITS must be 128')
 
 def get_args(n):
     fmtspec = { 'in0': in0, 'in1': in1, 'in2': in2, 'in3': in3, 'in4': in4,
@@ -336,6 +353,7 @@ def enum(l):
 # List of supported SIMD operators/functions
 
 # v   = SIMD vector parameter
+# vi  = SIMD vector of signed integers parameter
 # vx2 = struct of 2 SIMD vector parameters
 # vx3 = struct of 3 SIMD vector parameters
 # vx4 = struct of 4 SIMD vector parameters
@@ -361,6 +379,8 @@ def get_one_type_generic(param, typ):
         return '{}*'.format(typ)
     elif param == 'c*':
         return '{} const*'.format(typ)
+    elif param == 'vi':
+        return 'vi{}'.format(typ[1:])
     elif param == 'v':
         return 'v{}'.format(typ)
     elif param == 'vx2':
@@ -385,6 +405,8 @@ def get_one_type_specific(param, ext, typ):
         return '{}*'.format(typ)
     elif param == 'c*':
         return '{} const*'.format(typ)
+    elif param == 'vi':
+        return 'nsimd_{}_vi{}'.format(ext, typ[1:])
     elif param == 'v':
         return 'nsimd_{}_v{}'.format(ext, typ)
     elif param == 'vx2':
@@ -409,11 +431,17 @@ def get_one_type_pack(param, inout, N):
         return 'T const*'
     if param == 's':
         return 'T'
-    if param.startswith('v'):
+    if param in ['v', 'vx2', 'vx3', 'vx4']:
         if inout == 0:
             return 'pack<T, {}, SimdExt> const&'.format(N)
         else:
             return 'pack<T, {}, SimdExt>'.format(N)
+    if param == 'vi':
+        if inout == 0:
+            return 'pack<typename traits<T>::itype, {}, SimdExt> const&'. \
+                   format(N)
+        else:
+            return 'pack<typename traits<T>::itype, {}, SimdExt>'.format(N)
     if param == 'l':
         if inout == 0:
             return 'packl<T, {}, SimdExt> const&'.format(N)
@@ -434,6 +462,8 @@ def get_one_type_generic_adv_cxx(param, T, N):
         return T
     elif param == 'v':
         return 'pack<{}, {}, SimdExt>'.format(T, N)
+    elif param == 'vi':
+        return 'pack<i{}, {}, SimdExt>'.format(T[1:], N)
     elif param == 'vx2':
         return 'packx2<{}, {}, SimdExt>'.format(T, N)
     elif param == 'vx3':
@@ -442,6 +472,16 @@ def get_one_type_generic_adv_cxx(param, T, N):
         return 'packx4<{}, {}, SimdExt>'.format(T, N)
     elif param == 'l':
         return 'packl<{}, {}, SimdExt>'.format(T, N)
+    else:
+        raise ValueError('Unknown param: "{}"'.format(param))
+
+def get_one_type_scalar(param, t):
+    if param == '_':
+        return 'void'
+    elif param in ['p', 'l']:
+        return 'int'
+    elif param in ['s', 'v']:
+        return t
     else:
         raise ValueError('Unknown param: "{}"'.format(param))
 
@@ -474,14 +514,38 @@ def parse_signature(signature):
 # Load platforms
 
 def get_platforms(opts):
+    if opts.platforms_list != None:
+        return opts.platforms_list
     ret = dict()
     path = opts.script_dir
-    print ('-- Searching platforms in "{}"'.format(path))
+    myprint(opts, 'Searching platforms in "{}"'.format(path))
     for mod_file in os.listdir(path):
         if mod_file[-3:] == '.py' and mod_file[0:9] == 'platform_':
             mod_name = mod_file[:-3]
-            print ('-- Found new platform: {}'.format(mod_name[9:]))
+            myprint(opts, 'Found new platform: {}'.format(mod_name[9:]))
             ret[mod_name[9:]] = __import__(mod_name)
+    opts.platforms_list = ret
+    return ret
+
+# -----------------------------------------------------------------------------
+# Find modules
+
+def get_modules(opts):
+    if opts.modules_list != None:
+        return opts.modules_list
+    ret = dict()
+    # We have one module by directory
+    path = os.path.join(opts.script_dir, 'modules')
+    myprint(opts, 'Searching modules in "{}"'.format(path))
+    for module_dir in os.listdir(path):
+        if (not os.path.isdir(os.path.join(path, module_dir))) or \
+           module_dir == '.' or module_dir == '..' or \
+           (not os.path.exists(os.path.join(path, module_dir, 'hatch.py'))):
+            continue
+        myprint(opts, 'Found new module: {}'.format(module_dir))
+        mod = __import__('modules.{}.hatch'.format(module_dir))
+        ret[module_dir] = mod
+    opts.modules_list = ret
     return ret
 
 # -----------------------------------------------------------------------------
@@ -504,6 +568,13 @@ def load_ulps_informations(opts):
         ulps[func][type] = info
 
     return ulps
+
+def ulps_from_relative_distance_power(p):
+    return {
+      'f16': max(11 - p, 1),
+      'f32': max(24 - p, 1),
+      'f64': max(53 - p, 1)
+    }
 
 # -----------------------------------------------------------------------------
 # Domain stuff
@@ -885,12 +956,12 @@ class Domain(object):
                     cases.append('case {n}: {{ {code} }};'. \
                                  format(n=j, code=union.code(typ)))
                 nested_code = '''
-                // Branch to one of the nested interval (union)
+                /* Branch to one of the nested interval (union) */
                 switch (rand() % {nunions}) {{
-                    {cases}
-                    default:
-                        // SHOULD NEVER HAPPEN! This removes compiler warning!
-                        return {type}();
+                  {cases}
+                  default:
+                    /* SHOULD NEVER HAPPEN! This removes compiler warning! */
+                    return {type}();
                 }}
                 '''.format(cases='\n'.join(cases), nunions=nunions, type=typ)
             code += '''
@@ -910,7 +981,7 @@ class Domain(object):
             for u, union in enumerate(self.intervals):
                 ret += \
                     '''{typ} rand{u}() {{
-                            nat i, r;
+                            nsimd_nat i, r;
                             u8 *alias;
                             {typ} ret;
                             (void)i;
@@ -920,7 +991,7 @@ class Domain(object):
 
                 for i, interval in enumerate(union):
                     if interval.logical_:
-                        ret += 'ret = (u8)(rand())%2;'
+                        ret += 'ret = (u8)(rand()) % 2;'
                     else:
                         if not interval.removed:
                             test='0'
@@ -939,7 +1010,7 @@ class Domain(object):
                                     alias[i] = 0u;
                                 }}
                             }} while ({test});
-                            '''.format(test=test, it=int(typlen)//8)
+                            '''.format(test=test, it=int(typlen) // 8)
 
                 ret += 'return ret;}'
         elif typ in ftypes:
@@ -947,7 +1018,7 @@ class Domain(object):
             for u, union in enumerate(self.intervals):
                 ret += \
                     '''{typ} rand{u}() {{
-                            nat i;
+                            nsimd_nat i;
                             u8 *alias;
                             {typ} ret;
                             (void)i;
@@ -957,8 +1028,8 @@ class Domain(object):
                 for i, interval in enumerate(union):
                     if interval.logical_:
                         if typ == 'f16':
-                            ret += '''u16 tmp = ((u16)rand()%2);
-                                      memcpy(&ret, &tmp, sizeof(ret));'''
+                            ret += 'ret = nsimd_scalar_reinterpret_f16_u16(' \
+                                   '(u16)(rand() % 2));'
                         else:
                             ret += 'ret = ({})(rand()%2);'.format(typ)
                     else:
@@ -967,7 +1038,7 @@ class Domain(object):
                             for(i=0; i<{it}; ++i) {{
                                 alias[i] = (u8)(rand() & 0xFF);
                             }}
-                            '''.format(it=int(typlen)//8)
+                            '''.format(it=int(typlen) // 8)
 
                 ret += 'return ret;}'
 
@@ -1097,85 +1168,12 @@ def nsimd_category(category):
 # ------------------------------------------------------------------------------
 # Doc common
 
-doc_header = '''\
-<!DOCTYPE html>
-
-<html>
-  <head>
-    <meta charset=\"utf-8\">
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-    <title>{}</title>
-    <style type=\"text/css\">
-      body {{
-        /*margin:40px auto;*/
-        margin:10px auto;
-        /*max-width:650px;*/
-        max-width:800px;
-        /*line-height:1.6;*/
-        line-height:1.4;
-        /*font-size:18px;*/
-        color:#444;
-        padding:0 10px
-      }}
-      h1,h2,h3 {{
-        line-height:1.2
-      }}
-      table,th, td {{
-        border: 1px solid gray;
-        border-collapse : collapse;
-        padding: 1px 3px;
-      }}
-    </style>
-    <!-- https://www.mathjax.org/#gettingstarted -->
-    <script src=\"assets/polyfill.min.js\"></script>
-    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\"></script>
-    <!-- Highlight.js -->
-    <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
-    <script src=\"assets/highlight.min.js\"></script>
-    <script src=\"assets/cpp.min.js\"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-  </head>
-<body>
-
-<center>
-  <img src=\"img/logo.svg\"><br>
-  <br>
-  <a href=\"index.html\">Index</a> |
-  <a href=\"quick_start.html\">Quick Start</a> |
-  <a href=\"tutorials.html\">Tutorials</a> |
-  <a href=\"faq.html\">FAQ</a> |
-  <a href=\"contribute.html\">Contribute</a> |
-  <a href=\"overview.html\">API overview</a> |
-  <a href=\"api.html\">API reference</a> |
-  <a href=\"modules.html\">Modules</a>
-  <br><hr>
-  {}
-</center>
-'''
-
-doc_footer = '''\
-  </body>
-</html>
-'''
-
 def to_filename(op_name):
     valid = string.ascii_letters + string.digits
     ret = ''
     for c in op_name:
         ret += '-' if c not in valid else c
     return ret
-
-def get_html_header(title='', module='', links={}):
-    additional_links=''
-    if(module != ''):
-        additional_links += '<b>{}: </b>\n'.format(title)
-        additional_links += '\n'.join('<a href=\"module_{}_{}.html\">{}</a>'.\
-                                      format(module, name, title) \
-                                      for name, title in links.items())
-    return doc_header.format(title, additional_links)
-
-def get_html_footer():
-    return doc_footer
 
 def get_markdown_dir(opts):
     return os.path.join(opts.script_dir, '..', 'doc', 'markdown')
@@ -1194,73 +1192,5 @@ def get_markdown_file(opts, name, module=''):
     if module == '':
         return os.path.join(root, '{}.md'.format(op_name))
     else:
-        return os.path.join(root, 'module_{}_{}.md'.format(module, op_name))    
+        return os.path.join(root, 'module_{}_{}.md'.format(module, op_name))
 
-def get_html_dir(opts):
-    return os.path.join(opts.script_dir, '..', 'doc', 'html')
-
-def get_html_api_file(opts, name, module=''):
-    root = get_html_dir(opts)
-    op_name = to_filename(name)
-    if module == '':
-        return os.path.join(root, 'api_{}.html'.format(op_name))
-    else:
-        return os.path.join(root, 'module_{}_api_{}.html'.format(module, op_name))
-
-def get_html_file(opts, name, module=''):
-    root = get_html_dir(opts)
-    op_name = to_filename(name)
-    if module == '':
-        return os.path.join(root, '{}.html'.format(op_name))
-    else:
-        return os.path.join(root, 'module_{}_{}.html'.format(module, op_name))
-
-def gen_doc_html(opts, title, module='', links={}):
-    # check if md2html exists
-    md2html = 'md2html.exe' if platform.system() == 'Windows' else 'md2html'
-    doc_dir = os.path.join(opts.script_dir, '..', 'doc')
-    full_path_md2html = os.path.join(doc_dir, md2html)
-    if not os.path.isfile(full_path_md2html):
-        msg = '-- Cannot generate HTML: {} not found. '.format(md2html)
-        if platform.system() == 'Windows':
-            msg += 'Run "nmake /F Makefile.win" in {}'.format(doc_dir)
-        else:
-            msg += 'Run "make -f Makefile.nix" in {}'.format(doc_dir)
-        print(msg)
-        return
-
-    # get all markdown files
-    md_dir = get_markdown_dir(opts)
-    html_dir = get_html_dir(opts)
-
-    if(not os.path.isdir(html_dir)):
-        mkdir_p(html_dir)
-
-    doc_files = []
-    if module == '':
-        for file in os.listdir(md_dir):
-            name =  os.path.basename(file)
-            if name.endswith('.md') \
-               and not name.startswith('module_'):
-                doc_files.append(os.path.splitext(name)[0])
-    else:
-        for file in os.listdir(md_dir):
-            name =  os.path.basename(file)
-            if name.endswith('.md') \
-               and name.startswith('module_{}'.format(module)):
-                doc_files.append(os.path.splitext(name)[0])
-
-    ## gen html files
-    header = get_html_header(title, module, links)
-    footer = get_html_footer()
-    tmp_file = os.path.join(doc_dir, 'tmp.html')
-    for filename in doc_files:
-        input_name = os.path.join(md_dir, filename + '.md')
-        output_name = os.path.join(html_dir, filename + '.html')
-        os.system('{} "{}" "{}"'.format(full_path_md2html, input_name, tmp_file))
-        with open_utf8(opts, output_name) as fout:
-            fout.write(header)
-            with io.open(tmp_file, mode='r', encoding='utf-8') as fin:
-                fout.write(fin.read())
-            fout.write(footer)
-    

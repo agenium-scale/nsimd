@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include <nsimd/nsimd-all.hpp>
+
 #include <cstdlib>
 #include <vector>
 

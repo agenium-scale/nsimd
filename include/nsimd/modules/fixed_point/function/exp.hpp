@@ -41,7 +41,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int64_t &b) {
     return fp_t<_lf, _rt>(1);
 
   fp_t<_lf, _rt> val = a;
-  int e = b;
+  int64_t e = b;
   if (e < 0) {
     val = constants::one<_lf, _rt>() / val;
     e = -e;

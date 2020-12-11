@@ -25,6 +25,20 @@ import modules.fixed_point.gen_tests
 import modules.fixed_point.gen_doc
 
 # -----------------------------------------------------------------------------
+
+def name():
+    return 'Fixed-point arithmetic'
+
+def desc():
+    return '''This module provides vectorized fixed-point arithmetic through
+a C++98 API. The programmer can choose the integral type and the place of the
+coma for representing its fixed-point numbers. A number of operators are
+also provided.'''
+
+def doc_menu():
+    return {'Overview': 'overview', 'API reference': 'api'}
+
+# -----------------------------------------------------------------------------
 # Entry point
 
 def doit(opts):

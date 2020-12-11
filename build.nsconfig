@@ -1,0 +1,323 @@
+# MIT License
+#
+# Copyright (c) 2020 Agenium Scale
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+package_name nsimd-2.0
+
+## Get OS/Compiler specific file extensions
+
+set o     = @obj_ext
+set exe   = @exe_ext
+set s     = @asm_ext
+set so    = @shared_lib_ext
+set lib   = @shared_link_ext
+set root  = @source_dir
+set make  = @make_command
+set build = @build_dir
+set root  = @source_dir
+
+## Some defaults
+
+ifnot_set "SIMD extension to use" simd = cpu
+ifnot_set "CUDA target arch flag(s) for tests" cuda_arch_flags = ""
+[L] ifnot_set "MPFR compilation flags (for tests only)" mpfr = -lmpfr
+[W] ifnot_set "MPFR compilation flags (for tests only)" mpfr = ""
+ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
+ifnot_set "Google benchmark compilation flags (for benchmarks only)" \
+          benchmark = -lbenchmark
+ifnot_set "Turn off tests/bench/ulps" build_library_only = false
+
+## Targets for compilation
+
+set o_for_               = fp16$o memory$o ulps$o api_cpu$o
+set o_for_cpu            = $o_for_
+set o_for_cuda           = $o_for_
+set o_for_rocm           = $o_for_
+set o_for_oneapi         = $o_for_
+set o_for_sse2           = $o_for_cpu api_sse2$o
+set o_for_sse42          = $o_for_sse2 api_sse42$o
+set o_for_avx            = $o_for_sse42 api_avx$o
+set o_for_avx2           = $o_for_avx api_avx2$o
+set o_for_avx512_knl     = $o_for_avx2 api_avx512_knl$o
+set o_for_avx512_skylake = $o_for_avx2 api_avx512_skylake$o
+set o_for_neon128        = $o_for_cpu api_neon128$o
+set o_for_aarch64        = $o_for_cpu api_aarch64$o
+set o_for_sve            = $o_for_aarch64 api_sve$o
+set o_for_sve128         = $o_for_aarch64 api_sve128$o
+set o_for_sve256         = $o_for_aarch64 api_sve256$o
+set o_for_sve512         = $o_for_aarch64 api_sve512$o
+set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
+set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
+
+## SIMD compiler flags
+
+set cflags_for_               = -DCPU
+set cflags_for_cpu            = -DCPU
+set cflags_for_cuda           = -DCUDA
+set cflags_for_rocm           = -DROCM
+set cflags_for_oneapi         = -DONEAPI
+set cflags_for_sse2           = -DSSE2 -msse2
+set cflags_for_sse42          = -DSSE42 -msse42
+set cflags_for_avx            = -DAVX -mavx
+set cflags_for_avx2           = -DAVX2 -mavx2 -DFMA -mfma -DFP16 -mfp16
+set cflags_for_avx512_knl     = -DAVX512_KNL -mavx512_knl -mfma -DFP16 -mfp16
+set cflags_for_avx512_skylake = -DAVX512_SKYLAKE -mavx512_skylake -mfma \
+                                -DFP16 -mfp16
+set cflags_for_neon128        = -DNEON128 -mneon128
+set cflags_for_aarch64        = -DAARCH64 -maarch64
+set cflags_for_sve            = -DSVE -msve
+set cflags_for_sve128         = -DSVE128 -msve128
+set cflags_for_sve256         = -DSVE256 -msve256
+set cflags_for_sve512         = -DSVE512 -msve512
+set cflags_for_sve1024        = -DSVE1024 -msve1024
+set cflags_for_sve2048        = -DSVE2048 -msve2048
+
+## std default flag
+
+set std_flag_for_               = -std=c++98
+set std_flag_for_cpu            = $std_flag_for_
+set std_flag_for_cuda           = $std_flag_for_
+set std_flag_for_rocm           = -std=c++11
+set std_flag_for_oneapi         = -std=c++17
+set std_flag_for_sse2           = $std_flag_for_
+set std_flag_for_sse42          = $std_flag_for_
+set std_flag_for_avx            = $std_flag_for_
+set std_flag_for_avx2           = $std_flag_for_
+set std_flag_for_avx512_knl     = $std_flag_for_
+set std_flag_for_avx512_skylake = $std_flag_for_
+set std_flag_for_neon128        = $std_flag_for_
+set std_flag_for_aarch64        = $std_flag_for_
+set std_flag_for_sve            = $std_flag_for_
+set std_flag_for_sve128         = $std_flag_for_
+set std_flag_for_sve256         = $std_flag_for_
+set std_flag_for_sve512         = $std_flag_for_
+set std_flag_for_sve1024        = $std_flag_for_
+set std_flag_for_sve2048        = $std_flag_for_
+
+## Some defaults
+
+set flags  = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
+set cflags = ${std_flag_for_$simd$} $flags
+
+## Default building rules
+
+phony all deps libnsimd_$simd$$so$
+
+build_file libnsimd_$simd$$so deps ${o_for_$simd$}
+	c++ -shared @in -o @out
+
+set ldflags = -fPIC -L. -lnsimd_$simd
+
+## CPU (emulation) rules for building
+
+build_file fp16$o autodeps $root$/src/fp16.cpp
+	c++ $cflags$ @in -c -o @out
+
+build_file memory$o autodeps $root$/src/memory.cpp
+	c++ $cflags$ @in -c -o @out
+
+build_file ulps$o autodeps $root$/src/ulps.cpp
+	c++ $cflags$ @in -c -o @out
+
+build_file api_cpu$o autodeps $root$/src/api_cpu.cpp
+	c++ $cflags$ $cflags_for_cpu -c @in -o @out
+
+## Intel rules for building
+
+build_file api_sse2$o autodeps $root$/src/api_sse2.cpp
+	c++ $cflags$ -c $cflags_for_sse2 @in -o @out
+
+build_file api_sse42$o autodeps $root$/src/api_sse42.cpp
+	c++ $cflags$ -c $cflags_for_sse42 @in -o @out
+
+build_file api_avx$o autodeps $root$/src/api_avx.cpp
+	c++ $cflags$ -c $cflags_for_avx @in -o @out
+
+build_file api_avx2$o autodeps $root$/src/api_avx2.cpp
+	c++ $cflags$ -c $cflags_for_avx2 @in -o @out
+
+build_file api_avx512_knl$o autodeps $root$/src/api_avx512_knl.cpp
+	c++ $cflags$ -c $cflags_for_avx512_knl @in -o @out
+
+build_file api_avx512_skylake$o autodeps $root$/src/api_avx512_skylake.cpp
+	c++ $cflags$ -c $cflags_for_avx512_skylake @in -o @out
+
+## ARM 32 bits rules for building
+
+build_file api_neon128$o autodeps $root$/src/api_neon128.cpp
+	c++ $cflags$ -c $cflags_for_neon128 @in -o @out
+
+## ARM 64 bits rules for building
+
+build_file api_aarch64$o autodeps $root$/src/api_aarch64.cpp
+	c++ $cflags$ -c $cflags_for_aarch64 @in -o @out
+
+build_file api_sve$o autodeps $root$/src/api_sve.cpp
+	c++ $cflags$ -c $cflags_for_sve @in -o @out
+
+build_file api_sve128$o autodeps $root$/src/api_sve128.cpp
+	c++ $cflags$ -c $cflags_for_sve128 @in -o @out
+
+build_file api_sve256$o autodeps $root$/src/api_sve256.cpp
+	c++ $cflags$ -c $cflags_for_sve256 @in -o @out
+
+build_file api_sve512$o autodeps $root$/src/api_sve512.cpp
+	c++ $cflags$ -c $cflags_for_sve512 @in -o @out
+
+build_file api_sve1024$o autodeps $root$/src/api_sve1024.cpp
+	c++ $cflags$ -c $cflags_for_sve1024 @in -o @out
+
+build_file api_sve2048$o autodeps $root$/src/api_sve2048.cpp
+	c++ $cflags$ -c $cflags_for_sve2048 @in -o @out
+
+## Installation and packaging
+
+install_file libnsimd_${simd}$so lib
+[W] install_file libnsimd_${simd}$lib lib
+install_dir $root$/include/nsimd include
+install_dir $root$/doc/html doc
+
+begin_translate_if $build_library_only == false
+
+## Tests
+
+set tests_comp_for_               = c++
+set tests_comp_for_cpu            = c++
+set tests_comp_for_cuda           = nvcc -x cu $cuda_arch_flags
+set tests_comp_for_rocm           = hipcc $cuda_arch_flags
+set tests_comp_for_dpcpp          = dpcpp
+set tests_comp_for_sse2           = c++
+set tests_comp_for_sse42          = c++
+set tests_comp_for_avx            = c++
+set tests_comp_for_avx2           = c++
+set tests_comp_for_avx512_knl     = c++
+set tests_comp_for_avx512_skylake = c++
+set tests_comp_for_neon128        = c++
+set tests_comp_for_aarch64        = c++
+set tests_comp_for_sve            = c++
+set tests_comp_for_sve128         = c++
+set tests_comp_for_sve256         = c++
+set tests_comp_for_sve512         = c++
+set tests_comp_for_sve1024        = c++
+set tests_comp_for_sve2048        = c++
+
+set tests_comp = ${tests_comp_for_$simd$}
+
+set tests_flags = $flags$ $mpfr ${cflags_for_$simd$} -lm $ldflags
+
+echo Test compilation flags: $tests_flags$
+
+build_files c89 foreach glob:$root$/tests/*.c \
+                as tests.%r.c89$exe \
+                autodeps @item libnsimd_$simd$$so$
+	cc -std=c89 @item $tests_flags -o @out
+
+build_files c99 foreach glob:$root$/tests/*.c \
+                as tests.%r.c99$exe \
+                autodeps @item libnsimd_$simd$$so$
+	cc -std=c99 @item $tests_flags -o @out
+
+build_files c11 foreach glob:$root$/tests/*.c \
+                as tests.%r.c11$exe \
+                autodeps @item libnsimd_$simd$$so$
+	cc -std=c11 @item $tests_flags -o @out
+
+build_files cpp98 foreach glob:$root$/tests/*.cpp \
+                  as tests.%r.cpp98$exe \
+                  autodeps @item libnsimd_$simd$$so$
+	$tests_comp -std=c++98 @item $tests_flags -o @out
+
+build_files cpp11 foreach glob:$root$/tests/*.cpp \
+                  as tests.%r.cpp11$exe \
+                  autodeps @item libnsimd_$simd$$so$
+	$tests_comp -std=c++11 @item $tests_flags -o @out
+
+build_files cpp20 foreach glob:$root$/tests/*.cpp \
+                  as tests.%r.cpp20$exe \
+                  autodeps @item libnsimd_$simd$$so$
+	$tests_comp -std=c++20 @item $tests_flags -o @out
+
+phony tests.c89 deps $c89.files
+phony tests.c99 deps $c99.files
+phony tests.c11 deps $c11.files
+phony tests.cpp98 deps $cpp98.files
+phony tests.cpp11 deps $cpp11.files
+phony tests.cpp20 deps $cpp20.files
+
+# Phony target for tests
+
+set phony_tests_for_               = tests.c89 tests.c99 tests.cpp98 \
+                                     tests.cpp11
+set phony_tests_for_cpu            = $phony_tests_for_
+set phony_tests_for_cuda           = tests.cpp98 tests.cpp11
+set phony_tests_for_rocm           = tests.cpp11
+set phony_tests_for_dpcpp          = tests.cpp11
+set phony_tests_for_sse2           = $phony_tests_for_
+set phony_tests_for_sse42          = $phony_tests_for_
+set phony_tests_for_avx            = $phony_tests_for_
+set phony_tests_for_avx2           = $phony_tests_for_
+set phony_tests_for_avx512_knl     = $phony_tests_for_
+set phony_tests_for_avx512_skylake = $phony_tests_for_
+set phony_tests_for_neon128        = $phony_tests_for_
+set phony_tests_for_aarch64        = $phony_tests_for_
+set phony_tests_for_sve            = tests.c11 tests.cpp11
+set phony_tests_for_sve128         = $phony_tests_for_
+set phony_tests_for_sve256         = $phony_tests_for_
+set phony_tests_for_sve512         = $phony_tests_for_
+set phony_tests_for_sve1024        = $phony_tests_for_
+set phony_tests_for_sve2048        = $phony_tests_for_
+
+phony tests deps ${phony_tests_for_$simd$}
+
+## Examples
+
+build_files examples_cpp98 foreach glob:$root$/examples/*.cpp \
+                           as examples.%r.cpp98$exe \
+                           autodeps @item libnsimd_$simd$$so$
+	c++ -std=c++98 @item $tests_flags -o @out
+
+phony examples.cpp98 deps $examples_cpp98.files
+
+## Ulps
+
+build_files optional ulps foreach glob:$root$/ulps/*.cpp \
+                          as ulp.%b.${simd}$exe \
+                          autodeps @item libnsimd_$simd$$so$
+	c++ $flags$ $mpfr -std=c++11 @item ${cflags_for_$simd$} \
+	    $ldflags -o @out
+
+phony ulps deps $ulps.files
+
+## Benches
+
+set benches_flags  = -std=c++11 ${cflags_for_$simd$} $flags $sleef $benchmark
+
+echo Benches compilation flags: $benches_flags
+
+build_files optional benches \
+            foreach glob:$root$/benches/*.$simd$.*.cpp \
+            as benches.%b.cpp11$exe \
+            autodeps @item libnsimd_$simd$$so$
+	c++ benches_flags @item -o @out
+
+phony benches deps $benches.files$
+
+end_translate

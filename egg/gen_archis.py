@@ -63,7 +63,8 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
                #endif
 
                NSIMD_DLLSPEC
-               {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args});
+               {return_typ} NSIMD_VECTORCALL
+               nsimd_{name}_{simd_ext}_{suf}({c_args});
 
                #if NSIMD_CXX > 0
                }} // extern "C"
@@ -71,7 +72,8 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-                 NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
+                 NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                 {name}({cxx_args}) {{
                    {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
                  }}
                }} // namespace nsimd
@@ -82,14 +84,15 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
             ret += \
             '''{hbar}
 
-               NSIMD_INLINE
-               {return_typ} nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+               NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+               nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
                  {content}
                }}
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-                 NSIMD_INLINE {return_typ} {name}({cxx_args}) {{
+                 NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                 {name}({cxx_args}) {{
                    {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
                  }}
                }} // namespace nsimd
@@ -129,9 +132,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
                extern "C" {{
                #endif
 
-               NSIMD_DLLSPEC
-               int nsimd_put_{simd_ext}_{typ}(FILE *, const char *,
-                                              nsimd_{simd_ext}_v{typ});
+               NSIMD_DLLSPEC int NSIMD_VECTORCALL
+               nsimd_put_{simd_ext}_{typ}(FILE *, const char *,
+                                          nsimd_{simd_ext}_v{typ});
 
                #if NSIMD_CXX > 0
                }} // extern "C"
@@ -139,9 +142,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-               NSIMD_INLINE int put(FILE *out, const char *fmt,
-                                    nsimd_{simd_ext}_v{typ} a0, {typ},
-                                    {simd_ext}) {{
+               NSIMD_INLINE int NSIMD_VECTORCALL
+               put(FILE *out, const char *fmt, nsimd_{simd_ext}_v{typ} a0,
+                   {typ}, {simd_ext}) {{
                  return nsimd_put_{simd_ext}_{typ}(out, fmt, a0);
                }}
                }} // namespace nsimd
@@ -153,9 +156,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
                extern "C" {{
                #endif
 
-               NSIMD_DLLSPEC
-               int nsimd_put_{simd_ext}_l{typ}(FILE *, const char *,
-                                              nsimd_{simd_ext}_vl{typ});
+               NSIMD_DLLSPEC int NSIMD_VECTORCALL
+               nsimd_put_{simd_ext}_l{typ}(FILE *, const char *,
+                                           nsimd_{simd_ext}_vl{typ});
 
                #if NSIMD_CXX > 0
                }} // extern "C"
@@ -163,9 +166,9 @@ def gen_archis_write_put(opts, platform, simd_ext, simd_dir):
 
                #if NSIMD_CXX > 0
                namespace nsimd {{
-               NSIMD_INLINE int putl(FILE *out, const char *fmt,
-                                    nsimd_{simd_ext}_vl{typ} a0, {typ},
-                                    {simd_ext}) {{
+               NSIMD_INLINE int NSIMD_VECTORCALL
+               putl(FILE *out, const char *fmt, nsimd_{simd_ext}_vl{typ} a0,
+                    {typ}, {simd_ext}) {{
                  return nsimd_put_{simd_ext}_l{typ}(out, fmt, a0);
                }}
                }} // namespace nsimd
@@ -219,27 +222,28 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
     if not common.can_create_filename(opts, filename):
         return
     mod = opts.platforms[platform]
-    c_code = '\n'.join(['typedef {} nsimd_{}_v{};'.format(mod.get_type(
-                       opts, simd_ext, t), simd_ext, t) for t in common.types])
+    c_code = '\n'.join([mod.get_type(opts, simd_ext, t,
+                                     'nsimd_{}_v{}'.format(simd_ext, t)) \
+                                     for t in common.types])
     c_code += '\n\n'
-    c_code += '\n'.join(['typedef {} nsimd_{}_vl{};'.format(
-              mod.get_logical_type(opts, simd_ext, t), simd_ext, t)
-              for t in common.types])
+    c_code += '\n'.join([mod.get_logical_type(
+                             opts, simd_ext, t, 'nsimd_{}_vl{}'. \
+                             format(simd_ext, t)) for t in common.types])
     if mod.has_compatible_SoA_types(simd_ext):
         for deg in range(2, 5):
-            c_code += '\n'.join(['typedef {} nsimd_{}_v{}x{};'. \
-                                 format(mod.get_SoA_type(simd_ext, typ, deg),
-                                 simd_ext, typ, deg) for typ in common.types])
+            c_code += '\n'.join([mod.get_SoA_type(simd_ext, typ, deg,
+                                'nsimd_{}_v{}x{}'.format(simd_ext, typ, deg)) \
+                                for typ in common.types])
     else:
         c_code += '\n'.join(['''
-                             typedef struct nsimd_{simd_ext}_v{typ}x2 {{
+                             typedef NSIMD_STRUCT nsimd_{simd_ext}_v{typ}x2 {{
                                nsimd_{simd_ext}_v{typ} v0;
                                nsimd_{simd_ext}_v{typ} v1;
                              }} nsimd_{simd_ext}_v{typ}x2;
                              '''.format(simd_ext=simd_ext, typ=typ) \
                                         for typ in common.types])
         c_code += '\n'.join(['''
-                             typedef struct nsimd_{simd_ext}_v{typ}x3 {{
+                             typedef NSIMD_STRUCT nsimd_{simd_ext}_v{typ}x3 {{
                                nsimd_{simd_ext}_v{typ} v0;
                                nsimd_{simd_ext}_v{typ} v1;
                                nsimd_{simd_ext}_v{typ} v2;
@@ -247,7 +251,7 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                              '''.format(simd_ext=simd_ext, typ=typ) \
                                         for typ in common.types])
         c_code += '\n'.join(['''
-                             typedef struct nsimd_{simd_ext}_v{typ}x4 {{
+                             typedef NSIMD_STRUCT nsimd_{simd_ext}_v{typ}x4 {{
                                nsimd_{simd_ext}_v{typ} v0;
                                nsimd_{simd_ext}_v{typ} v1;
                                nsimd_{simd_ext}_v{typ} v2;
@@ -256,15 +260,16 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                              '''.format(simd_ext=simd_ext, typ=typ) \
                                         for typ in common.types])
         c_code += '\n\n'
-    cxx_code = '\n\n'.join(['''template <>
-                               struct simd_traits<{typ}, {simd_ext}> {{
-                                 typedef nsimd_{simd_ext}_v{typ} simd_vector;
-                                 typedef nsimd_{simd_ext}_v{typ}x2 simd_vectorx2;
-                                 typedef nsimd_{simd_ext}_v{typ}x3 simd_vectorx3;
-                                 typedef nsimd_{simd_ext}_v{typ}x4 simd_vectorx4;
-                                 typedef nsimd_{simd_ext}_vl{typ} simd_vectorl;
-                               }};'''.format(typ=t, simd_ext=simd_ext)
-                               for t in common.types])
+    cxx_code = \
+        '\n\n'.join(['''template <>
+                        struct simd_traits<{typ}, {simd_ext}> {{
+                          typedef nsimd_{simd_ext}_v{typ} simd_vector;
+                          typedef nsimd_{simd_ext}_v{typ}x2 simd_vectorx2;
+                          typedef nsimd_{simd_ext}_v{typ}x3 simd_vectorx3;
+                          typedef nsimd_{simd_ext}_v{typ}x4 simd_vectorx4;
+                          typedef nsimd_{simd_ext}_vl{typ} simd_vectorl;
+                        }};'''.format(typ=t, simd_ext=simd_ext)
+                        for t in common.types])
     with common.open_utf8(opts, filename) as out:
         out.write('''#ifndef NSIMD_{platform}_{SIMD_EXT}_TYPES_H
                      #define NSIMD_{platform}_{SIMD_EXT}_TYPES_H
@@ -276,7 +281,8 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                      #if NSIMD_CXX > 0
                      namespace nsimd {{
 
-                     struct {simd_ext} {{}};
+                     // defined in nsimd.h for C++20 concepts
+                     // struct {simd_ext} {{}};
 
                      {cxx_code}
 
@@ -296,17 +302,17 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
 def gen_archis_platform(opts, platform):
     include_dir = os.path.join(opts.include_dir, platform);
     for s in opts.platforms[platform].get_simd_exts():
-        print ('-- Found new SIMD extension: {}'.format(s))
+        common.myprint(opts, 'Found new SIMD extension: {}'.format(s))
         if s in opts.simd:
             simd_dir = os.path.join(include_dir, s)
             common.mkdir_p(simd_dir)
             gen_archis_types(opts, simd_dir, platform, s)
             gen_archis_simd(opts, platform, s, simd_dir)
         else:
-            print ('--   Extension excluded by command line')
+            common.myprint(opts, '  Extension excluded by command line')
 
 def doit(opts):
-    print ('-- Generating SIMD implementations')
+    common.myprint(opts, 'Generating SIMD implementations')
     opts.platforms = common.get_platforms(opts)
     for p in opts.platforms:
         common.mkdir_p(os.path.join(opts.include_dir, p))
