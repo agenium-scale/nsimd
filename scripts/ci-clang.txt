@@ -1,0 +1,41 @@
+camelot.numscale.com (sse2-sse42-clang)
+- bash scripts/build-tests.sh for sse2/sse42 with clang
+- cd build-sse2-clang
+- ../nstools/bin/nstest -j80
+- cd ../build-sse42-clang
+- ../nstools/bin/nstest -j80
+
+gaunes.numscale.com (avx-avx2-clang)
+- bash scripts/build-tests.sh for avx/avx2 with clang
+- cd build-avx-clang
+- ../nstools/bin/nstest -j80
+- cd ../build-avx2-clang
+- ../nstools/bin/nstest -j80
+
+caradigan.numscale.com (aarch64-clang-1)
+- bash scripts/setup.sh
+- python3 egg/hatch.py -ltf
+- mkdir build-aarch64-clang
+- cd build-aarch64-clang
+- ../nstools/bin/nsconfig .. -Dsimd=aarch64 -comp=clang
+- ninja tests.c99 tests.cpp98 tests.cpp11
+- ../nstools/bin/nstest -j80
+
+carahes.numscale.com (aarch64-clang-2)
+- bash scripts/setup.sh
+- python3 egg/hatch.py -ltf
+- mkdir build-aarch64-clang
+- cd build-aarch64-clang
+- ../nstools/bin/nsconfig .. -Dsimd=aarch64 -comp=clang
+- ninja tests.c99 tests.cpp98 tests.cpp11
+- ../nstools/bin/nstest -j80
+
+camlann.numscale.com (aarch64-clang-3)
+- bash scripts/setup.sh
+- python3 egg/hatch.py -ltf
+- mkdir build-aarch64-clang
+- cd build-aarch64-clang
+- ../nstools/bin/nsconfig .. -Dsimd=aarch64 -comp=clang
+- ninja tests.c99 tests.cpp98 tests.cpp11
+- ../nstools/bin/nstest -j80
+
