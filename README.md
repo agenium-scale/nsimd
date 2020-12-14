@@ -176,7 +176,7 @@ go to the NSIMD directory and generate both NSIMD and nsconfig.
 ```bash
 $ cd nsimd
 $ python3 egg/hatch.py -ltf
-$ bash script/setup.sh
+$ bash scripts/setup.sh
 $ mkdir build
 $ cd build
 ```
