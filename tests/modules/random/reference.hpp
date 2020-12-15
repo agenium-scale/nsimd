@@ -151,8 +151,8 @@ NSIMD_INLINE tab64x2_t _philox4x64bumpkey(tab64x2_t key) {
 NSIMD_INLINE tab64x4_t _philox4x64round(tab64x4_t ctr, tab64x2_t key) {
   u64 hi0;
   u64 hi1;
-  u64 lo0 = mulhilo64(0xD2E7470EE14C6C93ULL, ctr.v[0], &hi0);
-  u64 lo1 = mulhilo64(0xCA5A826395121157ULL, ctr.v[2], &hi1);
+  u64 lo0 = mulhilo64((u64)0xD2E7470EE14C6C93ULL, ctr.v[0], &hi0);
+  u64 lo1 = mulhilo64((u64)0xCA5A826395121157ULL, ctr.v[2], &hi1);
   tab64x4_t out = {
       {hi1 ^ ctr.v[1] ^ key.v[0], lo1, hi0 ^ ctr.v[3] ^ key.v[1], lo0}};
   return out;
@@ -235,8 +235,8 @@ NSIMD_INLINE tab64x1_t _philox2x64bumpkey(tab64x1_t key) {
 }
 
 NSIMD_INLINE tab64x2_t _philox2x64round(tab64x2_t ctr, tab64x1_t key) {
-  uint64_t hi;
-  uint64_t lo = mulhilo64(0xD2B74407B1CE6E93ULL, ctr.v[0], &hi);
+  u64 hi;
+  u64 lo = mulhilo64((u64)0xD2B74407B1CE6E93ULL, ctr.v[0], &hi);
   tab64x2_t out = {{hi ^ key.v[0] ^ ctr.v[1], lo}};
   return out;
 }
@@ -525,9 +525,9 @@ tab64x4_t branson_threefry4x64_R(unsigned int Nrounds,
                                  tab64x4_t in,
                                  tab64x4_t k) {
   tab64x4_t X;
-  uint64_t ks[4 + 1];
+  u64 ks[4 + 1];
   int i;
-  ks[4] = ((0xA9FC1A22) + (((uint64_t)(0x1BD11BDA)) << 32));
+  ks[4] = ((0xA9FC1A22) + (((u64)(0x1BD11BDA)) << 32));
   for (i = 0; i < 4; i++) {
     ks[i] = k.v[i];
     X.v[i] = in.v[i];
@@ -1260,9 +1260,9 @@ tab64x2_t branson_threefry2x64_R(unsigned int Nrounds,
                                  tab64x2_t in,
                                  tab64x2_t k) {
   tab64x2_t X;
-  uint64_t ks[2 + 1];
+  u64 ks[2 + 1];
   int i;
-  ks[2] = ((0xA9FC1A22) + (((uint64_t)(0x1BD11BDA)) << 32));
+  ks[2] = ((0xA9FC1A22) + (((u64)(0x1BD11BDA)) << 32));
   for (i = 0; i < 2; i++) {
     ks[i] = k.v[i];
     X.v[i] = in.v[i];
