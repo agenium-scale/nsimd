@@ -35,7 +35,7 @@ REM Pull nstools
 
 git remote get-url origin >_tmp-nsimd-url.txt
 set /P NSIMD_URL=<_tmp-nsimd-url.txt
-set NSTOOLS_URL=%NSIMD_URL:nstools=nsimd%
+set NSTOOLS_URL=%NSIMD_URL:nsimd=nstools%
 del /F /Q _tmp-nsimd-url.txt
 
 if exist "%NSTOOLS_DIR%\README.md" (
