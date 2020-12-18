@@ -44,6 +44,7 @@ ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
 ifnot_set "Google benchmark compilation flags (for benchmarks only)" \
           benchmark = -lbenchmark
 ifnot_set "Turn off tests/bench/ulps" build_library_only = false
+ifnot_set "Compile the libstdc++ statically" static_libstdcpp = false
 
 ## Targets for compilation
 
@@ -112,10 +113,16 @@ set std_flag_for_sve512         = $std_flag_for_
 set std_flag_for_sve1024        = $std_flag_for_
 set std_flag_for_sve2048        = $std_flag_for_
 
+## libstdc++ linking mode
+
+set libstdcpp_static_link_true  = -static-libstdc++
+set libstdcpp_static_link_false = 
+
 ## Some defaults
 
 set flags  = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
-set cflags = ${std_flag_for_$simd$} $flags
+set cflags = ${std_flag_for_$simd$} $flags \
+             ${libstdcpp_static_link_$static_libstdcpp$}
 
 ## Default building rules
 
