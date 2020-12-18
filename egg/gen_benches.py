@@ -1057,7 +1057,7 @@ def gen_bench_with_timestamp(f, simd, typ, category, unroll=None):
         // Number of elapsed times
         std::map<double, int> nb_per_elapsed_time;
         for (size_t run = 0; run < nb_runs; ++run) {{
-          ++nb_per_elapsed_time[(int64_t(elapsed_times_ns[run] * 100)) / 100.0];
+          ++nb_per_elapsed_time[(i64(elapsed_times_ns[run] * 100)) / 100.0];
         }}
         // Draw gnuplot
         std::system("mkdir -p gnuplot");

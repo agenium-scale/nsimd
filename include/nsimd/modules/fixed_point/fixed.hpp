@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2020 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,11 +34,11 @@ SOFTWARE.
 namespace nsimd {
 namespace fixed_point {
 
-template <typename T, uint8_t rt> static inline T float2int(const float val) {
+template <typename T, u8 rt> static inline T float2int(const float val) {
   return (T)roundf(val * (float)(1 << rt));
 }
 
-template <typename T, uint8_t rt> static inline float int2float(const T val) {
+template <typename T, u8 rt> static inline float int2float(const T val) {
   return (float)val / (float)(1 << rt);
 }
 
@@ -50,62 +50,62 @@ template <bool B, typename T = void> struct enable_if {};
 
 template <typename T> struct enable_if<true, T> { typedef T type; };
 
-template <uint8_t _lf, uint8_t _rt, typename T = void> struct fp_types {};
+template <u8 _lf, u8 _rt, typename T = void> struct fp_types {};
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 struct fp_types<_lf, _rt,
                 typename enable_if<(((_lf + 2 * _rt) > 0)) &&
                                    ((_lf + 2 * _rt) <= 8)>::type> {
-  typedef int8_t value_type;
-  typedef int8_t logical_type;
-  typedef uint8_t positive_type;
+  typedef i8 value_type;
+  typedef i8 logical_type;
+  typedef u8 positive_type;
   typedef vi8 simd_type;
   typedef vli8 simd_logical;
 };
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 struct fp_types<_lf, _rt,
                 typename enable_if<(((_lf + 2 * _rt) > 8)) &&
                                    ((_lf + 2 * _rt) <= 16)>::type> {
-  typedef int16_t value_type;
-  typedef int16_t logical_type;
-  typedef uint16_t positive_type;
+  typedef i16 value_type;
+  typedef i16 logical_type;
+  typedef u16 positive_type;
   typedef vi16 simd_type;
   typedef vli16 simd_logical;
 };
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 struct fp_types<_lf, _rt,
                 typename enable_if<(((_lf + 2 * _rt) > 16)) &&
                                    ((_lf + 2 * _rt) <= 32)>::type> {
-  typedef int32_t value_type;
-  typedef int32_t logical_type;
-  typedef uint32_t positive_type;
+  typedef i32 value_type;
+  typedef i32 logical_type;
+  typedef u32 positive_type;
   typedef vi32 simd_type;
   typedef vli32 simd_logical;
 };
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 struct fp_types<_lf, _rt,
                 typename enable_if<(((_lf + 2 * _rt) > 32)) &&
                                    ((_lf + 2 * _rt) <= 64)>::type> {
-  typedef int64_t value_type;
-  typedef int64_t logical_type;
-  typedef uint64_t positive_type;
+  typedef i64 value_type;
+  typedef i64 logical_type;
+  typedef u64 positive_type;
   typedef vi64 simd_type;
   typedef vli64 simd_logical;
 };
 
 
-template <uint8_t _lf, uint8_t _rt> struct fp_t {
+template <u8 _lf, u8 _rt> struct fp_t {
   typedef typename fp_types<_lf, _rt>::value_type value_type;
   typedef typename fp_types<_lf, _rt>::logical_type logical_type;
   typedef typename fp_types<_lf, _rt>::positive_type positive_type;
   typedef typename fp_types<_lf, _rt>::simd_type simd_type;
   typedef typename fp_types<_lf, _rt>::simd_logical simd_logical;
 
-  static const uint8_t lf = _lf;
-  static const uint8_t rt = _rt;
+  static const u8 lf = _lf;
+  static const u8 rt = _rt;
 
   value_type _raw;
 
@@ -161,11 +161,11 @@ template <uint8_t _lf, uint8_t _rt> struct fp_t {
 // For examining available precision
 //------------------------------------------------------------------------------
 
-template <uint8_t _lf, uint8_t _rt> uint8_t left(const fp_t<_lf, _rt>) {
+template <u8 _lf, u8 _rt> u8 left(const fp_t<_lf, _rt>) {
   return _lf;
 }
 
-template <uint8_t _lf, uint8_t _rt> uint8_t right(const fp_t<_lf, _rt>) {
+template <u8 _lf, u8 _rt> u8 right(const fp_t<_lf, _rt>) {
   return _rt;
 }
 

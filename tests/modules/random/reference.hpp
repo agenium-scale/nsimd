@@ -325,16 +325,16 @@ NSIMD_INLINE u32 mulhilo32(u32 a, u32 b, u32 *hip) {
 /* Philox 32x4 */
 
 NSIMD_INLINE tab32x2_t _philox4x32bumpkey(tab32x2_t key) {
-  key.v[0] += ((uint32_t)0x9E3779B9);
-  key.v[1] += ((uint32_t)0xBB67AE85);
+  key.v[0] += ((u32)0x9E3779B9);
+  key.v[1] += ((u32)0xBB67AE85);
   return key;
 }
 
 NSIMD_INLINE tab32x4_t _philox4x32round(tab32x4_t ctr, tab32x2_t key) {
-  uint32_t hi0;
-  uint32_t hi1;
-  uint32_t lo0 = mulhilo32(((uint32_t)0xD2511F53), ctr.v[0], &hi0);
-  uint32_t lo1 = mulhilo32(((uint32_t)0xCD9E8D57), ctr.v[2], &hi1);
+  u32 hi0;
+  u32 hi1;
+  u32 lo0 = mulhilo32(((u32)0xD2511F53), ctr.v[0], &hi0);
+  u32 lo1 = mulhilo32(((u32)0xCD9E8D57), ctr.v[2], &hi1);
   tab32x4_t out = {
       {hi1 ^ ctr.v[1] ^ key.v[0], lo1, hi0 ^ ctr.v[3] ^ key.v[1], lo0}};
   return out;
@@ -412,13 +412,13 @@ tab32x4_t branson_philox4x32_R(unsigned int R, tab32x4_t ctr, tab32x2_t key) {
 /* Philox 32x2 */
 
 NSIMD_INLINE tab32x1_t _philox2x32bumpkey(tab32x1_t key) {
-  key.v[0] += ((uint32_t)0x9E3779B9);
+  key.v[0] += ((u32)0x9E3779B9);
   return key;
 }
 
 NSIMD_INLINE tab32x2_t _philox2x32round(tab32x2_t ctr, tab32x1_t key) {
-  uint32_t hi;
-  uint32_t lo = mulhilo32(((uint32_t)0xd256d193), ctr.v[0], &hi);
+  u32 hi;
+  u32 lo = mulhilo32(((u32)0xd256d193), ctr.v[0], &hi);
   tab32x2_t out = {{hi ^ key.v[0] ^ ctr.v[1], lo}};
   return out;
 }
@@ -1506,7 +1506,7 @@ tab32x4_t branson_threefry4x32_R(unsigned int Nrounds,
                                  tab32x4_t in,
                                  tab32x4_t k) {
   tab32x4_t X;
-  uint32_t ks[4 + 1];
+  u32 ks[4 + 1];
   int i;
 
   ks[4] = 0x1BD11BDA;
@@ -2241,7 +2241,7 @@ tab32x2_t branson_threefry2x32_R(unsigned int Nrounds,
                                  tab32x2_t in,
                                  tab32x2_t k) {
   tab32x2_t X;
-  uint32_t ks[2 + 1];
+  u32 ks[2 + 1];
   int i;
   ks[2] = 0x1BD11BDA;
   for (i = 0; i < 2; i++) {

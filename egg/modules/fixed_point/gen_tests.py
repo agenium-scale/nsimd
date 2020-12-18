@@ -72,7 +72,7 @@ check = """
 """
 
 limits = """
-template <uint8_t lf, uint8_t rt>
+template <u8 lf, u8 rt>
 static double __get_numeric_precision() {
   return (double)ldexpf(1.0, -(int)rt);
 }
@@ -80,7 +80,7 @@ static double __get_numeric_precision() {
 """
 
 comparison_fp = """
-template <uint8_t lf, uint8_t rt>
+template <u8 lf, u8 rt>
 bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
   return nsimd_scalar_abs_f64(double(val) - ref) <=
            __get_numeric_precision<lf, rt>();
@@ -89,7 +89,7 @@ bool __compare_values(nsimd::fixed_point::fp_t<lf, rt> val, double ref){
 """
 
 comparison_log = """
-template <typename T, uint8_t lf, uint8_t rt>
+template <typename T, u8 lf, u8 rt>
 bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
     nsimd::fixed_point::fp_t<lf, rt> v1)
 {{
@@ -100,7 +100,7 @@ bool __check_logical_val(T val, nsimd::fixed_point::fp_t<lf, rt> v0,
 """
 
 gen_random_val = """
-template <uint8_t lf, uint8_t rt>
+template <u8 lf, u8 rt>
 nsimd::fixed_point::fp_t<lf, rt> __gen_random_val() {{
   float tmp = (float) rand() / (float) RAND_MAX;
   return nsimd::fixed_point::fp_t<lf, rt>(0.5f * tmp + 1.0f);

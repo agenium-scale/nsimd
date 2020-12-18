@@ -51,19 +51,19 @@ includes = \
 
 random_f16_generator = \
 '''
-uint16_t acc = 0;
+u16 acc = 0;
 for (i = 0; i < SIZE; i++) {
-  memcpy(&vin1[i], &acc, sizeof(uint16_t));
+  memcpy(&vin1[i], &acc, sizeof(u16));
   ++acc;
 }
 '''
 
 random_f32_generator = \
 '''
-uint32_t acc = 0;
+u32 acc = 0;
 for (i = 0; i < SIZE; i++) {
-  memcpy(&vin1[i], &acc, sizeof(uint32_t));
-  acc+=(uint32_t)((rand()%(16*16))+1);
+  memcpy(&vin1[i], &acc, sizeof(u32));
+  acc+=(u32)((rand()%(16*16))+1);
 }
 '''
 
@@ -72,9 +72,9 @@ random_f64_generator = \
 for (i = 0; i < SIZE/2; ++i) {
   double num = 0.;
 
-  uint64_t *inum = reinterpret_cast<uint64_t*>(&num);
-  for (uint64_t j=0; j<64; ++j) {
-      uint64_t tmp = ((uint64_t)(rand())%2u) << j;
+  u64 *inum = reinterpret_cast<u64*>(&num);
+  for (u64 j=0; j<64; ++j) {
+      u64 tmp = ((u64)(rand())%2u) << j;
       *inum = *inum | tmp;
   }
 
@@ -151,21 +151,21 @@ int main(void) {{
 
   int ulp_dnz = -{mantisse};
   double worst_rel_dnz = 0.;
-  int64_t worst_value_dnz_index = 0;
+  i64 worst_value_dnz_index = 0;
 
   int inf_error = false;
-  int64_t inf_error_index = 0;
+  i64 inf_error_index = 0;
 
   int nan_error = false;
-  int64_t nan_error_index = 0;
+  i64 nan_error_index = 0;
 
   /* Compare results */
   for (i = 0; i < SIZE; ++i) {{
       double rel = relative_distance((double){convert_from_type}(vout0[i]),
                                      (double){convert_from_type}(vout1[i]));
 
-      uint64_t hex_in = 0;
-      memcpy(&hex_in, &vin1[i], sizeof(uint32_t));
+      u64 hex_in = 0;
+      memcpy(&hex_in, &vin1[i], sizeof(u32));
 
       {typ} mpfr_out = vout0[i];
       {typ} nsimd_out = vout1[i];
@@ -215,7 +215,7 @@ int main(void) {{
   ulp = std::min(-ulp, {mantisse});
   ulp_dnz = std::min(-ulp_dnz, {mantisse});
 
-  uint64_t worst_value = 0, nan_value, inf_value, worst_value_dnz;
+  u64 worst_value = 0, nan_value, inf_value, worst_value_dnz;
   memcpy(&worst_value, &vin1[worst_value_index], sizeof({typ}));
   memcpy(&nan_value, &vin1[nan_error_index], sizeof({typ}));
   memcpy(&inf_value, &vin1[inf_error_index], sizeof({typ}));

@@ -34,8 +34,8 @@ namespace fixed_point
 template <typename T>
 void print_bits(const T &in)
 {
-  uint64_t two = 1;
-  uint64_t ref = *((uint64_t *) (&in));
+  u64 two = 1;
+  u64 ref = *((u64 *) (&in));
   for(unsigned int i = 0; i < 8 * sizeof(T); ++i)
   {
     std::cout << int((two & ref) / two);
