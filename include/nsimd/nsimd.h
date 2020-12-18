@@ -804,8 +804,13 @@ namespace nsimd {
   typedef signed   char  i8;
   typedef unsigned short u16;
   typedef signed   short i16;
-  typedef unsigned int   u32;
-  typedef signed   int   i32;
+  #if defined(NSIMD_NEON128) && (!defined(__ARM_FP) || __ARM_FP == 0)
+    typedef unsigned long  u32;
+    typedef signed   long  i32;
+  #else
+    typedef unsigned int   u32;
+    typedef signed   int   i32;
+  #endif
   #if NSIMD_WORD_SIZE == 64
     typedef unsigned long u64;
     typedef signed long   i64;
