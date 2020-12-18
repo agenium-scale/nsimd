@@ -40,7 +40,7 @@ python3 --version 1>/dev/null 2>/dev/null && \
   python "${HATCH_PY}" -tf
 
 ###############################################################################
-# Run setup
+# Run build.sh
 
 bash "${BUILD_SH}" "$@" || exit 1
 
@@ -64,8 +64,8 @@ for compiler in ${COMPILERS}; do
     BUILD_DIR="${BUILD_ROOT}/build-${simd_ext}-${compiler}"
     if [ -e "${BUILD_ROOT}/targets.txt" ]; then
       GLOBS=`cat ${BUILD_ROOT}/targets.txt | tr '\n' '|' | sed 's/|$//g'`
-      TARGETS=`(cd ${BUILD_DIR} && ninja -t targets) | sed 's/:.*//g' | \
-                grep -E "(${GLOBS})" | tr '\n' ' '`
+      TARGETS=`(cd ${BUILD_DIR} && ninja -t targets all | grep -E '^tests.') \
+               | sed 's/:.*//g' | grep -E "(${GLOBS})" | tr '\n' ' '`
     else
       TARGETS="tests"
     fi

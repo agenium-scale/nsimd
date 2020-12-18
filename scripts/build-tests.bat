@@ -26,45 +26,71 @@ setlocal EnableDelayedExpansion
 pushd "%~dp0"
 
 REM ###########################################################################
-REM Init
 
-set NSTOOLS_DIR="%CD%\..\nstools"
+set BUILD_BAT="%CD%\build.bat"
+set HATCH_PY="%CD%\..\egg\hatch.py"
+set NSCONFIG="%CD%\..\nstools\bin\nsconfig.exe"
+set BUILD_ROOT="%CD%\.."
 
 REM ###########################################################################
-REM Pull nstools
+REM Run build.bat
 
-if exist "%NSTOOLS_DIR%\README.md" (
-  pushd %NSTOOLS_DIR%
-  git pull
-  popd
+call %BUILD_BAT% %*
+if errorlevel 1 goto end_nok
+
+REM ###########################################################################
+REM Generate NSIMD
+
+python %HATCH_PY% -tf
+if errorlevel 1 goto end_nok
+
+REM ###########################################################################
+REM Build tests (checks on command line arguments has benn done by build.bat)
+
+set SIMD_EXTS_ARG=%2
+set SIMD_EXTS=%SIMD_EXTS_ARG:/=,%
+if "%3" == "" (
+  set COMPILER_ARG=cl
 ) else (
-  git remote get-url origin >_tmp-nsimd-url.txt
-  set /P NSIMD_URL=<_tmp-nsimd-url.txt
-  set NSTOOLS_URL=!NSIMD_URL:nsimd=nstools!
-  del /F /Q _tmp-nsimd-url.txt
-  pushd ".."
-  echo git clone !NSTOOLS_URL! nstools
-  git clone !NSTOOLS_URL! nstools
-  popd
+  set COMPILER_ARG=%4
+)
+set COMPILERS=%COMPILER_ARG:/=,%
+
+for %%g in (%COMPILERS%) do (
+  for %%h in (%SIMD_EXTS%) do (
+    set BUILD_DIR=%BUILD_ROOT%\build-%%h-%%g
+    if exist !BUILD_DIR! rd /Q /S !BUILD_DIR!
+    md !BUILD_DIR!
+    pushd !BUILD_DIR!
+      %NSCONFIG% .. -Dsimd=%%h -comp=%%g
+      if exist %BUILD_ROOT%\targets.txt (
+        set "TS= "
+        for /F %%k in ('type %BUILD_ROOT%\targets.txt') do (
+          ninja -t targets all | findstr /R "^tests" | findstr /R "%%k" ^
+                   >_targets.txt
+          for /F %%l in ('type _targets.txt') do (
+            set TMP1=%%l
+            set T=!TMP1::=!
+            set TS=!TS! !T!
+          )
+        )
+      ) else (
+        set TS=tests
+      )
+      echo *** !TS!
+      ninja !TS!
+    popd
+  )
 )
 
 REM ###########################################################################
-REM Create bin directory
 
-if not exist %NSTOOLS_DIR%\bin (
-  md %NSTOOLS_DIR%\bin
-)
-
-REM ###########################################################################
-REM Build nsconfig (if not already built)
-
-pushd %NSTOOLS_DIR%\nsconfig
-nmake /F Makefile.win nsconfig.exe
-nmake /F Makefile.win nstest.exe
-copy /Y "nsconfig.exe" %NSTOOLS_DIR%\bin
-copy /Y "nstest.exe" %NSTOOLS_DIR%\bin
-popd
-
+:end_ok
 popd
 endlocal
 exit /B 0
+
+:end_nok
+popd
+endlocal
+exit /B 1

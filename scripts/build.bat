@@ -50,7 +50,7 @@ REM Check/parse command line arguments
 
 if "%1" == "" (
   echo %0: usage: %0 for simd_ext1/.../simd_ext2 [with compiler1/.../compiler2]
-  goto end_ok
+  goto end_nok
 )
 
 if not "%1" == "for" (
