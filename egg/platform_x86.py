@@ -961,7 +961,7 @@ def store(simd_ext, typ, aligned):
                                _mm_castsi128_pd(v1),
                                  0 /* = (0 << 1) | (0 << 0) */);
                  _mm_store{align}_pd((f64*){in0}, v);
-               # else
+               #else
                  /* Note that we can do much better but is it useful? */
                  f32 buf[4];
                  _mm_storeu_ps(buf, {in1}.v0);
@@ -974,7 +974,7 @@ def store(simd_ext, typ, aligned):
                  *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
                  *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
                  *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);
-               # endif'''.format(align=align, **fmtspec)
+               #endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx:
             return \
             '''#ifdef NSIMD_FP16
@@ -994,7 +994,7 @@ def store(simd_ext, typ, aligned):
                  for (i = 0; i < 8; i++) {{
                    *((u16*){in0} + (8 + i)) = nsimd_f32_to_u16(buf[i]);
                  }}
-               # endif'''.format(align=align, **fmtspec)
+               #endif'''.format(align=align, **fmtspec)
         elif simd_ext in avx512:
             return \
             '''_mm256_store{align}_si256((__m256i*){in0},
