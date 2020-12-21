@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_mul(const fpsimd_t<_lf, _rt> &a,
                                          const fpsimd_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
@@ -44,7 +44,7 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_mul(const fpsimd_t<_lf, _rt> &a,
 }
 
 // Operator overload with base type compatibility
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> operator*(const fpsimd_t<_lf, _rt> &a,
                                           const fpsimd_t<_lf, _rt> &b) {
   return simd_mul(a, b);

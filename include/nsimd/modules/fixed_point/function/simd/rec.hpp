@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_rec(const fpsimd_t<_lf, _rt> &a0) {
   fpsimd_t<_lf, _rt> one(fp_t<_lf, _rt>(1));
   return simd_div<_lf, _rt>(one, a0);

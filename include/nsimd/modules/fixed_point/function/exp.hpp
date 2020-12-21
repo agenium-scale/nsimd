@@ -36,12 +36,12 @@ namespace nsimd {
 namespace fixed_point {
 // For integer exponents, use exponentiation by squaring
 template <unsigned char _lf, unsigned char _rt>
-NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const int64_t &b) {
+NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a, const i64 &b) {
   if (b == 0)
     return fp_t<_lf, _rt>(1);
 
   fp_t<_lf, _rt> val = a;
-  int64_t e = b;
+  i64 e = b;
   if (e < 0) {
     val = constants::one<_lf, _rt>() / val;
     e = -e;
@@ -72,7 +72,7 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a,
   const fp_t<_lf, _rt> rem = b - fp_t<_lf, _rt>(integer);
 
   if (0 == rem._raw) {
-    return exp(a, int64_t(integer));
+    return exp(a, i64(integer));
   }
 
   fp_t<_lf, _rt> fact = constants::one<_lf, _rt>();
@@ -81,16 +81,16 @@ NSIMD_INLINE fp_t<_lf, _rt> exp(const fp_t<_lf, _rt> &a,
   fp_t<_lf, _rt> log_init = rem * nsimd::fixed_point::log(a);
   // TODO: choose better stopping condition
   // For   x  , error is of order 1/(3*sizeof(x))!
-  //     int8_t         ,   log2( 1/(6!)  ) = 9.5  bits precision
-  //    int16_t         ,   log2( 1/(8!)  ) = 15.3 bits precision
-  //    int32_t         ,   log2( 1/(12!) ) = 28.8 bits precision
+  //     i8         ,   log2( 1/(6!)  ) = 9.5  bits precision
+  //    i16         ,   log2( 1/(8!)  ) = 15.3 bits precision
+  //    i32         ,   log2( 1/(12!) ) = 28.8 bits precision
   const int stop = 4 + 2 * sizeof(raw_type);
   for (int i = 1; i < stop; ++i) {
     fact = fact / i;
     log_eval = log_eval * log_init;
     res = res + (fact * log_eval);
   }
-  res = res * exp(a, int64_t(integer));
+  res = res * exp(a, i64(integer));
 
   return res;
 }

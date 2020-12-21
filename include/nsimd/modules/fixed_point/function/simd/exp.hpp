@@ -85,9 +85,9 @@ NSIMD_INLINE fpsimd_t<_lf, _rt> simd_exp(const fpsimd_t<_lf, _rt> &a,
 //  fpsimd_t<_lf,_rt> log_init = rem * log( a );
 //  // TODO: choose better stopping condition
 //  // For   x  , error is of order 1/(3*sizeof(x))!
-//  //     int8_t         ,   log2( 1/(6!)  ) = 9.5  bits precision
-//  //    int16_t         ,   log2( 1/(8!)  ) = 15.3 bits precision
-//  //    int32_t         ,   log2( 1/(12!) ) = 28.8 bits precision
+//  //     i8         ,   log2( 1/(6!)  ) = 9.5  bits precision
+//  //    i16         ,   log2( 1/(8!)  ) = 15.3 bits precision
+//  //    i32         ,   log2( 1/(12!) ) = 28.8 bits precision
 //  constexpr int stop = 4 + 2 * sizeof(raw_type);
 //  for ( int i = 1 ; i < stop ; ++i ) {
 //    fact = fact / i;

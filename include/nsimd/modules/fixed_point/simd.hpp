@@ -34,7 +34,7 @@ SOFTWARE.
 namespace nsimd {
 namespace fixed_point {
 
-template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimd_t {
+template <u8 _lf, u8 _rt> NSIMD_STRUCT fpsimd_t {
   typedef typename fp_t<_lf, _rt>::value_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
   typedef typename fp_t<_lf, _rt>::simd_logical logic;
@@ -56,7 +56,7 @@ template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimd_t {
   ~fpsimd_t() {}
 };
 
-template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimdl_t {
+template <u8 _lf, u8 _rt> NSIMD_STRUCT fpsimdl_t {
   typedef typename fp_t<_lf, _rt>::logical_type base_type;
   typedef typename fp_t<_lf, _rt>::simd_type value_type;
   typedef typename fp_t<_lf, _rt>::simd_logical logic;
@@ -75,18 +75,18 @@ template <uint8_t _lf, uint8_t _rt> NSIMD_STRUCT fpsimdl_t {
 };
 
 // Number of elements that fit into a SIMD register
-template <uint8_t _lf, uint8_t _rt> int fpsimd_n() {
+template <u8 _lf, u8 _rt> int fpsimd_n() {
   typedef typename fp_t<_lf, _rt>::value_type raw_t;
   return nsimd::len(raw_t());
 }
 
 // Number of elements that fit into a SIMD register
-template <uint8_t _lf, uint8_t _rt> int fpsimd_n(const fp_t<_lf, _rt> &) {
+template <u8 _lf, u8 _rt> int fpsimd_n(const fp_t<_lf, _rt> &) {
   return fpsimd_n<_lf, _rt>();
 }
 
 // Number of elements that fit into a SIMD register
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 int fpsimd_n(const fpsimd_t<_lf, _rt> &) {
   return fpsimd_n<_lf, _rt>();
 }

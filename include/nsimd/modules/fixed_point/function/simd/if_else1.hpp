@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 NSIMD_INLINE fpsimd_t<_lf, _rt> simd_if_else1(const fpsimdl_t<_lf, _rt> &a0,
                                               const fpsimd_t<_lf, _rt> &a1,
                                               const fpsimd_t<_lf, _rt> &a2) {

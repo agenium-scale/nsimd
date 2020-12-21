@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 bool equal_ulp(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b,
                const int &ulp) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;

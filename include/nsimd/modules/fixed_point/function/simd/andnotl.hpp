@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 NSIMD_INLINE fpsimdl_t<_lf, _rt> simd_andnotl(const fpsimdl_t<_lf, _rt> &a0,
                                               const fpsimdl_t<_lf, _rt> &a1) {
   typedef typename fp_t<_lf, _rt>::logical_type raw_t;

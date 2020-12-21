@@ -22,9 +22,9 @@ T rand_bits(T min, T max = std::numeric_limits<T>::max()) {
   T r;
   do {
     int nbits = sizeof(T) * CHAR_BIT;
-    uint64_t x = 0;
+    u64 x = 0;
     for (int i = 0; i < nbits; ++i) {
-      x |= uint64_t(::rand() % 2) << i;
+      x |= u64(::rand() % 2) << i;
     }
     r = *((T*)&x);
   } while (r < min || r > max);

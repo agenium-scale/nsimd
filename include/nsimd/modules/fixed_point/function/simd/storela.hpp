@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 NSIMD_INLINE void simd_storela(typename fpsimdl_t<_lf, _rt>::base_type *a,
                                fpsimdl_t<_lf, _rt> &val) {
   typedef typename fpsimdl_t<_lf, _rt>::base_type raw_t;

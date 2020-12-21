@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 bool lt(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
@@ -38,22 +38,22 @@ bool lt(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   return ((a._raw & mask) < (b._raw & mask));
 }
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 bool operator<(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   return lt(a, b);
 }
 
-template <uint8_t _lf, uint8_t _rt, typename T>
+template <u8 _lf, u8 _rt, typename T>
 bool operator<(const fp_t<_lf, _rt> &a, const T &b) {
   return lt(a, fp_t<_lf, _rt>(b));
 }
 
-template <uint8_t _lf, uint8_t _rt, typename T>
+template <u8 _lf, u8 _rt, typename T>
 bool operator<(const T &a, const fp_t<_lf, _rt> &b) {
   return lt(fp_t<_lf, _rt>(a), b);
 }
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 bool lte(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   typedef typename fp_t<_lf, _rt>::value_type raw_type;
   const int shift_size = 8 * sizeof(raw_type) - _lf - _rt;
@@ -62,17 +62,17 @@ bool lte(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   return ((a._raw & mask) <= (b._raw & mask));
 }
 
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 bool operator<=(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
   return lte(a, b);
 }
 
-template <uint8_t _lf, uint8_t _rt, typename T>
+template <u8 _lf, u8 _rt, typename T>
 bool operator<=(const fp_t<_lf, _rt> &a, const T &b) {
   return lte(a, fp_t<_lf, _rt>(b));
 }
 
-template <uint8_t _lf, uint8_t _rt, typename T>
+template <u8 _lf, u8 _rt, typename T>
 bool operator<=(const T &a, const fp_t<_lf, _rt> &b) {
   return lte(fp_t<_lf, _rt>(a), b);
 }

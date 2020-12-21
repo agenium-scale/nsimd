@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
-template <uint8_t _lf, uint8_t _rt>
+template <u8 _lf, u8 _rt>
 fpsimd_t<_lf, _rt> simd_set1(const fp_t<_lf, _rt> &a0) {
   typedef typename fpsimd_t<_lf, _rt>::base_type raw_t;
   fpsimd_t<_lf, _rt> res;

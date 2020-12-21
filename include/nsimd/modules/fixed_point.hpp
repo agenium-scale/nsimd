@@ -33,6 +33,7 @@ SOFTWARE.
 
 namespace nsimd {
 namespace fixed_point {
+
 // -----------------------------------------------------------------------------
 // ------------------------ Types definitions and len --------------------------
 // -----------------------------------------------------------------------------
@@ -46,8 +47,8 @@ template <typename T> int len(const nsimd::fixed_point::pack<T> &) {
 }
 
 template <typename T> NSIMD_STRUCT pack {
-  static const uint8_t lf = T::lf;
-  static const uint8_t rt = T::rt;
+  static const u8 lf = T::lf;
+  static const u8 rt = T::rt;
   typedef fp_t<lf, rt> value_type;
   fpsimd_t<lf, rt> val;
 
@@ -69,8 +70,8 @@ template <typename T> NSIMD_STRUCT pack {
 };
 
 template <typename T> NSIMD_STRUCT packl {
-  static const uint8_t lf = T::lf;
-  static const uint8_t rt = T::rt;
+  static const u8 lf = T::lf;
+  static const u8 rt = T::rt;
   typedef typename fp_t<lf, rt>::logical_type value_type;
   fpsimdl_t<lf, rt> val;
 };
