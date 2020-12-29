@@ -805,8 +805,16 @@ namespace nsimd {
   typedef unsigned short u16;
   typedef signed   short i16;
   #if defined(NSIMD_NEON128) && __ARM_ARCH <= 6
-    typedef unsigned long  u32;
-    typedef signed   long  i32;
+    #ifdef __UINT32_TYPE__
+      typedef __UINT32_TYPE__ u32;
+    #else
+      typedef unsigned long   u32;
+    #endif
+    #ifdef __INT32_TYPE__
+      typedef __INT32_TYPE__  i32;
+    #else
+      typedef signed   long   i32;
+    #endif
   #else
     typedef unsigned int   u32;
     typedef signed   int   i32;
