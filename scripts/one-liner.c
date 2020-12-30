@@ -88,12 +88,13 @@ int main(int argc, char **argv) {
         n = n * 2;
         DO(buf = realloc(buf, n), NULL, free_buf);
       }
+      i++;
     }
 
     DO(fputs(buf, acc), EOF, free_buf);
     DO(fflush(acc), EOF, free_buf);
     t = clock();
-    if (((double)(t - tick) / ((double)CLOCKS_PER_SEC) >= 1.0) {
+    if (((double)(t - tick)) / ((double)CLOCKS_PER_SEC) >= 1.0) {
       DO(one = fopen(argv[2], "wb"), NULL, free_buf);
       DO(fputs(buf, one), EOF, free_one);
       DO(fflush(one), EOF, free_one);
