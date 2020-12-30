@@ -48,7 +48,9 @@ if exist "%NSTOOLS_DIR%\README.md" (
   popd
 )
 
-git -C %NSTOOLS_DIR% checkout v1.0
+if "%NSIMD_NSTOOLS_CHECKOUT_LATER%" == "" (
+  git -C %NSTOOLS_DIR% checkout v1.0
+)
 
 REM ###########################################################################
 REM Create bin directory

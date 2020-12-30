@@ -15,12 +15,17 @@ carduel.numscale.com (avx512_knl-gcc)
 - cd build-avx512_knl-gcc
 - ../nstools/bin/nstest -j80
 
-gaunes.numscale.com (avx-avx2-gcc)
+gaunes.numscale.com (avx-avx2-armel-gcc)
 - bash scripts/build-tests.sh for avx/avx2 with gcc
 - cd build-avx-gcc
 - ../nstools/bin/nstest -j80
 - cd ../build-avx2-gcc
 - ../nstools/bin/nstest -j80
+- mkdir ../build-neon128-gcc
+- cd ../build-neon128-gcc
+- ../nstools/bin/nsconfig .. -Dsimd=neon128 -ccomp=gcc,arm-linux-gnueabihf-gcc,5,neon128 -cppcomp=gcc,arm-linux-gnueabihf-g++,5,neon128
+- ninja tests
+- ../nstools/bin/nstest -j80 --prefix="qemu-arm"
 
 logres.numscale.com (cpu-gcc-cuda-nvcc)
 - bash scripts/build-tests.sh for cpu with gcc
@@ -39,7 +44,7 @@ bowden.numscale.com (rocm-hipcc)
 - cd build-rocm-hipcc
 - ../nstools/bin/nstest -j80
 
-caradigan.numscale.com (neon128-aarch64-gcc)
+caradigan.numscale.com (armhf-aarch64-gcc)
 - bash scripts/build-tests.sh for aarch64 with gcc
 - cd build-aarch64-gcc
 - ../nstools/bin/nstest -j80

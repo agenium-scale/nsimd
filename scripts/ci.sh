@@ -22,18 +22,14 @@
 ###############################################################################
 # Argument parsing
 
-if [ "$1" == "" ]; then
-  echo "ERROR: usage: $0 JOBS_FILE REMOTE_DIR"
-  exit 1
-fi
-
-if [ "$2" == "" ]; then
-  echo "ERROR: usage: $0 JOBS_FILE REMOTE_DIR"
+if [ "$3" == "" ]; then
+  echo "ERROR: usage: $0 JOBS_FILE REMOTE_DIR NSIMD_NSTOOLS_CHECKOUT_LATER"
   exit 1
 fi
 
 JOBS_FILE="`realpath $1`"
 REMOTE_DIR="$2"
+NSIMD_NSTOOLS_CHECKOUT_LATER="$3"
 
 cd `dirname $0`
 #set -x
@@ -108,6 +104,8 @@ if [ -f "${JOBS_FILE}" ]; then
 	
 	cd \`dirname \$0\`
 	set -e
+
+        export NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
 
 	rm -rf ci-nsimd-${DESC}
 	rm -f ci-nsimd-${DESC}-output.txt

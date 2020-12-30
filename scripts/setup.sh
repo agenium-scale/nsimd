@@ -40,7 +40,9 @@ NSTOOLS_URL2="https://github.com/agenium-scale/nstools.git"
     ( cd "${PWD}/.." && \
       ( git clone `git remote get-url origin | sed s/nsimd/nstools/g` ) )
 
-git -C "${NSTOOLS_DIR}" checkout v1.0
+if [ "${NSIMD_NSTOOLS_CHECKOUT_LATER}" == "" ]; then
+  git -C "${NSTOOLS_DIR}" checkout v1.0
+fi
 
 [ -e "${NSTOOLS_DIR}/bin" ] || ( mkdir -p "${NSTOOLS_DIR}/bin" )
 
