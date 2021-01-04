@@ -29,6 +29,7 @@ fi
 
 JOBS_FILE="`realpath $1`"
 REMOTE_DIR="$2"
+W_REMOTE_DIR="`echo ${REMOTE_DIR} | tr / \\\\`"
 NSIMD_NSTOOLS_CHECKOUT_LATER="$3"
 
 cd `dirname $0`
@@ -45,6 +46,8 @@ SCP="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 GIT_URL=`git remote get-url origin`
 GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 TMP_DIR="${PWD}/../_ci"
+ONE_LINER_C="${PWD}/../scripts/one-liner.c"
+SSHJOB_C="${PWD}/../nstools/sshjob/sshjob.c"
 
 # Empty tmp directory
 if [ -f "${JOBS_FILE}" ]; then
@@ -56,26 +59,30 @@ fi
 # Build jobs scripts
 
 function write_end_of_script() {
-  cat >>"${1}" <<-EOF
-	  echo "Finished"
+  if [ "${3}" == "Windows" ]; then
+    cat >>"${1}" <<-EOF
+	  echo Finished
 
-	) |& while read -r line; do
-	  echo "\$line" >>ci-nsimd-${2}-output.txt
-	  NEW=\`date +%s\`
-	  if [ "\${OLD}" != "\${NEW}" ]; then
-	    echo "\$line" >ci-nsimd-${2}-one-liner.txt
-	    OLD=\${NEW}
-	  fi
-	done 
+	) |& one-liner ci-nsimd-${2}-output.txt ci-nsimd-${2}-one-liner.txt
 
-	echo "Finished" >ci-nsimd-${2}-one-liner.txt
+	echo Finished >ci-nsimd-${2}-one-liner.txt
 	EOF
+  else
+    cat >>"${1}" <<-EOF
+	  echo Finished
+
+	) |& ./one-liner ci-nsimd-${2}-output.txt ci-nsimd-${2}-one-liner.txt
+
+	echo Finished >ci-nsimd-${2}-one-liner.txt
+	EOF
+  fi
 }
 
 if [ -f "${JOBS_FILE}" ]; then
 
   CURRENT_JOB=""
   DESC=""
+  REMOTE_HOST="Linux"
   
   while read -r line; do
   
@@ -90,16 +97,46 @@ if [ -f "${JOBS_FILE}" ]; then
     fi
   
     if [ "`echo ${line} | cut -c 1`" == "-" ]; then
-      echo "  `echo ${line} | cut -c 2-` && \\" >>"${CURRENT_JOB}"
+      if [ "${REMOTE_HOST}" == "Windows" ]; then
+        echo "  `echo ${line} | cut -c 2-`" >>"${CURRENT_JOB}"
+      else
+        echo "  `echo ${line} | cut -c 2-` && \\" >>"${CURRENT_JOB}"
+      fi
       echo >>"${CURRENT_JOB}"
     else
       if [ "${CURRENT_JOB}" != "" ]; then
-        write_end_of_script "${CURRENT_JOB}" "${DESC}"
+        write_end_of_script "${CURRENT_JOB}" "${DESC}" "${REMOTE_HOST}"
       fi
       ADDR=`echo ${line} | sed -e 's/(.*)//g' -e 's/  *//g'`
       DESC=`echo ${line} | sed -e 's/.*(//g' -e 's/).*//g'`
-      CURRENT_JOB="${TMP_DIR}/${ADDR}--${DESC}.sh"
-      cat >"${CURRENT_JOB}" <<-EOF
+      REMOTE_HOST=`echo ${ADDR} | head -c 3`
+      if [ "${REMOTE_HOST}" == "WIN" ]; then
+        CURRENT_JOB="${TMP_DIR}/${ADDR}--${DESC}.bat" # <-- this must be before
+        ADDR="`echo ${ADDR} | tail -c +4`"            # <-- this
+        REMOTE_HOST="Windows"
+        cat >"${CURRENT_JOB}" <<-EOF
+	@echo off
+
+	setlocal
+	pushd "%~dp0"
+	
+        set NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
+
+	if exist ci-nsimd-${DESC} rd /Q /S ci-nsimd-${DESC}
+	if exist ci-nsimd-${DESC}-output.txt del /F /Q ci-nsimd-${DESC}-output.txt
+	if exist ci-nsimd-${DESC}-one-liner.txt del /F /Q ci-nsimd-${DESC}-one-liner.txt
+
+	git clone ${GIT_URL} ci-nsimd-${DESC}
+	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}
+
+	(
+	  pushd ci-nsimd-${DESC}
+
+	EOF
+      else
+        CURRENT_JOB="${TMP_DIR}/${ADDR}--${DESC}.sh"
+        REMOTE_HOST="Linux"
+        cat >"${CURRENT_JOB}" <<-EOF
 	#!/bin/sh
 	
 	cd \`dirname \$0\`
@@ -114,18 +151,17 @@ if [ -f "${JOBS_FILE}" ]; then
 	git clone ${GIT_URL} ci-nsimd-${DESC}
 	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}
 
-	OLD=\`date +%s\`
-	
 	(
 	  cd ci-nsimd-${DESC} && \\
 
 	EOF
+      fi
     fi
 
   done <"${JOBS_FILE}"
 
   if [ "${CURRENT_JOB}" != "" ]; then
-    write_end_of_script "${CURRENT_JOB}" "${DESC}"
+    write_end_of_script "${CURRENT_JOB}" "${DESC}" "${REMOTE_HOST}"
   fi
 
 fi
@@ -139,34 +175,45 @@ if [ -f "${JOBS_FILE}" ]; then
   echo "-- "
   echo "-- Initialization:"
   
-  for job in "${TMP_DIR}"/*.sh; do
+  for job in "${TMP_DIR}"/*.sh "${TMP_DIR}"/*.bat; do
     ADDR=`basename ${job} .sh | sed 's/--.*//g'`
     DESC=`basename ${job} .sh | sed 's/.*--//g'`
+    REMOTE_HOST=`echo ${ADDR} | head -c 3`
+    if [ "${REMOTE_HOST}" == "WIN" ]; then
+      REMOTE_HOST="Windows"
+      ADDR="`echo ${ADDR} | tail -c +4`"
+    else
+      REMOTE_HOST="Linux"
+    fi
     echo "-- Found new job: ${DESC}"
     echo "--   Remote machine will be: ${ADDR}"
-    echo "--   Working directory will be: ${REMOTE_DIR}"
-    ${SSH} ${ADDR} mkdir -p ${REMOTE_DIR}
+    if [ "${REMOTE_HOST}" == "Windows" ]; then
+      echo "--   Working directory will be: ${W_REMOTE_DIR}"
+      ${SSH} ${ADDR} if not exist ${W_REMOTE_DIR} md ${W_REMOTE_DIR}
+    else
+      echo "--   Working directory will be: ${REMOTE_DIR}"
+      ${SSH} ${ADDR} mkdir -p ${REMOTE_DIR}
+    fi
     echo "--   Launching commands"
-    ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
-    rjob="${REMOTE_DIR}/`basename ${job}`"
-    PID=`${SSH} ${ADDR} "echo \\\$PPID ; bash ${rjob} </dev/null \
-                         1>/dev/null 2>/dev/null &"`
-    echo "--   PID = ${PID}"
-    KILL_SCRIPT="`basename ${job} .sh`.ks"
-    cat >>"${TMP_DIR}/${KILL_SCRIPT}" <<-EOF
-	#!/bin/sh
-
-	list_children() {
-	  local children=\`ps -o pid= --ppid "\${1}"\`
-	  for pid in \${children}; do
-	    list_children "\${pid}"
-	  done
-	  echo " \${children} "
-        }
-
-        kill -TERM \`list_children ${PID}\` ${PID}
-	EOF
-    ${SCP} ${TMP_DIR}/${KILL_SCRIPT} ${ADDR}:${REMOTE_DIR}
+    if [ "${REMOTE_HOST}" == "Windows" ]; then
+      ${SCP} ${job} ${ADDR}:${W_REMOTE_DIR}
+      ${SCP} ${ONE_LINER_C} ${ADDR}:${W_REMOTE_DIR}
+      ${SCP} ${SSHJOB_C} ${ADDR}:${W_REMOTE_DIR}
+      ${SSH} ${ADDR} "cd ${W_REMOTE_DIR} & \
+                      cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS one-liner.c"
+      ${SSH} ${ADDR} "cd ${W_REMOTE_DIR} & \
+                      cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS sshjob.c"
+      ${SSH} ${ADDR} ${W_REMOTE_DIR}\\sshjob run ${W_REMOTE_DIR}\\${job} \
+             >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
+    else
+      ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
+      ${SCP} ${ONE_LINER_C} ${ADDR}:${REMOTE_DIR}
+      ${SCP} ${SSHJOB_C} ${ADDR}:${REMOTE_DIR}
+      ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 one-liner.c -o one-liner"
+      ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 sshjob.c -o sshjob"
+      ${SSH} ${ADDR} ${REMOTE_DIR}/sshjob run ${REMOTE_DIR}/${job} \
+             >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
+    fi
   done
 
   sleep 2
@@ -176,25 +223,40 @@ fi
 ###############################################################################
 # Build associative arrays
 
+REMOTE_HOST_A=""
 ADDR_A=""
 DESC_A=""
 ONE_LINER_A=""
-KILL_SCRIPT_A=""
+KILL_COMMAND_A=""
 LOG_A=""
 N=0
 
 for job in "${TMP_DIR}/"*.sh; do
   ADDR=`basename ${job} .sh | sed 's/--.*//g'`
+  REMOTE_HOST=`echo ${ADDR} | head -c 3`
+  if [ "${REMOTE_HOST}" == "WIN" ]; then
+    REMOTE_HOST="Windows"
+    ADDR="`echo ${ADDR} | tail -c +4`"
+    LOG="${W_REMOTE_DIR}\\ci-nsimd-${DESC}-output.txt"
+    ONE_LINER="${W_REMOTE_DIR}\\ci-nsimd-${DESC}-one-liner.txt"
+    KILL_COMMAND="${W_REMOTE_DIR}\\sshjob kill \
+                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt"
+  else
+    REMOTE_HOST="Linux"
+    ONE_LINER="${REMOTE_DIR}/ci-nsimd-${DESC}-one-liner.txt"
+    LOG="${REMOTE_DIR}/ci-nsimd-${DESC}-output.txt"
+    KILL_COMMAND="${REMOTE_DIR}/sshjob kill \
+                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt"
+  fi
   DESC=`basename ${job} .sh | sed 's/.*--//g'`
-  ONE_LINER="${REMOTE_DIR}/ci-nsimd-${DESC}-one-liner.txt"
-  KILL_SCRIPT="`basename ${job} .sh`.ks"
-  LOG="ci-nsimd-${DESC}-output.txt"
+  PID="${TMP_DIR}/ci-nsimd-${DESC}-pid.txt"
 
   ADDR_A="${ADDR_A}${ADDR}:"
   DESC_A="${DESC_A}${DESC}:"
   ONE_LINER_A="${ONE_LINER_A}${ONE_LINER}:"
-  KILL_SCRIPT_A="${KILL_SCRIPT_A}${KILL_SCRIPT}:"
+  KILL_COMMAND_A="${KILL_COMMAND_A}${KILL_COMMAND}:"
   LOG_A="${LOG_A}${LOG}:"
+  REMOTE_HOST_A="${REMOTE_HOST_A}${REMOTE_HOST}:"
 
   N=`expr ${N} + 1`
 done
@@ -241,8 +303,14 @@ while true; do
     ADDR=`get_a ${ADDR_A} ${i}`
     DESC=`get_a ${DESC_A} ${i}`
     ONE_LINER=`get_a ${ONE_LINER_A} ${i}`
-    STATUS=`${SSH} ${ADDR} "[ -f ${ONE_LINER} ] && cat ${ONE_LINER}" \
-                   </dev/null || true`
+    REMOTE_HOST=`get_a ${REMOTE_HOST_A} ${i}`
+    if [ "${REMOTE_HOST}" == "Windows" ]; then
+      STATUS=`${SSH} ${ADDR} "if exist ${ONE_LINER} type ${ONE_LINER}" \
+                     </dev/null || true`
+    else
+      STATUS=`${SSH} ${ADDR} "[ -f ${ONE_LINER} ] && cat ${ONE_LINER}" \
+                     </dev/null || true`
+    fi
     if [ "${i}" == "${selected}" ]; then
       echo2 "++++  ${i}: ${ADDR}, ${DESC}  ++++"
     else
@@ -281,9 +349,8 @@ while true; do
   fi
   if [ "${key}" == "t" ]; then
     ADDR=`get_a ${ADDR_A} ${selected}`
-    KILL_SCRIPT=`get_a ${KILL_SCRIPT_A} ${selected}`
-    ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
-                    1>/dev/null 2>/dev/null &"
+    KILL_COMMAND=`get_a ${KILL_SCRIPT_A} ${selected}`
+    ${SSH} ${ADDR} ${KILL_COMMAND}
     clear
     continue
   fi
@@ -294,9 +361,8 @@ while true; do
     echo
     for i in `seq 1 ${N}`; do
       ADDR=`get_a ${ADDR_A} ${i}`
-      KILL_SCRIPT=`get_a ${KILL_SCRIPT_A} ${i}`
-      ${SSH} ${ADDR} "bash ${REMOTE_DIR}/${KILL_SCRIPT} </dev/null \
-                      1>/dev/null 2>/dev/null &"
+      KILL_COMMAND=`get_a ${KILL_SCRIPT_A} ${i}`
+      ${SSH} ${ADDR} ${KILL_COMMAND}
     done
     echo
     echo "...done"
@@ -306,8 +372,8 @@ while true; do
   if [ "${key}" == "d" ]; then
     ADDR=`get_a ${ADDR_A} ${selected}`
     LOG=`get_a ${LOG_A} ${selected}`
-    ${SCP} ${ADDR}:${REMOTE_DIR}/${LOG} ${TMP_DIR}
-    less ${TMP_DIR}/${LOG}
+    ${SCP} ${ADDR}:${LOG} ${TMP_DIR}/log.txt
+    less ${TMP_DIR}/log.txt
     clear
     continue
   fi
@@ -319,7 +385,7 @@ while true; do
     for i in `seq 1 ${N}`; do
       ADDR=`get_a ${ADDR_A} ${i}`
       LOG=`get_a ${LOG_A} ${i}`
-      ${SCP} ${ADDR}:${REMOTE_DIR}/${LOG} ${TMP_DIR}
+      ${SCP} ${ADDR}:${LOG} ${TMP_DIR}
     done
     echo
     echo "...done"
