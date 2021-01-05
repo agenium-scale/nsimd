@@ -95,7 +95,7 @@ for compiler in ${COMPILERS}; do
     rm -rf "${BUILD_DIR}"
     mkdir -p "${BUILD_DIR}"
     (cd "${BUILD_DIR}" && \
-        "${NSCONFIG}" .. -Dsimd=${simd_ext} -comp=${compiler})
+        "${NSCONFIG}" .. -Dsimd=${simd_ext} -suite=${compiler})
     (cd "${BUILD_DIR}" && ninja)
   done
 done

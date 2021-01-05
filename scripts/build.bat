@@ -98,7 +98,7 @@ for %%g in (%COMPILERS%) do (
     if exist !BUILD_DIR! rd /Q /S !BUILD_DIR!
     md !BUILD_DIR!
     pushd !BUILD_DIR!
-      %NSCONFIG% .. -Dsimd=%%h -comp=%%g
+      %NSCONFIG% .. -Dsimd=%%h -suite=%%g
       ninja
     popd
   )

@@ -62,7 +62,7 @@ for %%g in (%COMPILERS%) do (
     if exist !BUILD_DIR! rd /Q /S !BUILD_DIR!
     md !BUILD_DIR!
     pushd !BUILD_DIR!
-      %NSCONFIG% .. -Dsimd=%%h -comp=%%g
+      %NSCONFIG% .. -Dsimd=%%h -suite=%%g
       if exist %BUILD_ROOT%\targets.txt (
         set "TS= "
         for /F %%k in ('type %BUILD_ROOT%\targets.txt') do (
