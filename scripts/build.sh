@@ -77,15 +77,6 @@ else
   exit 1
 fi
 
-COMPILERS=`echo ${COMPILER_ARG} | sed 's,/, ,g'`
-for compiler in ${COMPILERS}; do
-  (${compiler} --version 1>/dev/null 2>/dev/null)
-  if [ "$?" != "0" ]; then
-    echo "ERROR: compiler ${compiler} not found in PATH"
-    exit 1
-  fi
-done
-
 ###############################################################################
 # Build NSIMD : one build directory per SIMD extension per compiler
 

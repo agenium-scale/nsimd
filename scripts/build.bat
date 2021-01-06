@@ -67,7 +67,7 @@ set SIMD_EXTS_ARG=%2
 set SIMD_EXTS=%SIMD_EXTS_ARG:/=,%
 
 if "%3" == "" (
-  set COMPILER_ARG=cl
+  set COMPILER_ARG=msvc
 ) else ( if "%3" == "with" (
   if "%4" == "" (
     echo "ERROR: no compiler given after with"
@@ -80,14 +80,6 @@ if "%3" == "" (
 ) )
 
 set COMPILERS=%COMPILER_ARG:/=,%
-
-for %%g in (%COMPILERS%) do (
-  %%g 1>nul 2>nul
-  if errorlevel 1 (
-    echo ERROR: compiler %%g not found in PATH
-    goto end_nok
-  )
-)
 
 REM ###########################################################################
 REM Build NSIMD : one build directory per SIMD extension per compiler
