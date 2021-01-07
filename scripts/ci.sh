@@ -63,7 +63,7 @@ function write_end_of_script() {
     cat >>"${1}" <<-EOF
 	  echo Finished
 
-	) |& one-liner ci-nsimd-${2}-output.txt ci-nsimd-${2}-one-liner.txt
+	) 2>&1 | one-liner ci-nsimd-${2}-output.txt ci-nsimd-${2}-one-liner.txt
 
 	echo Finished >ci-nsimd-${2}-one-liner.txt
 	EOF
@@ -107,12 +107,13 @@ if [ -f "${JOBS_FILE}" ]; then
       if [ "${CURRENT_JOB}" != "" ]; then
         write_end_of_script "${CURRENT_JOB}" "${DESC}" "${REMOTE_HOST}"
       fi
-      ADDR=`echo ${line} | sed -e 's/(.*)//g' -e 's/  *//g'`
-      DESC=`echo ${line} | sed -e 's/.*(//g' -e 's/).*//g'`
-      REMOTE_HOST=`echo ${ADDR} | head -c 3`
-      if [ "${REMOTE_HOST}" == "WIN" ]; then
+      ADDR=`echo ${line} | sed -e 's/(.*//g' -e 's/  *//g'`
+      DESC=`echo ${line} | sed -e 's/\[.*//g' -e 's/.*(//g' -e 's/).*//g'`
+      EXTRA=`echo ${line} | sed -e 's/.*\[//g' -e 's/].*//g'`
+      REMOTE_HOST=`echo ${ADDR} | head -c 4`
+      if [ "${REMOTE_HOST}" == "WIN." ]; then
         CURRENT_JOB="${TMP_DIR}/${ADDR}--${DESC}.bat" # <-- this must be before
-        ADDR="`echo ${ADDR} | tail -c +4`"            # <-- this
+        ADDR="`echo ${ADDR} | tail -c +5`"            # <-- this
         REMOTE_HOST="Windows"
         cat >"${CURRENT_JOB}" <<-EOF
 	@echo off
@@ -120,7 +121,7 @@ if [ -f "${JOBS_FILE}" ]; then
 	setlocal
 	pushd "%~dp0"
 	
-        set NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
+	set NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
 
 	if exist ci-nsimd-${DESC} rd /Q /S ci-nsimd-${DESC}
 	if exist ci-nsimd-${DESC}-output.txt del /F /Q ci-nsimd-${DESC}-output.txt
@@ -132,6 +133,18 @@ if [ -f "${JOBS_FILE}" ]; then
 	(
 	  pushd ci-nsimd-${DESC}
 
+	EOF
+        # On Windows we need a native compiler. On Linux we have cc in the
+        # PATH but on Windows we have nothing. We need a MSVC but there is
+        # no easy way to find one. So we parse what is between [...] which
+        # contains the path to the vcvarsall.bat script to load the compiler
+        cat >"${TMP_DIR}/${ADDR}--${DESC}-native-cl" <<-EOF
+	@echo off
+	
+	setlocal
+	call ${EXTRA}
+	cl %*
+	exit /B %ERRORLEVEL%
 	EOF
       else
         CURRENT_JOB="${TMP_DIR}/${ADDR}--${DESC}.sh"
@@ -175,13 +188,15 @@ if [ -f "${JOBS_FILE}" ]; then
   echo "-- "
   echo "-- Initialization:"
   
-  for job in "${TMP_DIR}"/*.sh "${TMP_DIR}"/*.bat; do
-    ADDR=`basename ${job} .sh | sed 's/--.*//g'`
-    DESC=`basename ${job} .sh | sed 's/.*--//g'`
-    REMOTE_HOST=`echo ${ADDR} | head -c 3`
-    if [ "${REMOTE_HOST}" == "WIN" ]; then
+  for job in `find ${TMP_DIR} -iregex '.*\.\(bat\|sh\)'`; do
+    ADDR=`basename ${job} | \
+          sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/--.*//g'`
+    DESC=`basename ${job} | \
+          sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/.*--//g'`
+    REMOTE_HOST=`echo ${ADDR} | head -c 4`
+    if [ "${REMOTE_HOST}" == "WIN." ]; then
       REMOTE_HOST="Windows"
-      ADDR="`echo ${ADDR} | tail -c +4`"
+      ADDR="`echo ${ADDR} | tail -c +5`"
     else
       REMOTE_HOST="Linux"
     fi
@@ -199,19 +214,25 @@ if [ -f "${JOBS_FILE}" ]; then
       ${SCP} ${job} ${ADDR}:${W_REMOTE_DIR}
       ${SCP} ${ONE_LINER_C} ${ADDR}:${W_REMOTE_DIR}
       ${SCP} ${SSHJOB_C} ${ADDR}:${W_REMOTE_DIR}
+      ${SCP} ${TMP_DIR}/${ADDR}--${DESC}-native-cl \
+             ${ADDR}:${W_REMOTE_DIR}\\native-cl.bat
       ${SSH} ${ADDR} "cd ${W_REMOTE_DIR} & \
-                      cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS one-liner.c"
+                      native-cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS one-liner.c"
       ${SSH} ${ADDR} "cd ${W_REMOTE_DIR} & \
-                      cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS sshjob.c"
-      ${SSH} ${ADDR} ${W_REMOTE_DIR}\\sshjob run ${W_REMOTE_DIR}\\${job} \
+                      native-cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS sshjob.c"
+      ${SSH} ${ADDR} ${W_REMOTE_DIR}\\sshjob \
+             run ${W_REMOTE_DIR}\\`basename ${job}` \
              >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
+      echo ${SSH} ${ADDR} ${W_REMOTE_DIR}\\sshjob \
+             run ${W_REMOTE_DIR}\\`basename ${job}`
     else
       ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
       ${SCP} ${ONE_LINER_C} ${ADDR}:${REMOTE_DIR}
       ${SCP} ${SSHJOB_C} ${ADDR}:${REMOTE_DIR}
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 one-liner.c -o one-liner"
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 sshjob.c -o sshjob"
-      ${SSH} ${ADDR} ${REMOTE_DIR}/sshjob run ${REMOTE_DIR}/${job} \
+      ${SSH} ${ADDR} ${REMOTE_DIR}/sshjob \
+             run bash ${REMOTE_DIR}/`basename ${job}` \
              >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
     fi
   done
@@ -231,25 +252,25 @@ KILL_COMMAND_A=""
 LOG_A=""
 N=0
 
-for job in "${TMP_DIR}/"*.sh; do
-  ADDR=`basename ${job} .sh | sed 's/--.*//g'`
-  REMOTE_HOST=`echo ${ADDR} | head -c 3`
-  if [ "${REMOTE_HOST}" == "WIN" ]; then
+for job in `find ${TMP_DIR} -iregex '.*\.\(bat\|sh\)'`; do
+  ADDR=`basename ${job} | \
+        sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/--.*//g'`
+  DESC=`basename ${job} | \
+        sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/.*--//g'`
+  LOG="${REMOTE_DIR}/ci-nsimd-${DESC}-output.txt"
+  REMOTE_HOST="`echo ${ADDR} | head -c 4`"
+  if [ "${REMOTE_HOST}" == "WIN." ]; then
     REMOTE_HOST="Windows"
-    ADDR="`echo ${ADDR} | tail -c +4`"
-    LOG="${W_REMOTE_DIR}\\ci-nsimd-${DESC}-output.txt"
+    ADDR="`echo ${ADDR} | tail -c +5`"
     ONE_LINER="${W_REMOTE_DIR}\\ci-nsimd-${DESC}-one-liner.txt"
     KILL_COMMAND="${W_REMOTE_DIR}\\sshjob kill \
-                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt"
+                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt`"
   else
     REMOTE_HOST="Linux"
     ONE_LINER="${REMOTE_DIR}/ci-nsimd-${DESC}-one-liner.txt"
-    LOG="${REMOTE_DIR}/ci-nsimd-${DESC}-output.txt"
     KILL_COMMAND="${REMOTE_DIR}/sshjob kill \
-                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt"
+                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt`"
   fi
-  DESC=`basename ${job} .sh | sed 's/.*--//g'`
-  PID="${TMP_DIR}/ci-nsimd-${DESC}-pid.txt"
 
   ADDR_A="${ADDR_A}${ADDR}:"
   DESC_A="${DESC_A}${DESC}:"
@@ -280,7 +301,8 @@ selected=1
 
 echo2() {
  printf "%-${COLUMNS}s" " "
- echo -e "\r${1}"
+ printf "\r"
+ echo "${1}"
 }
 
 while true; do
@@ -372,6 +394,7 @@ while true; do
   if [ "${key}" == "d" ]; then
     ADDR=`get_a ${ADDR_A} ${selected}`
     LOG=`get_a ${LOG_A} ${selected}`
+    echo DEBUG: ${SCP} ${ADDR}:${LOG} ${TMP_DIR}/log.txt
     ${SCP} ${ADDR}:${LOG} ${TMP_DIR}/log.txt
     less ${TMP_DIR}/log.txt
     clear
