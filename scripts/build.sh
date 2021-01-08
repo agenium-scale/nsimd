@@ -76,6 +76,7 @@ else
   echo "ERROR: expected 'with' as fourth argument"
   exit 1
 fi
+COMPILERS=`echo ${COMPILER_ARG} | sed 's,/, ,g'`
 
 ###############################################################################
 # Build NSIMD : one build directory per SIMD extension per compiler
