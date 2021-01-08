@@ -1576,9 +1576,7 @@ T to(S value) {
         defined(NSIMD_AVX512_KNL)
       #define _mm_insert_epi64(a, i, imm8) \
         _mm_insert_epi32(_mm_insert_epi32(a, (i32)((u64)i  >> 32), \
-                                             2 * imm8), (i32)(i & 0xFFFFFFFF), \
-                         2 * imm8 + 1); \
-
+                         2 * imm8), (i32)(i & 0xFFFFFFFF), 2 * imm8 + 1)
       #define _mm_extract_epi64(a, imm8) \
         (((i64)_mm_extract_epi32(a, 2 * imm8) << 32) | \
          (i64)_mm_extract_epi32(a, 2 * imm8 + 1))
@@ -1587,9 +1585,8 @@ T to(S value) {
         defined(NSIMD_AVX512_SKYLAKE) || defined(NSIMD_AVX512_KNL)
       #define _mm256_insert_epi64(__m256i a, i64 i, const int imm8) \
         _mm256_insert_epi32(_mm256_insert_epi32(a, (i32)((u64)i  >> 32), \
-                                                2 * imm8), \
-                                                (i32)(i & 0xFFFFFFFF), \
-                            2 * imm8 + 1); \
+                            2 * imm8), (i32)(i & 0xFFFFFFFF), \
+                            2 * imm8 + 1)
       #define _mm256_extract_epi64(a, imm8) \
         (((i64)_mm256_extract_epi32(a, 2 * imm8) << 32) | \
          (i64)_mm256_extract_epi32(a, 2 * imm8 + 1))
