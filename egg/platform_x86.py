@@ -550,25 +550,57 @@ def get_undefined(simd_ext, typ):
 #   'v' means vector so code to extract has to be emitted
 #   's' means base type so no need to write code for extraction
 def get_emulation_code(func, signature, simd_ext, typ):
-    code = 'nsimd_{simd_ext}_v{typ} ret = {undef};\n'. \
+    # Trick using insert and extract
+    trick = 'nsimd_{simd_ext}_v{typ} ret = {undef};\n'. \
            format(undef=get_undefined(simd_ext, typ), **fmtspec)
     arity = len(signature)
-    code += typ + ' ' + \
+    trick += typ + ' ' + \
             ', '.join(['tmp{}'.format(i) \
                        for i in range(arity) if signature[i] == 'v']) + ';\n'
     args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
                       if signature[i] == 's' else 'tmp{}'.format(i) \
                       for i in range(arity)])
     for i in range(fmtspec['le']):
-        code += '\n'.join(['tmp{} = {};'. \
+        trick += '\n'.join(['tmp{} = {};'. \
                 format(j, get_lane(simd_ext, typ,
                        '{{in{}}}'.format(j).format(**fmtspec), i)) \
                        for j in range(arity) if signature[j] == 'v']) + '\n'
-        code += set_lane(simd_ext, typ, 'ret',
+        trick += set_lane(simd_ext, typ, 'ret',
                          'nsimd_scalar_{func}_{typ}({args})'. \
                          format(func=func, args=args, **fmtspec), i) + '\n'
-    code += 'return ret;'
-    return code
+    trick += 'return ret;'
+
+    # but in 32-bits mode insert and extract instrinsics are almost never
+    # available so we emulate
+    emulation = 'int i;\n{typ} ret[{le}];\n'.format(**fmtspec)
+    emulation += typ + ' ' + \
+                 ', '.join(['buf{}[{}]'.format(i, fmtspec['le']) \
+                            for i in range(arity) if signature[i] == 'v']) + \
+                            ';\n'
+    emulation += '\n'.join(['{{pre}}store{{sufsi}}({cast}buf{i}, {{in{i}}});'. \
+                            format(i=i, cast=castsi(simd_ext, typ)). \
+                            format(**fmtspec) \
+                            for i in range(arity) if signature[i] == 'v']) + \
+                            '\n'
+    args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
+                      if signature[i] == 's' else 'buf{}[i]'.format(i) \
+                      for i in range(arity)])
+    emulation += '''for (i = 0; i < {le}; i++) {{
+                      ret[i] = nsimd_scalar_{func}_{typ}({args});
+                    }}
+                    return {pre}loadu{sufsi}({cast}ret);'''. \
+                    format(args=args, cast=castsi(simd_ext, typ), func=func,
+                           **fmtspec)
+
+    if simd_ext == 'sse42' and \
+       typ in ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32']:
+        return trick
+    else:
+        return '''#if NSIMD_WORD_SIZE == 32
+                    {}
+                  #else
+                    {}
+                  #endif'''.format(emulation, trick)
 
 def how_it_should_be_op2(func, simd_ext, typ):
     if typ == 'f16':
@@ -3652,22 +3684,27 @@ def scatter_linear(simd_ext, typ):
                          lo=extract(simd_ext, typ, LO, fmtspec['in2']),
                          hi=extract(simd_ext, typ, HI, fmtspec['in2']),
                          **fmtspec)
+    emulation = '''int i;
+                   {typ} buf[{le}];
+                   {pre}storeu{sufsi}({cast}buf, {in2});
+                   for (i = 0; i < {le}; i++) {{
+                     {in0}[i * {in1}] = buf[i];
+                   }}'''.format(cast=castsi(simd_ext, typ), **fmtspec)
     if (simd_ext == 'sse2' and typ in ['i16', 'u16']) or \
        (simd_ext == 'avx' and \
         typ in ['i32', 'u32', 'f32', 'i64', 'u64', 'f64']) or \
        (simd_ext in ['sse42', 'avx2']):
-        return '\n'.join([
+        trick = '\n'.join([
         '{in0}[{i} * {in1}] = {get_lane};'.format(i=i,
         get_lane=get_lane(simd_ext, typ, '{in2}'.format(**fmtspec), i),
         **fmtspec) for i in range(int(fmtspec['le']))])
+        return '''#if NSIMD_WORD_SIZE == 32
+                    {}
+                  #else
+                    {}
+                  #endif'''.format(emulation, trick)
     else:
-        cast = castsi(simd_ext, typ)
-        return '''int i;
-                  {typ} buf[{le}];
-                  {pre}storeu{sufsi}({cast}buf, {in2});
-                  for (i = 0; i < {le}; i++) {{
-                    {in0}[i * {in1}] = buf[i];
-                  }}'''.format(cast=cast, **fmtspec)
+        return emulation
 
 # -----------------------------------------------------------------------------
 # mask_scatter
@@ -3789,16 +3826,17 @@ def gather_linear(simd_ext, typ):
                   ret.v0 = {pre}loadu_ps(buf);
                   ret.v1 = {pre}loadu_ps(buf + {leo2});
                   return ret;'''.format(leo2=le // 2, **fmtspec)
+    emulation = '''{typ} buf[{le}];
+                   int i;
+                   for (i = 0; i < {le}; i++) {{
+                     buf[i] = {in0}[i * {in1}];
+                   }}
+                   return {pre}loadu{sufsi}({cast}buf);'''. \
+                   format(cast=cast, **fmtspec)
     if simd_ext == 'sse2' and typ not in ['i16', 'u16']:
-        return '''{typ} buf[{le}];
-                  int i;
-                  for (i = 0; i < {le}; i++) {{
-                    buf[i] = {in0}[i * {in1}];
-                  }}
-                  return {pre}loadu{sufsi}({cast}buf);'''. \
-                  format(cast=cast, **fmtspec)
+        return emulation
     if simd_ext in sse + avx:
-        return \
+        trick = \
         '''nsimd_{simd_ext}_v{typ} ret;
            ret = {pre}undefined{sufsi}();
            '''.format(**fmtspec) + ''.join([
@@ -3806,6 +3844,12 @@ def gather_linear(simd_ext, typ):
                                           format(i=i, **fmtspec), i) + '\n' \
                                           for i in range(le)]) + \
         '''return ret;'''
+        return '''#if NSIMD_WORD_SIZE == 32
+                    {}
+                  #else
+                    {}
+                  #endif
+                  '''.format(emulation, trick)
     # getting here means AVX-512
     return \
     '''nsimd_avx2_v{typ} lo = _mm256_undefined{sufsi2}();

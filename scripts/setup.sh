@@ -42,6 +42,8 @@ NSTOOLS_URL2="https://github.com/agenium-scale/nstools.git"
 
 if [ "${NSIMD_NSTOOLS_CHECKOUT_LATER}" == "" ]; then
   git -C "${NSTOOLS_DIR}" checkout v1.0
+else
+  git -C "${NSTOOLS_DIR}" checkout master
 fi
 
 [ -e "${NSTOOLS_DIR}/bin" ] || ( mkdir -p "${NSTOOLS_DIR}/bin" )

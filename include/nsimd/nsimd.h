@@ -1551,47 +1551,6 @@ T to(S value) {
      2^n. */
   #pragma warning(push)
   #pragma warning(disable : 4146)
-
-  /* Some intrinsics are not available in 32-bits mode so we give an
-     implementation here. */
-
-  #if defined(NSIMD_IS_MSVC) && NSIMD_WORD_SIZE == 32
-    #if defined(NSIMD_SSE2) || defined(NSIMD_SSE42) || defined(NSIMD_AVX) || \
-        defined(NSIMD_AVX2) || defined(NSIMD_AVX512_SKYLAKE) || \
-        defined(NSIMD_AVX512_KNL)
-      static inline i64 __vectorcall _mm_cvtsi128_si64(__m128i a) {
-        return ((i64)_mm_cvtsi128_si32(a) |
-                ((i64)(_mm_cvtsi128_si32(_mm_shuffle_epi32(a, 1))) << 32));
-      }
-
-      static inline __m128i __vectorcall _mm_cvtsi64_si128(i64 a) {
-        __m128i lo = _mm_cvtsi32_si128((i32)(a & 0xFFFFFFFF));
-        __m128i hi = _mm_shuffle_epi32(
-                         _mm_cvtsi32_si128((i32)((u64)a >> 32)), 9);
-        return _mm_or_si128(hi, lo);
-      }
-    #endif
-    #if defined(NSIMD_SSE42) || defined(NSIMD_AVX) || \
-        defined(NSIMD_AVX2) || defined(NSIMD_AVX512_SKYLAKE) || \
-        defined(NSIMD_AVX512_KNL)
-      #define _mm_insert_epi64(a, i, imm8) \
-        _mm_insert_epi32(_mm_insert_epi32(a, (i32)((u64)i  >> 32), \
-                         2 * imm8), (i32)(i & 0xFFFFFFFF), 2 * imm8 + 1)
-      #define _mm_extract_epi64(a, imm8) \
-        (((i64)_mm_extract_epi32(a, 2 * imm8) << 32) | \
-         (i64)_mm_extract_epi32(a, 2 * imm8 + 1))
-    #endif
-    #if defined(NSIMD_AVX) || defined(NSIMD_AVX2) || \
-        defined(NSIMD_AVX512_SKYLAKE) || defined(NSIMD_AVX512_KNL)
-      #define _mm256_insert_epi64(__m256i a, i64 i, const int imm8) \
-        _mm256_insert_epi32(_mm256_insert_epi32(a, (i32)((u64)i  >> 32), \
-                            2 * imm8), (i32)(i & 0xFFFFFFFF), \
-                            2 * imm8 + 1)
-      #define _mm256_extract_epi64(a, imm8) \
-        (((i64)_mm256_extract_epi32(a, 2 * imm8) << 32) | \
-         (i64)_mm256_extract_epi32(a, 2 * imm8 + 1))
-    #endif
-  #endif
 #elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
   /* When compiling with Clang with C++98 or C++03, some Intel intrinsics are
      implemented as macros which contain long long but long long are not
