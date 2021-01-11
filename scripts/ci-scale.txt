@@ -23,7 +23,7 @@ gaunes.numscale.com (avx-avx2-armel-gcc)
 - ../nstools/bin/nstest -j80
 - mkdir ../build-neon128-gcc
 - cd ../build-neon128-gcc
-- ../nstools/bin/nsconfig .. -Dsimd=neon128 -ccomp=gcc,arm-linux-gnueabihf-gcc,5,neon128 -cppcomp=gcc,arm-linux-gnueabihf-g++,5,neon128
+- ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabihf-gcc,5,neon128 -comp=c++,gcc,arm-linux-gnueabihf-g++,5,neon128
 - ninja tests
 - ../nstools/bin/nstest -j80 --prefix="qemu-arm"
 
@@ -35,13 +35,13 @@ logres.numscale.com (cpu-gcc-cuda-nvcc)
 - export LD_LIBRARY_PATH=/usr/local/cuda/lib64
 - mkdir ../build-cuda-nvcc
 - cd ../build-cuda-nvcc
-- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -comp=nvcc
+- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -suite=nvcc
 - ninja tests
 - ../nstools/bin/nstest -j20
 
-bowden.numscale.com (rocm-hipcc)
-- bash scripts/build-tests.sh for rocm with hipcc
-- cd build-rocm-hipcc
+bowden.numscale.com (rocm)
+- bash scripts/build-tests.sh for rocm with rocm
+- cd build-rocm-rocm
 - ../nstools/bin/nstest -j80
 
 caradigan.numscale.com (armhf-aarch64-gcc)
@@ -51,7 +51,7 @@ caradigan.numscale.com (armhf-aarch64-gcc)
 - cd ..
 - mkdir build-neon128-gcc
 - cd build-neon128-gcc
-- ../nstools/bin/nsconfig .. -Dsimd=neon128 -ccomp=gcc,arm-linux-gnueabihf-gcc,5,neon128 -cppcomp=gcc,arm-linux-gnueabihf-g++,5,neon128
+- ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabihf-gcc,5,neon128 -comp=c++,gcc,arm-linux-gnueabihf-g++,5,neon128
 - ninja tests
 - ../nstools/bin/nstest -j80
 
@@ -63,14 +63,14 @@ carahes.numscale.com (sve128-gcc)
 - module load qemu/4.2.0
 - ../nstools/bin/nstest -j80 --prefix="qemu-aarch64 -cpu max,sve-max-vq=1"
 
-WIN.gorre2 (sse42-msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
+WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
 - setlocal
 - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-- scripts\build for sse42 with msvc
+- call scripts\build for sse2/sse42/avx/avx2 with msvc
 - endlocal
 - setlocal
 - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
-- scripts\build-tests for avx2 with msvc
+- call scripts\build-tests for avx2 with msvc
 - cd build-avx2-msvc
 - ..\nstools\bin\nstest -j80
 - endlocal

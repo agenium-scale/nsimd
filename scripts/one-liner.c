@@ -28,8 +28,7 @@ SOFTWARE.
 
 This program needs to be as portable as possible as it is intended for
 Windows hosts with an unknown version of Visual Studio. It is compiled
-before running the tests of NSIMD by the same version of the compiler that
-will be used for NSIMD.
+before running the tests of NSIMD.
 
 Its purpose is to read stdin and put all into an accumulator file and from
 time to time (approximatively every second) put a line of text into another
@@ -58,7 +57,7 @@ int main(int argc, char **argv) {
   char *buf;
   int ret = 0;
   size_t n = 1024;
-  clock_t tick;
+  time_t tick;
 
   if (argc != 3) {
     fprintf(stderr, "%s: ERROR: usage: one-liner acc.txt one-liner.txt",
@@ -69,9 +68,9 @@ int main(int argc, char **argv) {
   DO(acc = fopen(argv[1], "wb"), NULL, end);
   DO(buf = malloc(n), NULL, free_acc);
 
-  tick = clock();
+  tick = time(NULL);
   for (;;) {
-    clock_t t;
+    time_t t;
     size_t i = 0;
     int end_of_file = 0;
 
@@ -93,8 +92,8 @@ int main(int argc, char **argv) {
 
     DO(fputs(buf, acc), EOF, free_buf);
     DO(fflush(acc), EOF, free_buf);
-    t = clock();
-    if (((double)(t - tick)) / ((double)CLOCKS_PER_SEC) >= 1.0) {
+    t = time(NULL);
+    if (t - tick >= 1) {
       DO(one = fopen(argv[2], "wb"), NULL, free_buf);
       DO(fputs(buf, one), EOF, free_one);
       DO(fflush(one), EOF, free_one);
@@ -107,6 +106,10 @@ int main(int argc, char **argv) {
       break;
     }
   }
+
+  DO(one = fopen(argv[2], "wb"), NULL, free_buf);
+  DO(fputs("Finished", one), EOF, free_one);
+  DO(fflush(one), EOF, free_one);
 
 free_one:
   if (one != NULL && fclose(one) == EOF) {

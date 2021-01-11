@@ -58,26 +58,6 @@ fi
 ###############################################################################
 # Build jobs scripts
 
-function write_end_of_script() {
-  if [ "${3}" == "Windows" ]; then
-    cat >>"${1}" <<-EOF
-	  echo Finished
-
-	) 2>&1 | one-liner ci-nsimd-${2}-output.txt ci-nsimd-${2}-one-liner.txt
-
-	echo Finished >ci-nsimd-${2}-one-liner.txt
-	EOF
-  else
-    cat >>"${1}" <<-EOF
-	  echo Finished
-
-	) |& ./one-liner ci-nsimd-${2}-output.txt ci-nsimd-${2}-one-liner.txt
-
-	echo Finished >ci-nsimd-${2}-one-liner.txt
-	EOF
-  fi
-}
-
 if [ -f "${JOBS_FILE}" ]; then
 
   CURRENT_JOB=""
@@ -97,16 +77,9 @@ if [ -f "${JOBS_FILE}" ]; then
     fi
   
     if [ "`echo ${line} | cut -c 1`" == "-" ]; then
-      if [ "${REMOTE_HOST}" == "Windows" ]; then
-        echo "  `echo ${line} | cut -c 2-`" >>"${CURRENT_JOB}"
-      else
-        echo "  `echo ${line} | cut -c 2-` && \\" >>"${CURRENT_JOB}"
-      fi
+      echo "`echo ${line} | cut -c 2- | sed 's/^  *//g'`" >>"${CURRENT_JOB}"
       echo >>"${CURRENT_JOB}"
     else
-      if [ "${CURRENT_JOB}" != "" ]; then
-        write_end_of_script "${CURRENT_JOB}" "${DESC}" "${REMOTE_HOST}"
-      fi
       ADDR=`echo ${line} | sed -e 's/(.*//g' -e 's/  *//g'`
       DESC=`echo ${line} | sed -e 's/\[.*//g' -e 's/.*(//g' -e 's/).*//g'`
       EXTRA=`echo ${line} | sed -e 's/.*\[//g' -e 's/].*//g'`
@@ -123,6 +96,8 @@ if [ -f "${JOBS_FILE}" ]; then
 	
 	set NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
 
+	if "%1" == "run_script" goto script
+
 	if exist ci-nsimd-${DESC} rd /Q /S ci-nsimd-${DESC}
 	if exist ci-nsimd-${DESC}-output.txt del /F /Q ci-nsimd-${DESC}-output.txt
 	if exist ci-nsimd-${DESC}-one-liner.txt del /F /Q ci-nsimd-${DESC}-one-liner.txt
@@ -130,8 +105,10 @@ if [ -f "${JOBS_FILE}" ]; then
 	git clone ${GIT_URL} ci-nsimd-${DESC}
 	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}
 
-	(
-	  pushd ci-nsimd-${DESC}
+	pushd ci-nsimd-${DESC}
+
+	REM ----------------------------------------------------------------
+	REM User commands from here
 
 	EOF
         # On Windows we need a native compiler. On Linux we have cc in the
@@ -164,18 +141,16 @@ if [ -f "${JOBS_FILE}" ]; then
 	git clone ${GIT_URL} ci-nsimd-${DESC}
 	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}
 
-	(
-	  cd ci-nsimd-${DESC} && \\
+	cd ci-nsimd-${DESC}
+
+	# ------------------------------------------------------------------
+	# User commands from here
 
 	EOF
       fi
     fi
 
   done <"${JOBS_FILE}"
-
-  if [ "${CURRENT_JOB}" != "" ]; then
-    write_end_of_script "${CURRENT_JOB}" "${DESC}" "${REMOTE_HOST}"
-  fi
 
 fi
 
@@ -220,19 +195,21 @@ if [ -f "${JOBS_FILE}" ]; then
                       native-cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS one-liner.c"
       ${SSH} ${ADDR} "cd ${W_REMOTE_DIR} & \
                       native-cl /Ox /W3 /D_CRT_SECURE_NO_WARNINGS sshjob.c"
-      ${SSH} ${ADDR} ${W_REMOTE_DIR}\\sshjob \
-             run ${W_REMOTE_DIR}\\`basename ${job}` \
+      ${SSH} ${ADDR} "cd ${W_REMOTE_DIR} & \
+                      sshjob run \"`basename ${job}` 2>&1 | \
+                             one-liner ci-nsimd-${DESC}-output.txt \
+                                       ci-nsimd-${DESC}-one-liner.txt\"" \
              >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
-      echo ${SSH} ${ADDR} ${W_REMOTE_DIR}\\sshjob \
-             run ${W_REMOTE_DIR}\\`basename ${job}`
     else
       ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
       ${SCP} ${ONE_LINER_C} ${ADDR}:${REMOTE_DIR}
       ${SCP} ${SSHJOB_C} ${ADDR}:${REMOTE_DIR}
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 one-liner.c -o one-liner"
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 sshjob.c -o sshjob"
-      ${SSH} ${ADDR} ${REMOTE_DIR}/sshjob \
-             run bash ${REMOTE_DIR}/`basename ${job}` \
+      ${SSH} ${ADDR} "cd ${REMOTE_DIR} && \
+                      sshjob run \"bash `basename ${job}` |& \
+                             ./one-liner ci-nsimd-${DESC}-output.txt \
+                                         ci-nsimd-${DESC}-one-liner.txt\"" \
              >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
     fi
   done
