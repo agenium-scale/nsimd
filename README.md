@@ -94,6 +94,26 @@ cmake .. -Dsimd=neon128                               # for armel
 cmake .. -Dsimd=neon128 -DNSIMD_ARM32_IS_ARMEL=OFF    # for armhf
 ```
 
+We provide in the `scripts` directory a CMake find module to find NSIMD on
+your system. One can let the module find NSIMD on its own, if several
+versions for different SIMD extensions of NSIMD are installed then the
+module will find and return one. There is no guaranty on which versions will
+be chosen by the module.
+
+```cmake
+find_package(NSIMD)
+```
+
+If one wants a specific version of the library for a given SIMD extension then
+use the `COMPONENTS` part of `find_package`. Only one component is supported
+at a time.
+
+```cmake
+find_package(NSIMD COMPONENTS avx2)         # find only NSIMD for Intel AVX2
+find_package(NSIMD COMPONENTS sve)          # find only NSIMD for Arm SVE
+find_package(NSIMD COMPONENTS sse2 sse42)   # unsupported
+```
+
 ## Nsconfig
 
 The support for CMake has been limited to building the library only. If you

@@ -24,7 +24,8 @@ set -e
 set -x
 
 FIND_NSIMD_CMAKE="`dirname $0`/../scripts/FindNSIMD.cmake"
-SIMD_EXTS="sse2"
+SIMD_EXTS="sse2 sse42 avx avx2 avx512_knl avx512_skylake neon128 aarch64 \
+           sve sve128 sve256 sve512 sve1024 sve2048 cuda rocm"
 
 for simd_ext in ${SIMD_EXTS}; do
 
