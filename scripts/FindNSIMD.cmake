@@ -24,15 +24,7 @@
 # FindNSIMD
 # ---------
 #
-# Find libnsimd, Agenium Scale's vectorization library.
-#
-# Imported targets
-# ^^^^^^^^^^^^^^^^
-#
-# This module defines the following :prop_tgt:`IMPORTED` target:
-#
-# ``PNG::PNG``
-#   The libpng library, if found.
+# Find the NSIMD library, Agenium Scale's vectorization library.
 #
 # Result variables
 # ^^^^^^^^^^^^^^^^
@@ -40,11 +32,13 @@
 # This module will set the following variables in your project:
 #
 # ``NSIMD_INCLUDE_DIRS``
-#   where to find png.h, etc.
+#   where to find nsimd.h, etc.
+# ``NSIMD_LIBRARY_DIRS``
+#   where to find the library to link against to use NSIMD.
 # ``NSIMD_LIBRARIES``
-#   the libraries to link against to use PNG.
+#   the library to link against to use NSIMD.
 # ``NSIMD_FOUND``
-#   If false, do not try to use PNG.
+#   If false, do not try to use NSIMD.
 
 if (NOT NSIMD_FOUND AND NOT DEFINED NSIMD_LIBRARIES)
   list(LENGTH NSIMD_FIND_COMPONENTS l)
@@ -80,10 +74,12 @@ if (NOT NSIMD_FOUND AND NOT DEFINED NSIMD_INCLUDE_DIRS)
   find_path(NSIMD_INCLUDE_DIRS NAMES nsimd/nsimd.h)
 endif()
 
-if (DEFINED NSIMD_INCLUDE_DIRS AND DEFINED NSIMD_LIBRARIES)
+if (NOT "${NSIMD_INCLUDE_DIRS}" STREQUAL "NSIMD_INCLUDE_DIRS-NOTFOUND" AND
+    NOT "${NSIMD_LIBRARIES}" STREQUAL "NSIMD_LIBRARIES-NOTFOUND")
+  get_filename_component(NSIMD_LIBRARY_DIRS ${NSIMD_LIBRARIES} DIRECTORY)
   if (NOT NSIMD_FIND_QUIETLY)
     message(STATUS "[include dir = ${NSIMD_INCLUDE_DIRS}]"
-                   " [lib dir = ${NSIMD_LIBRARIES}]")
+                   " [library = ${NSIMD_LIBRARIES}]")
   endif()
   set(NSIMD_FOUND TRUE)
 else()
@@ -96,7 +92,7 @@ else()
     if (NOT DEFINED NSIMD_LIBRARIES)
       set(msg "${msg} [cannot determine library dir]")
     else()
-      set(msg "${msg} [library dir = ${NSIMD_LIBRARIES}]")
+      set(msg "${msg} [library = ${NSIMD_LIBRARIES}]")
     endif()
     if (NSIMD_FIND_REQUIRED)
       message(FATAL_ERROR "${msg}")
