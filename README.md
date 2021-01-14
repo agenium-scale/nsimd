@@ -68,14 +68,44 @@ NSIMD can compile on SSE 4.2 code with MSVC 2010.
 
 # Build the library
 
-The support for CMake has been dropped as it has several flaws:
+## CMake
+
+As CMake is widely used as a build system, we have added support for building
+the library only and the corresponding find module.
+
+```sh
+mkdir build
+cd build
+cmake .. -Dsimd=SIMD_EXT
+make
+make install
+```
+
+where `SIMD_EXT` is one of the following: CPU, SSE2, SSE42, AVX, AVX2,
+AVX512\_KNL, AVX512\_SKYLAKE, NEON128, AARCH64, SVE, SVE128, SVE256, SVE512,
+SVE1024, SVE2048, CUDA, ROCM.
+
+Note that when compiling for NEON128 on Linux one has to choose the ABI, either
+armel or armhf. Default is armel. As CMake is unable to autodetect this
+parameter one has to tell CMake manually.
+
+```sh
+cmake .. -Dsimd=neon128                               # for armel
+cmake .. -Dsimd=neon128 -DNSIMD_ARM32_IS_ARMEL=OFF    # for armhf
+```
+
+## Nsconfig
+
+The support for CMake has been limited to building the library only. If you
+wish to run tests or contribute you need to use nsconfig as CMake has several
+flaws:
 - too slow especially on Windows,
 - inability to use several compilers at once,
 - inability to have a portable build system,
 - very poor support for portable compilation flags,
 - ...
 
-## Dependencies
+## Dependencies (nsconfig only)
 
 Generating C/C++ files is done by the Python3 code contained in the `egg`.
 Python should be installed by default on any Linux distro. On Windows it comes
@@ -188,30 +218,68 @@ $ ../nstools/bin/nsconfig --help
 usage: nsconfig [OPTIONS]... DIRECTORY
 Configure project for compilation.
 
-  -v                   verbose mode
-  -nodev               Build system will never call nsconfig
-  -DVAR=VALUE          Set value of variable VAR to VALUE
-  -list-vars           List project specific variable
-  -GBUILD_SYSTEM       Produce files for build system BUILD_SYSTEM
-  -Ghelp               List supported build systems
-  -oOUTPUT             Output to OUTPUT instead of default
-  -comp=SUITE          Use compiler SUITE for both C and C++
-  -ccomp=SUITE,PATH[,VERSION[,ARCHI]]
-                       Use PATH as default C compiler from suite SUITE
-                       If VERSION and/or ARCHI are given, nsconfig
-                       try to determine those. This is useful for
-                       cross compiling, ARCHI must be in { x86, x86_64,
-                       arm, aarch64 }
-  -ccomp=help          List supported C compilers
-  -cppcomp=SUITE,PATH[,VERSION[,ARCHI]]
-                       Use PATH as default C++ compiler from suite SUITE
-                       If VERSION and/or ARCHI are given, nsconfig
-                       try to determine those. This is useful for
-                       cross compiling, ARCHI must be in { x86, x86_64,
-                       arm, aarch64 }
-  -cppcomp=help        List supported C++ compilers
-  -prefix=PREFIX       Set prefix for installation to PREFIX
-  -h, --help           Print the current text
+  -v              verbose mode, useful for debugging
+  -nodev          Build system will never call nsconfig
+  -DVAR=VALUE     Set value of variable VAR to VALUE
+  -list-vars      List project specific variable
+  -GBUILD_SYSTEM  Produce files for build system BUILD_SYSTEM
+                  Supported BUILD_SYSTEM:
+                    make       POSIX Makefile
+                    gnumake    GNU Makefile
+                    nmake      Microsot Visual Studio NMake Makefile
+                    ninja      Ninja build file (this is the default)
+                    list-vars  List project specific variables
+  -oOUTPUT        Output to OUTPUT instead of default
+  -suite=SUITE    Use compilers from SUITE as default ones
+                  Supported SUITE:
+                    gcc       The GNU compiler collection
+                    msvc      Microsoft C and C++ compiler
+                    llvm      The LLVM compiler infrastructure
+                    armclang  Arm suite of compilers based on LLVM
+                    icc       Intel C amd C++ compiler
+                    rocm      Radeon Open Compute compilers
+                    cuda, cuda+gcc, cuda+clang, cuda+msvc
+                              Nvidia CUDA C++ compiler
+  -comp=COMMAND,COMPILER[,PATH[,VERSION[,ARCHI]]]
+                  Use COMPILER when COMMAND is invoked for compilation
+                  If VERSION and/or ARCHI are not given, nsconfig will
+                  try to determine those. This is useful for cross
+                  compiling and/or setting the CUDA host compiler.
+                  COMMAND must be in { cc, c++, gcc, g++, cl, icc, nvcc,
+                  hipcc, hcc, clang, clang++, armclang, armclang++,
+                  cuda-host-c++ } ;
+                  VERSION is compiler dependant. Note that VERSION
+                  can be set to only major number(s) in which case
+                  nsconfig fill missing numbers with zeros.
+                  Supported ARCHI:
+                    x86      Intel 32-bits ISA
+                    x86_64   Intel/AMD 64-bits ISA
+                    armel    ARMv5 and ARMv6 32-bits ISA
+                    armhf    ARMv7 32-bits ISA
+                    aarch64  ARM 64-bits ISA
+                  Supported COMPILER:
+                    gcc, g++              GNU Compiler Collection
+                    clang, clang++        LLVM Compiler Infrastructure
+                    msvc, cl              Microsoft Visual C++
+                    armclang, armclang++  ARM Compiler
+                    icc                   Intel C/C++ Compiler
+                    dpcpp                 Intel DPC++ Compiler
+                    nvcc                  Nvidia CUDA compiler
+                    hipcc                 ROCm HIP compiler
+  -prefix=PREFIX  Set path for installation to PREFIX
+  -h, --help      Print the current help
+
+NOTE: Nvidia CUDA compiler (nvcc) needs a host compiler. Usually on
+      Linux systems it is GCC while on Windows systems it is MSVC.
+      If nvcc is chosen as the default C++ compiler via the -suite
+      switch, then its host compiler can be invoked in compilation
+      commands with 'cuda-host-c++'. The latter defaults to GCC on Linux
+      systems and MSVC on Windows systems. The user can of course choose
+      a specific version and path of this host compiler via the
+      '-comp=cuda-hostc++,... parameters. If nvcc is not chosen as the
+      default C++ compiler but is used for compilation then its default
+      C++ host compiler is 'c++'. The latter can also be customized via
+      the '-comp=c++,...' command line switch.
 ```
 
 Each project can defined its own set of variable controlling the generation of
@@ -220,13 +288,15 @@ the ninja file of Makefile.
 ```bash
 $ ../nstools/bin/nsconfig .. -list-vars
 Project variables list:
-name           | description
----------------|---------------------------------------------------------
-simd           | SIMD extension to use
-optional_flags | Optional flags like FMA, FP16...
-mpfr           | MPFR compilation flags (for tests only)
-sleef          | Sleef compilation flags (for benchmarks only)
-benchmark      | Google benchmark compilation flags (for benchmarks only)
+name               | description
+-------------------|---------------------------------------------------------
+simd               | SIMD extension to use
+cuda_arch_flags    | CUDA target arch flag(s) for tests
+mpfr               | MPFR compilation flags (for tests only)
+sleef              | Sleef compilation flags (for benchmarks only)
+benchmark          | Google benchmark compilation flags (for benchmarks only)
+build_library_only | Turn off tests/bench/ulps
+static_libstdcpp   | Compile the libstdc++ statically
 ```
 
 Finally one can choose what to do and compile NSIMD and its tests.
@@ -266,8 +336,8 @@ run aarch64 code on x86\_64 host.
 
 ```bash
 $ ../nstools/bin/nsconfig .. -Dsimd=aarch64 \
-      -ccomp=gcc,aarch64-linux-gnu-gcc,10.0,aarch64 \
-      -cppcomp=gcc,aarch64-linux-gnu-g++,10.0,aarch64
+      -comp=cc,gcc,aarch64-linux-gnu-gcc,10.0,aarch64 \
+      -comp=c++,gcc,aarch64-linux-gnu-g++,10.0,aarch64
 ```
 
 ## Defines that control NSIMD compilation and usage
