@@ -33,6 +33,8 @@ SOFTWARE.
 /* Detect host compiler */
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
+#elif defined(__FCC_version__)
+  #define NSIMD_IS_FCC
 #elif defined(__INTEL_COMPILER)
   #define NSIMD_IS_ICC
 #elif defined(__clang__)

@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +35,8 @@ def get_put_impl(simd_ext):
       'u16': ['"%d"', '(int)buf[i]'],
       'i32': ['"%d"', 'buf[i]'],
       'u32': ['"%u"', 'buf[i]'],
-      'i64': ['"%lld"', 'buf[i]'],
-      'u64': ['"%llu"', 'buf[i]'],
+      'i64': ['"%lld"', '(nsimd_longlong)buf[i]'],
+      'u64': ['"%llu"', '(nsimd_ulonglong)buf[i]'],
       'f16': ['"%e"', '(double)nsimd_f16_to_f32(buf[i])'],
       'f32': ['"%e"', '(double)buf[i]'],
       'f64': ['"%e"', 'buf[i]'],
