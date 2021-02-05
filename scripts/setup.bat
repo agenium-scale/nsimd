@@ -38,14 +38,19 @@ if exist "%NSTOOLS_DIR%\README.md" (
   git pull
   popd
 ) else (
-  git remote get-url origin >_tmp-nsimd-url.txt
-  set /P NSIMD_URL=<_tmp-nsimd-url.txt
-  set NSTOOLS_URL=!NSIMD_URL:nsimd=nstools!
-  del /F /Q _tmp-nsimd-url.txt
-  pushd ".."
-  echo git clone !NSTOOLS_URL! nstools
-  git clone !NSTOOLS_URL! nstools
-  popd
+  if exist "..\.git" (
+    git remote get-url origin >_tmp-nsimd-url.txt
+    set /P NSIMD_URL=<_tmp-nsimd-url.txt
+    set NSTOOLS_URL=!NSIMD_URL:nsimd=nstools!
+    del /F /Q _tmp-nsimd-url.txt
+    pushd ".."
+    git clone !NSTOOLS_URL! nstools
+    popd
+  ) else (
+    pushd ".."
+    git clone "https://github.com/agenium-scale/nstools.git" nstools
+    popd
+  )
 )
 
 if "%NSIMD_NSTOOLS_CHECKOUT_LATER%" == "" (

@@ -29,8 +29,6 @@ set -e
 # Init
 
 NSTOOLS_DIR="${PWD}/../nstools"
-NSTOOLS_URL="git@github.com:agenium-scale/nstools.git"
-NSTOOLS_URL2="https://github.com/agenium-scale/nstools.git"
 
 ###############################################################################
 # Build nsconfig (if not already built)
@@ -38,7 +36,9 @@ NSTOOLS_URL2="https://github.com/agenium-scale/nstools.git"
 [ -e "${NSTOOLS_DIR}/README.md" ] && \
     ( cd "${NSTOOLS_DIR}" && git pull ) || \
     ( cd "${PWD}/.." && \
-      ( git clone `git remote get-url origin | sed s/nsimd/nstools/g` ) )
+      ( [ -d .git ] \
+        && ( git clone `git remote get-url origin | sed s/nsimd/nstools/g` ) \
+        || ( git clone "https://github.com/agenium-scale/nstools.git" ) ) )
 
 if [ "${NSIMD_NSTOOLS_CHECKOUT_LATER}" == "" ]; then
   git -C "${NSTOOLS_DIR}" checkout v1.0
