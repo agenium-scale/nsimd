@@ -6,14 +6,14 @@ carahes.numscale.com (sve128-gcc)
 - module load qemu/4.2.0
 - ../nstools/bin/nstest -j80 --prefix="qemu-aarch64 -cpu max,sve-max-vq=1"
 
-WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
-- setlocal
-- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-- call scripts\build for sse2/sse42/avx/avx2 with msvc
-- endlocal
-- setlocal
-- call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
-- call scripts\build-tests for avx2 with msvc
-- cd build-avx2-msvc
-- ..\nstools\bin\nstest -j80
-- endlocal
+#WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
+#- setlocal
+#- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+#- call scripts\build for sse2/sse42/avx/avx2 with msvc
+#- endlocal
+#- setlocal
+#- call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
+#- call scripts\build-tests for avx2 with msvc
+#- cd build-avx2-msvc
+#- ..\nstools\bin\nstest -j80
+#- endlocal

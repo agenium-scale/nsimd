@@ -1465,7 +1465,7 @@ template <NSIMD_CONCEPT_VALUE_TYPE T> struct scoped_aligned_mem_for {
 /* host compiler. Otherwise we must have C++ linkage as fp16 types are       */
 /* defined as C++ classes . */
 
-#if NSIMD_CXX > 0 && !defined(NSIMD_IS_NVCC) && !defined(NSIMD_IS_HIPCC)
+#if NSIMD_CXX > 0 && !defined(NSIMD_CUDA) && !defined(NSIMD_ROCM)
   #define NSIMD_C_LINKAGE_FOR_F16
 #endif
 

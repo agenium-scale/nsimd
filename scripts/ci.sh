@@ -99,9 +99,6 @@ if [ -f "${JOBS_FILE}" ]; then
 	if "%1" == "run_script" goto script
 
 	if exist ci-nsimd-${DESC} rd /Q /S ci-nsimd-${DESC}
-	if exist ci-nsimd-${DESC}-output.txt del /F /Q ci-nsimd-${DESC}-output.txt
-	if exist ci-nsimd-${DESC}-one-liner.txt del /F /Q ci-nsimd-${DESC}-one-liner.txt
-
 	git clone ${GIT_URL} ci-nsimd-${DESC}
 	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}
 
@@ -135,9 +132,6 @@ if [ -f "${JOBS_FILE}" ]; then
         export NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
 
 	rm -rf ci-nsimd-${DESC}
-	rm -f ci-nsimd-${DESC}-output.txt
-	rm -f ci-nsimd-${DESC}-one-liner.txt
-
 	git clone ${GIT_URL} ci-nsimd-${DESC}
 	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}
 
@@ -257,8 +251,6 @@ for job in `find ${TMP_DIR} -iregex '.*\.\(bat\|sh\)'`; do
   N=`expr ${N} + 1`
 done
 
-exit
-
 get_a() {
   echo ${1} | cut -f${2} -d':'
 }
@@ -348,10 +340,7 @@ while true; do
   fi
   if [ "${key}" == "t" ]; then
     ADDR=`get_a ${ADDR_A} ${selected}`
-    clear
-    echo "DEBUG: ${KILL_COMMAND_A}"
     KILL_COMMAND=`get_a ${KILL_COMMAND_A} ${selected}`
-    echo "DEBUG: ${KILL_COMMAND}"
     ${SSH} ${ADDR} ${KILL_COMMAND}
     clear
     continue

@@ -23,7 +23,7 @@ gaunes.numscale.com (avx-avx2-armel-gcc)
 - ../nstools/bin/nstest -j80
 - mkdir ../build-neon128-gcc
 - cd ../build-neon128-gcc
-- ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabihf-gcc,5,neon128 -comp=c++,gcc,arm-linux-gnueabihf-g++,5,neon128
+- ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabi-gcc,5,armel -comp=c++,gcc,arm-linux-gnueabi-g++,5,armel
 - ninja tests
 - ../nstools/bin/nstest -j80 --prefix="qemu-arm"
 
@@ -35,7 +35,7 @@ logres.numscale.com (cpu-gcc-cuda-nvcc)
 - export LD_LIBRARY_PATH=/usr/local/cuda/lib64
 - mkdir ../build-cuda-nvcc
 - cd ../build-cuda-nvcc
-- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -suite=nvcc
+- ../nstools/bin/nsconfig .. -Dsimd=cuda -Dcuda_arch_flags=-msm_75 -suite=cuda
 - ninja tests
 - ../nstools/bin/nstest -j20
 
@@ -51,7 +51,7 @@ caradigan.numscale.com (armhf-aarch64-gcc)
 - cd ..
 - mkdir build-neon128-gcc
 - cd build-neon128-gcc
-- ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabihf-gcc,5,neon128 -comp=c++,gcc,arm-linux-gnueabihf-g++,5,neon128
+- ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabihf-gcc,5,armhf -comp=c++,gcc,arm-linux-gnueabihf-g++,5,armhf
 - ninja tests
 - ../nstools/bin/nstest -j80
 
