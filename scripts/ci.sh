@@ -29,7 +29,7 @@ fi
 
 JOBS_FILE="`realpath $1`"
 REMOTE_DIR="$2"
-W_REMOTE_DIR="`echo ${REMOTE_DIR} | tr / \\\\`"
+W_REMOTE_DIR="`echo ${REMOTE_DIR} | tr / \\\\\\`"
 NSIMD_NSTOOLS_CHECKOUT_LATER="$3"
 
 cd `dirname $0`
@@ -199,7 +199,7 @@ if [ -f "${JOBS_FILE}" ]; then
                       sshjob run \"`basename ${job}` 2>&1 | \
                              one-liner ci-nsimd-${DESC}-output.txt \
                                        ci-nsimd-${DESC}-one-liner.txt\"" \
-             >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
+             | sed 's/\r//g' >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
     else
       ${SCP} ${job} ${ADDR}:${REMOTE_DIR}
       ${SCP} ${ONE_LINER_C} ${ADDR}:${REMOTE_DIR}
@@ -207,9 +207,9 @@ if [ -f "${JOBS_FILE}" ]; then
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 one-liner.c -o one-liner"
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && cc -O2 sshjob.c -o sshjob"
       ${SSH} ${ADDR} "cd ${REMOTE_DIR} && \
-                      sshjob run \"bash `basename ${job}` |& \
-                             ./one-liner ci-nsimd-${DESC}-output.txt \
-                                         ci-nsimd-${DESC}-one-liner.txt\"" \
+                      ./sshjob run \"bash `basename ${job}` 2>&1 | \
+                               ./one-liner ci-nsimd-${DESC}-output.txt \
+                                           ci-nsimd-${DESC}-one-liner.txt\"" \
              >${TMP_DIR}/ci-nsimd-${DESC}-pid.txt
     fi
   done
@@ -236,17 +236,16 @@ for job in `find ${TMP_DIR} -iregex '.*\.\(bat\|sh\)'`; do
         sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/.*--//g'`
   LOG="${REMOTE_DIR}/ci-nsimd-${DESC}-output.txt"
   REMOTE_HOST="`echo ${ADDR} | head -c 4`"
+  PID="`sed -e 's/\r//g' ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt`"
   if [ "${REMOTE_HOST}" == "WIN." ]; then
     REMOTE_HOST="Windows"
     ADDR="`echo ${ADDR} | tail -c +5`"
     ONE_LINER="${W_REMOTE_DIR}\\ci-nsimd-${DESC}-one-liner.txt"
-    KILL_COMMAND="${W_REMOTE_DIR}\\sshjob kill \
-                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt`"
+    KILL_COMMAND="${W_REMOTE_DIR}\\sshjob kill ${PID}"
   else
     REMOTE_HOST="Linux"
     ONE_LINER="${REMOTE_DIR}/ci-nsimd-${DESC}-one-liner.txt"
-    KILL_COMMAND="${REMOTE_DIR}/sshjob kill \
-                  `cat ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt`"
+    KILL_COMMAND="${REMOTE_DIR}/sshjob kill ${PID}"
   fi
 
   ADDR_A="${ADDR_A}${ADDR}:"
@@ -255,14 +254,15 @@ for job in `find ${TMP_DIR} -iregex '.*\.\(bat\|sh\)'`; do
   KILL_COMMAND_A="${KILL_COMMAND_A}${KILL_COMMAND}:"
   LOG_A="${LOG_A}${LOG}:"
   REMOTE_HOST_A="${REMOTE_HOST_A}${REMOTE_HOST}:"
-
   N=`expr ${N} + 1`
 done
+
+exit
 
 get_a() {
   echo ${1} | cut -f${2} -d':'
 }
- 
+
 ###############################################################################
 # Monitor jobs (main event loop)
 
@@ -348,7 +348,10 @@ while true; do
   fi
   if [ "${key}" == "t" ]; then
     ADDR=`get_a ${ADDR_A} ${selected}`
-    KILL_COMMAND=`get_a ${KILL_SCRIPT_A} ${selected}`
+    clear
+    echo "DEBUG: ${KILL_COMMAND_A}"
+    KILL_COMMAND=`get_a ${KILL_COMMAND_A} ${selected}`
+    echo "DEBUG: ${KILL_COMMAND}"
     ${SSH} ${ADDR} ${KILL_COMMAND}
     clear
     continue
@@ -360,7 +363,7 @@ while true; do
     echo
     for i in `seq 1 ${N}`; do
       ADDR=`get_a ${ADDR_A} ${i}`
-      KILL_COMMAND=`get_a ${KILL_SCRIPT_A} ${i}`
+      KILL_COMMAND=`get_a ${KILL_COMMAND_A} ${i}`
       ${SSH} ${ADDR} ${KILL_COMMAND}
     done
     echo
