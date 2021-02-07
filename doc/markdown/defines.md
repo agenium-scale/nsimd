@@ -17,6 +17,7 @@ easy.
 | `NSIMD_IS_ICC`      | Intel C++ Compiler                                |
 | `NSIMD_IS_CLANG`    | Clang/LLVM                                        |
 | `NSIMD_IS_GCC`      | GNU Compiler Collection                           |
+| `NSIMD_IS_FCC`      | Fujitsu compiler                                  |
 
 **Warning**: some HIP versions do not declare themselves at all so it
 impossible to find out that HIP is the compiler. As HIP is based on clang,
@@ -37,7 +38,7 @@ compiler is GCC).
 | Define            | Description           | Possible values                 |
 |-------------------|-----------------------|---------------------------------|
 | `NSIMD_C`         | C version             | 1989, 1999, 2011                |
-| `NSIMD_CXX`       | C++ version           | 1998, 2011, 2014, 2017          |
+| `NSIMD_CXX`       | C++ version           | 1998, 2011, 2014, 2017, 2020    |
 | `NSIMD_WORD_SIZE` | Machine word size     | 32, 64                          |
 | `NSIMD_U8_MIN`    | Minimum value for u8  | 0                               |
 | `NSIMD_U8_MAX`    | Maximum value for u8  | 255                             |
@@ -84,6 +85,8 @@ following defines.
 | `NSIMD_SVE512`         | Arm SVE (size known at compilation to 512 bits)   |
 | `NSIMD_SVE1024`        | Arm SVE (size known at compilation to 1024 bits)  |
 | `NSIMD_SVE2048`        | Arm SVE (size known at compilation to 2048 bits)  |
+| `NSIMD_CUDA`           | Nvidia CUDA                                       |
+| `NSIMD_ROCM`           | AMD ROCm architectures                            |
 | `NSIMD_FP16`           | Architecture supports natively IEEE float16       |
 | `NSIMD_FMA`            | Architecture supports natively FMAs               |
 

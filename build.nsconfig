@@ -133,16 +133,18 @@ build_file libnsimd_$simd$$so deps ${o_for_$simd$}
 
 set ldflags = -fPIC -L. -lnsimd_$simd
 
-## CPU (emulation) rules for building
+## Building block of the library, must be built with target flags
 
 build_file fp16$o autodeps $root$/src/fp16.cpp
-	c++ $cflags$ @in -c -o @out
+	c++ $cflags$ ${cflags_for_$simd$} @in -c -o @out
 
 build_file memory$o autodeps $root$/src/memory.cpp
-	c++ $cflags$ @in -c -o @out
+	c++ $cflags$ ${cflags_for_$simd$} @in -c -o @out
 
 build_file ulps$o autodeps $root$/src/ulps.cpp
-	c++ $cflags$ @in -c -o @out
+	c++ $cflags$ ${cflags_for_$simd$} @in -c -o @out
+
+## CPU (emulation) rules for building
 
 build_file api_cpu$o autodeps $root$/src/api_cpu.cpp
 	c++ $cflags$ $cflags_for_cpu -c @in -o @out

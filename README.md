@@ -64,7 +64,7 @@ The C++ API only wraps the C calls.
 NSIMD is tested with GCC, Clang, MSVC, NVCC, HIPCC and ARMClang. As a C89 and a
 C++98 API are provided, other compilers should work fine. Old compiler versions
 should work as long as they support the targeted SIMD extension. For instance,
-NSIMD can compile on SSE 4.2 code with MSVC 2010.
+NSIMD can compile SSE 4.2 code with MSVC 2010.
 
 # Build the library
 
