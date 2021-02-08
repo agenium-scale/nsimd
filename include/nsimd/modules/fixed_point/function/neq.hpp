@@ -26,13 +26,13 @@ SOFTWARE.
 #define NSIMD_MODULES_FIXED_POINT_FUNCTION_NEQ_HPP
 
 #include "nsimd/modules/fixed_point/fixed.hpp"
+#include "nsimd/modules/fixed_point/function/eq.hpp"
 
 namespace nsimd {
 namespace fixed_point {
 template <u8 _lf, u8 _rt>
 bool operator!=(const fp_t<_lf, _rt> &a, const fp_t<_lf, _rt> &b) {
-  const u8 mask = ~((mask << (_lf + _rt)) >> (_lf + _rt));
-  return ((a._raw & mask) != (b._raw & mask));
+  return !(a == b);
 }
 
 } // namespace fixed_point
