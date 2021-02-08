@@ -171,7 +171,7 @@ namespace nsimd {
 #elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
   #define NSIMD_POWERPC
 #else
-  #define NSIMD_CPU
+  #define NSIMD_GENERIC
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -244,6 +244,10 @@ namespace nsimd {
 
 /* ------------------------------------------------------------------------- */
 /* Detect architecture/SIMD */
+
+#if defined(CPU) && !defined(NSIMD_CPU)
+  #define NSIMD_CPU
+#endif
 
 /* Intel */
 

@@ -70,8 +70,12 @@ set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
 
 ## SIMD compiler flags
 
+lambda cflags_for_generic_*    = -DCPU
+set    cflags_for_generic_cuda = -DCUDA
+set    cflags_for_generic_rocm = -DROCM
+
 set cflags_for_               = -DCPU
-set cflags_for_cpu            = -DCPU
+set cflags_for_cpu            = ${cflags_for_generic_$simd$}
 set cflags_for_cuda           = -DCUDA
 set cflags_for_rocm           = -DROCM
 set cflags_for_oneapi         = -DONEAPI
@@ -93,25 +97,10 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 
 ## std default flag
 
-set std_flag_for_               = -std=c++98
-set std_flag_for_cpu            = $std_flag_for_
-set std_flag_for_cuda           = $std_flag_for_
-set std_flag_for_rocm           = -std=c++11
-set std_flag_for_oneapi         = -std=c++17
-set std_flag_for_sse2           = $std_flag_for_
-set std_flag_for_sse42          = $std_flag_for_
-set std_flag_for_avx            = $std_flag_for_
-set std_flag_for_avx2           = $std_flag_for_
-set std_flag_for_avx512_knl     = $std_flag_for_
-set std_flag_for_avx512_skylake = $std_flag_for_
-set std_flag_for_neon128        = $std_flag_for_
-set std_flag_for_aarch64        = $std_flag_for_
-set std_flag_for_sve            = $std_flag_for_
-set std_flag_for_sve128         = $std_flag_for_
-set std_flag_for_sve256         = $std_flag_for_
-set std_flag_for_sve512         = $std_flag_for_
-set std_flag_for_sve1024        = $std_flag_for_
-set std_flag_for_sve2048        = $std_flag_for_
+lambda std_flag_for_*      = -std=c++98
+set    std_flag_for_       = -std=c++98
+set    std_flag_for_rocm   = -std=c++11
+set    std_flag_for_oneapi = -std=c++17
 
 ## libstdc++ linking mode
 
@@ -133,18 +122,16 @@ build_file libnsimd_$simd$$so deps ${o_for_$simd$}
 
 set ldflags = -fPIC -L. -lnsimd_$simd
 
-## Building block of the library, must be built with target flags
+## Generic (emulation) rules for building
 
 build_file fp16$o autodeps $root$/src/fp16.cpp
-	c++ $cflags$ ${cflags_for_$simd$} @in -c -o @out
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
 build_file memory$o autodeps $root$/src/memory.cpp
-	c++ $cflags$ ${cflags_for_$simd$} @in -c -o @out
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
 build_file ulps$o autodeps $root$/src/ulps.cpp
-	c++ $cflags$ ${cflags_for_$simd$} @in -c -o @out
-
-## CPU (emulation) rules for building
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
 build_file api_cpu$o autodeps $root$/src/api_cpu.cpp
 	c++ $cflags$ $cflags_for_cpu -c @in -o @out
@@ -208,25 +195,10 @@ begin_translate_if $build_library_only == false
 
 ## Tests
 
-set tests_comp_for_               = c++
-set tests_comp_for_cpu            = c++
-set tests_comp_for_cuda           = nvcc -x cu $cuda_arch_flags
-set tests_comp_for_rocm           = hipcc $cuda_arch_flags
-set tests_comp_for_dpcpp          = dpcpp
-set tests_comp_for_sse2           = c++
-set tests_comp_for_sse42          = c++
-set tests_comp_for_avx            = c++
-set tests_comp_for_avx2           = c++
-set tests_comp_for_avx512_knl     = c++
-set tests_comp_for_avx512_skylake = c++
-set tests_comp_for_neon128        = c++
-set tests_comp_for_aarch64        = c++
-set tests_comp_for_sve            = c++
-set tests_comp_for_sve128         = c++
-set tests_comp_for_sve256         = c++
-set tests_comp_for_sve512         = c++
-set tests_comp_for_sve1024        = c++
-set tests_comp_for_sve2048        = c++
+lambda tests_comp_for_*     = c++
+set    tests_comp_for_cuda  = nvcc -x cu $cuda_arch_flags
+set    tests_comp_for_rocm  = hipcc $cuda_arch_flags
+set    tests_comp_for_dpcpp = dpcpp
 
 set tests_comp = ${tests_comp_for_$simd$}
 
@@ -273,26 +245,11 @@ phony tests.cpp20 deps $cpp20.files
 
 # Phony target for tests
 
-set phony_tests_for_               = tests.c89 tests.c99 tests.cpp98 \
-                                     tests.cpp11
-set phony_tests_for_cpu            = $phony_tests_for_
-set phony_tests_for_cuda           = tests.cpp98 tests.cpp11
-set phony_tests_for_rocm           = tests.cpp11
-set phony_tests_for_dpcpp          = tests.cpp11
-set phony_tests_for_sse2           = $phony_tests_for_
-set phony_tests_for_sse42          = $phony_tests_for_
-set phony_tests_for_avx            = $phony_tests_for_
-set phony_tests_for_avx2           = $phony_tests_for_
-set phony_tests_for_avx512_knl     = $phony_tests_for_
-set phony_tests_for_avx512_skylake = $phony_tests_for_
-set phony_tests_for_neon128        = $phony_tests_for_
-set phony_tests_for_aarch64        = $phony_tests_for_
-set phony_tests_for_sve            = tests.c11 tests.cpp11
-set phony_tests_for_sve128         = $phony_tests_for_
-set phony_tests_for_sve256         = $phony_tests_for_
-set phony_tests_for_sve512         = $phony_tests_for_
-set phony_tests_for_sve1024        = $phony_tests_for_
-set phony_tests_for_sve2048        = $phony_tests_for_
+lambda phony_tests_for_*     = tests.c89 tests.c99 tests.cpp98 tests.cpp11
+set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
+set    phony_tests_for_rocm  = tests.cpp11
+set    phony_tests_for_dpcpp = tests.cpp11
+set    phony_tests_for_sve   = tests.c11 tests.cpp11
 
 phony tests deps ${phony_tests_for_$simd$}
 
