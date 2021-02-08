@@ -98,7 +98,6 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 ## std default flag
 
 lambda std_flag_for_*      = -std=c++98
-set    std_flag_for_       = -std=c++98
 set    std_flag_for_rocm   = -std=c++11
 set    std_flag_for_oneapi = -std=c++17
 

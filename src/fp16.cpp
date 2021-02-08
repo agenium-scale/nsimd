@@ -84,12 +84,6 @@ implementation below was written so that it can easily be SIMD'ed.
 extern "C" {
 #endif
 
-/* Union used to manipulate bit in float numbers. */
-typedef union {
-  u32 u;
-  f32 f;
-} f32_u32;
-
 // ----------------------------------------------------------------------------
 // Convert a FP16 as an u16 to a float
 
@@ -141,10 +135,10 @@ NSIMD_DLLEXPORT float nsimd_u16_to_f32(u16 a) {
     /* the exponent must be recomputed -15 + 127 */
     exponent += 112;
   }
+
   /* We then rebuild the float */
-  f32_u32 ret;
-  ret.u = (sign << 16) | (((u32)exponent) << 23) | (mantissa << 13);
-  return ret.f;
+  return nsimd_scalar_reinterpret_f32_u32(
+      (sign << 16) | (((u32)exponent) << 23) | (mantissa << 13));
 #endif
 }
 
@@ -198,26 +192,24 @@ NSIMD_DLLEXPORT u16 nsimd_f32_to_u16(f32 a) {
   u32 sign, mantissa;
   int exponent;
 
-  f32_u32 in;
-  in.f = a;
-
-  sign = in.u & 0x80000000;
-  exponent = (int)((in.u >> 23) & 0xFF);
-  mantissa = (in.u & 0x7FFFFF);
+  u32 in_u = nsimd_scalar_reinterpret_u32_f32(a);
+  sign = in_u & 0x80000000;
+  exponent = (int)((in_u >> 23) & 0xFF);
+  mantissa = (in_u & 0x7FFFFF);
 
   if (exponent == 255 && mantissa != 0) {
     /* Nan */
     return (u16)(0xffff);
   }
 
-  const f32_u32 biggest_f16 = {0x477ff000};
-  if (in.f >= biggest_f16.f || in.f <= -biggest_f16.f) {
+  const f32 biggest_f16 = nsimd_scalar_reinterpret_f32_u32(0x477ff000);
+  if (a >= biggest_f16 || a <= -biggest_f16) {
     /* Number is too big to be representable in half => return infinity */
     return (u16)(sign >> 16 | 0x1f << 10);
   }
 
-  const f32_u32 smallest_f16 = {0x33000000};
-  if (in.f <= smallest_f16.f && in.f >= -smallest_f16.f) {
+  const f32 smallest_f16 = nsimd_scalar_reinterpret_f32_u32(0x33000000);
+  if (a <= smallest_f16 && a >= -smallest_f16) {
     /* Number is too small to be representable in half => return ±0 */
     return (u16)(sign >> 16);
   }
@@ -227,25 +219,29 @@ NSIMD_DLLEXPORT u16 nsimd_f32_to_u16(f32 a) {
 
   /* Following algorithm taken from:
    * https://fgiesen.wordpress.com/2012/03/28/half-to-float-done-quic/ */
-  const f32_u32 denormal_f16 = {0x38800000};
-  if (in.f < denormal_f16.f && in.f > -denormal_f16.f) {
+  const f32 denormal_f16 = nsimd_scalar_reinterpret_f32_u32(0x38800000);
+  if (a < denormal_f16 && a > -denormal_f16) {
     /* Denormalized half */
-    const f32_u32 magic = {((127 - 15) + (23 - 10) + 1) << 23};
+    const u32 magic_u = ((127 - 15) + (23 - 10) + 1) << 23;
+    const f32 magic_f = nsimd_scalar_reinterpret_f32_u32(magic_u);
 
-    in.u &= ~0x80000000U;
-    in.f += magic.f;
-    in.u -= magic.u;
+    u32 in_u = nsimd_scalar_reinterpret_u32_f32(a);
+    in_u &= ~0x80000000u;
+    f32 in_f = nsimd_scalar_reinterpret_f32_u32(in_u);
+    in_f += magic_f;
+    in_u = nsimd_scalar_reinterpret_u32_f32(in_f);
+    in_u -= magic_u;
 
-    return (u16)(sign >> 16 | in.u);
+    return (u16)((sign >> 16) | in_u);
   }
 
   /* Normal half */
-  in.u &= ~0x80000000U;
-  u32 mant_odd = (in.u >> 13) & 1;
-  in.u += ((u32)(15 - 127) << 23) + 0xfffU;
-  in.u += mant_odd;
+  in_u &= ~0x80000000U;
+  u32 mant_odd = (in_u >> 13) & 1;
+  in_u += ((u32)(15 - 127) << 23) + 0xfffU;
+  in_u += mant_odd;
 
-  return (u16)(sign >> 16 | in.u >> 13);
+  return (u16)((sign >> 16) | (in_u >> 13));
 #endif
 }
 

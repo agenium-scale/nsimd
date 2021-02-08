@@ -881,10 +881,13 @@ namespace nsimd {
 
 #ifdef NSIMD_ARM_FP16
   typedef __fp16 f16;
+  #define NSIMD_NATIVE_FP16
 #elif defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   typedef __half f16;
+  #define NSIMD_NATIVE_FP16
 #elif defined(NSIMD_ONEAPI)
   typedef half f16;
+  #define NSIMD_NATIVE_FP16
 #else
   typedef struct { u16 u; } f16;
 #endif
