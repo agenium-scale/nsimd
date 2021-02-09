@@ -32,6 +32,16 @@ posix_c_source = \
    #error "_POSIX_C_SOURCE defined by third-party but must be >= 200112L"
    #endif'''
 
+msvc_c4334_warning = \
+'''#ifdef NSIMD_IS_MSVC
+     // MSVC wrongly emits warning C4333 on the following pieces of code:
+     //   (i64)(1 << (rand() % 4))
+     //   (u64)(1 << (rand() % 4))
+     // so we deactive it for now
+     #pragma warning( disable : 4334 )
+   #endif'''
+
+
 # -----------------------------------------------------------------------------
 # Get filename for test
 
@@ -2685,7 +2695,9 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
         neq_test = 'in[j] != out[j]'
     with common.open_utf8(opts, filename) as out:
         out.write(
-            '''{includes}
+        '''{includes}
+
+           {msvc_c4334_warning}
 
            #define CHECK(a) {{ \\
              errno = 0; \\
@@ -2727,7 +2739,9 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
            }}'''.format(includes=get_includes(lang), op_name=op.name,
                         to_typ=to_typ, from_typ=from_typ, comp=comp,
                         year=date.today().year, rand=rand, neq_test=neq_test,
-                        sizeof=common.sizeof(from_typ)))
+                        sizeof=common.sizeof(from_typ),
+                        msvc_c4334_warning=msvc_c4334_warning \
+                        if from_typ in ['i64', 'u64'] else ''))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
@@ -2893,6 +2907,8 @@ def gen_unpack_half(opts, op, typ, lang):
               #include <float.h>
               #include <math.h>
 
+              {msvc_c4334_warning}
+
               #define SIZE (2048 / {sizeof})
 
               #define CHECK(a) {{ \\
@@ -2911,7 +2927,9 @@ def gen_unpack_half(opts, op, typ, lang):
                           posix_c_source=posix_c_source,
                           includes=get_includes(lang),
                           comp_unpack=comp_unpack,
-                          sizeof=common.sizeof(typ), simd=opts.simd)
+                          sizeof=common.sizeof(typ), simd=opts.simd,
+                          msvc_c4334_warning=msvc_c4334_warning \
+                          if typ in ['i64', 'u64'] else '')
     if typ == 'f16':
         rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
         (f32)(1 << (rand() % 4)) /
@@ -3031,27 +3049,31 @@ def gen_unpack(opts, op, typ, lang):
 
     head = '''{posix_c_source}
 
-    {includes}
-    #include <float.h>
-    #include <math.h>
+              {includes}
+              #include <float.h>
+              #include <math.h>
 
-    #define SIZE (2048 / {sizeof})
+              {msvc_c4334_warning}
 
-    #define CHECK(a) {{ \\
-      errno = 0; \\
-      if (!(a)) {{ \\
-        fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
-                __LINE__, strerror(errno)); \\
-        fflush(stderr); \\
-        exit(EXIT_FAILURE); \\
-      }} \\
-    }}
+              #define SIZE (2048 / {sizeof})
 
-    /* {simd} */
-    ''' .format(year=date.today().year, typ=typ,
-                posix_c_source=posix_c_source,
-                includes=get_includes(lang),
-                sizeof=common.sizeof(typ), simd= opts.simd)
+              #define CHECK(a) {{ \\
+                errno = 0; \\
+                if (!(a)) {{ \\
+                  fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                          __LINE__, strerror(errno)); \\
+                  fflush(stderr); \\
+                  exit(EXIT_FAILURE); \\
+                }} \\
+              }}
+
+              /* {simd} */
+              ''' .format(year=date.today().year, typ=typ,
+                          posix_c_source=posix_c_source,
+                          includes=get_includes(lang),
+                          sizeof=common.sizeof(typ), simd= opts.simd,
+                          msvc_c4334_warning=msvc_c4334_warning \
+                          if typ in ['i64', 'u64'] else '')
 
     if typ == 'f16':
         rand = 'nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) * ' \
