@@ -1,4 +1,14 @@
 camelot.numscale.com (sse2-sse42-gcc)
+- mkdir cmake-build-sse2
+- cd cmake-build-sse2
+- cmake .. -Dsimd=sse2
+- make -j10
+- cd ..
+- mkdir cmake-build-sse42
+- cd cmake-build-sse42
+- cmake .. -Dsimd=sse42
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for sse2/sse42 with gcc
 - cd build-sse2-gcc
 - ../nstools/bin/nstest -j80
@@ -6,28 +16,63 @@ camelot.numscale.com (sse2-sse42-gcc)
 - ../nstools/bin/nstest -j80
 
 glastonbury.numscale.com (avx512_skylake-gcc)
+- source /etc/profile.d/modules.sh
+- module load cmake/3.1.0
+- mkdir cmake-build-avx512_skylake
+- cd cmake-build-avx512_skylake
+- cmake .. -Dsimd=avx512_skylake
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for avx512_skylake with gcc
 - cd build-avx512_skylake-gcc
 - ../nstools/bin/nstest -j40
 
 carduel.numscale.com (avx512_knl-gcc)
+- source /etc/profile.d/profile.sh
+- module load cmake/3.1.0
+- mkdir cmake-build-avx512_knl
+- cd cmake-build-avx512_knl
+- cmake .. -Dsimd=avx512_knl
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for avx512_knl with gcc
 - cd build-avx512_knl-gcc
 - ../nstools/bin/nstest -j80
 
 gaunes.numscale.com (avx-avx2-armel-gcc)
+- mkdir cmake-build-avx
+- cd cmake-build-avx
+- cmake .. -Dsimd=avx
+- make -j10
+- cd ..
+- mkdir cmake-build-avx2
+- cd cmake-build-avx2
+- cmake .. -Dsimd=avx2
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for avx/avx2 with gcc
 - cd build-avx-gcc
 - ../nstools/bin/nstest -j80
 - cd ../build-avx2-gcc
 - ../nstools/bin/nstest -j80
-- mkdir ../build-neon128-gcc
-- cd ../build-neon128-gcc
+- cd ..
+- mkdir cmake-build-armel
+- cd cmake-build-armel
+- cmake .. -Dsimd=neon128 -DCMAKE_CXX_COMPILER=arm-linux-gnueabi-gcc
+- make -j10
+- cd ..
+- mkdir build-neon128-gcc
+- cd build-neon128-gcc
 - ../nstools/bin/nsconfig .. -Dsimd=neon128 -comp=cc,gcc,arm-linux-gnueabi-gcc,5,armel -comp=c++,gcc,arm-linux-gnueabi-g++,5,armel
 - ninja tests
 - ../nstools/bin/nstest -j80 --prefix="qemu-arm"
 
 logres.numscale.com (cpu-gcc-cuda-nvcc)
+- mkdir cmake-build-cpu
+- cd cmake-build-cpu
+- cmake .. -Dsimd=cpu
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for cpu with gcc
 - cd build-cpu-gcc
 - ../nstools/bin/nstest -j80
@@ -45,9 +90,19 @@ bowden.numscale.com (rocm)
 - ../nstools/bin/nstest -j80
 
 caradigan.numscale.com (armhf-aarch64-gcc)
+- mkdir cmake-build-aarch64
+- cd cmake-build-aarch64
+- cmake .. -Dsimd=aarch64
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for aarch64 with gcc
 - cd build-aarch64-gcc
 - ../nstools/bin/nstest -j80
+- cd ..
+- mkdir cmake-build-neon128
+- cd cmake-build-neon128
+- cmake .. -Dsimd=neon128 -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-gcc -DNSIMD_ARM32_IS_ARMEL=OFF
+- make -j10
 - cd ..
 - mkdir build-neon128-gcc
 - cd build-neon128-gcc
@@ -58,6 +113,11 @@ caradigan.numscale.com (armhf-aarch64-gcc)
 carahes.numscale.com (sve128-gcc)
 - source /etc/profile.d/profile.sh
 - module load gcc/10.2.0
+- mkdir cmake-build-sve128
+- cd cmake-build-sve128
+- cmake .. -Dsimd=sve128
+- make -j10
+- cd ..
 - bash scripts/build-tests.sh for sve128 with gcc
 - cd build-sve128-gcc
 - module load qemu/4.2.0
@@ -66,6 +126,27 @@ carahes.numscale.com (sve128-gcc)
 WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
 - setlocal
 - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+- set PATH=%PATH%;C:\Program Files (x86)\CMake\bin
+- md cmake-build-sse2
+- cd cmake-build-sse2
+- cmake .. -Dsimd=sse2 -DCMAKE_CXX_COMPILER=cl -GNinja
+- ninja
+- cd ..
+- md cmake-build-sse42
+- cd cmake-build-sse42
+- cmake .. -Dsimd=sse42 -DCMAKE_CXX_COMPILER=cl -GNinja
+- ninja
+- cd ..
+- md cmake-build-avx
+- cd cmake-build-avx
+- cmake .. -Dsimd=avx -DCMAKE_CXX_COMPILER=cl -GNinja
+- ninja
+- cd ..
+- md cmake-build-avx2
+- cd cmake-build-avx2
+- cmake .. -Dsimd=avx2 -DCMAKE_CXX_COMPILER=cl -GNinja
+- ninja
+- cd ..
 - call scripts\build for sse2/sse42/avx/avx2 with msvc
 - endlocal
 - setlocal
