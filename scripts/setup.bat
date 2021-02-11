@@ -35,7 +35,7 @@ REM Pull nstools
 
 if exist "%NSTOOLS_DIR%\README.md" (
   pushd %NSTOOLS_DIR%
-  git pull
+  git pull || cd .
   popd
 ) else (
   if exist "..\.git" (
@@ -53,7 +53,7 @@ if exist "%NSTOOLS_DIR%\README.md" (
   )
 )
 
-if "%NSIMD_NSTOOLS_CHECKOUT_LATER%" == "" (
+if "%NSTOOLS_CHECKOUT_LAST_COMMIT%" == "" (
   git -C %NSTOOLS_DIR% checkout v2.1
 ) else (
   git -C %NSTOOLS_DIR% checkout master

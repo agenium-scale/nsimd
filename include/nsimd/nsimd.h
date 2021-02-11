@@ -135,6 +135,14 @@ namespace nsimd {
 } // namespace nsimd
 #endif
 
+#ifdef __UINT64_TYPE__
+  typedef __UINT64_TYPE__ nsimd_uint64_type;
+#endif
+
+#ifdef __INT64_TYPE__
+  typedef __INT64_TYPE__ nsimd_int64_type;
+#endif
+
 #ifdef NSIMD_LONGLONG_IS_EXTENSION
   #if defined(NSIMD_IS_GCC)
     #pragma GCC diagnostic pop
@@ -810,28 +818,39 @@ namespace nsimd {
   typedef signed   char  i8;
   typedef unsigned short u16;
   typedef signed   short i16;
-  #if defined(NSIMD_NEON128) && __ARM_ARCH <= 6
-    #ifdef __UINT32_TYPE__
-      typedef __UINT32_TYPE__ u32;
-    #else
-      typedef unsigned long   u32;
-    #endif
-    #ifdef __INT32_TYPE__
-      typedef __INT32_TYPE__  i32;
-    #else
-      typedef signed   long   i32;
-    #endif
+  #ifdef __UINT32_TYPE__
+    typedef __UINT32_TYPE__ u32;
   #else
-    typedef unsigned int   u32;
-    typedef signed   int   i32;
+    #if defined(NSIMD_NEON128) && __ARM_ARCH <= 6
+      typedef unsigned long u32;
+    #else
+      typedef unsigned int  u32;
+    #endif
+  #endif
+  #ifdef __INT32_TYPE__
+    typedef __INT32_TYPE__  i32;
+  #else
+    #if defined(NSIMD_NEON128) && __ARM_ARCH <= 6
+      typedef signed long   i32;
+    #else
+      typedef signed int    i32;
+    #endif
   #endif
   #if NSIMD_WORD_SIZE == 64
-    typedef unsigned long u64;
-    typedef signed long   i64;
+    #ifdef __UINT64_TYPE__
+      typedef nsimd_uint64_type u64;
+    #else
+      typedef unsigned long     u64;
+    #endif
+    #ifdef __INT64_TYPE__
+      typedef nsimd_int64_type  i64;
+    #else
+      typedef signed long       i64;
+    #endif
   #else
     #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
-      __extension__ typedef nsimd_ulonglong u64;
-      __extension__ typedef nsimd_longlong i64;
+      typedef nsimd_ulonglong u64;
+      typedef nsimd_longlong i64;
     #else
       typedef unsigned long long u64;
       typedef signed long long   i64;

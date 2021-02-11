@@ -34,13 +34,13 @@ NSTOOLS_DIR="${PWD}/../nstools"
 # Build nsconfig (if not already built)
 
 [ -e "${NSTOOLS_DIR}/README.md" ] && \
-    ( cd "${NSTOOLS_DIR}" && git pull ) || \
+    ( cd "${NSTOOLS_DIR}" && ( git pull || true ) ) || \
     ( cd "${PWD}/.." && \
       ( [ -d .git ] \
         && ( git clone `git remote get-url origin | sed s/nsimd/nstools/g` ) \
         || ( git clone "https://github.com/agenium-scale/nstools.git" ) ) )
 
-if [ "${NSIMD_NSTOOLS_CHECKOUT_LATER}" == "" ]; then
+if [ "${NSTOOLS_CHECKOUT_LAST_COMMIT}" == "" ]; then
   git -C "${NSTOOLS_DIR}" checkout v2.1
 else
   git -C "${NSTOOLS_DIR}" checkout master
