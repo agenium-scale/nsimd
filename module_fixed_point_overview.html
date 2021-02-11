@@ -103,8 +103,8 @@ to encode its fractional part.</p>
 <p>The fixed_point module uses the templated type <code>nsimd::fixed_point::fp_t&lt;lf,
 rt&gt;</code> to represent a fixed_point number. All the basic floating-point arithmetic
 operaors have been defined, therefore fp_t elements can be manipulated as
-normal numbers.  The fixed_point module will use a <code>int8_t</code>, <code>int16_t</code>, or
-<code>int32_t</code> integer type for storage, depending on the value of <code>lf + 2 * rt</code>.</p>
+normal numbers.  The fixed_point module will use a <code>i8</code>, <code>i16</code>, or
+<code>i32</code> integer type for storage, depending on the value of <code>lf + 2 * rt</code>.</p>
 <p>All the functions of the module are under the namespace <code>nsimd::fixed_point</code>,
 and match the same interface than <code>nsimd</code> C++ .</p>
 <p>The <code>fp_t</code> struct type is defined in <code>fixed.hpp</code>, and the associated simd
@@ -113,7 +113,7 @@ and match the same interface than <code>nsimd</code> C++ .</p>
 with <code>lf</code> and <code>rt</code> :</p>
 <pre class="C++"><code>namespace nsimd {
 namespace fixed_point {
-template &lt;uint8_t lf, uint8_t rt&gt;
+template &lt;u8 lf, u8 rt&gt;
 struct pack;
 } // namespace fixed_point
 } // namespace nsimd</code></pre>

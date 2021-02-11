@@ -102,7 +102,7 @@ conversion intrinsics if available on your machine. Note that AVX-512
 has thoses natively.</p></li>
 <li><p>Arm architectures can provide native float16 arithmetic. For 32-bits and
 64-bits chips (ARMv7 and Aarch64) chips float16 support is optional. When
-compiling wuth <code>-DFP16</code>, NSIMD will use float16-related intrinsics. Note
+compiling with <code>-DFP16</code>, NSIMD will use float16-related intrinsics. Note
 that for SVE chips float16&apos;s are mandatory hence NSIMD will use appropriate
 intrinsics with or without <code>-DFP16</code>.</p></li>
 <li><p>CUDA provides supports for converting float16&apos;s to/from float32&apos;s. These
@@ -175,5 +175,63 @@ representation of the float16&apos;s.</p>
 </tr>
 </tbody>
 </table>
+<p>The <code>nsimd_*</code> functions listed above do not use the same linkage type depending
+on the targeted architecture. When compiling for GPUs the corresponding symbols
+names are mangled. They use C++ ABI because the float16 type is defined as a
+C++ class and not as a C struct. We therefore inherit from the implementation
+of CUDA and HIP/ROCm. Linkage types are listed below.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Function signature</th>
+<th style="text-align: left;">CUDA/ROCm</th>
+<th style="text-align: left;">Other architectures</th>
+</tr>
+</thead><tbody>
+<tr>
+<td style="text-align: left;"><code>f16 nsimd_f32_to_f16(f32 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd_f16_to_f32(f16 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f16 nsimd::f32_to_f16(f32 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C++ linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd::f16_to_f32(f16 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C++ linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>u16 nsimd_f32_to_u16(f32 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd_u16_to_f32(u16 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>u16 nsimd::f32_to_u16(f32 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C++ linkage</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>f32 nsimd::u16_to_f32(u16 a);</code></td>
+<td style="text-align: left;">C++ linkage</td>
+<td style="text-align: left;">C++ linkage</td>
+</tr>
+</tbody>
+</table>
+<p>It is possible to know at compile time in which situation we are. The
+<code>NSIMD_C_LINKAGE_FOR_F16</code> macro if defined means that C linkage is used for
+<code>nsimd_*</code> functions.</p>
   </body>
 </html>
