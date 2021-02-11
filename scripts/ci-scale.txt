@@ -84,10 +84,20 @@ logres.numscale.com (cpu-gcc-cuda-nvcc)
 - ninja tests
 - ../nstools/bin/nstest -j20
 
-bowden.numscale.com (rocm)
+bowden.numscale.com (rocm-cpp20-cmakefind)
 - bash scripts/build-tests.sh for rocm with rocm
 - cd build-rocm-rocm
 - ../nstools/bin/nstest -j80
+- cd ..
+- mkdir build-cpp20
+- source /etc/profile.d/profile.sh
+- module load gcc/10.2.0
+- cd build-cpp20
+- ../nstools/bin/nsconfig .. -Dsimd=sse42 -suite=gcc
+- ninja tests.cpp20
+- ../nstools/bin/nstest -j80
+- cd ..
+- bash tests/FindNSIMD.cmake.sh
 
 caradigan.numscale.com (armhf-aarch64-gcc)
 - mkdir cmake-build-aarch64

@@ -1,19 +1,14 @@
-carahes.numscale.com (sve128-gcc)
+bowden.numscale.com (rocm-cpp20-cmakefind)
+- bash scripts/build-tests.sh for rocm with rocm
+- cd build-rocm-rocm
+- ../nstools/bin/nstest -j80
+- cd ..
+- mkdir build-cpp20
 - source /etc/profile.d/profile.sh
 - module load gcc/10.2.0
-- bash scripts/build-tests.sh for sve128 with gcc
-- cd build-sve128-gcc
-- module load qemu/4.2.0
-- ../nstools/bin/nstest -j80 --prefix="qemu-aarch64 -cpu max,sve-max-vq=1"
-
-#WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
-#- setlocal
-#- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-#- call scripts\build for sse2/sse42/avx/avx2 with msvc
-#- endlocal
-#- setlocal
-#- call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
-#- call scripts\build-tests for avx2 with msvc
-#- cd build-avx2-msvc
-#- ..\nstools\bin\nstest -j80
-#- endlocal
+- cd build-cpp20
+- ../nstools/bin/nsconfig .. -Dsimd=sse42 -suite=gcc
+- ninja tests.cpp20
+- ../nstools/bin/nstest -j80
+- cd ..
+- bash tests/FindNSIMD.cmake.sh
