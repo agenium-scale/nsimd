@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 cmake_minimum_required(VERSION 3.0.2)
-project(NSIMD VERSION 2.0 LANGUAGES CXX)
+project(NSIMD VERSION 2.1 LANGUAGES CXX)
 
 # -----------------------------------------------------------------------------
 # First check that NSIMD code has been generated
@@ -29,7 +29,7 @@ project(NSIMD VERSION 2.0 LANGUAGES CXX)
 if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/nsimd/functions.h")
   if (WIN32)
     execute_process(COMMAND
-                    python ${CMAKE_CURRENT_SOURCE_DIR}\egg\hatch.py -lf)
+                    python ${CMAKE_CURRENT_SOURCE_DIR}\\egg\\hatch.py -lf)
   else()
     execute_process(COMMAND
                     python3 ${CMAKE_CURRENT_SOURCE_DIR}/egg/hatch.py -lf)
@@ -207,7 +207,7 @@ add_library(${NSIMD_LIB_TARGET} SHARED ${NSIMD_LIB_DEPS})
 
 if (WIN32)
   install(TARGETS ${NSIMD_LIB_TARGET} RUNTIME DESTINATION lib
-          ARCHIVE DESTINATION lib)
+                                      ARCHIVE DESTINATION lib)
 else()
   install(TARGETS ${NSIMD_LIB_TARGET} LIBRARY DESTINATION lib)
 endif()

@@ -127,30 +127,50 @@ WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual 
 - setlocal
 - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
 - set PATH=%PATH%;C:\Program Files (x86)\CMake\bin
-- md cmake-build-sse2
-- cd cmake-build-sse2
-- cmake .. -Dsimd=sse2 -DCMAKE_CXX_COMPILER=cl -GNinja
-- ninja
+- md cmake-build32-sse2
+- cd cmake-build32-sse2
+- cmake .. -Dsimd=sse2 -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
 - cd ..
-- md cmake-build-sse42
-- cd cmake-build-sse42
-- cmake .. -Dsimd=sse42 -DCMAKE_CXX_COMPILER=cl -GNinja
-- ninja
+- md cmake-build32-sse42
+- cd cmake-build32-sse42
+- cmake .. -Dsimd=sse42 -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
 - cd ..
-- md cmake-build-avx
-- cd cmake-build-avx
-- cmake .. -Dsimd=avx -DCMAKE_CXX_COMPILER=cl -GNinja
-- ninja
+- md cmake-build32-avx
+- cd cmake-build32-avx
+- cmake .. -Dsimd=avx -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
 - cd ..
-- md cmake-build-avx2
-- cd cmake-build-avx2
-- cmake .. -Dsimd=avx2 -DCMAKE_CXX_COMPILER=cl -GNinja
-- ninja
+- md cmake-build32-avx2
+- cd cmake-build32-avx2
+- cmake .. -Dsimd=avx2 -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
 - cd ..
 - call scripts\build for sse2/sse42/avx/avx2 with msvc
 - endlocal
 - setlocal
 - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"
+- md cmake-build64-sse2
+- cd cmake-build64-sse2
+- cmake .. -Dsimd=sse2 -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
+- cd ..
+- md cmake-build64-sse42
+- cd cmake-build64-sse42
+- cmake .. -Dsimd=sse42 -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
+- cd ..
+- md cmake-build64-avx
+- cd cmake-build64-avx
+- cmake .. -Dsimd=avx -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
+- cd ..
+- md cmake-build64-avx2
+- cd cmake-build64-avx2
+- cmake .. -Dsimd=avx2 -DCMAKE_CXX_COMPILER=cl -G "NMake Makefiles"
+- nmake
+- cd ..
 - call scripts\build-tests for avx2 with msvc
 - cd build-avx2-msvc
 - ..\nstools\bin\nstest -j80
