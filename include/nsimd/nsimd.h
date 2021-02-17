@@ -745,7 +745,7 @@ namespace nsimd {
     #elif defined(NSIMD_IS_NVCC) && __CUDACC_VER_MAJOR__ == 10
       #pragma push
       // Warning #2381-D = dynamic exception specifications are deprecated
-      #pragma diag_suppress 2381-D
+      #pragma diag_suppress 2381
     #endif
     #include <cuda_fp16.h>
     #if defined(NSIMD_IS_GCC)
