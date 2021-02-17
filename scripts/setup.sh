@@ -41,7 +41,7 @@ NSTOOLS_DIR="${PWD}/../nstools"
         || ( git clone "https://github.com/agenium-scale/nstools.git" ) ) )
 
 if [ "${NSTOOLS_CHECKOUT_LAST_COMMIT}" == "" ]; then
-  git -C "${NSTOOLS_DIR}" checkout v2.1
+  git -C "${NSTOOLS_DIR}" checkout v2.2
 else
   git -C "${NSTOOLS_DIR}" checkout master
 fi

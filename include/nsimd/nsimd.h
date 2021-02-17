@@ -1505,9 +1505,16 @@ NSIMD_DLLSPEC f32 nsimd_u16_to_f32(u16);
 #ifdef NSIMD_ARM_FP16
 NSIMD_INLINE f16 nsimd_f32_to_f16(f32 a) { return (f16)a; }
 NSIMD_INLINE f32 nsimd_f16_to_f32(f16 a) { return (f32)a; }
-#elif defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#elif (defined(NSIMD_CUDA) && __CUDACC_VER_MAJOR__ >= 10) ||                  \
+    defined(NSIMD_ROCM)
 inline f16 nsimd_f32_to_f16(f32 a) { return __float2half(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return __half2float(a); }
+#elif defined(NSIMD_CUDA) && __CUDACC_VER_MAJOR__ < 10
+inline f16 nsimd_f32_to_f16(f32 a) {
+  u16 ret = nsimd_f32_to_u16(a);
+  return *(__half *)&ret;
+}
+inline f32 nsimd_f16_to_f32(f16 a) { return nsimd_u16_to_f32(*(u16 *)&a); }
 #elif defined(NSIMD_ONEAPI)
 inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
