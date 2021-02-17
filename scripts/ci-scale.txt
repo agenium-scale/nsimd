@@ -1,4 +1,4 @@
-camelot.numscale.com (sse2-sse42-gcc)
+camelot.numscale.com <sse2-sse42-gcc> {/home/gquintin}
 - mkdir cmake-build-sse2
 - cd cmake-build-sse2
 - cmake .. -Dsimd=sse2
@@ -15,7 +15,7 @@ camelot.numscale.com (sse2-sse42-gcc)
 - cd ../build-sse42-gcc
 - ../nstools/bin/nstest -j80
 
-glastonbury.numscale.com (avx512_skylake-gcc)
+glastonbury.numscale.com <avx512_skylake-gcc> {/home/gquintin}
 - source /etc/profile.d/modules.sh
 - module load cmake/3.1.0
 - mkdir cmake-build-avx512_skylake
@@ -27,7 +27,7 @@ glastonbury.numscale.com (avx512_skylake-gcc)
 - cd build-avx512_skylake-gcc
 - ../nstools/bin/nstest -j40
 
-carduel.numscale.com (avx512_knl-gcc)
+carduel.numscale.com <avx512_knl-gcc> {/home/gquintin}
 - source /etc/profile.d/profile.sh
 - module load cmake/3.1.0
 - mkdir cmake-build-avx512_knl
@@ -39,7 +39,7 @@ carduel.numscale.com (avx512_knl-gcc)
 - cd build-avx512_knl-gcc
 - ../nstools/bin/nstest -j80
 
-gaunes.numscale.com (avx-avx2-armel-gcc)
+gaunes.numscale.com <avx-avx2-armel-gcc> {/home/gquintin}
 - mkdir cmake-build-avx
 - cd cmake-build-avx
 - cmake .. -Dsimd=avx
@@ -67,7 +67,7 @@ gaunes.numscale.com (avx-avx2-armel-gcc)
 - ninja tests
 - ../nstools/bin/nstest -j80 --prefix="qemu-arm"
 
-logres.numscale.com (cpu-gcc-cuda-nvcc)
+logres.numscale.com <cpu-gcc-cuda-nvcc> {/home/gquintin}
 - mkdir cmake-build-cpu
 - cd cmake-build-cpu
 - cmake .. -Dsimd=cpu
@@ -84,7 +84,7 @@ logres.numscale.com (cpu-gcc-cuda-nvcc)
 - ninja tests
 - ../nstools/bin/nstest -j20
 
-bowden.numscale.com (rocm-cpp20-cmakefind)
+bowden.numscale.com <rocm-cpp20-cmakefind> {/home/gquintin}
 - bash scripts/build-tests.sh for rocm with rocm
 - cd build-rocm-rocm
 - ../nstools/bin/nstest -j80
@@ -99,7 +99,7 @@ bowden.numscale.com (rocm-cpp20-cmakefind)
 - cd ..
 - bash tests/FindNSIMD.cmake.sh
 
-caradigan.numscale.com (armhf-aarch64-gcc)
+caradigan.numscale.com <armhf-aarch64-gcc> {/home/gquintin}
 - mkdir cmake-build-aarch64
 - cd cmake-build-aarch64
 - cmake .. -Dsimd=aarch64
@@ -120,7 +120,7 @@ caradigan.numscale.com (armhf-aarch64-gcc)
 - ninja tests
 - ../nstools/bin/nstest -j80
 
-carahes.numscale.com (sve128-gcc)
+carahes.numscale.com <sve128-gcc> {/home/gquintin}
 - source /etc/profile.d/profile.sh
 - module load gcc/10.2.0
 - mkdir cmake-build-sve128
@@ -133,7 +133,7 @@ carahes.numscale.com (sve128-gcc)
 - module load qemu/4.2.0
 - ../nstools/bin/nstest -j80 --prefix="qemu-aarch64 -cpu max,sve-max-vq=1"
 
-WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
+WIN.gorre2 <msvc15_32-avx2-msvc19_64> {/home/gquintin} ["C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvars64.bat"]
 - setlocal
 - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
 - set PATH=%PATH%;C:\Program Files (x86)\CMake\bin
@@ -185,3 +185,15 @@ WIN.gorre2 (msvc15_32-avx2-msvc19_64) ["C:\Program Files (x86)\Microsoft Visual 
 - cd build-avx2-msvc
 - ..\nstools\bin\nstest -j80
 - endlocal
+
+couillere <aarch64-macos> {/Users/gquintin}
+- export PATH=${PATH}:/opt/homebrew/bin
+- python3 egg/hatch.py -ltf
+- bash scripts/setup.sh
+- mkdir build-aarch64-xcode
+- cd build-aarch64-xcode
+- ../nstools/bin/nsconfig .. -Dsimd=aarch64 -suite=llvm -Dmpfr="-I/opt/homebrew/include -L/opt/homebrew/lib -lmpfr"
+- ninja
+- ninja tests
+- ../nstools/bin/nstest -j16
+

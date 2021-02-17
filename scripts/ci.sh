@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2020 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,13 @@
 ###############################################################################
 # Argument parsing
 
-if [ "$3" == "" ]; then
-  echo "ERROR: usage: $0 JOBS_FILE REMOTE_DIR NSIMD_NSTOOLS_CHECKOUT_LATER"
+if [ "$2" == "" ]; then
+  echo "ERROR: usage: $0 JOBS_FILE NSTOOLS_CHECKOUT_LAST_COMMIT"
   exit 1
 fi
 
 JOBS_FILE="`realpath $1`"
-REMOTE_DIR="$2"
-W_REMOTE_DIR="`echo ${REMOTE_DIR} | tr / \\\\\\`"
-NSIMD_NSTOOLS_CHECKOUT_LATER="$3"
+NSIMD_NSTOOLS_CHECKOUT_LATER="$2"
 
 cd `dirname $0`
 #set -x
@@ -80,10 +78,12 @@ if [ -f "${JOBS_FILE}" ]; then
       echo "`echo ${line} | cut -c 2- | sed 's/^  *//g'`" >>"${CURRENT_JOB}"
       echo >>"${CURRENT_JOB}"
     else
-      ADDR=`echo ${line} | sed -e 's/(.*//g' -e 's/  *//g'`
-      DESC=`echo ${line} | sed -e 's/\[.*//g' -e 's/.*(//g' -e 's/).*//g'`
+      ADDR=`echo ${line} | sed -e 's/<.*//g' -e 's/  *//g'`
+      DESC=`echo ${line} | sed -e 's/.*<//g' -e 's/>.*//g'`
+      REMOTE_DIR=`echo ${line} | sed -e 's/.*{//g' -e 's/}.*//g'`
       EXTRA=`echo ${line} | sed -e 's/.*\[//g' -e 's/].*//g'`
       REMOTE_HOST=`echo ${ADDR} | head -c 4`
+      echo ${REMOTE_DIR} >"${TMP_DIR}/${ADDR}--${DESC}.work.dir"
       if [ "${REMOTE_HOST}" == "WIN." ]; then
         CURRENT_JOB="${TMP_DIR}/${ADDR}--${DESC}.bat" # <-- this must be before
         ADDR="`echo ${ADDR} | tail -c +5`"            # <-- this
@@ -94,7 +94,7 @@ if [ -f "${JOBS_FILE}" ]; then
 	setlocal
 	pushd "%~dp0"
 	
-	set NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
+	set NSTOOLS_CHECKOUT_LAST_COMMIT="${NSTOOLS_CHECKOUT_LAST_COMMIT}"
 
 	if "%1" == "run_script" goto script
 
@@ -129,7 +129,7 @@ if [ -f "${JOBS_FILE}" ]; then
 	cd \`dirname \$0\`
 	set -e
 
-        export NSIMD_NSTOOLS_CHECKOUT_LATER="${NSIMD_NSTOOLS_CHECKOUT_LATER}"
+        export NSTOOLS_CHECKOUT_LAST_COMMIT="${NSTOOLS_CHECKOUT_LAST_COMMIT}"
 
 	rm -rf ci-nsimd-${DESC}
 	git clone ${GIT_URL} ci-nsimd-${DESC}
@@ -162,6 +162,8 @@ if [ -f "${JOBS_FILE}" ]; then
           sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/--.*//g'`
     DESC=`basename ${job} | \
           sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/.*--//g'`
+    REMOTE_DIR="`cat ${TMP_DIR}/${ADDR}--${DESC}.work.dir`"
+    W_REMOTE_DIR="`echo ${REMOTE_DIR} | tr / \\\\\\`"
     REMOTE_HOST=`echo ${ADDR} | head -c 4`
     if [ "${REMOTE_HOST}" == "WIN." ]; then
       REMOTE_HOST="Windows"
@@ -228,6 +230,8 @@ for job in `find ${TMP_DIR} -iregex '.*\.\(bat\|sh\)'`; do
         sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/--.*//g'`
   DESC=`basename ${job} | \
         sed -e 's/\.sh$//g' -e 's/\.bat$//g' -e 's/.*--//g'`
+  REMOTE_DIR="`cat ${TMP_DIR}/${ADDR}--${DESC}.work.dir`"
+  W_REMOTE_DIR="`echo ${REMOTE_DIR} | tr / \\\\\\`"
   LOG="${REMOTE_DIR}/ci-nsimd-${DESC}-output.txt"
   REMOTE_HOST="`echo ${ADDR} | head -c 4`"
   PID="`sed -e 's/\r//g' ${TMP_DIR}/ci-nsimd-${DESC}-pid.txt`"
@@ -291,34 +295,55 @@ while true; do
   echo2 "                 [d] see selected job log"
   echo2
   for i in `seq 1 ${N}`; do
-    ADDR=`get_a ${ADDR_A} ${i}`
-    DESC=`get_a ${DESC_A} ${i}`
-    ONE_LINER=`get_a ${ONE_LINER_A} ${i}`
-    REMOTE_HOST=`get_a ${REMOTE_HOST_A} ${i}`
-    if [ "${REMOTE_HOST}" == "Windows" ]; then
-      STATUS=`${SSH} ${ADDR} "if exist ${ONE_LINER} type ${ONE_LINER}" \
-                     </dev/null || true`
-    else
-      STATUS=`${SSH} ${ADDR} "[ -f ${ONE_LINER} ] && cat ${ONE_LINER}" \
-                     </dev/null || true`
-    fi
-    if [ "${i}" == "${selected}" ]; then
-      echo2 "++++  ${i}: ${ADDR}, ${DESC}  ++++"
-    else
-      echo2 "${i}: ${ADDR}, ${DESC}"
-    fi
-    W=`expr ${COLUMNS} - 4`
-    echo2 "    `echo ${STATUS} | cut -c 1-${W}`"
-    echo2
+    (
+      ADDR=`get_a ${ADDR_A} ${i}`
+      ONE_LINER=`get_a ${ONE_LINER_A} ${i}`
+      REMOTE_HOST=`get_a ${REMOTE_HOST_A} ${i}`
+      if [ "${REMOTE_HOST}" == "Windows" ]; then
+        STATUS=`${SSH} ${ADDR} "if exist ${ONE_LINER} type ${ONE_LINER}" \
+                       || true`
+      else
+        STATUS=`${SSH} ${ADDR} "[ -f ${ONE_LINER} ] && cat ${ONE_LINER}" \
+                       || true`
+      fi
+      echo ${STATUS} >${TMP_DIR}/one-liner-${i}.txt
+    ) </dev/null &
     read -t 0.01 -n 1 key || true
     if [ "${key}" != "" ]; then
       break
     fi
   done
+  if [ "${key}" == "" ]; then
+    wait
+    for i in `seq 1 ${N}`; do
+      ADDR=`get_a ${ADDR_A} ${i}`
+      DESC=`get_a ${DESC_A} ${i}`
+      #if [ "${REMOTE_HOST}" == "Windows" ]; then
+      #  STATUS=`${SSH} ${ADDR} "if exist ${ONE_LINER} type ${ONE_LINER}" \
+      #                 </dev/null || true`
+      #else
+      #  STATUS=`${SSH} ${ADDR} "[ -f ${ONE_LINER} ] && cat ${ONE_LINER}" \
+      #                 </dev/null || true`
+      #fi
+      STATUS=`cat ${TMP_DIR}/one-liner-${i}.txt`
+      if [ "${i}" == "${selected}" ]; then
+        echo2 "++++  ${i}: ${ADDR}, ${DESC}  ++++"
+      else
+        echo2 "${i}: ${ADDR}, ${DESC}"
+      fi
+      W=`expr ${COLUMNS} - 4`
+      echo2 "    `echo ${STATUS} | cut -c 1-${W}`"
+      echo2
+      read -t 0.01 -n 1 key || true
+      if [ "${key}" != "" ]; then
+        break
+      fi
+    done
+  fi
 
   # Keyboard input part
   if [ "${key}" == "" ]; then
-    read -t 0.01 -n 1 key || true
+    read -t 1 -n 1 key || true
   fi
   if [ "${key}" == "" ]; then
     continue

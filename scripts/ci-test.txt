@@ -1,14 +1,10 @@
-bowden.numscale.com (rocm-cpp20-cmakefind)
-- bash scripts/build-tests.sh for rocm with rocm
-- cd build-rocm-rocm
-- ../nstools/bin/nstest -j80
-- cd ..
-- mkdir build-cpp20
-- source /etc/profile.d/profile.sh
-- module load gcc/10.2.0
-- cd build-cpp20
-- ../nstools/bin/nsconfig .. -Dsimd=sse42 -suite=gcc
-- ninja tests.cpp20
-- ../nstools/bin/nstest -j80
-- cd ..
-- bash tests/FindNSIMD.cmake.sh
+couillere <aarch64-macos> {/home/gquintin}
+- export PATH=${PATH}:/opt/homebrew/bin
+- python3 egg/hatch.py -ltf
+- bash scripts/setup.sh
+- mkdir build-aarch64-xcode
+- cd build-aarch64-xcode
+- ../nstools/bin/nsconfig .. -Dsimd=aarch64 -suite=llvm -Dmpfr="-I/opt/homebrew/include -L/opt/homebrew/lib -lmpfr"
+- ninja
+- ninja tests
+- ../nstools/bin/nstest -j16

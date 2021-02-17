@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 cmake_minimum_required(VERSION 3.0.2)
-project(NSIMD VERSION 2.1 LANGUAGES CXX)
+project(NSIMD VERSION 2.2 LANGUAGES CXX)
 
 # -----------------------------------------------------------------------------
 # First check that NSIMD code has been generated

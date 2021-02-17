@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-package_name nsimd-2.0
+package_name nsimd-2.2
 
 ## Get OS/Compiler specific file extensions
 
