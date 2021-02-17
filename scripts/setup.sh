@@ -49,7 +49,7 @@ fi
 [ -e "${NSTOOLS_DIR}/bin" ] || ( mkdir -p "${NSTOOLS_DIR}/bin" )
 
 ( cd "${NSTOOLS_DIR}/nsconfig" && \
-  make -f Makefile.nix nsconfig && \
-  make -f Makefile.nix nstest && \
+  make -j8 -f Makefile.nix nsconfig && \
+  make -j8 -f Makefile.nix nstest && \
   cp "nsconfig" "${NSTOOLS_DIR}/bin" && \
   cp "nstest" "${NSTOOLS_DIR}/bin" )

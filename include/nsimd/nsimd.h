@@ -742,12 +742,18 @@ namespace nsimd {
     #elif defined(NSIMD_IS_CLANG)
       #pragma clang diagnostic push
       #pragma clang diagnostic ignored "-Wunused-function"
+    #elif defined(NSIMD_IS_NVCC) && __CUDACC_VER_MAJOR__ == 10
+      #pragma push
+      // Warning #2381-D = dynamic exception specifications are deprecated
+      #pragma diag_suppress 2381-D
     #endif
     #include <cuda_fp16.h>
     #if defined(NSIMD_IS_GCC)
       #pragma GCC diagnostic pop
     #elif defined(NSIMD_IS_CLANG)
       #pragma clang diagnostic pop
+    #elif defined(NSIMD_IS_NVCC) && __CUDACC_VER_MAJOR__ == 10
+      #pragma pop
     #endif
   #endif
 
