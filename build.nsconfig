@@ -195,7 +195,7 @@ begin_translate_if $build_library_only == false
 ## Tests
 
 lambda tests_comp_for_*     = c++
-set    tests_comp_for_cuda  = nvcc -x cu $cuda_arch_flags
+set    tests_comp_for_cuda  = nvcc $cuda_arch_flags
 set    tests_comp_for_rocm  = hipcc $cuda_arch_flags
 set    tests_comp_for_dpcpp = dpcpp
 

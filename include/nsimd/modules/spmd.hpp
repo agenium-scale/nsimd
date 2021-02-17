@@ -113,7 +113,7 @@ namespace spmd {
 #define spmd_call_tmpl_dev_func(name, template_argument, ...)                 \
   name<template_argument, spmd_ScalarBits_>(__VA_ARGS__)
 
-#ifdef NSIMD_CUDA
+#if defined(NSIMD_CUDA)
 
 // launch 1d kernel CUDA
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
