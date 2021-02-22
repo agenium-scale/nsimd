@@ -2366,7 +2366,7 @@ def gen_mask_store(opts, op, typ, lang):
 
              fprintf(stdout, "test of {op_name} over {typ}...\\n");
 
-             CHECK(vout = ({typ}*)nsimd_aligned_alloc(2 * len));{unalign}
+             CHECK(vout = ({typ}*)nsimd_aligned_alloc({sizeof} * len));{unalign}
 
              /* Fill vout with zeors */
              for (i = 0; i < len; i++) {{
@@ -2398,7 +2398,7 @@ def gen_mask_store(opts, op, typ, lang):
            }}'''.format(includes=get_includes(lang), op_name=op.name,
                         typ=typ, year=date.today().year, test=test,
                         comp1=comp1, comp2=comp2, unalign=unalign,
-                        fill_vout=fill_vout))
+                        fill_vout=fill_vout, sizeof=common.sizeof(typ)))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
