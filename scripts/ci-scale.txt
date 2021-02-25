@@ -183,7 +183,7 @@ WIN.gorre2 <msvc15_32-avx2-msvc19_64> {/home/gquintin} ["C:\Program Files (x86)\
 - cd ..
 - call scripts\build-tests for avx2 with msvc
 - cd build-avx2-msvc
-- ..\nstools\bin\nstest -j80
+- ..\nstools\bin\nstest -j60
 - endlocal
 
 couillere <aarch64-macos> {/Users/gquintin}

@@ -96,8 +96,6 @@ if [ -f "${JOBS_FILE}" ]; then
 	
 	set NSTOOLS_CHECKOUT_LAST_COMMIT="${NSTOOLS_CHECKOUT_LAST_COMMIT}"
 
-	if "%1" == "run_script" goto script
-
 	if exist ci-nsimd-${DESC} rd /Q /S ci-nsimd-${DESC}
 	git clone ${GIT_URL} ci-nsimd-${DESC}
 	git -C ci-nsimd-${DESC} checkout ${GIT_BRANCH}

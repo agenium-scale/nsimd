@@ -1,4 +1,4 @@
-couillere <aarch64-macos> {/home/gquintin}
+couillere <aarch64-macos> {/Users/gquintin}
 - export PATH=${PATH}:/opt/homebrew/bin
 - python3 egg/hatch.py -ltf
 - bash scripts/setup.sh
@@ -8,3 +8,4 @@ couillere <aarch64-macos> {/home/gquintin}
 - ninja
 - ninja tests
 - ../nstools/bin/nstest -j16
+
