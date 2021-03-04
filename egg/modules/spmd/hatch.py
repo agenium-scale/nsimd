@@ -482,6 +482,22 @@ def gen_tests_for_shifts(opts, t, operator):
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n, s);
         }}
 
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({typ} *dst, {typ} *a0, const size_t n,
+                           const int s, sycl::id<1> id) {{
+          const size_t ii = id.get(0);
+          if(ii < n){{
+            dst[ii] = nsimd::scalar_{op_name}(a0[ii], s);
+          }}
+        }}
+
+        void compute_result({typ} *dst, {typ} *a0, const size_t n, const int s) {{
+          sycl::queue().parallel_for(sycl::range<1>(n), [=](sycl::id<1> id){{
+            kernel(dst, a0, n, s, id);
+          }};).wait()
+        }}
+
         #else
 
         void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
@@ -576,6 +592,22 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 
         void compute_result({typ} *dst, {typ} *a0, size_t n) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n);
+        }}
+
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({typ} *dst, {typ} *a0, const size_t n, sycl::id<1> id) {{
+          const size_t ii = id.get(0);
+          if(ii < n){{
+            dst[ii] = nsimd::scalar_{op_name}({typ}(), nsimd::scalar_{op_name}(
+                                     {totyp}(), a0[ii]));
+          }}
+        }}
+
+        void compute_result({typ} *dst, {typ} *a0, const size_t n) {{
+          sycl::queue().parallel_for(sycl::range<1>(n), [=](sycl::id<1> id){{
+            kernel(dst, a0, n, id);
+          }};).wait();
         }}
 
         #else
@@ -776,6 +808,20 @@ def gen_tests_for(opts, t, operator):
                              n);
         }}
 
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({typ} *dst, {k_args}, const size_t n, sycl::id<1> id) {{
+          if(id.get(0) < n){{
+            {cpu_kernel}
+          }}
+        }}
+
+        void compute_result({typ} *dst, {k_args}, const size_t n) {{
+          sycl::queue().parallel_for(sycl::range<1>(n), [=](sycl::id<1> id){{
+            kernel(dst, {k_call_args}, n, id);
+          }};).wait();
+        }}
+
         #else
 
         void compute_result({typ} *dst, {k_args}, unsigned int n) {{
@@ -922,6 +968,7 @@ def gen_functions(opts):
 
         m_call_args_cpu = s_call_args
         m_call_args_gpu = s_call_args
+        m_call_args_sycl = s_call_args
         to_type = ''
         ToType = ''
         v_op_name = op_name
@@ -934,6 +981,7 @@ def gen_functions(opts):
             s_ret_typ = 'ToType'
             s_tmpl = append('typename ToType', s_tmpl)
             m_call_args_gpu = append('to_type()', s_call_args)
+            m_call_args_sycl = append('to_type()', s_call_args)
             s_call_args = append('ToType()', s_call_args)
             v_tmpl = append('typename ToType', v_tmpl)
             to_type = '<to_type>'
@@ -955,6 +1003,10 @@ def gen_functions(opts):
         '''#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
            {signature} nsimd::gpu_{s_op_name}({m_call_args_gpu})
+
+           #elif defined(NSIMD_ONEAPI)
+
+           {signature} nsimd::scalar_{s_op_name}({m_call_args_sycl})
 
            #else
 
@@ -989,6 +1041,7 @@ def gen_functions(opts):
                       m_call_args_cpu=m_call_args_cpu, to_type=to_type,
                       v_op_name=v_op_name, op_name=op_name, template=template,
                       m_call_args_gpu=m_call_args_gpu,
+                      m_call_args_sycl=m_call_args_sycl,
                       signature=get_signature(operator))
 
     # Write the code to file
