@@ -32,6 +32,12 @@ tpb = 128
 gpu_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
 
 # -----------------------------------------------------------------------------
+# oneAPI: default number of threads per block
+
+tpb = 128
+one_api_gpu_params = ''
+
+# -----------------------------------------------------------------------------
 # helpers
 
 def append(s1, s2):
@@ -485,17 +491,22 @@ def gen_tests_for_shifts(opts, t, operator):
         #elif defined(NSIMD_ONEAPI)
 
         inline void kernel({typ} *dst, {typ} *a0, const size_t n,
-                           const int s, sycl::id<1> id) {{
-          const size_t ii = id.get(0);
-          if(ii < n){{
-            dst[ii] = nsimd::scalar_{op_name}(a0[ii], s);
+                           const int s, sycl::nd_item<1> item) {{
+          auto idx = item.get_global_id();
+          if(idx < n){{
+            dst[idx] = nsimd::scalar_{op_name}(a0[idx], s);
           }}
         }}
 
         void compute_result({typ} *dst, {typ} *a0, const size_t n, const int s) {{
-          sycl::queue().parallel_for(sycl::range<1>(n), [=](sycl::id<1> id){{
-            kernel(dst, a0, n, s, id);
-          }};).wait()
+	  sycl::queue q_ = spmd::_get_global_queue();
+	  q_.submit([&](handler& h){
+	      h.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	                                       sycl::range<1>({threads_per_block})),
+	                                       [=](sycl::nd_item<1> item){
+	      kernel(dst, a0, n, s, item);
+	    }).wait();
+	  });
         }}
 
         #else
