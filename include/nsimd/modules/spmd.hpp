@@ -31,6 +31,10 @@ SOFTWARE.
 #include <vector>
 #include <cstring>
 
+#if defined(NSIMD_ONEAPI)
+#include <CL/sycl.hpp>
+#endif
+
 namespace spmd {
 
 #if NSIMD_CXX < 2011 || NSIMD_C < 1999
@@ -51,6 +55,24 @@ namespace spmd {
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wvariadic-macros"
   #endif
+#endif
+
+// ----------------------------------------------------------------------------
+// oneAPI
+
+#if defined(NSIMD_ONEAPI)
+struct _sycl_global_queue{
+private:
+  static sycl::queue _q;
+public:
+  static sycl::queue &get(){ return _q; }
+};
+
+sycl::queue _sycl_global_queue::_q = sycl::queue(sycl::gpu_selector{});
+
+static inline sycl::queue _get_global_queue(){
+  return _sycl_global_queue::get();
+}
 #endif
 
 // ----------------------------------------------------------------------------
