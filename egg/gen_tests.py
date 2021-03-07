@@ -46,17 +46,15 @@ msvc_c4334_warning = \
 # Get filename for test
 
 def get_filename(opts, op, typ, lang, custom_name=''):
-    pp_lang = {'c_base': 'C (base API)',
-               'cxx_base' : 'C++ (base API)',
-               'cxx_adv' : 'C++ (advanced API)'}
     tests_dir = os.path.join(opts.tests_dir, lang)
     common.mkdir_p(tests_dir)
     if not custom_name:
         filename = os.path.join(tests_dir, '{}.{}.{}'.format(op.name, typ,
-                     'c' if lang == 'c_base' else 'cpp'))
+                     'c' if lang in ['c_base', 'c_adv'] else 'cpp'))
     else:
         filename = os.path.join(tests_dir, '{}_{}.{}.{}'.format(op.name,
-                     custom_name, typ, 'c' if lang == 'c_base' else 'cpp'))
+                     custom_name, typ,
+                     'c' if lang in ['c_base', 'c_adv'] else 'cpp'))
     if common.can_create_filename(opts, filename):
         return filename
     else:
@@ -69,6 +67,8 @@ def get_includes(lang):
     ret = '#include <nsimd/nsimd.h>\n'
     if lang == 'cxx_adv':
         ret += '#include <nsimd/cxx_adv_api.hpp>\n'
+    if lang == 'c_adv':
+        ret += '#include <nsimd/c_adv_api.h>\n'
     if lang == 'c_base':
         ret += '''#include <stdlib.h>
                   #include <stdio.h>
@@ -323,6 +323,14 @@ def get_content(op, typ, lang):
                      format(i, logical, i, typ) for i in nargs]
             code += ['vc = v{}({}, {});'.format(op.name, args, typ)]
             code += ['vstore{}u(&vout_nsimd[i], vc, {});'.format(logical, typ)]
+            vout_nsimd_comp = '\n'.join(code)
+        if lang == 'c_adv':
+            code = ['nsimd_pack{}_{} {}, vc;'.format(logical, typ, args)]
+            code += ['va{} = nsimd_load{}u(&vin{}[i]);'.
+                     format(i, logical, i) for i in nargs]
+            code += ['vc = nsimd_{}({});'.format(op.name, args)]
+            code += ['nsimd_store{}u(&vout_nsimd[i], vc);'. \
+                     format(logical, typ)]
             vout_nsimd_comp = '\n'.join(code)
         if lang == 'cxx_base':
             code = ['vec{}({}) {}, vc;'.format(logical, typ, args)]

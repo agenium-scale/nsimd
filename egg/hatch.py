@@ -44,7 +44,7 @@ import common
 import gen_archis
 import gen_base_apis
 import gen_adv_cxx_api
-#import gen_adv_c_api
+import gen_adv_c_api
 import gen_tests
 import gen_benches
 import gen_src
@@ -164,8 +164,7 @@ def main():
     if opts.adv_cxx_api == True or opts.all == True:
         gen_adv_cxx_api.doit(opts)
     if opts.adv_c_api == True or opts.all == True:
-        pass
-        #gen_adv_c_api.doit(opts)
+        gen_adv_c_api.doit(opts)
     if opts.ulps == True or opts.all == True:
         gen_ulps.doit(opts)
     if opts.tests == True or opts.all == True:

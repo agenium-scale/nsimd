@@ -314,6 +314,12 @@ class Operator(object, metaclass=MAddToOperators):
                     args=args),
                     '#define v{name}_e({args}, simd_ext)'. \
                     format(name=self.name, args=args)]
+        elif lang == 'c_adv':
+            args = ['a{}'.format(i - 1) for i in range(1, len(self.params))]
+            if not self.closed:
+                args = ['to_type'] + args
+            args = ', '.join(args)
+            return '#define nsimd_{}({})'.format(self.name, args)
         elif lang == 'cxx_base':
             def get_type(param, typename):
                 if param == '_':
