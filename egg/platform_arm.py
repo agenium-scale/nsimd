@@ -92,6 +92,13 @@ def get_simd_exts():
     return ['neon128', 'aarch64', 'sve', 'sve128', 'sve256', 'sve512',
             'sve1024', 'sve2048']
 
+def get_prev_simd_ext(simd_ext):
+    if simd_ext in ['neon128', 'aarch64']:
+        return 'cpu'
+    elif simd_ext in sve:
+        return 'aarch64'
+    raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

@@ -637,3 +637,73 @@ functions:
   ```
 
 Tests for the module have to be put into the `nsimd/tests/mymod` directory.
+
+## How to I add a new platform?
+
+The list of supported platforms is determined by looking in the `egg`
+directory and listing all `platform_*.py` files. Each file must contain all
+SIMD extensions for a given platform. For example the default (no SIMD) is
+given by `platform_cpu.py`. All the Intel SIMD extensions are given by
+`platform_x86.py`.
+
+Each Python file that implements a platform must be named
+`platform_[name for platform].py` and must export at least the following
+functions:
+
+- `def get_simd_exts()`  
+  Return the list of SIMD extensions implemented by this file as a Python
+  list.
+
+- `def get_prev_simd_ext(simd_ext)`  
+  Usually SIMD extensions are added over time by vendors and a chip
+  implementing  a SIMD extension supports previous SIMD extension. This
+  function must return the previous SIMD extension supported by the vendor if
+  it exists otherwise it must return the empty string. Note that `cpu` is the
+  only SIMD extensions that has no previous SIMD extensions. Every other SIMD
+  extension has at least `cpu` as previous SIMD extension.
+
+- `def get_native_typ(simd_ext, typ)`  
+  Return the native SIMD type corresponding of the SIMD extension `simd_ext`
+  whose elements are of type `typ`. If `typ` or `simd_ext` is not known then a
+  ValueError exception must be raised.
+
+- `def get_type(simd_ext, typ)`  
+  Returns the "intrinsic" SIMD type corresponding to the given
+  arithmetic type. If `typ` or `simd_ext` is not known then a ValueError
+  exception must be raised.
+
+- `def get_additional_include(func, simd_ext, typ)`  
+  Returns additional include if need be for the implementation of `func` for
+  the given `simd_ext` and `typ`.
+
+- `def get_logical_type(simd_ext, typ)`  
+  Returns the "intrinsic" logical SIMD type corresponding to the given
+  arithmetic type. If `typ` or `simd_ext` is not known then a ValueError
+  exception must be raised.
+
+- `def get_nb_registers(simd_ext)`  
+  Returns the number of registers for this SIMD extension.
+
+- `def get_impl(func, simd_ext, from_typ, to_typ)`  
+  Returns the implementation (C code) for `func` on type `typ` for `simd_ext`.
+  If `typ` or `simd_ext` is not known then a ValueError exception must be
+  raised. Any `func` given satisfies `S func(T a0, T a1, ... T an)`.
+
+- `def has_compatible_SoA_types(simd_ext)`  
+  Returns True iff the given `simd_ext` has structure of arrays types
+  compatible with NSIMD i.e. whose members are v1, v2, ... Returns False
+  otherwise. If `simd_ext` is not known then a ValueError exception must be
+  raised.
+
+- `def get_SoA_type(simd_ext, typ, deg)`  
+  Returns the structure of arrays types for the given `typ`, `simd_ext` and
+  `deg`. If `simd_ext` is not known or does not name a type whose
+  corresponding SoA types are compatible with NSIMD then a ValueError
+  exception must be raised.
+
+- `def emulate_fp16(simd_ext)`
+  Returns True iff the given SIMD extension has to emulate FP16's with
+  two FP32's.
+
+Then you are free to implement the SIMd extensions for the platform. See above
+on how to add the implementations of operators.

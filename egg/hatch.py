@@ -26,54 +26,6 @@
 # `gen_*.py` file. This script simply calls the `doit` function of each
 # `gen_*.py` module. Names are self-explanatory.
 #
-# The list of supported architectures is determined by looking at the `egg`
-# directory and listing all `platform_*.py` files. Each file must contain all
-# SIMD extensions for a given architecture. For example the default (no SIMD) is
-# given by `platform_cpu.py`. All the Intel SIMD extensions are given by
-# `platform_x86.py`.
-#
-# Each module that implements a platform:
-#   - must be named 'platform_[name for platform].py
-#   - must export at least the following functions
-#
-#     * def get_type(simd_ext, typ)
-#       Returns the "intrinsic" SIMD type corresponding to the given
-#       arithmetic type. If typ or simd_ext is not known then a ValueError
-#       exception must be raised.
-#
-#     * def get_additional_include(func, simd_ext, typ)
-#       Returns additional include if need be for the implementation of func for
-#       the given simd_ext and typ.
-#
-#     * def get_logical_type(simd_ext, typ)
-#       Returns the "intrinsic" logical SIMD type corresponding to the given
-#       arithmetic type. If typ or simd_ext is not known then a ValueError
-#       exception must be raised.
-#
-#     * def get_nb_registers(simd_ext)
-#       Returns the number of registers for this SIMD extension.
-#
-#     * def get_impl(func, simd_ext, from_typ, to_typ)
-#       Returns the implementation (C code) for func on type typ for simd_ext.
-#       If typ or simd_ext is not known then a ValueError exception must be
-#       raised. Any func given satisfies `S func(T a0, T a1, ... T an)`.
-#
-#     * def has_compatible_SoA_types(simd_ext)
-#       Returns True iff the given simd_ext has structure of arrays types
-#       compatible with NSIMD i.e. whose members are v1, v2, ... Returns False
-#       otherwise. If simd_ext is not known then a ValueError exception must be
-#       raised.
-#
-#     * def get_SoA_type(simd_ext, typ, deg)
-#       Returns the structure of arrays types for the given typ, simd_ext and
-#       deg. If simd_ext is not known or does not name a type whose
-#       corresponding SoA types are compatible with NSIMD then a ValueError
-#       exception must be raised.
-#
-#     * def emulate_fp16(simd_ext)
-#       Returns True iff the given SIMD extension has to emulate FP16's with
-#       two FP32's.
-
 # -----------------------------------------------------------------------------
 # First thing we do is check whether python3 is used
 
@@ -91,7 +43,8 @@ import re
 import common
 import gen_archis
 import gen_base_apis
-import gen_advanced_api
+import gen_adv_cxx_api
+#import gen_adv_c_api
 import gen_tests
 import gen_benches
 import gen_src
@@ -180,7 +133,8 @@ def parse_args(args):
     # to keep the possibility to change them in the future
     opts.archis = opts.library
     opts.base_apis = opts.library
-    opts.cxx_api = opts.library
+    opts.adv_cxx_api = opts.library
+    opts.adv_c_api = opts.library
     opts.friendly_but_not_optimized = opts.library
     opts.src = opts.library
     opts.scalar_utilities = opts.library
@@ -207,8 +161,11 @@ def main():
         gen_archis.doit(opts)
     if opts.base_apis == True or opts.all == True:
         gen_base_apis.doit(opts)
-    if opts.cxx_api == True or opts.all == True:
-        gen_advanced_api.doit(opts)
+    if opts.adv_cxx_api == True or opts.all == True:
+        gen_adv_cxx_api.doit(opts)
+    if opts.adv_c_api == True or opts.all == True:
+        pass
+        #gen_adv_c_api.doit(opts)
     if opts.ulps == True or opts.all == True:
         gen_ulps.doit(opts)
     if opts.tests == True or opts.all == True:

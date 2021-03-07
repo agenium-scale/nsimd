@@ -42,6 +42,20 @@ def get_simd_exts():
     return ['sse2', 'sse42', 'avx', 'avx2', 'avx512_knl', 'avx512_skylake']
 
 
+def get_prev_simd_ext(simd_ext):
+    if simd_ext == 'sse2':
+        return 'cpu'
+    elif simd_ext == 'sse42':
+        return 'sse2'
+    elif simd_ext == 'avx':
+        return 'sse42'
+    elif simd_ext == 'avx2':
+        return 'avx'
+    elif simd_ext in avx512:
+        return 'avx2'
+    raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+
+
 def emulate_fp16(simd_ext):
     if not simd_ext in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))

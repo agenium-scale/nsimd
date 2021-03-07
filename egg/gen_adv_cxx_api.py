@@ -182,9 +182,9 @@ def doit(opts):
         out.write('''#ifndef NSIMD_CXX_ADV_API_FUNCTIONS_HPP
                      #define NSIMD_CXX_ADV_API_FUNCTIONS_HPP
 
-                     namespace nsimd {{
+                     namespace nsimd {
 
-                     '''.format(year=date.today().year))
+                     ''')
 
         for op_name, operator in operators.operators.items():
             if not operator.autogen_cxx_adv:

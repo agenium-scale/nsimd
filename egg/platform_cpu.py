@@ -46,6 +46,11 @@ def get_nb_el(typ):
 def get_simd_exts():
     return ['cpu']
 
+def get_prev_simd_ext(simd_ext):
+    if simd_ext != 'cpu':
+        raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+    return ''
+
 def get_simd_strings(simd_ext):
     if simd_ext == 'cpu':
         return ['cpu']

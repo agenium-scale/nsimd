@@ -485,6 +485,12 @@ def get_one_type_scalar(param, t):
     else:
         raise ValueError('Unknown param: "{}"'.format(param))
 
+def get_first_discriminating_type(params):
+    for i in range(len(params)):
+        if params[i] in ['*', 'c*', 's', 'v', 'l', 'vx2', 'vx3', 'vx4']:
+            return i
+    return -1
+
 # -----------------------------------------------------------------------------
 # Formats
 
