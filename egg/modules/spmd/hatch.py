@@ -607,17 +607,20 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         #elif defined(NSIMD_ONEAPI)
 
         inline void kernel({typ} *dst, {typ} *a0, const size_t n, sycl::id<1> id) {{
-          const size_t ii = id.get(0);
-          if(ii < n){{
+          const sycl::id<1> idx = item.get_global_id();
+          if(idx.get(0) < n){{
             dst[ii] = nsimd::scalar_{op_name}({typ}(), nsimd::scalar_{op_name}(
                                      {totyp}(), a0[ii]));
           }}
         }}
 
         void compute_result({typ} *dst, {typ} *a0, const size_t n) {{
-          sycl::queue().parallel_for(sycl::range<1>(n), [=](sycl::id<1> id){{
+	  sycl::queue q_ = spmd::_get_global_queue();
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	                                    sycl::range<1>({threads_per_block})),
+	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, a0, n, id);
-          }};).wait();
+          }}).wait();
         }}
 
         #else
