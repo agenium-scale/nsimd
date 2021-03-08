@@ -492,8 +492,8 @@ def gen_tests_for_shifts(opts, t, operator):
 
         inline void kernel({typ} *dst, {typ} *a0, const size_t n,
                            const int s, sycl::nd_item<1> item) {{
-          auto idx = item.get_global_id();
-          if(idx < n){{
+          const sycl::id<1> idx = item.get_global_id();
+          if(idx.get(0) < n){{
             dst[idx] = nsimd::scalar_{op_name}(a0[idx], s);
           }}
         }}
