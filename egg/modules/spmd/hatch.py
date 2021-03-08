@@ -96,7 +96,7 @@ by NSIMD. On a more technical side, the DSL keywords are macros that:
 - use masks for CPUs as Intel ISPC (<https://ispc.github.io/>).
 
 The difference between NSIMD's SPMD is that a single code can be compiled
-to target GPUs and CPUs whereas:
+to target both GPUs and CPUs whereas:
 - NVIDIA CUDA only targets NVIDIA GPUs
 - AMD HIP only targets NVIDIA and AMD GPUs
 - INTEL ICP only targets Intel SIMD units and ARM NEON
@@ -148,7 +148,7 @@ The caveat with `spmd_dev_func` is that its first argument must be the return
 type followed by the device function name.
 
 It is also possible to write templated kernels. Due to C++ `__VA_ARGS__`
-limitations the number of template argument is limited to one of kind
+limitations, the number of template arguments is limited to one of kind of
 `typename`. If more types or integers are to be passed to device kernels or
 functions they have to be boxed inside a struct.
 
@@ -282,7 +282,7 @@ spmd_kernel_end
 
 ### while loops
 
-You should not use plan C++ `while`'s, `break`'s and `continue`'s. This will
+You should not use plain C++ `while`'s, `break`'s and `continue`'s. This will
 not cause compilation error but will produce incorrect results at runtime.
 You should use `k_while`, `k_break`, `k_continue` and `k_endif` instead. They
 have the same semantic as their C++ counterparts.
@@ -326,7 +326,7 @@ kernels return type is always `void`) and for device functions returning
 For device functions returning a value it is recommanded to proceed this way:
 
 1. Declare a variable, say `ret`, to store the return value.
-2. Whereever you need to return, set the variable appropriately with `k_set`
+2. Wherever you need to return, set the variable appropriately with `k_set`
    and return with `k_return`.
 3. At the end of the function use `return ret;`.
 
@@ -358,7 +358,7 @@ This paragraph applies mainly when targeting CPUs. Using techniques described
 below won't affect GPUs.
 
 If you are familiar with the SIMD technique of masking to emulate loops and
-if's you may know that `k_set` and `k_store` are implemented using respectively
+if statements you may know that `k_set` and `k_store` are implemented using respectively
 `nsimd::if_else` and `nsimd::maskz_storeu` which may incur performance
 penalties. When you know that a simple assignment or store is sufficient
 you may use the unmasked variants:
@@ -372,7 +372,7 @@ inside loops, on temporary variables, knowing that the result of the latter
 won't be needed later.
 
 You may also use C++ standard keywords and constructs. But be aware that doing
-so will apply all the same treatment too all SIMD lanes. This can be useful
+so will apply all the same treatment to all SIMD lanes. This can be useful
 when the operations involved are independant of the processed data as in the
 example below.
 
