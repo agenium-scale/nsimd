@@ -28,8 +28,8 @@ SOFTWARE.
 #include <nsimd/nsimd-all.hpp>
 
 #include <cassert>
-#include <vector>
 #include <cstring>
+#include <vector>
 
 #if defined(NSIMD_ONEAPI)
 #include <CL/sycl.hpp>
@@ -38,39 +38,40 @@ SOFTWARE.
 namespace spmd {
 
 #if NSIMD_CXX < 2011 || NSIMD_C < 1999
-  #define NSIMD_VARIADIC_MACROS_IS_EXTENSION
+#define NSIMD_VARIADIC_MACROS_IS_EXTENSION
 #endif
 
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
-  #if defined(NSIMD_IS_GCC)
-    /* Not emitting the warning -Wvariadic-macros is not possible with
-       GCC <= 12. It is a bug. A workaround is to tell GCC to consider this
-       header file as a system header file so that all warnings are not
-       emitted. This is not satisfying but necessary for the moment.
-       */
-    #pragma GCC system_header
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wvariadic-macros"
-  #elif defined(NSIMD_IS_CLANG)
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wvariadic-macros"
-  #endif
+#if defined(NSIMD_IS_GCC)
+/* Not emitting the warning -Wvariadic-macros is not possible with
+   GCC <= 12. It is a bug. A workaround is to tell GCC to consider this
+   header file as a system header file so that all warnings are not
+   emitted. This is not satisfying but necessary for the moment.
+   */
+#pragma GCC system_header
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
+#elif defined(NSIMD_IS_CLANG)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvariadic-macros"
+#endif
 #endif
 
 // ----------------------------------------------------------------------------
 // oneAPI
 
 #if defined(NSIMD_ONEAPI)
-struct _sycl_global_queue{
+struct _sycl_global_queue {
 private:
   static sycl::queue _q;
+
 public:
-  static sycl::queue &get(){ return _q; }
+  static sycl::queue &get() { return _q; }
 };
 
-sycl::queue _sycl_global_queue::_q = sycl::queue(sycl::gpu_selector{});
+sycl::queue _sycl_global_queue::_q = sycl::queue();
 
-static inline sycl::queue _get_global_queue(){
+static inline sycl::queue _get_global_queue() {
   return _sycl_global_queue::get();
 }
 #endif
@@ -78,7 +79,7 @@ static inline sycl::queue _get_global_queue(){
 // ----------------------------------------------------------------------------
 // CUDA and ROCm
 
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
 
 #if defined(NSIMD_CUDA)
 
@@ -95,7 +96,7 @@ static inline sycl::queue _get_global_queue(){
     int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
     if (spmd_i_ < n) {
 
-#else
+#elif defined(NSIMD_ROCM)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
@@ -110,6 +111,22 @@ static inline sycl::queue _get_global_queue(){
   __global__ void name(__VA_ARGS__, size_t n) {                               \
     size_t spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;          \
     if (spmd_i_ < n) {
+
+#else
+
+// 1d kernel definition
+#define spmd_kernel_1d(name, ...)                                             \
+  template <int spmd_ScalarBits_>                                             \
+  inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
+    const sycl::id<1> spmd_i_ = item.get_global_id();                         \
+    if (spmd_i_.get(0) < n) {
+
+// templated kernel definition
+#define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
+    const sycl::id<1> spmd_i_ = item.get_global_id();                         \
+    if (spmd_i_.get(0) < n) {
 
 #endif
 
@@ -144,7 +161,7 @@ static inline sycl::queue _get_global_queue(){
       <<<(unsigned int)((n + threads_per_block - 1) / threads_per_block),     \
          (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
 
-#else
+#elif defined(NSIMD_ROCM)
 
 // launch 1d kernel ROCm
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
@@ -153,6 +170,19 @@ static inline sycl::queue _get_global_queue(){
       (name<spmd_scalar_bits_>),                                              \
       (size_t)((n + threads_per_block - 1) / threads_per_block),              \
       (size_t)(threads_per_block), 0, NULL, __VA_ARGS__, (size_t)n)
+
+#elif defined(NSIMD_ONEAPI)
+
+// launch 1d kernel oneAPI
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
+                              ...)                                            \
+  sycl::queue q = spmd::_get_global_queue();                                  \
+  q.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),                         \
+                                   sycl::range<1>(threads_per_block)),        \
+                 [=](sycl::nd_item<1> item) {                                 \
+                   name<spmd_scalar_bits>(__VA_ARGS__, (size_t)n, item);      \
+                 })                                                           \
+      .wait();
 
 #endif
 
@@ -358,7 +388,7 @@ struct KernelSIMD {};
   }
 
 // launch 1d templated kernel
-#define spmd_launch_tmpl_kernel_1d(                                      \
+#define spmd_launch_tmpl_kernel_1d(                                           \
     name, template_argument, spmd_scalar_bits_, spmd_unroll_, spmd_n_, ...)   \
   {                                                                           \
     typename spmd::type_t<spmd::KernelSIMD, spmd_scalar_bits_,                \
@@ -499,8 +529,7 @@ template <> struct store_helper<KernelSIMD> {
   }
 
   template <typename T, typename S, typename U, int N, typename SimdExt>
-  static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr,
-                   U value) {
+  static void impl(nsimd::packl<T, N, SimdExt> const &mask, S *addr, U value) {
     nsimd::mask_storeu(mask, addr,
                        nsimd::pack<S, N, SimdExt>(nsimd::to<S>(value)));
   }
@@ -689,11 +718,11 @@ inline bool any(bool a) { return a; }
 #endif
 
 #ifdef NSIMD_VARIADIC_MACROS_IS_EXTENSION
-  #if defined(NSIMD_IS_GCC)
-    #pragma GCC diagnostic pop
-  #elif defined(NSIMD_IS_CLANG)
-    #pragma clang diagnostic pop
-  #endif
+#if defined(NSIMD_IS_GCC)
+#pragma GCC diagnostic pop
+#elif defined(NSIMD_IS_CLANG)
+#pragma clang diagnostic pop
+#endif
 #endif
 
 } // namespace spmd
