@@ -167,13 +167,13 @@ template <typename T> void device_free(T *const ptr) {
 template <typename T>
 void copy_to_device(T *const device_ptr, T *const host_ptr, const size_t sz) {
   sycl::queue q = spmd::_get_global_queue();
-  q.memcpy(device_ptr, host_ptr, sz).wait();
+  q.memcpy((void *)device_ptr, (const void *)host_ptr, sz * sizeof(T)).wait();
 }
 
 template <typename T>
 void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
   sycl::queue q = spmd::_get_global_queue();
-  q.memcpy(host_ptr, device_ptr, sz * sizeof(T)).wait();
+  q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T)).wait();
 }
 
 #define nsimd_fill_dev_mem_func(func_name, expr)                               \
@@ -188,14 +188,11 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
                                                                                \
   template <typename T> void func_name(T *const ptr, const size_t sz) {        \
     sycl::queue q = spmd::_get_global_queue();                                 \
-    q.submit([&](sycl::handler &cgh) {                                         \
-      cgh.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),                    \
-                                         sycl::range<1>(threads_per_block)),   \
-                       [=](sycl::nd_item<1> item) {                            \
-                         kernel_##func_name##_(ptr, sz, item);                 \
-                       })                                                      \
-          .wait();                                                             \
-    })                                                                         \
+    q.parallel_for(                                                            \
+         sycl::nd_range<1>(sycl::range<1>(sz),                                 \
+                           sycl::range<1>(threads_per_block)),                 \
+         [=](sycl::nd_item<1> item) { kernel_##func_name##_(ptr, sz, item); }) \
+        .wait();                                                               \
   }
 
 // ----------------------------------------------------------------------------
@@ -242,7 +239,7 @@ template <typename T> struct paired_pointers_t {
 template <typename T> paired_pointers_t<T> pair_malloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   ret.device_ptr = device_malloc<T>(sz);
   if (ret.device_ptr == NULL) {
     ret.host_ptr = NULL;
@@ -275,7 +272,7 @@ template <typename T> paired_pointers_t<T> pair_malloc_or_exit(size_t sz) {
 template <typename T> paired_pointers_t<T> pair_calloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   ret.device_ptr = device_calloc<T>(sz);
   if (ret.device_ptr == NULL) {
     ret.host_ptr = NULL;
@@ -306,7 +303,7 @@ template <typename T> paired_pointers_t<T> pair_calloc_or_exit(size_t sz) {
 }
 
 template <typename T> void pair_free(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   device_free(p.device_free);
   free((void *)p.host_ptr);
 #else
@@ -315,7 +312,7 @@ template <typename T> void pair_free(paired_pointers_t<T> p) {
 }
 
 template <typename T> void copy_to_device(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   copy_to_device(p.device_ptr, p.host_ptr, p.sz);
 #else
   (void)p;
@@ -323,7 +320,7 @@ template <typename T> void copy_to_device(paired_pointers_t<T> p) {
 }
 
 template <typename T> void copy_to_host(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   copy_to_host(p.host_ptr, p.device_ptr, p.sz);
 #else
   (void)p;
