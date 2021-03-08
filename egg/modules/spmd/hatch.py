@@ -500,10 +500,9 @@ def gen_tests_for_shifts(opts, t, operator):
 
         void compute_result({typ} *dst, {typ} *a0, const size_t n, const int s) {{
 	  sycl::queue q_ = spmd::_get_global_queue();
-	  q_.submit([&](handler& h){
-	      h.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
-	                                       sycl::range<1>({threads_per_block})),
-	                                       [=](sycl::nd_item<1> item){
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	                                    sycl::range<1>({threads_per_block})),
+	                                    [=](sycl::nd_item<1> item){
 	      kernel(dst, a0, n, s, item);
 	    }).wait();
 	  });
