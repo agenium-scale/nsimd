@@ -492,9 +492,9 @@ def gen_tests_for_shifts(opts, t, operator):
 
         inline void kernel({typ} *dst, {typ} *a0, const size_t n,
                            const int s, sycl::nd_item<1> item) {{
-          const sycl::id<1> idx = item.get_global_id();
-          if(idx.get(0) < n){{
-            dst[idx] = nsimd::scalar_{op_name}(a0[idx], s);
+          const size_t ii = item.get_global_id().get(0);
+          if(ii < n){{
+            dst[ii] = nsimd::scalar_{op_name}(a0[ii], s);
           }}
         }}
 
@@ -502,10 +502,9 @@ def gen_tests_for_shifts(opts, t, operator):
 	  sycl::queue q_ = spmd::_get_global_queue();
 	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
 	                                    sycl::range<1>({threads_per_block})),
-	                                    [=](sycl::nd_item<1> item){
+	                                    [=](sycl::nd_item<1> item){{
 	      kernel(dst, a0, n, s, item);
-	    }).wait();
-	  });
+	    }}).wait();
         }}
 
         #else
@@ -606,9 +605,10 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 
         #elif defined(NSIMD_ONEAPI)
 
-        inline void kernel({typ} *dst, {typ} *a0, const size_t n, sycl::id<1> id) {{
-          const sycl::id<1> idx = item.get_global_id();
-          if(idx.get(0) < n){{
+        inline void kernel({typ} *dst, {typ} *a0, const size_t n,
+                           sycl::nd_item<1> item) {{
+          const size_t ii = item.get_global_id().get(0);
+          if(ii < n){{
             dst[ii] = nsimd::scalar_{op_name}({typ}(), nsimd::scalar_{op_name}(
                                      {totyp}(), a0[ii]));
           }}
@@ -619,7 +619,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
 	                                    sycl::range<1>({threads_per_block})),
 	                                    [=](sycl::nd_item<1> item){{
-            kernel(dst, a0, n, id);
+            kernel(dst, a0, n, item);
           }}).wait();
         }}
 
@@ -823,16 +823,19 @@ def gen_tests_for(opts, t, operator):
 
         #elif defined(NSIMD_ONEAPI)
 
-        inline void kernel({typ} *dst, {k_args}, const size_t n, sycl::id<1> id) {{
-          if(id.get(0) < n){{
+        inline void kernel({typ} *dst, {k_args}, const size_t n, sycl::nd_item<1> item) {{
+          if(item.get_global_id().get(0) < n){{
             {cpu_kernel}
           }}
         }}
 
         void compute_result({typ} *dst, {k_args}, const size_t n) {{
-          sycl::queue().parallel_for(sycl::range<1>(n), [=](sycl::id<1> id){{
-            kernel(dst, {k_call_args}, n, id);
-          }};).wait();
+	  sycl::queue q_ = spmd::_get_global_queue();
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	                                    sycl::range<1>({threads_per_block})),
+	                                    [=](sycl::nd_item<1> item){{
+            kernel(dst, {k_call_args}, n, item);
+          }}).wait();
         }}
 
         #else
@@ -981,7 +984,7 @@ def gen_functions(opts):
 
         m_call_args_cpu = s_call_args
         m_call_args_gpu = s_call_args
-        m_call_args_sycl = s_call_args
+        m_call_args_oneapi = s_call_args
         to_type = ''
         ToType = ''
         v_op_name = op_name
@@ -994,7 +997,7 @@ def gen_functions(opts):
             s_ret_typ = 'ToType'
             s_tmpl = append('typename ToType', s_tmpl)
             m_call_args_gpu = append('to_type()', s_call_args)
-            m_call_args_sycl = append('to_type()', s_call_args)
+            m_call_args_oneapi = append('to_type()', s_call_args)
             s_call_args = append('ToType()', s_call_args)
             v_tmpl = append('typename ToType', v_tmpl)
             to_type = '<to_type>'
@@ -1019,7 +1022,7 @@ def gen_functions(opts):
 
            #elif defined(NSIMD_ONEAPI)
 
-           {signature} nsimd::scalar_{s_op_name}({m_call_args_sycl})
+           {signature} nsimd::scalar_{s_op_name}({m_call_args_oneapi})
 
            #else
 
@@ -1054,7 +1057,7 @@ def gen_functions(opts):
                       m_call_args_cpu=m_call_args_cpu, to_type=to_type,
                       v_op_name=v_op_name, op_name=op_name, template=template,
                       m_call_args_gpu=m_call_args_gpu,
-                      m_call_args_sycl=m_call_args_sycl,
+		      m_call_args_oneapi=m_call_args_oneapi,
                       signature=get_signature(operator))
 
     # Write the code to file
@@ -1082,7 +1085,7 @@ def desc():
     return '''SPMD programming allows the programmer to focus on kernels and
 the compiler to vectorize kernel code more effectively. Basically this
 module provides a "à la CUDA" programming C++ DSL to targets CPU SIMD as well
-as NVIDIA and AMD GPUs.'''
+as NVIDIA, AMD and DPC++ GPUs.'''
 
 def doc_menu():
     return {'Overview': 'overview', 'API reference': 'api'}
