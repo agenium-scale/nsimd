@@ -159,33 +159,42 @@ def get_impl(operator, totyp, typ):
   if typ == 'f16':
       return get_impl_f16(operator, totyp, typ)
 
-  # infix operators - f32, f64
-  infix_operators_f32_f64 = {
+  # infix operators - rec - f32, f64
+  infix_op_rec_f32_f64 = {
       'rec': 'return sycl::recip({in0});',
       'rec8': 'return sycl::recip({in0});',
-      'rec11': 'return sycl::recip({in0});',
-      'lt': 'return sycl::isless({in0},{in1});',
-      'gt': 'return sycl::isgreater({in0},{in1});',
-      'le': 'return sycl::islessequal({in0},{in1});',
-      'ge': 'return sycl::isgreaterequal({in0},{in1});',
-      'ne': 'return sycl::isnotequal({in0},{in1});',
-      'eq': 'return sycl::isequal({in0},{in1});'
-  }
+      'rec11': 'return sycl::recip({in0});'
+      }
 
-  if typ in ['f32','f64'] and operator.name in infix_operators_f32_f64:
-    return infix_operators_f32_f64[operator.name].\
+  if typ in ['f32','f64'] and operator.name in infix_op_rec_f32_f64:
+    return infix_op_rec_f32_f64[operator.name].\
      format(**fmtspec)
 
+  # infix operators - cmp - f32, f64
+  infix_op_cmp_f32_f64 = {
+      'lt': 'return {cast_to_int}sycl::isless({in0},{in1});',
+      'gt': 'return {cast_to_int}sycl::isgreater({in0},{in1});',
+      'le': 'return {cast_to_int}sycl::islessequal({in0},{in1});',
+      'ge': 'return {cast_to_int}sycl::isgreaterequal({in0},{in1});',
+      'ne': 'return {cast_to_int}sycl::isnotequal({in0},{in1});',
+      'eq': 'return {cast_to_int}sycl::isequal({in0},{in1});'
+  }
+
+  if typ in ['f32','f64'] and operator.name in infix_op_cmp_f32_f64:
+    return infix_op_cmp_f32_f64[operator.name].\
+     format(cast_to_int='(int)' if typ == 'f64' else '', **fmtspec)
+
+
   # infix operators - cmp - integer types
-  infix_cmp_op_t = [ 'lt', 'gt', 'le', 'ge', 'ne', 'eq' ]
-  if operator.name in infix_cmp_op_t:
+  infix_op_cmp_iutypes = [ 'lt', 'gt', 'le', 'ge', 'ne', 'eq' ]
+  if operator.name in infix_op_cmp_iutypes:
     return 'return nsimd_scalar_{op}_{typ}({in0},{in1});'.\
       format(op=operator.name, **fmtspec)
 
   # infix operators f32, f64 + integers
   # TODO: should use nsimd_scalar instead?
   # ref: see book, pages 480, 481, 482
-  infix_operators_t = {
+  infix_op_t = {
       'add': 'return std::plus<{typ}>()({in0}, {in1});',
       'sub': 'return std::minus<{typ}>()({in0}, {in1});',
       'mul': 'return std::multiplies<{typ}>()({in0}, {in1});',
@@ -193,20 +202,20 @@ def get_impl(operator, totyp, typ):
       'neg': 'return std::negate<{typ}>()({in0});'
   }
 
-  if operator.name in infix_operators_t:
-    return infix_operators_t[operator.name].\
+  if operator.name in infix_op_t:
+    return infix_op_t[operator.name].\
       format(**fmtspec)
 
   # shifts
   shifts_op_ui_t = [ 'shl', 'shr', 'shra' ]
   if operator.name in shifts_op_ui_t and typ in common.iutypes:
-    return 'return nsimd_scalar_shl_{typ}({in0}, {in1});'.\
-      format(**fmtspec)
+    return 'return nsimd_scalar_{op}_{typ}({in0}, {in1});'.\
+      format(op=operator.name, **fmtspec)
 
   # adds
   if operator.name == 'adds':
     if typ in common.ftypes:
-      return infix_operators_t['add'].\
+      return infix_op_t['add'].\
         format(**fmtspec)
     else:
       return 'return sycl::add_sat({in0},{in1});'.format(**fmtspec)
@@ -214,17 +223,21 @@ def get_impl(operator, totyp, typ):
   # subs
   if operator.name == 'subs':
     if typ in common.ftypes:
-      return infix_operators_t['sub'].\
+      return infix_op_t['sub'].\
         format(**fmtspec)
     else:
       return 'return sycl::sub_sat({in0},{in1});'.format(**fmtspec)
 
   # fma's
   if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
-    neg = '-' if operator.name in ['fnma, fnms'] else ''
-    op = '-' if operator.name in ['fnms, fms'] else ''
-    return 'return sycl::fma({neg}{in0}, {in1}, {op}{in2});'.\
-      format(op=op, neg=neg, **fmtspec)
+    if typ in common.ftypes:
+      neg = '-' if operator.name in ['fnma, fnms'] else ''
+      op = '-' if operator.name in ['fnms, fms'] else ''
+      return 'return sycl::fma({neg}{in0}, {in1}, {op}{in2});'.\
+        format(op=op, neg=neg, **fmtspec)
+    else:
+      return 'return nsimd_scalar_{op}_{typ}({in0}, {in1}, {in2})'.\
+        format(op=operator.name, **fmtspec)
 
   # other operators
   # round_to_even, ceil, floor, trunc, min, max, abs, sqrt
@@ -246,7 +259,7 @@ def get_impl(operator, totyp, typ):
   # min/max
   if operator.name in ['min','max']:
     if typ in common.iutypes:
-      return 'return nsimd_scalar_{op}_{typ}({in0},{in1})'.\
+      return 'return sycl::{op}({in0},{in1})'.\
         format(op=operator.name, **fmtspec)
     else:
       op = 'sycl::fmin' if operator.name == 'min' else 'sycl::fmax'
