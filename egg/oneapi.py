@@ -19,8 +19,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Reference: book Data Parallel C++
+# -----------------------------------------------------------------------------
+# References:
+
+# Functions: book:
+# Data Parallel C++
+# Mastering DPC++ for Programming of Heterogeneous Systems using
+# C++ and SYCL - Apress Open
 # Table page 475: list of maths functions. float16 supported
+
+# sycl half type (f16) API:
+# https://mmha.github.io/syclreference/libraries/types/half/
+# -----------------------------------------------------------------------------
 
 import common
 import scalar
@@ -30,8 +40,6 @@ fmtspec = dict()
 # -----------------------------------------------------------------------------
 
 def get_impl_f16(operator, totyp, typ):
-    # sycl reference half type API:
-    # https://mmha.github.io/syclreference/libraries/types/half/
 
     # Case 1: no sycl function available for half type
     # sycl function available for f32
@@ -45,15 +53,32 @@ def get_impl_f16(operator, totyp, typ):
     # sycl function available for f32
     # use nsimd casts f32-->f16 + sycl function + f16-->f32
 
+    # TODO: hould we use sycl::add_sat, sycl::add_sub
+    # both available for f32?
     no_sycl_avail_f16_cast_use_sycl_f32 = \
-      ['fma', 'fms', 'fnma', 'fnms', 'min', 'max']
+      ['fma', 'fms', 'fnma', 'fnms', 'min', 'max', 'abs']
 
     # Case 3: sycl provides functions supporting half type
 
-    sycl_avail_f16 = \
+    sycl_avail_functions_f16 = \
       ['rec8', 'rec11', 'rec', 'rsqrt8', 'rsqrt11', 'rsqrt', 'sqrt']
 
-    # Case 4: no sycl function available for any type
+    # Case 4: sycl half's type provided comparison operators
+    # Note:
+    # not documented in the book
+    # source: sycl half type (f16) API:
+    # https://mmha.github.io/syclreference/libraries/types/half/
+
+    sycl_avail_cmp_op_f16 = {
+        'lt': 'return {in0} < {in1};',
+        'gt': 'return {in0} > {in1};',
+        'le': 'return {in0} <= {in1};',
+        'ge': 'return {in0} >= {in1};',
+        'ne': 'return {in0} != {in1};',
+        'eq': 'return {in0} == {in1};'
+    }
+
+    # Case 5: no sycl function available for any type
     # use nsimd_scalar_[operator]_f16
 
     # Dispatch
@@ -68,22 +93,27 @@ def get_impl_f16(operator, totyp, typ):
       if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        return '''f32 in0 = nsimd_f16_to_f32({in0});
-	          f32 in1 = nsimd_f16_to_f32({in1});
-	          f32 in2 = nsimd_f16_to_f32({in2});
-                  f32 res = sycl::fma({neg}{in0}, {in1}, {op}{in2});
+        return '''f32 x0 = nsimd_f16_to_f32({in0});
+	          f32 x1 = nsimd_f16_to_f32({in1});
+	          f32 x2 = nsimd_f16_to_f32({in2});
+                  f32 res = sycl::fma({neg}x0, x1, {op}x2);
                   return nsimd_f32_to_f16(res);
                   '''.format(neg=neg, op=op, **fmtspec)
       elif operator.name in ['min','max']:
         op = 'fmin' if operator.name == 'min' else 'fmax'
-        return '''f32 in0 = nsimd_f16_to_f32({in0});
-	          f32 in1 = nsimd_f16_to_f32({in1});
-                  f32 res = sycl::{op}({in0}, {in1});
+        return '''f32 x0 = nsimd_f16_to_f32({in0});
+	          f32 x1 = nsimd_f16_to_f32({in1});
+                  f32 res = sycl::{op}(x0, x1);
                   return nsimd_f32_to_f16(res);
                   '''.format(op=op, **fmtspec)
+      elif operator.name == 'abs':
+        return '''f32 x0 = nsimd_f16_to_f32({in0});
+                  f32 res = sycl::fabs(x0);
+                  return nsimd_f32_to_f16(res);
+                  '''.format(**fmtspec)
 
     # Case 3
-    elif operator.name in sycl_avail_f16:
+    elif operator.name in sycl_avail_functions_f16:
       if operator.name in ['rec8', 'rec11', 'rec']:
         return 'return sycl::recip({in0});'.format(**fmtspec)
       elif operator.name in ['rsqrt8', 'rsqrt11', 'rsqrt']:
@@ -92,6 +122,11 @@ def get_impl_f16(operator, totyp, typ):
         return 'return sycl::sqrt({in0});'.format(**fmtspec)
 
     # Case 4
+    elif operator.name in sycl_avail_cmp_op_f16:
+      return sycl_avail_cmp_op_f16[operator.name].\
+        format(**fmtspec)
+
+    # Case 5
     else:
       args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
                           for i in range(len(operator.params[1:]))])
@@ -116,6 +151,7 @@ def reinterpret(totyp, typ):
 # -----------------------------------------------------------------------------
 
 def get_impl(operator, totyp, typ):
+
   global fmtspec
 
   fmtspec = {
@@ -184,7 +220,6 @@ def get_impl(operator, totyp, typ):
     return infix_op_cmp_f32_f64[operator.name].\
      format(cast_to_int='(int)' if typ == 'f64' else '', **fmtspec)
 
-
   # infix operators - cmp - integer types
   infix_op_cmp_iutypes = [ 'lt', 'gt', 'le', 'ge', 'ne', 'eq' ]
   if operator.name in infix_op_cmp_iutypes:
@@ -192,19 +227,28 @@ def get_impl(operator, totyp, typ):
       format(op=operator.name, **fmtspec)
 
   # infix operators f32, f64 + integers
-  # TODO: should use nsimd_scalar instead?
-  # ref: see book, pages 480, 481, 482
-  infix_op_t = {
-      'add': 'return std::plus<{typ}>()({in0}, {in1});',
-      'sub': 'return std::minus<{typ}>()({in0}, {in1});',
-      'mul': 'return std::multiplies<{typ}>()({in0}, {in1});',
-      'div': 'return std::divides<{typ}>()({in0}, {in1});',
-      'neg': 'return std::negate<{typ}>()({in0});'
-  }
+  # ref: see Data Parallel C++ book, pages 480, 481, 482
+  # TODO: do the functions below call instrinsics/built-in
+  # functions on the device?
+  # 'add': 'return std::plus<{typ}>()({in0}, {in1});',
+  # 'sub': 'return std::minus<{typ}>()({in0}, {in1});',
+  # 'mul': 'return std::multiplies<{typ}>()({in0}, {in1});',
+  # 'div': 'return std::divides<{typ}>()({in0}, {in1});',
 
+  infix_op_t = [ 'add', 'sub', 'mul', 'div' ]
   if operator.name in infix_op_t:
-    return infix_op_t[operator.name].\
-      format(**fmtspec)
+    return 'return nsimd_scalar_{op}_{typ}({in0},{in1})'.\
+      format(op=operator.name, **fmtspec)
+
+  # neg
+  # ref: see Data Parallel C++ book, pages 480, 481, 482
+  # TODO: does the function below call an instrinsic/built-in
+  # function on the device?
+  # 'neg': 'return std::negate<{typ}>()({in0});'
+
+  if operator.name == 'neg':
+    return 'return nsimd_scalar_{op}_{typ}({in0})'.\
+      format(op=operator.name, **fmtspec)
 
   # shifts
   shifts_op_ui_t = [ 'shl', 'shr', 'shra' ]
