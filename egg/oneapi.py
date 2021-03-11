@@ -39,18 +39,19 @@ def get_impl_f16(operator, totyp, typ):
     # use nsimd_scalar_[operator]_f16
 
     no_sycl_avail_f16_rounding_use_nsimd_scalar = \
-    ['round_to_even', 'ceil', 'floor', 'trunc']
+      ['round_to_even', 'ceil', 'floor', 'trunc']
 
     # Case 2: no sycl function available for half type
     # sycl function available for f32
     # use nsimd casts f32-->f16 + sycl function + f16-->f32
 
     no_sycl_avail_f16_cast_use_sycl_f32 = \
-    ['fma', 'fms', 'fnma', 'fnms', 'min', 'max']
+      ['fma', 'fms', 'fnma', 'fnms', 'min', 'max']
 
     # Case 3: sycl provides functions supporting half type
 
-    sycl_avail_f16 = ['rec8', 'rec11', 'rec', 'rsqrt8', 'rsqrt11', 'rsqrt']
+    sycl_avail_f16 = \
+      ['rec8', 'rec11', 'rec', 'rsqrt8', 'rsqrt11', 'rsqrt', 'sqrt']
 
     # Case 4: no sycl function available for any type
     # use nsimd_scalar_[operator]_f16
@@ -59,7 +60,7 @@ def get_impl_f16(operator, totyp, typ):
 
     # Case 1
     if operator.name in no_sycl_avail_f16_rounding_use_nsimd_scalar:
-      code = 'return nsimd_scalar_{op}_f16({in0});'.\
+      return 'return nsimd_scalar_{op}_f16({in0});'.\
         format(op=operator.name,**fmtspec)
 
     # Case 2
@@ -67,40 +68,36 @@ def get_impl_f16(operator, totyp, typ):
       if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        code = \
-        '''f32 in0 = nsimd_f16_to_f32({in0});
-	   f32 in1 = nsimd_f16_to_f32({in1});
-	   f32 in2 = nsimd_f16_to_f32({in2});
-           f32 res = sycl::fma({neg}{in0}, {in1}, {op}{in2});
-           return nsimd_f32_to_f16(res);
-        '''.format(neg=neg, op=op, **fmtspec)
+        return '''f32 in0 = nsimd_f16_to_f32({in0});
+	          f32 in1 = nsimd_f16_to_f32({in1});
+	          f32 in2 = nsimd_f16_to_f32({in2});
+                  f32 res = sycl::fma({neg}{in0}, {in1}, {op}{in2});
+                  return nsimd_f32_to_f16(res);
+                  '''.format(neg=neg, op=op, **fmtspec)
       elif operator.name in ['min','max']:
         op = 'fmin' if operator.name == 'min' else 'fmax'
-        code = \
-        '''f32 in0 = nsimd_f16_to_f32({in0});
-	   f32 in1 = nsimd_f16_to_f32({in1});
-           f32 res = sycl::{op}({in0}, {in1});
-           return nsimd_f32_to_f16(res);
-        '''.format(op=op, **fmtspec)
+        return '''f32 in0 = nsimd_f16_to_f32({in0});
+	          f32 in1 = nsimd_f16_to_f32({in1});
+                  f32 res = sycl::{op}({in0}, {in1});
+                  return nsimd_f32_to_f16(res);
+                  '''.format(op=op, **fmtspec)
 
     # Case 3
     elif operator.name in sycl_avail_f16:
       if operator.name in ['rec8', 'rec11', 'rec']:
-        code = 'return sycl::recip({in0});'.format(**fmtspec)
+        return 'return sycl::recip({in0});'.format(**fmtspec)
       elif operator.name in ['rsqrt8', 'rsqrt11', 'rsqrt']:
-        code = 'return sycl::rsqrt({in0});'.format(**fmtspec)
+        return 'return sycl::rsqrt({in0});'.format(**fmtspec)
+      elif operator.name == 'sqrt':
+        return 'return sycl::sqrt({in0});'.format(**fmtspec)
 
-    # Case 4: no sycl function available for any type
-    # use nsimd_scalar_[operator]
+    # Case 4
     else:
       args = ', '.join(['{{in{}}}'.format(i).format(**fmtspec) \
                           for i in range(len(operator.params[1:]))])
 
-      code = 'return nsimd_scalar_{op}_f16({args});'.\
+      return 'return nsimd_scalar_{op}_f16({args});'.\
         format(op=operator.name,args)
-
-    return code
-
 
 # -----------------------------------------------------------------------------
 
@@ -222,15 +219,56 @@ def get_impl(operator, totyp, typ):
     else:
       return 'return sycl::sub_sat({in0},{in1});'.format(**fmtspec)
 
-  # ---------------- below in progress -------------------
+  # fma's
+  if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
+    neg = '-' if operator.name in ['fnma, fnms'] else ''
+    op = '-' if operator.name in ['fnms, fms'] else ''
+    return 'return sycl::fma({neg}{in0}, {in1}, {op}{in2});'.\
+      format(op=op, neg=neg, **fmtspec)
 
-  if operator.name == 'trunc':
-   return 'return sycl::trunc({in0});'.format(**fmtspec)
+  # other operators
+  # round_to_even, ceil, floor, trunc, min, max, abs, sqrt
 
-  if operator.name in ['min', 'max']:
-   op = 'sycl::fmin' if operator.name == 'min' else 'sycl::fmax'
-   return 'return {op}({in0}, {in1});'.format(op=op, **fmtspec)
+  # round_to_even
+  if operator.name == 'round_to_even':
+    return 'return nsimd_scalar_round_to_even_{typ}({in0})'.\
+      format(**fmtspec)
 
-  if operator.name in ['floor', 'ceil', 'sqrt']:
-    return 'return sycl::{op}({in0});'.format(op=operator.name, **fmtspec)
+  # other rounding operators
+  other_rounding_ops = ['ceil', 'floor', 'trunc']
+  if operator.name in other_rounding_ops
+    if typ in common.iutypes:
+      return 'return nsimd_scalar_{op}_{typ}({in0})'.\
+        format(op=operator.name, **fmtspec)
+    else:
+      return 'sycl::{op}({in0})'.format(op=operator.name, **fmtspec)
+
+  # min/max
+  if operator.name in ['min','max']:
+    if typ in common.iutypes:
+      return 'return nsimd_scalar_{op}_{typ}({in0},{in1})'.\
+        format(op=operator.name, **fmtspec)
+    else:
+      op = 'sycl::fmin' if operator.name == 'min' else 'sycl::fmax'
+     return 'return {op}({in0}, {in1});'.format(op=op, **fmtspec)
+
+  # abs
+  if operator.name == 'abs':
+    if typ in common.itypes:
+      return 'return ({typ})sycl::abs({in0})'.\
+        format(**fmtspec)
+    elif typ in common.utypes:
+      return 'return nsimd_scalar_abs_{typ}({in0})'.format(**fmtspec)
+    else:
+      return 'return sycl::fabs({in0})'.format(**fmtspec)
+
+  # sqrt
+  if operator.name == 'sqrt':
+    if typ in common.ftypes:
+      return 'return sycl::sqrt({in0})'.format(**fmtspec)
+
+  # rsqrt
+  if operator.name in ['rsqrt8', 'rsqrt11', 'rsqrt']:
+    if typ in common.ftypes:
+      return 'return sycl::rsqrt({in0});'.format(**fmtspec)
 
