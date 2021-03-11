@@ -107,7 +107,6 @@ def doit(opts):
 
            #if defined(NSIMD_ONEAPI)
            #include <CL/sycl.hpp>
-           #include <functional>
            #endif
 
            #ifdef NSIMD_NATIVE_FP16
