@@ -905,7 +905,7 @@ namespace nsimd {
   typedef __half f16;
   #define NSIMD_NATIVE_FP16
 #elif defined(NSIMD_ONEAPI)
-  typedef half f16;
+  typedef sycl::half f16;
   #define NSIMD_NATIVE_FP16
 #else
   typedef struct { u16 u; } f16;
