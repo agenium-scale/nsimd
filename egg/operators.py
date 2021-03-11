@@ -543,11 +543,18 @@ class Operator(object, metaclass=MAddToOperators):
 
         return sig
 
-    def get_scalar_signature(self, cpu_gpu, t, tt, lang):
-        sig = '__device__ ' if cpu_gpu == 'gpu' else ''
+    def get_scalar_signature(self, cpu_gpu_oneapi, t, tt, lang):
+        sig = '__device__ ' if cpu_gpu_oneapi == 'gpu' else ''
         sig += common.get_one_type_scalar(self.params[0], tt) + ' '
         func_name = 'nsimd_' if lang == 'c' else ''
-        func_name += 'gpu_' if cpu_gpu == 'gpu' else 'scalar_'
+        if cpu_gpu_oneapi == 'cpu':
+          func_name += 'scalar_'
+        if cpu_gpu_oneapi == 'gpu':
+          func_name += 'gpu_'
+        elif cpu_gpu_oneapi == 'oneapi':
+          func_name += 'oneapi_'
+        else:
+          func_name += 'scalar_'
         func_name += self.name
         operator_on_logicals = (self.params == ['l'] * len(self.params))
         if lang == 'c' and not operator_on_logicals:
