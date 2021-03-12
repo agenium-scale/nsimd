@@ -180,8 +180,7 @@ def doit(opts):
 	        oneapi_impl=get_oneapi_impl(
 	        operator.get_scalar_signature('oneapi', t, tt, 'cxx'),
 	        oneapi.get_impl(operator, tt, t)
-	        ))
-
+	        )))
                 continue
             for t in operator.types:
                 tts = common.get_output_types(t, operator.output_to)
@@ -221,7 +220,7 @@ def doit(opts):
 	                oneapi_impl=get_oneapi_impl(
 	                operator.get_scalar_signature('oneapi', t, tt, 'cxx'),
 	                oneapi.get_impl(operator, tt, t)
-                        ))
+                        )))
 
         out.write('''
 
