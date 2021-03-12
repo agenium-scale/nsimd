@@ -132,21 +132,21 @@ def get_impl_f16(operator, totyp, typ):
                           for i in range(len(operator.params[1:]))])
 
       return 'return nsimd_scalar_{op}_f16({args});'.\
-        format(op=operator.name,args)
+        format(op=operator.name, args=args)
 
 # -----------------------------------------------------------------------------
 
 def reinterpret(totyp, typ):
     if typ == totyp:
-        return 'return {in0};'.format(**fmtspec)
+      return 'return {in0};'.format(**fmtspec)
     elif ((typ in common.ftypes and totyp in common.iutypes) or \
     (typ in common.iutypes and totyp in common.ftypes)):
-    return 'return nsimd_scalar_reinterpret_{totyp}_{typ}({in0});'. \
+      return 'return nsimd_scalar_reinterpret_{totyp}_{typ}({in0});'. \
            format(totyp=totyp, typ=typ, **fmtspec)
     else:
-        return '''{totyp} ret;
-                  memcpy((void *)&ret, (void *)&{in0}, sizeof({in0}));
-                  return ret;'''.format(**fmtspec)
+      return '''{totyp} ret;
+                 memcpy((void *)&ret, (void *)&{in0}, sizeof({in0}));
+                 return ret;'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -293,7 +293,7 @@ def get_impl(operator, totyp, typ):
 
   # other rounding operators
   other_rounding_ops = ['ceil', 'floor', 'trunc']
-  if operator.name in other_rounding_ops
+  if operator.name in other_rounding_ops:
     if typ in common.iutypes:
       return 'return nsimd_scalar_{op}_{typ}({in0})'.\
         format(op=operator.name, **fmtspec)
@@ -307,7 +307,7 @@ def get_impl(operator, totyp, typ):
         format(op=operator.name, **fmtspec)
     else:
       op = 'sycl::fmin' if operator.name == 'min' else 'sycl::fmax'
-     return 'return {op}({in0}, {in1});'.format(op=op, **fmtspec)
+      return 'return {op}({in0}, {in1});'.format(op=op, **fmtspec)
 
   # abs
   if operator.name == 'abs':
