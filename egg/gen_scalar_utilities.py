@@ -92,7 +92,7 @@ def doit(opts):
                                               for sig in scalar_tmp])
         gpu_reinterpret_decls = '\n'.join(['inline ' + sig + ';' \
                                            for sig in gpu_tmp])
-        oneapi_reinterpret_decls = '\n'.join(['NSIMD_INLINE' + sig + ';' \
+        oneapi_reinterpret_decls = '\n'.join(['NSIMD_INLINE ' + sig + ';' \
                                            for sig in oneapi_tmp])
         out.write(
         '''#ifndef NSIMD_SCALAR_UTILITIES_H
