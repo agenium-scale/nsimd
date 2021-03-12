@@ -58,7 +58,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
 # -----------------------------------------------------------------------------
 
 def get_oneapi_impl(oneapi_sig, oneapi_impl):
-  return '''#elif defined(NSIMD_ONEAPI)"
+  return '''#elif defined(NSIMD_ONEAPI)
 
            NSIMD_INLINE {oneapi_sig} {{
              {oneapi_impl}
