@@ -33,6 +33,15 @@ SOFTWARE.
 #include <cstdlib>
 
 // ----------------------------------------------------------------------------
+// Num threads per block on device
+
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
+#define THREADS_PER_BLOCK 128
+#else
+#define THREADS_PER_BLOCK 1
+#endif
+
+// ----------------------------------------------------------------------------
 // Common code for devices
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)

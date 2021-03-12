@@ -501,7 +501,7 @@ def gen_tests_for_shifts(opts, t, operator):
         void compute_result({typ} *dst, {typ} *a0, const size_t n, const int s) {{
 	  sycl::queue q_ = spmd::_get_global_queue();
 	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
-	                                    sycl::range<1>({threads_per_block})),
+	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
 	      kernel(dst, a0, n, s, item);
 	    }}).wait();
@@ -617,7 +617,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         void compute_result({typ} *dst, {typ} *a0, const size_t n) {{
 	  sycl::queue q_ = spmd::_get_global_queue();
 	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
-	                                    sycl::range<1>({threads_per_block})),
+	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, a0, n, item);
           }}).wait();
@@ -832,7 +832,7 @@ def gen_tests_for(opts, t, operator):
         void compute_result({typ} *dst, {k_args}, const size_t n) {{
 	  sycl::queue q_ = spmd::_get_global_queue();
 	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
-	                                    sycl::range<1>({threads_per_block})),
+	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, {k_call_args}, n, item);
           }}).wait();
@@ -863,11 +863,6 @@ def gen_tests_for(opts, t, operator):
 
         // clang-format on
 
-        #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
-        #define THREADS_PER_BLOCK 128
-        #else
-        #define THREADS_PER_BLOCK 1
-        #endif
 
         int main() {{
           unsigned int n_[3] = {{ 10, 1001, 10001 }};
