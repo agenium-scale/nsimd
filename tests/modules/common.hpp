@@ -25,12 +25,12 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_SPMD_COMMON_HPP
 #define NSIMD_MODULES_SPMD_COMMON_HPP
 
-#include <nsimd/nsimd.h>
-#include <nsimd/scalar_utilities.h>
-#include <iostream>
-#include <cstring>
 #include <cerrno>
 #include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <nsimd/nsimd.h>
+#include <nsimd/scalar_utilities.h>
 
 // ----------------------------------------------------------------------------
 // Num threads per block on device
@@ -60,6 +60,28 @@ __device__ bool cmp_Ts(double a, double b) {
   return __double_as_longlong(a) == __double_as_longlong(b);
 }
 
+#elif defined(NSIMD_ONEAPI)
+
+template <typename T> bool cmp_Ts(const T a, const T b) { return a == b; }
+
+bool cmp_Ts(const sycl::half a, const sycl::half b) {
+  i16 a_i16;
+  memcpy((void *)&a_i16, (void *)&a, sizeof(a_i16));
+  i16 b_i16;
+  memcpy((void *)&b_i16, (void *)&b, sizeof(b_i16));
+  return a_i16 == b_i16;
+}
+
+bool cmp_Ts(float a, float b) {
+  return nsimd_scalar_reinterpret_i32_f32(a) ==
+         nsimd_scalar_reinterpret_i32_f32(b);
+}
+
+bool cmp_Ts(double a, double b) {
+  return nsimd_scalar_reinterpret_i64_f64(a) ==
+         nsimd_scalar_reinterpret_i64_f64(b);
+}
+
 #endif
 
 // ----------------------------------------------------------------------------
@@ -72,7 +94,7 @@ __device__ bool cmp_Ts(double a, double b) {
 template <typename T>
 __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
   extern __shared__ char buf_[]; // size of a block
-  T *buf = (T*)buf_;
+  T *buf = (T *)buf_;
   int tid = threadIdx.x;
   int i = tid + blockIdx.x * blockDim.x;
   if (i < n) {
@@ -121,9 +143,9 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
     std::cerr << "ERROR: cannot cudaMalloc " << sizeof(int) << " bytes\n";
     exit(EXIT_FAILURE);
   }
-  device_cmp_blocks<<<(n + 127) / 128, 128, 128 * sizeof(T)>>>(src1, src2,
-                                                               int(n));
-  device_cmp_array<<<(n + 127) / 128, 128>>>(device_ret, src1, int(n));
+  device_cmp_blocks<<<(n + 127) / 128, 128, 128 * sizeof(T)> > >(src1, src2,
+                                                                 int(n));
+  device_cmp_array<<<(n + 127) / 128, 128> > >(device_ret, src1, int(n));
   cudaMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
              cudaMemcpyDeviceToHost);
   cudaFree((void *)device_ret);
@@ -146,7 +168,7 @@ template <typename T> void del(T *ptr) { cudaFree(ptr); }
 template <typename T>
 __global__ void device_cmp_blocks(T *src1, T *src2, size_t n) {
   extern __shared__ char buf_[]; // size of a block
-  T *buf = (T*)buf_;
+  T *buf = (T *)buf_;
   size_t tid = hipThreadIdx_x;
   size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
   if (i < n) {
@@ -210,6 +232,100 @@ template <typename T> bool cmp(T *src1, T *src2, size_t n, double) {
 
 template <typename T> void del(T *ptr) { hipFree(ptr); }
 
+// ----------------------------------------------------------------------------
+// oneAPI
+
+#elif defined(NSIMD_ONEAPI)
+
+// perform reduction on blocks first, note that this could be optimized
+// but to check correctness we don't need it now
+template <typename T>
+void device_cmp_blocks(T *src1, T *src2, const size_t n,
+                       sycl::nd_item<1> item) {
+  char buf_[THREADS_PER_BLOCK]; // size of a block
+  T *buf = (T *)buf_;
+  size_t tid = item.get_local_id().get(0);
+  size_t i = item.get_global_id().get(0);
+  if (i < n) {
+    buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
+  }
+
+  sycl::nd_range<1> nd_range = item.get_nd_range();
+  sycl::range<1> range = nd_range.get_local_range();
+  const int block_start = nd_range.get_offset();
+  const int block_end = block_start + range.size();
+
+  int size;
+  if (block_end < n) {
+    size = range.size();
+  } else {
+    size = n - block_start;
+  }
+  item.barrier(sycl::access::fence_space::local);
+
+  // reduction mul on the block (sub-group)
+  for (int s = size / 2; s != 0; s /= 2) {
+    if (tid < s && i < n) {
+      buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
+      item.barrier(sycl::access::fence_space::local);
+    }
+  }
+  if (tid == 0) {
+    src1[i] = buf[0];
+  }
+}
+
+template <typename T>
+void device_cmp_array(int *dst, T *src1, const size_t n,
+                      sycl::nd_item<1> item) {
+  // reduction mul on the whole vector
+  T buf = T(1);
+  sycl::nd_range<1> nd_range = item.get_nd_range();
+  sycl::range<1> range = nd_range.get_local_range();
+  for (int i = 0; i < n; i += range.size()) {
+    buf = nsimd::oneapi_mul(buf, src1[i]);
+  }
+  size_t i = item.get_global_id().get(0);
+  if (i == 0) {
+    dst[0] = int(buf);
+  }
+}
+
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
+  sycl::queue q = spmd::_get_global_queue();
+  T *device_ret = sycl::malloc_device<T>(n, q);
+  if (device_ret == NULL) {
+    std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(int)
+              << " bytes\n";
+    exit(EXIT_FAILURE);
+  }
+  sycl::event e1 = q_.parallel_for(
+      sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
+      [=](sycl::nd_item<1> item) {
+        device_cmp_blocks(src1, src2, size_t(n), item);
+      });
+  e1.wait();
+  sycl::event e2 = q_.parallel_for(
+      sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
+      [=](sycl::nd_item<1> item) {
+        device_cmp_array(device_ret, src1, size_t(n), item);
+      });
+  e2.wait();
+  int host_ret;
+  q.memcpy((void *)&host_ret, (void *)device_ret, sz * sizeof(T)).wait();
+  sycl::free(device_ret, q);
+  return bool(host_ret);
+}
+
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
+  return cmp(src1, src2, n);
+}
+
+template <typename T> void del(T *ptr) {
+  sycl::queue q = spmd::_get_global_queue();
+  sycl::free(ptr, q);
+}
+
 #else
 
 // ----------------------------------------------------------------------------
@@ -256,7 +372,7 @@ bool cmp(T *src1, T *src2, unsigned int n, double epsilon) {
       continue;
     }
 
-    if ( (ma - mi) / ma > epsilon) {
+    if ((ma - mi) / ma > epsilon) {
       return false;
     }
   }
