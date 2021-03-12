@@ -78,6 +78,7 @@ def doit(opts):
         # we declare reinterprets now as we need them
         scalar_tmp = []
         gpu_tmp = []
+        oneapi_tmp = []
         for t in operators.Reinterpret.types:
             for tt in common.get_output_types(
                           t, operators.Reinterpret.output_to):
