@@ -142,7 +142,7 @@ def reinterpret(totyp, typ):
     elif ((typ in common.ftypes and totyp in common.iutypes) or \
     (typ in common.iutypes and totyp in common.ftypes)):
       return 'return nsimd_scalar_reinterpret_{totyp}_{typ}({in0});'. \
-           format(totyp=totyp, typ=typ, **fmtspec)
+           format(**fmtspec)
     else:
       return '''{totyp} ret;
                  memcpy((void *)&ret, (void *)&{in0}, sizeof({in0}));
@@ -259,7 +259,7 @@ def get_impl(operator, totyp, typ):
   # adds
   if operator.name == 'adds':
     if typ in common.ftypes:
-      return infix_op_t['add'].\
+      return 'return nsimd_scalar_add_{typ}({in0},{in1})'.\
         format(**fmtspec)
     else:
       return 'return sycl::add_sat({in0},{in1});'.format(**fmtspec)
@@ -267,7 +267,7 @@ def get_impl(operator, totyp, typ):
   # subs
   if operator.name == 'subs':
     if typ in common.ftypes:
-      return infix_op_t['sub'].\
+      return 'return nsimd_scalar_sub_{typ}({in0},{in1})'.\
         format(**fmtspec)
     else:
       return 'return sycl::sub_sat({in0},{in1});'.format(**fmtspec)
