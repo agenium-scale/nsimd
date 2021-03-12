@@ -143,9 +143,9 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
     std::cerr << "ERROR: cannot cudaMalloc " << sizeof(int) << " bytes\n";
     exit(EXIT_FAILURE);
   }
-  device_cmp_blocks<<<(n + 127) / 128, 128, 128 * sizeof(T)> > >(src1, src2,
+  device_cmp_blocks<<<(n + 127) / 128, 128, 128 * sizeof(T)>>>(src1, src2,
                                                                  int(n));
-  device_cmp_array<<<(n + 127) / 128, 128> > >(device_ret, src1, int(n));
+  device_cmp_array<<<(n + 127) / 128, 128>>>(device_ret, src1, int(n));
   cudaMemcpy((void *)&host_ret, (void *)device_ret, sizeof(int),
              cudaMemcpyDeviceToHost);
   cudaFree((void *)device_ret);
