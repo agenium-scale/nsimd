@@ -36,7 +36,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
                     {cuda_impl}
                   }}
 
-                  #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl)
+                  '''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl)
     else:
         return '''#if defined(NSIMD_CUDA)
 
@@ -44,9 +44,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
                     {cuda_impl}
                   }}
 
-                  #endif
-
-                  #ifdef NSIMD_ROCM
+                  #elif NSIMD_ROCM
 
                   inline {gpu_sig} {{
                     {rocm_impl}
