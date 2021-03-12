@@ -547,8 +547,6 @@ class Operator(object, metaclass=MAddToOperators):
         sig = '__device__ ' if cpu_gpu_oneapi == 'gpu' else ''
         sig += common.get_one_type_scalar(self.params[0], tt) + ' '
         func_name = 'nsimd_' if lang == 'c' else ''
-        if cpu_gpu_oneapi == 'cpu':
-          func_name += 'scalar_'
         if cpu_gpu_oneapi == 'gpu':
           func_name += 'gpu_'
         elif cpu_gpu_oneapi == 'oneapi':
