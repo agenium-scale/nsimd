@@ -246,9 +246,8 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
   T *buf = (T *)buf_;
   size_t tid = item.get_local_id().get(0);
   size_t i = item.get_global_id().get(0);
-  if (i < n) {
-    buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
-  }
+  if(i >= n){ return; }
+  buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
 
   sycl::nd_range<1> nd_range = item.get_nd_range();
   sycl::range<1> range = nd_range.get_local_range();
@@ -264,12 +263,16 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
   item.barrier(sycl::access::fence_space::local);
 
   // reduction mul on the block (sub-group)
-  for (int s = size / 2; s != 0; s /= 2) {
-    if (tid < s && i < n) {
-      buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
+    for (int s = size / 2; s != 0; s /= 2) {
+      if(tid < s){
+        buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
+      }
+      // book p 217
+      // it is critically important that either all work-items
+      // in the group execute the barrier or no work-items in
+      // the group execute the barrier.
       item.barrier(sycl::access::fence_space::local);
     }
-  }
   if (tid == 0) {
     src1[i] = buf[0];
   }
