@@ -77,7 +77,7 @@ static inline sycl::queue _get_global_queue() {
 #endif
 
 // ----------------------------------------------------------------------------
-// CUDA and ROCm
+// CUDA ,ROCm and oneAPI
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
 
@@ -112,7 +112,7 @@ static inline sycl::queue _get_global_queue() {
     size_t spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;          \
     if (spmd_i_ < n) {
 
-#else
+#elif defined(NSIMD_ONEAPI)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
@@ -134,6 +134,8 @@ static inline sycl::queue _get_global_queue() {
   }                                                                           \
   }
 
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+
 // device function
 #define spmd_dev_func(type_name, ...)                                         \
   template <int spmd_ScalarBits_> __device__ type_name(__VA_ARGS__) {
@@ -142,6 +144,19 @@ static inline sycl::queue _get_global_queue() {
 #define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
   template <typename template_argument, int spmd_ScalarBits_>                 \
   __device__ type_name(__VA_ARGS__) {
+
+#elif defined(NSIMD_ONEAPI)
+
+// device function
+#define spmd_dev_func(type_name, ...)                                         \
+  template <int spmd_ScalarBits_> type_name(__VA_ARGS__) {
+
+// templated device function
+#define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  type_name(__VA_ARGS__) {
+
+#endif
 
 #define spmd_dev_func_end }
 
