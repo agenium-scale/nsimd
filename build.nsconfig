@@ -117,7 +117,7 @@ set cflags = ${std_flag_for_$simd$} $flags \
 phony all deps libnsimd_$simd$$so$
 
 build_file libnsimd_$simd$$so deps ${o_for_$simd$}
-	c++ -shared @in -o @out
+	c++ -shared -fPIC @in -o @out
 
 set ldflags = -fPIC -L. -lnsimd_$simd
 
