@@ -357,6 +357,7 @@ namespace nsimd {
 
 #if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
   #define NSIMD_ONEAPI
+  #undef ONEAPI
 #endif
 
 /* ------------------------------------------------------------------------- */
