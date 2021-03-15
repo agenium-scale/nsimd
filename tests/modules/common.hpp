@@ -115,8 +115,8 @@ __global__ void device_cmp_blocks(T *src1, T *src2, int n) {
   for (int s = size / 2; s != 0; s /= 2) {
     if (tid < s && i < n) {
       buf[tid] = nsimd::gpu_mul(buf[tid], buf[tid + s]);
-      __syncthreads();
     }
+    __syncthreads();
   }
   if (tid == 0) {
     src1[i] = buf[0];
