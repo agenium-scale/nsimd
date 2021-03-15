@@ -32,12 +32,6 @@ tpb = 128
 gpu_params = '(n + {}) / {}, {}'.format(tpb, tpb - 1, tpb)
 
 # -----------------------------------------------------------------------------
-# oneAPI: default number of threads per block
-
-tpb = 128
-one_api_gpu_params = ''
-
-# -----------------------------------------------------------------------------
 # helpers
 
 def append(s1, s2):
@@ -494,7 +488,7 @@ def gen_tests_for_shifts(opts, t, operator):
                            const int s, sycl::nd_item<1> item) {{
           const size_t ii = item.get_global_id().get(0);
           if(ii < n){{
-            dst[ii] = nsimd::scalar_{op_name}(a0[ii], s);
+            dst[ii] = nsimd::oneapi_{op_name}(a0[ii], s);
           }}
         }}
 
@@ -609,7 +603,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
                            sycl::nd_item<1> item) {{
           const size_t ii = item.get_global_id().get(0);
           if(ii < n){{
-            dst[ii] = nsimd::scalar_{op_name}({typ}(), nsimd::scalar_{op_name}(
+            dst[ii] = nsimd::oneapi_{op_name}({typ}(), nsimd::oneapi_{op_name}(
                                      {totyp}(), a0[ii]));
           }}
         }}
@@ -751,6 +745,34 @@ def gen_tests_for(opts, t, operator):
                                      one=get_cte_gpu(t, 1),
                                      zero=get_cte_gpu(t, 0))
 
+    # oneAPI
+    def get_cte_oneapi(typ, cte):
+      if typ = 'f16':
+        return 'nsimd_f32_to_f16((f32){})'.format(cte)
+      else:
+        return '({}){}'.format(typ, cte)
+
+    def oneapi_load_code(param, typ, i):
+      if param == 'l':
+          return 'nsimd::oneapi_lt(a{}[i], {})'.format(i, get_cte_oneapi(typ, 4))
+      if param == 'v':
+          return 'a{}[i]'.format(i)
+
+    args = ', '.join([oneapi_load_code(operator.params[i + 1], t, i) \
+                      for i in range(arity)])
+    if op_name == 'to_mask':
+        args = t + '(), ' + args
+    if operator.params[0] == 'v':
+        gpu_kernel = 'dst[i] = nsimd::one_api_{}({});'.format(op_name, args)
+    else:
+        gpu_kernel = '''if (nsimd::oneapi_{op_name}({args})) {{
+                          dst[i] = {one};
+                        }} else {{
+                          dst[i] = {zero};
+                        }}'''.format(op_name=op_name, args=args,
+                                     one=get_cte_oneapi(t, 1),
+                                     zero=get_cte_oneapi(t, 0))
+
     # cpu
     def get_cte_cpu(typ, cte):
         if typ == 'f16':
@@ -758,14 +780,14 @@ def gen_tests_for(opts, t, operator):
         else:
             return '({}){}'.format(typ, cte)
 
-    def gpu_load_code(param, typ, i):
+    def cpu_load_code(param, typ, i):
         if param == 'l':
             return 'nsimd::scalar_lt(a{}[i], {})'. \
                    format(i, get_cte_cpu(typ, 4))
         if param == 'v':
             return 'a{}[i]'.format(i)
 
-    args = ', '.join([gpu_load_code(operator.params[i + 1], t, i) \
+    args = ', '.join([cpu_load_code(operator.params[i + 1], t, i) \
                       for i in range(arity)])
     if op_name == 'to_mask':
         args = t + '(), ' + args
@@ -825,7 +847,7 @@ def gen_tests_for(opts, t, operator):
 
         inline void kernel({typ} *dst, {k_args}, const size_t n, sycl::nd_item<1> item) {{
           if(item.get_global_id().get(0) < n){{
-            {cpu_kernel}
+            {oneapi_kernel}
           }}
         }}
 
@@ -889,7 +911,8 @@ def gen_tests_for(opts, t, operator):
         }}
         '''.format(typ=t, free_tabs=free_tabs, fill_tabs=fill_tabs,
                    k_code=k_code, k_call_args=k_call_args, k_args=k_args,
-                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel, comp=comp,
+                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
+                   oneapi_kernel=oneapi_kernel, comp=comp,
                    gpu_params=gpu_params, typnbits=t[1:]))
 
     common.clang_format(opts, filename, cuda=True)
