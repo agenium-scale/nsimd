@@ -268,7 +268,7 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
   TODO: test the following usage correctness
   sycl::ONEAPI::sub_group sg = item.get_sub_group();
   if(tid == 0){
-    src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiply<>());
+    src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiplies<>());
   }
   */
 
