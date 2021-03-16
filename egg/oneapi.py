@@ -316,7 +316,7 @@ def get_impl(operator, totyp, typ):
       return 'return nsimd_scalar_{op}_{typ}({in0});'.\
         format(op=operator.name, **fmtspec)
     else:
-      return 'sycl::{op}({in0});'.format(op=operator.name, **fmtspec)
+      return 'return sycl::{op}({in0});'.format(op=operator.name, **fmtspec)
 
   # min/max
   if operator.name in ['min','max']:
