@@ -61,7 +61,7 @@ def get_impl_f16(operator, totyp, typ):
     # Case 3: sycl provides functions supporting half type
 
     sycl_avail_functions_f16 = \
-      ['rec8', 'rec11', 'rec', 'rsqrt8', 'rsqrt11', 'rsqrt', 'sqrt']
+      ['rec','rec8','rec11','rsqrt8', 'rsqrt11', 'rsqrt', 'sqrt']
 
     # Case 4: sycl half's type provided comparison operators
     # Note:
@@ -99,7 +99,7 @@ def get_impl_f16(operator, totyp, typ):
 	          f32 x2 = static_cast<f32>({in2});
                   f32 res = sycl::fma({neg}x0, x1, {op}x2);
                   // cl::sycl::half::half(const float& f)
-                  return sycl::half(res);
+                  return f16(res);
                   '''.format(neg=neg, op=op, **fmtspec)
       elif operator.name in ['min','max']:
         op = 'fmin' if operator.name == 'min' else 'fmax'
@@ -108,20 +108,23 @@ def get_impl_f16(operator, totyp, typ):
 	          f32 x1 =  static_cast<f32>({in1});
                   f32 res = sycl::{op}(x0, x1);
                   // cl::sycl::half::half(const float& f)
-                  return sycl::half(res);
+                  return f16(res);
                   '''.format(op=op, **fmtspec)
       elif operator.name == 'abs':
         return '''// cl::sycl::half::operator float
                   f32 x0 = static_cast<f32>({in0});
                   f32 res = sycl::fabs(x0);
                   // cl::sycl::half::half(const float& f)
-                  return sycl::half(res);
+                  return f16(res);
                   '''.format(**fmtspec)
 
     # Case 3
     elif operator.name in sycl_avail_functions_f16:
       if operator.name in ['rec8', 'rec11', 'rec']:
-        return 'return sycl::recip({in0});'.format(**fmtspec)
+        return '''// sycl::recip available in native form only
+                  // availability in half-precision
+                  'return f16(1.0f / {in0});'
+                  '''.format(**fmtspec)
       elif operator.name in ['rsqrt8', 'rsqrt11', 'rsqrt']:
         return 'return sycl::rsqrt({in0});'.format(**fmtspec)
       elif operator.name == 'sqrt':
@@ -214,15 +217,12 @@ def get_impl(operator, totyp, typ):
       return get_impl_f16(operator, totyp, typ)
 
   # infix operators - rec - f32, f64
-  infix_op_rec_f32_f64 = {
-      'rec': 'return sycl::recip({in0});',
-      'rec8': 'return sycl::recip({in0});',
-      'rec11': 'return sycl::recip({in0});'
-      }
+  infix_op_rec_ftypes =['rec', 'rec8', 'rec11']
 
-  if typ in ['f32','f64'] and operator.name in infix_op_rec_f32_f64:
-    return infix_op_rec_f32_f64[operator.name].\
-     format(**fmtspec)
+  if typ in common.ftypes_no_f16 and operator.name in infix_op_rec_ftypes:
+      return '''// sycl::recip available in native form only
+                return 1.0{f} / {in0};
+                '''.format(f='f' if typ == 'f32' else '', **fmtspec)
 
   # infix operators - cmp - f32, f64
   infix_op_cmp_f32_f64 = {
@@ -234,7 +234,7 @@ def get_impl(operator, totyp, typ):
       'eq': 'return {cast_to_int}sycl::isequal({in0},{in1});'
   }
 
-  if typ in ['f32','f64'] and operator.name in infix_op_cmp_f32_f64:
+  if typ in common.ftypes_no_f16 and operator.name in infix_op_cmp_f32_f64:
     return infix_op_cmp_f32_f64[operator.name].\
      format(cast_to_int='(int)' if typ == 'f64' else '', **fmtspec)
 
