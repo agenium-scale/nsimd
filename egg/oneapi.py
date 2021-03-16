@@ -53,7 +53,7 @@ def get_impl_f16(operator, totyp, typ):
     # sycl function available for f32
     # use nsimd casts f32-->f16 + sycl function + f16-->f32
 
-    # TODO: hould we use sycl::add_sat, sycl::add_sub
+    # TODO: should we use sycl::add_sat, sycl::add_sub
     # both available for f32?
     no_sycl_avail_f16_cast_use_sycl_f32 = \
       ['fma', 'fms', 'fnma', 'fnms', 'min', 'max', 'abs']
@@ -93,23 +93,29 @@ def get_impl_f16(operator, totyp, typ):
       if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
         neg = '-' if operator.name in ['fnma, fnms'] else ''
         op = '-' if operator.name in ['fnms, fms'] else ''
-        return '''f32 x0 = nsimd_f16_to_f32({in0});
-	          f32 x1 = nsimd_f16_to_f32({in1});
-	          f32 x2 = nsimd_f16_to_f32({in2});
+        return '''// cl::sycl::half::operator float
+                  f32 x0 = static_cast<f32>({in0});
+	          f32 x1 = static_cast<f32>({in1});
+	          f32 x2 = static_cast<f32>({in2});
                   f32 res = sycl::fma({neg}x0, x1, {op}x2);
-                  return nsimd_f32_to_f16(res);
+                  // cl::sycl::half::half(const float& f)
+                  return sycl::half(res);
                   '''.format(neg=neg, op=op, **fmtspec)
       elif operator.name in ['min','max']:
         op = 'fmin' if operator.name == 'min' else 'fmax'
-        return '''f32 x0 = nsimd_f16_to_f32({in0});
-	          f32 x1 = nsimd_f16_to_f32({in1});
+        return '''// cl::sycl::half::operator float
+                  f32 x0 =  static_cast<f32>({in0});
+	          f32 x1 =  static_cast<f32>({in1});
                   f32 res = sycl::{op}(x0, x1);
-                  return nsimd_f32_to_f16(res);
+                  // cl::sycl::half::half(const float& f)
+                  return sycl::half(res);
                   '''.format(op=op, **fmtspec)
       elif operator.name == 'abs':
-        return '''f32 x0 = nsimd_f16_to_f32({in0});
+        return '''// cl::sycl::half::operator float
+                  f32 x0 = static_cast<f32>({in0});
                   f32 res = sycl::fabs(x0);
-                  return nsimd_f32_to_f16(res);
+                  // cl::sycl::half::half(const float& f)
+                  return sycl::half(res);
                   '''.format(**fmtspec)
 
     # Case 3
@@ -189,7 +195,11 @@ def get_impl(operator, totyp, typ):
 
   # cvt
   if operator.name == 'cvt':
-    return 'return nsimd_scalar_cvt_{totyp}_{typ}({in0});'.format(**fmtspec)
+    if 'f16' == totyp:
+      # conversion op: takes in a 32 bit float and converts it to 16 bits
+      return 'return sycl::half(static_cast<f32>({in0}));'.format(**fmtspec)
+    else:
+      return 'return nsimd_scalar_cvt_{totyp}_{typ}({in0});'.format(**fmtspec)
 
   # to_mask
   if operator.name == 'to_mask':
@@ -306,7 +316,7 @@ def get_impl(operator, totyp, typ):
       return 'return nsimd_scalar_{op}_{typ}({in0});'.\
         format(op=operator.name, **fmtspec)
     else:
-      return 'sycl::{op}({in0})'.format(op=operator.name, **fmtspec)
+      return 'sycl::{op}({in0});'.format(op=operator.name, **fmtspec)
 
   # min/max
   if operator.name in ['min','max']:
