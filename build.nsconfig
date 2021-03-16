@@ -73,6 +73,7 @@ set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
 lambda cflags_for_generic_*    = -DCPU
 set    cflags_for_generic_cuda = -DCUDA
 set    cflags_for_generic_rocm = -DROCM
+set    cflags_for_generic_oneapi = -DONEAPI
 
 set cflags_for_               = -DCPU
 set cflags_for_cpu            = ${cflags_for_generic_$simd$}
