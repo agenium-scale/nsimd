@@ -166,13 +166,13 @@ def get_impl(operator, totyp, typ):
   # bool first, no special treatment for f16's
   bool_operators = [ 'andl', 'orl', 'xorl', 'andnotl', 'notl' ]
   if operator.name in bool_operators:
-    return 'return nsimd_scalar_{op}({in0},{in1})'.\
+    return 'return nsimd_scalar_{op}({in0},{in1});'.\
             format(op=operator.name,**fmtspec)
 
   # infix operators no special treatment for f16's
   infix_operators = [ 'orb', 'andb', 'andnotb', 'notb', 'xorb' ]
   if operator.name in infix_operators:
-    return 'return nsimd_scalar_{op}_{typ}({in0},{in1})'.\
+    return 'return nsimd_scalar_{op}_{typ}({in0},{in1});'.\
             format(op=operator.name,**fmtspec)
 
   # reinterpret
@@ -237,7 +237,7 @@ def get_impl(operator, totyp, typ):
 
   infix_op_t = [ 'add', 'sub', 'mul', 'div' ]
   if operator.name in infix_op_t:
-    return 'return nsimd_scalar_{op}_{typ}({in0},{in1})'.\
+    return 'return nsimd_scalar_{op}_{typ}({in0},{in1});'.\
       format(op=operator.name, **fmtspec)
 
   # neg
@@ -247,7 +247,7 @@ def get_impl(operator, totyp, typ):
   # 'neg': 'return std::negate<{typ}>()({in0});'
 
   if operator.name == 'neg':
-    return 'return nsimd_scalar_{op}_{typ}({in0})'.\
+    return 'return nsimd_scalar_{op}_{typ}({in0});'.\
       format(op=operator.name, **fmtspec)
 
   # shifts
@@ -259,7 +259,7 @@ def get_impl(operator, totyp, typ):
   # adds
   if operator.name == 'adds':
     if typ in common.ftypes:
-      return 'return nsimd_scalar_add_{typ}({in0},{in1})'.\
+      return 'return nsimd_scalar_add_{typ}({in0},{in1});'.\
         format(**fmtspec)
     else:
       return 'return sycl::add_sat({in0},{in1});'.format(**fmtspec)
@@ -267,7 +267,7 @@ def get_impl(operator, totyp, typ):
   # subs
   if operator.name == 'subs':
     if typ in common.ftypes:
-      return 'return nsimd_scalar_sub_{typ}({in0},{in1})'.\
+      return 'return nsimd_scalar_sub_{typ}({in0},{in1});'.\
         format(**fmtspec)
     else:
       return 'return sycl::sub_sat({in0},{in1});'.format(**fmtspec)
@@ -280,7 +280,7 @@ def get_impl(operator, totyp, typ):
       return 'return sycl::fma({neg}{in0}, {in1}, {op}{in2});'.\
         format(op=op, neg=neg, **fmtspec)
     else:
-      return 'return nsimd_scalar_{op}_{typ}({in0}, {in1}, {in2})'.\
+      return 'return nsimd_scalar_{op}_{typ}({in0}, {in1}, {in2});'.\
         format(op=operator.name, **fmtspec)
 
   # other operators
@@ -288,14 +288,14 @@ def get_impl(operator, totyp, typ):
 
   # round_to_even
   if operator.name == 'round_to_even':
-    return 'return nsimd_scalar_round_to_even_{typ}({in0})'.\
+    return 'return nsimd_scalar_round_to_even_{typ}({in0});'.\
       format(**fmtspec)
 
   # other rounding operators
   other_rounding_ops = ['ceil', 'floor', 'trunc']
   if operator.name in other_rounding_ops:
     if typ in common.iutypes:
-      return 'return nsimd_scalar_{op}_{typ}({in0})'.\
+      return 'return nsimd_scalar_{op}_{typ}({in0});'.\
         format(op=operator.name, **fmtspec)
     else:
       return 'sycl::{op}({in0})'.format(op=operator.name, **fmtspec)
@@ -303,7 +303,7 @@ def get_impl(operator, totyp, typ):
   # min/max
   if operator.name in ['min','max']:
     if typ in common.iutypes:
-      return 'return sycl::{op}({in0},{in1})'.\
+      return 'return sycl::{op}({in0},{in1});'.\
         format(op=operator.name, **fmtspec)
     else:
       op = 'sycl::fmin' if operator.name == 'min' else 'sycl::fmax'
@@ -312,17 +312,17 @@ def get_impl(operator, totyp, typ):
   # abs
   if operator.name == 'abs':
     if typ in common.itypes:
-      return 'return ({typ})sycl::abs({in0})'.\
+      return 'return ({typ})sycl::abs({in0});'.\
         format(**fmtspec)
     elif typ in common.utypes:
-      return 'return nsimd_scalar_abs_{typ}({in0})'.format(**fmtspec)
+      return 'return nsimd_scalar_abs_{typ}({in0});'.format(**fmtspec)
     else:
-      return 'return sycl::fabs({in0})'.format(**fmtspec)
+      return 'return sycl::fabs({in0});'.format(**fmtspec)
 
   # sqrt
   if operator.name == 'sqrt':
     if typ in common.ftypes:
-      return 'return sycl::sqrt({in0})'.format(**fmtspec)
+      return 'return sycl::sqrt({in0});'.format(**fmtspec)
 
   # rsqrt
   if operator.name in ['rsqrt8', 'rsqrt11', 'rsqrt']:
