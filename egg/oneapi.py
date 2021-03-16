@@ -123,7 +123,7 @@ def get_impl_f16(operator, totyp, typ):
       if operator.name in ['rec8', 'rec11', 'rec']:
         return '''// sycl::recip available in native form only
                   // availability in half-precision
-                  'return f16(1.0f / {in0});'
+                  return f16(1.0f / {in0});
                   '''.format(**fmtspec)
       elif operator.name in ['rsqrt8', 'rsqrt11', 'rsqrt']:
         return 'return sycl::rsqrt({in0});'.format(**fmtspec)
@@ -206,11 +206,11 @@ def get_impl(operator, totyp, typ):
 
   # to_mask
   if operator.name == 'to_mask':
-    return 'nsimd_scalar_to_mask_{totyp}({in0});'.format(**fmtspec)
+    return 'return nsimd_scalar_to_mask_{totyp}({in0});'.format(**fmtspec)
 
   # to_logical
   if operator.name == 'to_logical':
-    return 'nsimd_scalar_to_logical_{typ}({in0});'.format(**fmtspec)
+    return 'return nsimd_scalar_to_logical_{typ}({in0});'.format(**fmtspec)
 
   # for all other operators, f16 has a special treatment
   if typ == 'f16':
