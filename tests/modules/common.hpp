@@ -263,6 +263,15 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
   item.barrier(sycl::access::fence_space::local);
 
   // reduction mul on the block (sub-group)
+
+  /*
+  TODO: test the following usage correctness
+  sycl::ONEAPI::sub_group sg = item.get_sub_group();
+  if(tid == 0){
+    src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiply<>());
+  }
+  */
+
     for (int s = size / 2; s != 0; s /= 2) {
       if(tid < s){
         buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
