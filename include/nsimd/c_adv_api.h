@@ -29,15 +29,11 @@ SOFTWARE.
 
 #if NSIMD_C >= 2011
 
-typedef void nsimd_c11_type_unsupported;
+NSIMD_INLINE void nsimd_c11_type_unsupported(void) {}
 
 /* ------------------------------------------------------------------------- */
 
 #include <nsimd/c_adv_api_functions.h>
-
-/* ------------------------------------------------------------------------- */
-
-NSIMD_C11_SIMD_TYPES
 
 /* ------------------------------------------------------------------------- */
 

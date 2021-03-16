@@ -192,7 +192,7 @@ ppc_simds = [
     'power8',
 ]
 
-simds = ['cpu'] + x86_simds + arm_simds + ppc_simds
+simds = ['cpu'] + x86_simds + arm_simds
 
 simds_deps = {
     'cpu': ['cpu'],
@@ -487,7 +487,7 @@ def get_one_type_scalar(param, t):
 
 def get_first_discriminating_type(params):
     for i in range(len(params)):
-        if params[i] in ['*', 'c*', 's', 'v', 'l', 'vx2', 'vx3', 'vx4']:
+        if params[i] in ['v', 'l', 'vx2', 'vx3', 'vx4']:
             return i
     return -1
 

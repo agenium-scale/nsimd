@@ -200,8 +200,6 @@ def gen_archis_write_file(opts, op, platform, simd_ext, simd_dir):
 
            {hbar}
 
-           {c11_overloads}
-
            #endif
            '''.format(additional_include=mod.get_additional_include(
                                            op.name, platform, simd_ext),
@@ -209,9 +207,7 @@ def gen_archis_write_file(opts, op, platform, simd_ext, simd_dir):
                       guard=op.get_header_guard(platform, simd_ext),
                       platform=platform, simd_ext=simd_ext,
                       func=op.name, hbar=common.hbar,
-                      code=get_simd_implementation(opts, op, mod, simd_ext),
-                      c11_overloads=gen_adv_c_api.get_c11_overloads(op, mod,
-                                                                    simd_ext)))
+                      code=get_simd_implementation(opts, op, mod, simd_ext)))
     common.clang_format(opts, filename)
 
 def gen_archis_simd(opts, platform, simd_ext, simd_dir):
@@ -228,34 +224,9 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                                      'nsimd_{}_v{}'.format(simd_ext, t)) \
                                      for t in common.types])
     c_code += '\n\n'
-    c_code += '#if NSIMD_C >= 2011\n' + \
-              '\n'.join([
-              '''struct nsimd_pack_{typ}_{simd_ext} {{
-                   nsimd_{simd_ext}_v{typ} v;
-                 }};
-
-                 NSIMD_STRUCT nsimd_pack_{typ}_{simd_ext}
-                 nsimd_make_pack_{typ}_{simd_ext}(nsimd_{simd_ext}_v{typ} a0)
-                 {{
-                   return (struct nsimd_pack_{typ}_{simd_ext}){{a0}};
-                 }}'''.format(simd_ext=simd_ext, typ=t) \
-                 for t in common.types]) + '\n#endif'
-    c_code += '\n\n'
     c_code += '\n'.join([mod.get_logical_type(
                              opts, simd_ext, t, 'nsimd_{}_vl{}'. \
                              format(simd_ext, t)) for t in common.types])
-    c_code += '\n\n#if NSIMD_C >= 2011\n' + \
-              '\n'.join([
-              '''struct nsimd_packl_{typ}_{simd_ext} {{
-                   nsimd_{simd_ext}_vl{typ} v;
-                 }};
-
-                 NSIMD_STRUCT nsimd_packl_{typ}_{simd_ext}
-                 nsimd_make_packl_{typ}_{simd_ext}(nsimd_{simd_ext}_vl{typ} a0)
-                 {{
-                   return (struct nsimd_packl_{typ}_{simd_ext}){{a0}};
-                 }}'''.format(simd_ext=simd_ext, typ=t) \
-                 for t in common.types]) + '\n#endif'
     if mod.has_compatible_SoA_types(simd_ext):
         for deg in range(2, 5):
             c_code += '\n'.join([mod.get_SoA_type(simd_ext, typ, deg,
@@ -268,13 +239,6 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
           nsimd_{simd_ext}_v{typ} v0;
           nsimd_{simd_ext}_v{typ} v1;
         }} nsimd_{simd_ext}_v{typ}x2;
-
-        NSIMD_STRUCT nsimd_packx2_{typ}_{simd_ext}
-        nsimd_make_packx2_{typ}_{simd_ext}(nsimd_{simd_ext}_v{typ}x2 a0)
-        {{
-          return (struct nsimd_packx2_{typ}_{simd_ext}){{{{a0.v0}},
-                                                         {{a0.v1}}}};
-        }}
         '''.format(simd_ext=simd_ext, typ=typ) for typ in common.types])
 
         c_code += '\n'.join([
@@ -284,14 +248,6 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
           nsimd_{simd_ext}_v{typ} v1;
           nsimd_{simd_ext}_v{typ} v2;
         }} nsimd_{simd_ext}_v{typ}x3;
-
-
-        NSIMD_STRUCT nsimd_packx3_{typ}_{simd_ext}
-        nsimd_make_packx3_{typ}_{simd_ext}(nsimd_{simd_ext}_v{typ}x3 a0)
-        {{
-          return (struct nsimd_packx3_{typ}_{simd_ext}){{{{a0.v0}}, {{a0.v1}},
-                                                         {{a0.v2}}}};
-        }}
         '''.format(simd_ext=simd_ext, typ=typ) for typ in common.types])
 
         c_code += '\n'.join([
@@ -302,25 +258,8 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
           nsimd_{simd_ext}_v{typ} v2;
           nsimd_{simd_ext}_v{typ} v3;
         }} nsimd_{simd_ext}_v{typ}x4;
-
-        NSIMD_STRUCT nsimd_packx4_{typ}_{simd_ext}
-        nsimd_make_packx4_{typ}_{simd_ext}(nsimd_{simd_ext}_v{typ}x4 a0)
-        {{
-          return (struct nsimd_packx4_{typ}_{simd_ext}){{{{a0.v0}}, {{a0.v1}},
-                                                         {{a0.v2}},
-                                                         {{a0.v3}}}};
-        }}
         '''.format(simd_ext=simd_ext, typ=typ) for typ in common.types])
         c_code += '\n\n'
-    c_code += '\n#if NSIMD_C >= 2011\n'
-    for deg in range(2, 5):
-        vars = ', '.join(['v{}'.format(i) for i in range(deg)])
-        c_code += '\n'.join([ \
-                  '''struct nsimd_packx{deg}_{typ}_{simd_ext} {{
-                       nsimd_{simd_ext}_v{typ} {vars};
-                     }};'''.format(simd_ext=simd_ext, typ=t, deg=deg,
-                                   vars=vars) for t in common.types]) + '\n'
-    c_code += '\n#endif\n\n'
     cxx_code = \
         '\n\n'.join(['''template <>
                         struct simd_traits<{typ}, {simd_ext}> {{
@@ -351,12 +290,10 @@ def gen_archis_types(opts, simd_dir, platform, simd_ext):
                      #endif
 
                      #endif
-                     '''.\
-                     format(year=date.today().year,
-                            platform=platform.upper(),
-                            SIMD_EXT=simd_ext.upper(),
+                     '''. \
+                     format(year=date.today().year, platform=platform.upper(),
+                            SIMD_EXT=simd_ext.upper(), simd_ext=simd_ext,
                             c_code=c_code, cxx_code=cxx_code,
-                            simd_ext=simd_ext,
                             nb_registers=mod.get_nb_registers(simd_ext)))
     common.clang_format(opts, filename)
 
