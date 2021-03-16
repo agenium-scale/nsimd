@@ -747,7 +747,7 @@ def gen_tests_for(opts, t, operator):
 
     # oneAPI
     def get_cte_oneapi(typ, cte):
-      if typ = 'f16':
+      if typ == 'f16':
         return 'nsimd_f32_to_f16((f32){})'.format(cte)
       else:
         return '({}){}'.format(typ, cte)
@@ -763,9 +763,9 @@ def gen_tests_for(opts, t, operator):
     if op_name == 'to_mask':
         args = t + '(), ' + args
     if operator.params[0] == 'v':
-        gpu_kernel = 'dst[i] = nsimd::one_api_{}({});'.format(op_name, args)
+        oneapi_kernel = 'dst[i] = nsimd::one_api_{}({});'.format(op_name, args)
     else:
-        gpu_kernel = '''if (nsimd::oneapi_{op_name}({args})) {{
+        oneapi_kernel = '''if (nsimd::oneapi_{op_name}({args})) {{
                           dst[i] = {one};
                         }} else {{
                           dst[i] = {zero};
@@ -1040,7 +1040,7 @@ def gen_functions(opts):
 
            #elif defined(NSIMD_ONEAPI)
 
-           {signature} nsimd::scalar_{s_op_name}({m_call_args_oneapi})
+           {signature} nsimd::oneapi_{s_op_name}({m_call_args_oneapi})
 
            #else
 
