@@ -166,14 +166,22 @@ def get_impl(operator, totyp, typ):
   # bool first, no special treatment for f16's
   bool_operators = [ 'andl', 'orl', 'xorl', 'andnotl', 'notl' ]
   if operator.name in bool_operators:
-    return 'return nsimd_scalar_{op}({in0},{in1});'.\
-            format(op=operator.name,**fmtspec)
+    if operator.name == 'notl':
+      return 'return nsimd_scalar_{op}({in0});'.\
+              format(op=operator.name,**fmtspec)
+    else:
+      return 'return nsimd_scalar_{op}({in0},{in1});'.\
+              format(op=operator.name,**fmtspec)
 
   # infix operators no special treatment for f16's
   infix_operators = [ 'orb', 'andb', 'andnotb', 'notb', 'xorb' ]
   if operator.name in infix_operators:
-    return 'return nsimd_scalar_{op}_{typ}({in0},{in1});'.\
-            format(op=operator.name,**fmtspec)
+    if operator.name == 'notb':
+      return 'return nsimd_scalar_{op}_{typ}({in0});'.\
+              format(op=operator.name,**fmtspec)
+    else:
+      return 'return nsimd_scalar_{op}_{typ}({in0},{in1});'.\
+              format(op=operator.name,**fmtspec)
 
   # reinterpret
   if operator.name == 'reinterpret':
