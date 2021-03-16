@@ -36,6 +36,24 @@ NSIMD_INLINE void nsimd_c11_type_unsupported(void) {}
 #include <nsimd/c_adv_api_functions.h>
 
 /* ------------------------------------------------------------------------- */
+/* We add by hand parametrized loads/stores. */
+
+/* loads */
+
+#define nsimd_load_aligned(type, ptr) nsimd_loada(type, ptr)
+#define nsimd_load_unaligned(type, ptr) nsimd_loadu(type, ptr)
+
+#define nsimd_load(alignment, type, ptr)                                      \
+  NSIMD_PP_CAT_2(nsimd_load_, alignment)(type, ptr)
+
+/* stores */
+
+#define nsimd_store_aligned(ptr, vec) nsimd_storea(ptr, vec)
+#define nsimd_store_unaligned(ptr, vec) nsimd_storeu(ptr, vec)
+
+#define nsimd_store(alignment, ptr, vec)                                      \
+  NSIMD_PP_CAT_2(nsimd_store_, alignment)(ptr, vec)
+
 
 #endif /* NSIMD_C >= 2011 */
 

@@ -47,13 +47,14 @@ msvc_c4334_warning = \
 def get_filename(opts, op, typ, lang, custom_name=''):
     tests_dir = os.path.join(opts.tests_dir, lang)
     common.mkdir_p(tests_dir)
+    ext = { 'c_base': 'prec11.c', 'c_adv': 'c' }
     if not custom_name:
         filename = os.path.join(tests_dir, '{}.{}.{}'.format(op.name, typ,
-                     'c' if lang in ['c_base', 'c_adv'] else 'cpp'))
+                     ext[lang] if lang in ['c_base', 'c_adv'] else 'cpp'))
     else:
         filename = os.path.join(tests_dir, '{}_{}.{}.{}'.format(op.name,
                      custom_name, typ,
-                     'c' if lang in ['c_base', 'c_adv'] else 'cpp'))
+                     ext[lang] if lang in ['c_base', 'c_adv'] else 'cpp'))
     if common.can_create_filename(opts, filename):
         return filename
     else:
@@ -2783,8 +2784,8 @@ def gen_reinterpret_convert(opts, op, from_typ, to_typ, lang):
         if op.name == 'upcvt':
             comp = '''{{
                         nsimd_packx2_{to_typ} tmp =
-                          nsimd_upcvt(nsimd_packx2_{to_typ},
-                            nsimd_loada(nsimd_pack_{from_typ}, in));
+                            nsimd_upcvt(nsimd_packx2_{to_typ},
+                                nsimd_loada(nsimd_pack_{from_typ}, in));
                         nsimd_storea(out, nsimd_downcvt(
                             nsimd_pack_{from_typ}, tmp.v0, tmp.v1));
                       }}'''.format(op_name=op.name, from_typ=from_typ,

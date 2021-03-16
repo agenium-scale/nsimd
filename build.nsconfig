@@ -205,12 +205,12 @@ set tests_flags = $flags$ $mpfr ${cflags_for_$simd$} -lm $ldflags
 
 echo Test compilation flags: $tests_flags$
 
-build_files c89 foreach glob:$root$/tests/*.c \
+build_files c89 foreach glob:$root$/tests/*.prec11.c \
                 as tests.%r.c89$exe \
                 autodeps @item libnsimd_$simd$$so$
 	cc -std=c89 @item $tests_flags -o @out
 
-build_files c99 foreach glob:$root$/tests/*.c \
+build_files c99 foreach glob:$root$/tests/*.prec11.c \
                 as tests.%r.c99$exe \
                 autodeps @item libnsimd_$simd$$so$
 	cc -std=c99 @item $tests_flags -o @out
@@ -244,7 +244,8 @@ phony tests.cpp20 deps $cpp20.files
 
 # Phony target for tests
 
-lambda phony_tests_for_*     = tests.c89 tests.c99 tests.cpp98 tests.cpp11
+lambda phony_tests_for_*     = tests.c89 tests.c99 tests.c11 tests.cpp98 \
+                               tests.cpp11
 set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
 set    phony_tests_for_rocm  = tests.cpp11
 set    phony_tests_for_dpcpp = tests.cpp11
