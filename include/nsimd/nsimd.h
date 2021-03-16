@@ -357,6 +357,8 @@ namespace nsimd {
 
 #if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
   #define NSIMD_ONEAPI
+  // undef ONEAPI is needed because ONEAPI is used as a namespace in DPC++:
+  // sycl::ONEAPI
   #undef ONEAPI
 #endif
 
