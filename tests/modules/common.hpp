@@ -307,7 +307,7 @@ void device_cmp_array(int *dst, T *src1, const size_t n,
 
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   sycl::queue q = spmd::_get_global_queue();
-  T *device_ret = sycl::malloc_device<T>(n, q);
+  int *device_ret = sycl::malloc_device<int>(n, q);
   if (device_ret == NULL) {
     std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(int)
               << " bytes\n";
