@@ -748,7 +748,7 @@ def gen_tests_for(opts, t, operator):
     # oneAPI
     def get_cte_oneapi(typ, cte):
       if typ == 'f16':
-        return 'nsimd_f32_to_f16((f32){})'.format(cte)
+        return 'f16((f32){})'.format(cte)
       else:
         return '({}){}'.format(typ, cte)
 
@@ -846,7 +846,8 @@ def gen_tests_for(opts, t, operator):
         #elif defined(NSIMD_ONEAPI)
 
         inline void kernel({typ} *dst, {k_args}, const size_t n, sycl::nd_item<1> item) {{
-          if(item.get_global_id().get(0) < n){{
+          const size_t i = item.get_global_id().get(0);
+          if(i < n){{
             {oneapi_kernel}
           }}
         }}
