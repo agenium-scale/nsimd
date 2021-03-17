@@ -28,6 +28,7 @@ SOFTWARE.
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
 #include <iostream>
 #include <nsimd/nsimd.h>
 #include <nsimd/scalar_utilities.h>
@@ -251,16 +252,17 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
 
   sycl::nd_range<1> nd_range = item.get_nd_range();
   sycl::range<1> range = nd_range.get_local_range();
-  const int block_start = nd_range.get_offset();
-  const int block_end = block_start + range.size();
+  const size_t block_start = nd_range.get_offset();
+  assert(block_start < n);
+  const size_t block_end = block_start + range.size();
 
-  int size;
+  size_t size;
   if (block_end < n) {
     size = range.size();
   } else {
     size = n - block_start;
   }
-  item.barrier(sycl::access::fence_space::local);
+  item.barrier(sycl::access::fence_space::local_space);
 
   // reduction mul on the block (sub-group)
 
@@ -272,7 +274,7 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
   }
   */
 
-    for (int s = size / 2; s != 0; s /= 2) {
+    for (size_t s = size / 2; s != 0; s /= 2) {
       if(tid < s){
         buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
       }
@@ -280,7 +282,7 @@ void device_cmp_blocks(T *src1, T *src2, const size_t n,
       // it is critically important that either all work-items
       // in the group execute the barrier or no work-items in
       // the group execute the barrier.
-      item.barrier(sycl::access::fence_space::local);
+      item.barrier(sycl::access::fence_space::local_space);
     }
   if (tid == 0) {
     src1[i] = buf[0];
@@ -294,7 +296,7 @@ void device_cmp_array(int *dst, T *src1, const size_t n,
   T buf = T(1);
   sycl::nd_range<1> nd_range = item.get_nd_range();
   sycl::range<1> range = nd_range.get_local_range();
-  for (int i = 0; i < n; i += range.size()) {
+  for (size_t i = 0; i < n; i += range.size()) {
     buf = nsimd::oneapi_mul(buf, src1[i]);
   }
   size_t i = item.get_global_id().get(0);
@@ -311,20 +313,20 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
               << " bytes\n";
     exit(EXIT_FAILURE);
   }
-  sycl::event e1 = q_.parallel_for(
+  sycl::event e1 = q.parallel_for(
       sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
-      [=](sycl::nd_item<1> item) {
-        device_cmp_blocks(src1, src2, size_t(n), item);
+      [=](sycl::nd_item<1> item_) {
+        device_cmp_blocks(src1, src2, size_t(n), item_);
       });
   e1.wait();
-  sycl::event e2 = q_.parallel_for(
+  sycl::event e2 = q.parallel_for(
       sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
-      [=](sycl::nd_item<1> item) {
-        device_cmp_array(device_ret, src1, size_t(n), item);
+      [=](sycl::nd_item<1> item_) {
+        device_cmp_array(device_ret, src1, size_t(n), item_);
       });
   e2.wait();
   int host_ret;
-  q.memcpy((void *)&host_ret, (void *)device_ret, sz * sizeof(T)).wait();
+  q.memcpy((void *)&host_ret, (void *)device_ret, n * sizeof(T)).wait();
   sycl::free(device_ret, q);
   return bool(host_ret);
 }
