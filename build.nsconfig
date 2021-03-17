@@ -79,7 +79,7 @@ set cflags_for_               = -DCPU
 set cflags_for_cpu            = ${cflags_for_generic_$simd$}
 set cflags_for_cuda           = -DCUDA
 set cflags_for_rocm           = -DROCM
-set cflags_for_oneapi         = -DSYCL
+set cflags_for_oneapi         = -DONEAPI
 set cflags_for_sse2           = -DSSE2 -msse2
 set cflags_for_sse42          = -DSSE42 -msse42
 set cflags_for_avx            = -DAVX -mavx
@@ -248,7 +248,7 @@ phony tests.cpp20 deps $cpp20.files
 lambda phony_tests_for_*     = tests.c89 tests.c99 tests.cpp98 tests.cpp11
 set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
 set    phony_tests_for_rocm  = tests.cpp11
-set    phony_tests_for_dpcpp = tests.cpp11
+set    phony_tests_for_oneapi = tests.cpp11
 set    phony_tests_for_sve   = tests.c11 tests.cpp11
 
 phony tests deps ${phony_tests_for_$simd$}
