@@ -249,8 +249,16 @@ template <> struct type_t<64> {
 #define k_unmasked_load(base_addr) k_load(base_addr)
 
 // f32 <--> f16 conversions
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 #define k_f32_to_f16(a) __float2half(a)
 #define k_f16_to_f32(a) __half2float(a)
+
+#elif defined(NSIMD_ONEAPI)
+// use sycl::half f32 --> f16 conversion operator: sycl::half(const float& RHS)
+#define k_f32_to_f16(a) f16(a)
+// use sycl::half::operator float() half --> f32
+#define k_f16_to_f32(a) static_cast<f32>(a)
+#endif
 
 // assignment statement
 #define k_set(var, value)                                                     \
