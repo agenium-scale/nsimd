@@ -53,8 +53,6 @@ def get_impl_f16(operator, totyp, typ):
     # sycl function available for f32
     # use nsimd casts f32-->f16 + sycl function + f16-->f32
 
-    # TODO: should we use sycl::add_sat, sycl::add_sub
-    # both available for f32?
     no_sycl_avail_f16_cast_use_sycl_f32 = \
       ['fma', 'fms', 'fnma', 'fnms', 'min', 'max', 'abs']
 
