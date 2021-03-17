@@ -1,7 +1,7 @@
 # Use utf-8 encoding
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -54,9 +54,9 @@ def gen_overview(opts):
 
 ## NSIMD scalar types
 
-Their names follows the following pattern: `Sxx` where
+Their names follow the following pattern: `Sxx` where
 
-- `S` is `i` for signed integers, `u` for unsigned integer and `f` for
+- `S` is `i` for signed integers, `u` for unsigned integer or `f` for
   floatting point number.
 - `xx` is the number of bits taken to represent the number.
 
@@ -66,29 +66,40 @@ Full list of scalar types:
         for t in common.types:
             fout.write('- `{}`\n'.format(t))
         fout.write('''
+## NSIMD generic SIMD vector types
 
-## NSIMD SIMD vector types
+In NSIMD, we call a platform an architecture e.g. Intel, ARM, POWERPC. We call
+SIMD extension a set of low-level functions and types provided by hardware
+vendors to access SIMD units. Examples include SSE2, SSE42, AVX, ...  When
+compiling the generic SIMD vector types represents a SIMD register of the
+target. Examples are a `__m128` for Intel SSE, `__m512` for Intel AVX-512 or
+`svfloat32_t` for Arm SVE.
 
-Their names follows the following pattern: `vSCALAR` where `SCALAR` is a
-one of scalar type listed above. For example `vi8` means a SIMD vector
-containing `i8`'s.
+Their names follow the following pattern:
+
+- C base API: `vSCALAR` where `SCALAR` is a one of scalar type listed above.
+- C advanced API: `nsimd_pack_SCALAR` where `SCALAR` is a one of scalar type
+  listed above.
+- C++ advanced API: `nsimd::pack<SCALAR>` where `SCALAR` is a one of scalar
+  type listed above.
 
 Full list of SIMD vector types:
 
+| Base type | C base API | C advanced API | C++ advanced API |
+|-----------|------------|----------------|------------------|
 ''')
-        for t in common.types:
-            fout.write('- `v{}`\n'.format(t))
+
+        fout.write('\n'.join([
+        '| `{typ}` | `v{typ}` | `nsimd_pack_{typ}` | `nsimd::pack<{typ}>` |'. \
+        format(typ=typ) for typ in common.types]))
+
         fout.write('''
 
 ## C/C++ base APIs
 
 These come automatically when you include `nsimd/nsimd.h`. You do *not* need
-to include a header file for having a function. In NSIMD, we call a platform
-an architecture e.g. Intel, ARM, POWERPC. We call SIMD extension a set of
-low-level functions and types provided to access a given SIDM extension.
-Examples include SSE2, SSE42, AVX, ...
-
-Here is a list of supported platforms and their corresponding SIMD extensions.
+to include a header file for having a function. Here is a list of supported
+platforms and their corresponding SIMD extensions.
 
 ''')
         platforms = common.get_platforms(opts)
@@ -98,27 +109,26 @@ Here is a list of supported platforms and their corresponding SIMD extensions.
                 fout.write('  - `{}`\n'.format(s))
         fout.write('''
 Each simd extension has its own set of SIMD types and functions. Types follow
-the following pattern: `nsimd_SIMDEXT_vSCALAR` where
+the pattern: `nsimd_SIMDEXT_vSCALAR` where
 
 - `SIMDEXT` is the SIMD extensions.
 - `SCALAR` is one of scalar types listed above.
 
 There are also logical types associated to each SIMD vector type. These types
-are used to represent the result of a comparison of SIMD vectors. They are
-usually bit masks. Their name follow the following pattern:
+are used, for example, to represent the result of a comparison of SIMD vectors.
+They are usually bit masks. Their name follow the pattern:
 `nsimd_SIMDEXT_vlSCALAR` where
 
 - `SIMDEXT` is the SIMD extensions.
 - `SCALAR` is one of scalar types listed above.
 
-Note 1: Platform `cpu` is scalar fallback when no SIMD extension has been
-specified.
+Note 1: Platform `cpu` is a 128 bits SIMD emulation fallback when no SIMD
+extension has been specified or is supported on a given compilation target.
 
 Note 2: as all SIMD extensions of all platforms are different there is no
 need to put the name of the platform in each identifier.
 
-Function names follow the following pattern: `nsimd_SIMDEXT_FUNCNAME_SCALAR`
-where
+Function names follow the pattern: `nsimd_SIMDEXT_FUNCNAME_SCALAR` where
 
 - `SIMDEXT` is the SIMD extensions.
 - `FUNCNAME` is the name of a function e.g. `add` or `sub`.
@@ -126,20 +136,20 @@ where
 
 ### Generic identifier
 
-In C, genericity is achieved using macros.
+In the base C API, genericity is achieved using macros.
 
-- `vec(SCALAR)` represents the SIMD vector type containing SCALAR elements.
-  SCALAR must be one of scalar types listed above.
-- `vecl(SCALAR)` represents the SIMD vector of logicals type containing SCALAR
+- `vec(SCALAR)` is a type to represent a SIMD vector containing SCALAR
+  elements.  SCALAR must be one of scalar types listed above.
+- `vecl(SCALAR)` is a type to represent a SIMD vector of logicals for SCALAR
   elements. SCALAR must be one of scalar types listed above.
-- `vec_e(SCALAR)` represents the SIMD vector type containing SCALAR elements.
-  SCALAR must be one of scalar types listed above.
-- `vecl_e(SCALAR)` represents the SIMD vector of logicals type containing
-  SCALAR elements. SCALAR must be one of scalar types listed above.
-- `vFUNCNAME` is the macro name to access the function FUNCNAME e.g. `vadd`,
-  `vsub`.
-- `vFUNCNAME_e` is the macro name to access the function FUNCNAME e.g.
-  `vadd_e`, `vsub_e`.
+- `vec_a(SCALAR, SIMDEXT)` is a type to represent a SIMD vector containing
+  SCALAR elements for the simd extension SIMDEXT. SCALAR must be one of scalar
+  types listed above and SIMDEXT must be a valid SIMD extension.
+- `vecl_a(SCALAR, SIMDEXT)` is a type to represent a SIMD vector of logicals
+  for SCALAR elements for the simd extension SIMDEXT. SCALAR must be one of
+  scalar types listed above and SIMDEXT must be a valid SIMD extension.
+- `vFUNCNAME` takes as input the above types to access the operator FUNCNAME
+  e.g. `vadd`, `vsub`.
 
 In C++98 and C++03, type traits are available.
 
@@ -158,12 +168,17 @@ provided.
 - `nsimd::vectorl<SCALAR, SIMDEXT>` is a typedef to
   `nsimd::simd_traits<SCALAR, SIMDEXT>::vectorl`.
 
+The C++20 API does not bring different types for SIMD registers nor other
+way to access the other SIMD types. It only brings concepts instead of usual
+`typename`s. For more informations cf. <concepts.md>.
+
 Note that all macro and functions available in plain C are still available in
 C++.
 
-### List of functions available for manipulation of SIMD vectors
+### List of operators provided by the base APIs
 
-For each FUNCNAME a C function (also available in C++)
+In the documentation we use interchangeably the terms "function" and
+"operator".  For each operator FUNCNAME a C function (also available in C++)
 named `nsimd_SIMDEXT_FUNCNAME_SCALAR` is available for each SCALAR type unless
 specified otherwise.
 
@@ -180,11 +195,13 @@ take the SIMDEXT as its last last argument.
 For example, for the addition of two SIMD vectors `a` and `b` here are the
 possibilities:
 
-    c = nsimd_add_avx_f32(a, b); // use AVX
-    c = nsimd::add(a, b, f32()); // use detected SIMDEXT
-    c = nsimd::add(a, b, f32(), avx()); // force AVX even if detected SIMDEXT is not AVX
-    c = vadd(a, b, f32); // use detected SIMDEXT
-    c = vadd_e(a, b, f32, avx); // force AVX even if detected SIMDEXT is not AVX
+```c++
+c = nsimd_add_avx_f32(a, b); // use AVX
+c = nsimd::add(a, b, f32()); // use detected SIMDEXT
+c = nsimd::add(a, b, f32(), avx()); // force AVX even if detected SIMDEXT is not AVX
+c = vadd(a, b, f32); // use detected SIMDEXT
+c = vadd_e(a, b, f32, avx); // force AVX even if detected SIMDEXT is not AVX
+```
 
 Here is a list of available FUNCNAME.
 
@@ -196,11 +213,10 @@ Here is a list of available FUNCNAME.
             args = ', '.join([common.get_one_type_generic(p, 'SCALAR') + \
                               ' a' + str(count) for count, p in \
                               enumerate(operator.params[1:])])
-            fout.write('- `{} {}({});`\n'.format(return_typ, func, args))
+            fout.write('- `{} {}({});`  \n'.format(return_typ, func, args))
 
             if operator.domain and len(operator.params[1:]) > 0:
                 params = operator.params[1:]
-
                 if len(params) == 1:
                     fout.write('  a0 ∈ {}\n'.format(operator.domain))
                 else:
@@ -212,6 +228,41 @@ Here is a list of available FUNCNAME.
                 typs = ', '.join(['{}'.format(t) for t in operator.types])
                 fout.write('  Only available for {}\n'.format(typs))
         fout.write('''
+
+## C advanced API (only available in C11)
+
+The C advanced API takes advantage of the C11 `_Generic` keyword to provide
+function overloading. Unlike the base API described above there is no need to
+pass as arguments the base type of the SIMD extension. The informations are
+contained in the types provided by this API.
+
+- `nsimd_pack_SCALAR_SIMDEXT` represents a SIMD vectors containing
+  SCALAR elements of SIMD extension SIMDEXT.
+- `nsimd::packl_SCALAR_SIMDEXT` represents a SIMD vectors of logicals
+  for SCALAR elements of SIMD extension SIMDEXT.
+
+There are versions of the above type without SIMDEXT for which the targeted
+SIMD extension is automatically chosen.
+
+- `nsimd_pack_SCALAR` represents a SIMD vectors containing SCALAR elements.
+- `nsimd::packl_SCALAR` represents a SIMD vectors of logicals for SCALAR
+  elements.
+
+Generic types are also available:
+
+- `nsimd_pack(SCALAR)` is a type to represent a SIMD vector containing SCALAR
+  elements.  SCALAR must be one of scalar types listed above.
+- `nsimd_packl(SCALAR)` is a type to represent a SIMD vector of logicals for
+  SCALAR elements. SCALAR must be one of scalar types listed above.
+- `nsimd_pack_a(SCALAR, SIMDEXT)` is a type to represent a SIMD vector
+  containing SCALAR elements for the simd extension SIMDEXT. SCALAR must be one
+  of scalar types listed above and SIMDEXT must be a valid SIMD extension.
+- `nsimd_packl_a(SCALAR, SIMDEXT)` is a type to represent a SIMD vector of
+  logicals for SCALAR elements for the simd extension SIMDEXT. SCALAR must be
+  one of scalar types listed above and SIMDEXT must be a valid SIMD extension.
+
+Finally, operators are follow the naming: `nsimd_FUNCNAME` e.g. `nsimd_add`,
+`nsimd_sub`.
 
 ## C++ advanced API
 
@@ -239,38 +290,9 @@ Functions that takes packs do not take any other argument unless specified
 otherwise e.g. the load family of funtions. It is impossible to determine
 the kind of pack (unroll and SIMDEXT) from the type of a pointer. Therefore
 in this case, the last argument must be a pack and this same type will then
-return. Also some functions are available as C++ operators.
-
-Here is the list of functions that act on packs.
-
+return. Also some functions are available as C++ operators. They follow the
+naming: `nsimd::FUNCNAME`.
 ''')
-        for op_name, operator in operators.items():
-            return_typ = common.get_one_type_pack(operator.params[0], 1, 'N')
-            func = operator.name
-            args = ', '.join([common.get_one_type_pack(p, 0, 'N') + ' a' + \
-                              str(count) for count, p in \
-                              enumerate(operator.params[1:])])
-            if 'v' not in operator.params[1:] and 'l' not in operator.params[1:]:
-                args = args + ', pack<T, N, SimdExt> const&' if args != '' \
-                              else 'pack<T, N, SimdExt> const&'
-            fout.write('- `{} {}({});`\n'.format(return_typ, func, args))
-
-            if operator.domain and len(operator.params[1:]) > 0:
-                params = operator.params[1:]
-                if len(params) == 1:
-                    fout.write('  a0 ∈ {}\n'.format(operator.domain))
-                else:
-                    param = ', '.join(['a'+str(count) for count in \
-                                       range(len(params))])
-                    fout.write('  ({}) ∈ {}\n'.format(param, operator.domain))
-
-            if operator.cxx_operator:
-                fout.write('  Available as `{}`\n'. \
-                    format('operator'+operator.cxx_operator))
-
-            if len(operator.types) < len(common.types):
-                typs = ', '.join(['{}'.format(t) for t in operator.types])
-                fout.write('  Only available for {}\n'.format(typs))
 
 # -----------------------------------------------------------------------------
 

@@ -54,6 +54,20 @@ NSIMD_INLINE void nsimd_c11_type_unsupported(void) {}
 #define nsimd_store(alignment, ptr, vec)                                      \
   NSIMD_PP_CAT_2(nsimd_store_, alignment)(ptr, vec)
 
+/* ------------------------------------------------------------------------- */
+/* Generic types */
+
+#define nsimd_pack(type) NSIMD_PP_CAT_2(nsimd_pack_, type)
+#define nsimd_packl(type) NSIMD_PP_CAT_2(nsimd_packl_, type)
+#define nsimd_packx2(type) NSIMD_PP_CAT_2(nsimd_packx2_, type)
+#define nsimd_packx3(type) NSIMD_PP_CAT_2(nsimd_packx3_, type)
+#define nsimd_packx4(type) NSIMD_PP_CAT_2(nsimd_packx4_, type)
+
+#define nsimd_pack_a(type, simd_ext) NSIMD_PP_CAT_3(nsimd_pack_, type)
+#define nsimd_packl_a(type, simd_ext) NSIMD_PP_CAT_3(nsimd_packl_, type)
+#define nsimd_packx2_a(type, simd_ext) NSIMD_PP_CAT_3(nsimd_packx2_, type)
+#define nsimd_packx3_a(type, simd_ext) NSIMD_PP_CAT_3(nsimd_packx3_, type)
+#define nsimd_packx4_a(type, simd_ext) NSIMD_PP_CAT_3(nsimd_packx4_, type)
 
 #endif /* NSIMD_C >= 2011 */
 
