@@ -180,7 +180,7 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
   template <typename T>                                                        \
   void kernel_##func_name##_(T *const ptr, const size_t sz,                    \
                              sycl::nd_item<1> item) {                          \
-    auto idx = item.get_global_id();                                           \
+    const size_t idx = item.get_global_id().get(0);                            \
     if (idx < sz) {                                                            \
       ptr[idx] = nsimd::to<T>(expr);                                           \
     }                                                                          \
