@@ -763,7 +763,7 @@ def gen_tests_for(opts, t, operator):
     if op_name == 'to_mask':
         args = t + '(), ' + args
     if operator.params[0] == 'v':
-        oneapi_kernel = 'dst[i] = nsimd::one_api_{}({});'.format(op_name, args)
+        oneapi_kernel = 'dst[i] = nsimd::oneapi_{}({});'.format(op_name, args)
     else:
         oneapi_kernel = '''if (nsimd::oneapi_{op_name}({args})) {{
                           dst[i] = {one};
