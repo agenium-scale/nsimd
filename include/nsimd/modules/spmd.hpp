@@ -195,7 +195,7 @@ static inline sycl::queue _get_global_queue() {
   q.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),                         \
                                    sycl::range<1>(threads_per_block)),        \
                  [=](sycl::nd_item<1> item) {                                 \
-                   name<spmd_scalar_bits>(__VA_ARGS__, (size_t)n, item);      \
+                   name<spmd_scalar_bits_>(__VA_ARGS__, (size_t)n, item);     \
                  })                                                           \
       .wait();
 
