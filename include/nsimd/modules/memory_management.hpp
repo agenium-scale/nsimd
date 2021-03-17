@@ -180,9 +180,9 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
   template <typename T>                                                        \
   void kernel_##func_name##_(T *const ptr, const size_t sz,                    \
                              sycl::nd_item<1> item) {                          \
-    const size_t idx = item.get_global_id().get(0);                            \
-    if (idx < sz) {                                                            \
-      ptr[idx] = nsimd::to<T>(expr);                                           \
+    const size_t i = item.get_global_id().get(0);                              \
+    if (i < sz) {                                                              \
+      ptr[i] = nsimd::to<T>(expr);                                             \
     }                                                                          \
   }                                                                            \
                                                                                \
@@ -190,7 +190,7 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
     sycl::queue q = spmd::_get_global_queue();                                 \
     q.parallel_for(                                                            \
          sycl::nd_range<1>(sycl::range<1>(sz),                                 \
-                           sycl::range<1>(threads_per_block)),                 \
+                           sycl::range<1>(THREADS_PER_BLOCK)),                 \
          [=](sycl::nd_item<1> item) { kernel_##func_name##_(ptr, sz, item); }) \
         .wait();                                                               \
   }
