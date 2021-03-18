@@ -304,8 +304,10 @@ def get_impl(operator, totyp, typ):
 
   # round_to_even
   if operator.name == 'round_to_even':
-    return 'return nsimd_scalar_round_to_even_{typ}({in0});'.\
-      format(**fmtspec)
+    if typ in common.ftypes_no_f16:
+      return 'return sycl::rint({in0});'.format(**fmtspec)
+    else:
+      return 'return {in0};'.format(**fmtspec)
 
   # other rounding operators
   other_rounding_ops = ['ceil', 'floor', 'trunc']
