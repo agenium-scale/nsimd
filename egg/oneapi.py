@@ -41,13 +41,10 @@ fmtspec = dict()
 
 def get_impl_f16(operator, totyp, typ):
 
-    # Case 1: no sycl function available for half type
+    # Case 1: rounding functions
+    # no sycl function available for half type
     # sycl function available for f32
-    # however do not use nsimd casts f32 to f16 with rounding functions
-    # use nsimd_scalar_[operator]_f16
-
-    no_sycl_avail_f16_rounding_use_nsimd_scalar = \
-      ['round_to_even', 'ceil', 'floor', 'trunc']
+    # use sycl defined conversions half --> f32 , f32 --> half
 
     # Case 2: no sycl function available for half type
     # sycl function available for f32
@@ -82,9 +79,12 @@ def get_impl_f16(operator, totyp, typ):
     # Dispatch
 
     # Case 1
-    if operator.name in no_sycl_avail_f16_rounding_use_nsimd_scalar:
-      return 'return nsimd_scalar_{op}_f16({in0});'.\
-        format(op=operator.name,**fmtspec)
+    if operator.name in ['floor','ceil','trunc']:
+      return 'return f16(sycl::{op}(static_cast<f32>({in0}))'.\
+              format(op=operator.name,**fmtspec)
+    elif operator.name == 'round_to_even':
+      return 'return f16(sycl::rint(static_cast<f32>({in0}))'.\
+              format(**fmtspec)
 
     # Case 2
     elif operator.name in no_sycl_avail_f16_cast_use_sycl_f32:
