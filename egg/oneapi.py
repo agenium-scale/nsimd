@@ -80,10 +80,10 @@ def get_impl_f16(operator, totyp, typ):
 
     # Case 1
     if operator.name in ['floor','ceil','trunc']:
-      return 'return f16(sycl::{op}(static_cast<f32>({in0}))'.\
+      return 'return f16(sycl::{op}(static_cast<f32>({in0})));'.\
               format(op=operator.name,**fmtspec)
     elif operator.name == 'round_to_even':
-      return 'return f16(sycl::rint(static_cast<f32>({in0}))'.\
+      return 'return f16(sycl::rint(static_cast<f32>({in0})));'.\
               format(**fmtspec)
 
     # Case 2
