@@ -32,6 +32,7 @@ SOFTWARE.
 #include <iostream>
 #include <nsimd/nsimd.h>
 #include <nsimd/scalar_utilities.h>
+#include <nsimd/modules/memory_management.hpp>
 
 // ----------------------------------------------------------------------------
 // Num threads per block on device
@@ -241,10 +242,8 @@ template <typename T> void del(T *ptr) { hipFree(ptr); }
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
-void device_cmp_blocks(T *src1, T *src2, const size_t n,
+void device_cmp_blocks(T *src1, T *src2, T* buf, const size_t n,
                        sycl::nd_item<1> item) {
-  char buf_[THREADS_PER_BLOCK]; // size of a block
-  T *buf = (T *)buf_;
   size_t tid = item.get_local_id().get(0);
   size_t i = item.get_global_id().get(0);
   if(i >= n){ return; }
@@ -306,28 +305,38 @@ void device_cmp_array(int *dst, T *src1, const size_t n,
 }
 
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
+  T* buf = nsimd::device_calloc<T>(THREADS_PER_BLOCK);
+  if (buf == NULL) {
+    std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(T)
+              << " bytes\n";
+    exit(EXIT_FAILURE);
+  }
   sycl::queue q = spmd::_get_global_queue();
-  int *device_ret = sycl::malloc_device<int>(n, q);
+  sycl::event e1 = q.parallel_for(
+      sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
+      [=](sycl::nd_item<1> item_) {
+        device_cmp_blocks(src1, src2, buf, size_t(n), item_);
+      });
+  e1.wait();
+  nsimd::device_free(buf);
+
+  int *device_ret = nsimd::device_calloc<int>(n);
   if (device_ret == NULL) {
     std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(int)
               << " bytes\n";
     exit(EXIT_FAILURE);
   }
-  sycl::event e1 = q.parallel_for(
-      sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
-      [=](sycl::nd_item<1> item_) {
-        device_cmp_blocks(src1, src2, size_t(n), item_);
-      });
-  e1.wait();
   sycl::event e2 = q.parallel_for(
       sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
       [=](sycl::nd_item<1> item_) {
         device_cmp_array(device_ret, src1, size_t(n), item_);
       });
   e2.wait();
+
   int host_ret;
   q.memcpy((void *)&host_ret, (void *)device_ret, sizeof(int)).wait();
-  sycl::free(device_ret, q);
+  nsimd::device_free(device_ret);
+
   return bool(host_ret);
 }
 
