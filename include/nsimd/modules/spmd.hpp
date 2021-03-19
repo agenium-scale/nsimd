@@ -118,15 +118,15 @@ static inline sycl::queue _get_global_queue() {
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
   inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
-    const sycl::id<1> spmd_i_ = item.get_global_id();                         \
-    if (spmd_i_.get(0) < n) {
+    size_t spmd_i_ = item.get_global_id().get(0);                  	      \
+    if (spmd_i_ < n) {
 
 // templated kernel definition
 #define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
   template <typename template_argument, int spmd_ScalarBits_>                 \
   inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
-    const sycl::id<1> spmd_i_ = item.get_global_id();                         \
-    if (spmd_i_.get(0) < n) {
+    size_t spmd_i_ = item.get_global_id().get(0);                             \
+    if (spmd_i_ < n) {
 
 #endif
 
