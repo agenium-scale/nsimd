@@ -61,19 +61,43 @@ namespace spmd {
 // oneAPI
 
 #if defined(NSIMD_ONEAPI)
-struct _sycl_global_queue {
-private:
-  static sycl::queue _q;
-
+class _sycl_global_queue {
 public:
-  static sycl::queue &get() { return _q; }
+  _sycl_global_queue(const _sycl_global_queue&) = delete;
+  _sycl_global_queue& operator=(const _sycl_global_queue&) = delete;
+
+  static _sycl_global_queue &get_instance() {
+    static _sycl_global_queue s_queue;
+    return s_queue;
+  }
+
+  sycl::queue& cpu(){
+    static sycl::queue s_cpu(sycl::cpu_selector{});
+    return s_cpu;
+  }
+
+  sycl::queue& gpu(){
+    static sycl::queue s_gpu(sycl::gpu_selector{});
+    return s_gpu;
+  }
+
+private:
+  _sycl_global_queue() = default;
 };
 
-sycl::queue _sycl_global_queue::_q = sycl::queue();
-
-static inline sycl::queue _get_global_queue() {
-  return _sycl_global_queue::get();
+static inline sycl::queue& _get_global_queue(const sycl::cpu_selector&){
+  return _sycl_global_queue::get_instance().cpu();	
 }
+
+static inline sycl::queue& _get_global_queue(const sycl::gpu_selector&){
+  return _sycl_global_queue::get_instance().gpu();	
+}
+
+// default global queue bound to gpu
+static inline sycl::queue& _get_global_queue(){
+  return _get_global_queue(sycl::gpu_selector{});
+}
+
 #endif
 
 // ----------------------------------------------------------------------------
