@@ -326,7 +326,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
       });
   e2.wait();
   int host_ret;
-  q.memcpy((void *)&host_ret, (void *)device_ret, n * sizeof(T)).wait();
+  q.memcpy((void *)&host_ret, (void *)device_ret, sizeof(int)).wait();
   sycl::free(device_ret, q);
   return bool(host_ret);
 }
