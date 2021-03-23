@@ -840,20 +840,28 @@ namespace nsimd {
     #endif
   #endif
   #if NSIMD_WORD_SIZE == 64
-    #ifdef __UINT64_TYPE__
-      typedef nsimd_uint64_type u64;
+    #if defined(NSIMD_ONEAPI)
+      typedef sycl::cl_ulong u64;
+      typedef sycl::cl_long i64;
     #else
-      typedef unsigned long     u64;
-    #endif
-    #ifdef __INT64_TYPE__
-      typedef nsimd_int64_type  i64;
-    #else
-      typedef signed long       i64;
+      #ifdef __UINT64_TYPE__
+        typedef nsimd_uint64_type u64;
+      #else
+        typedef unsigned long     u64;
+      #endif
+      #ifdef __INT64_TYPE__
+        typedef nsimd_int64_type  i64;
+      #else
+        typedef signed long       i64;
+      #endif
     #endif
   #else
     #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
       typedef nsimd_ulonglong u64;
       typedef nsimd_longlong i64;
+    #elif defined(NSIMD_ONEAPI)
+      typedef sycl::cl_ulong u64;
+      typedef sycl::cl_long i64;
     #else
       typedef unsigned long long u64;
       typedef signed long long   i64;
