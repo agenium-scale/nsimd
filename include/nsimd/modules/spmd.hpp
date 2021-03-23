@@ -63,20 +63,20 @@ namespace spmd {
 #if defined(NSIMD_ONEAPI)
 class _sycl_global_queue {
 public:
-  _sycl_global_queue(const _sycl_global_queue&) = delete;
-  _sycl_global_queue& operator=(const _sycl_global_queue&) = delete;
+  _sycl_global_queue(const _sycl_global_queue &) = delete;
+  _sycl_global_queue &operator=(const _sycl_global_queue &) = delete;
 
   static _sycl_global_queue &get_instance() {
     static _sycl_global_queue s_queue;
     return s_queue;
   }
 
-  sycl::queue& cpu(){
+  sycl::queue &cpu() {
     static sycl::queue s_cpu(sycl::cpu_selector{});
     return s_cpu;
   }
 
-  sycl::queue& gpu(){
+  sycl::queue &gpu() {
     static sycl::queue s_gpu(sycl::gpu_selector{});
     return s_gpu;
   }
@@ -85,17 +85,34 @@ private:
   _sycl_global_queue() = default;
 };
 
-static inline sycl::queue& _get_global_queue(const sycl::cpu_selector&){
-  return _sycl_global_queue::get_instance().cpu();	
+static inline sycl::queue &_get_global_queue(const sycl::cpu_selector &) {
+  return _sycl_global_queue::get_instance().cpu();
 }
 
-static inline sycl::queue& _get_global_queue(const sycl::gpu_selector&){
-  return _sycl_global_queue::get_instance().gpu();	
+static inline sycl::queue &_get_global_queue(const sycl::gpu_selector &) {
+  return _sycl_global_queue::get_instance().gpu();
 }
 
 // default global queue bound to gpu
-static inline sycl::queue& _get_global_queue(){
+static inline sycl::queue &_get_global_queue() {
   return _get_global_queue(sycl::gpu_selector{});
+}
+
+unsigned int compute_total_num_threads(const size_t init_iter_range,
+                                       const size_t num_threads_per_block) {
+
+  if (init_iter_range % num_threads_per_block == 0) {
+    return init_iter_range;
+  }
+
+  else if (init_iter_range < num_threads_per_block) {
+    return num_threads_per_block;
+  }
+
+  else {
+    unsigned int multiple = init_iter_range / num_threads_per_block + 1;
+    return multiple * num_threads_per_block;
+  }
 }
 
 #endif
@@ -142,7 +159,7 @@ static inline sycl::queue& _get_global_queue(){
 #define spmd_kernel_1d(name, ...)                                             \
   template <int spmd_ScalarBits_>                                             \
   inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
-    size_t spmd_i_ = item.get_global_id().get(0);                  	      \
+    size_t spmd_i_ = item.get_global_id().get(0);                             \
     if (spmd_i_ < n) {
 
 // templated kernel definition
