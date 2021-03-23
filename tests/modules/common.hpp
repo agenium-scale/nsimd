@@ -25,14 +25,14 @@ SOFTWARE.
 #ifndef NSIMD_MODULES_SPMD_COMMON_HPP
 #define NSIMD_MODULES_SPMD_COMMON_HPP
 
+#include <cassert>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include <cassert>
 #include <iostream>
+#include <nsimd/modules/memory_management.hpp>
 #include <nsimd/nsimd.h>
 #include <nsimd/scalar_utilities.h>
-#include <nsimd/modules/memory_management.hpp>
 
 // ----------------------------------------------------------------------------
 // Num threads per block on device
@@ -242,11 +242,13 @@ template <typename T> void del(T *ptr) { hipFree(ptr); }
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
-void device_cmp_blocks(T *src1, T *src2, T* buf, const size_t n,
+void device_cmp_blocks(T *src1, T *src2, T *buf, const size_t n,
                        sycl::nd_item<1> item) {
   size_t tid = item.get_local_id().get(0);
   size_t i = item.get_global_id().get(0);
-  if(i >= n){ return; }
+  if (i >= n) {
+    return;
+  }
   buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
 
   sycl::nd_range<1> nd_range = item.get_nd_range();
@@ -273,16 +275,16 @@ void device_cmp_blocks(T *src1, T *src2, T* buf, const size_t n,
   }
   */
 
-    for (size_t s = size / 2; s != 0; s /= 2) {
-      if(tid < s){
-        buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
-      }
-      // book p 217
-      // it is critically important that either all work-items
-      // in the group execute the barrier or no work-items in
-      // the group execute the barrier.
-      item.barrier(sycl::access::fence_space::local_space);
+  for (size_t s = size / 2; s != 0; s /= 2) {
+    if (tid < s) {
+      buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
     }
+    // book p 217
+    // it is critically important that either all work-items
+    // in the group execute the barrier or no work-items in
+    // the group execute the barrier.
+    item.barrier(sycl::access::fence_space::local_space);
+  }
   if (tid == 0) {
     src1[i] = buf[0];
   }
@@ -305,18 +307,23 @@ void device_cmp_array(int *dst, T *src1, const size_t n,
 }
 
 template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
-  T* buf = nsimd::device_calloc<T>(THREADS_PER_BLOCK);
+  T *buf = nsimd::device_calloc<T>(THREADS_PER_BLOCK);
   if (buf == NULL) {
     std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(T)
               << " bytes\n";
     exit(EXIT_FAILURE);
   }
+
+  const size_t total_num_threads =
+      compute_total_num_threads(n, THREADS_PER_BLOCK);
   sycl::queue q = spmd::_get_global_queue();
-  sycl::event e1 = q.parallel_for(
-      sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
-      [=](sycl::nd_item<1> item_) {
-        device_cmp_blocks(src1, src2, buf, size_t(n), item_);
-      });
+
+  sycl::event e1 =
+      q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                       sycl::range<1>(THREADS_PER_BLOCK)),
+                     [=](sycl::nd_item<1> item_) {
+                       device_cmp_blocks(src1, src2, buf, size_t(n), item_);
+                     });
   e1.wait();
   nsimd::device_free(buf);
 
@@ -326,11 +333,12 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
               << " bytes\n";
     exit(EXIT_FAILURE);
   }
-  sycl::event e2 = q.parallel_for(
-      sycl::nd_range<1>(sycl::range<1>(n), sycl::range<1>(THREADS_PER_BLOCK)),
-      [=](sycl::nd_item<1> item_) {
-        device_cmp_array(device_ret, src1, size_t(n), item_);
-      });
+  sycl::event e2 =
+      q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                       sycl::range<1>(THREADS_PER_BLOCK)),
+                     [=](sycl::nd_item<1> item_) {
+                       device_cmp_array(device_ret, src1, size_t(n), item_);
+                     });
   e2.wait();
 
   int host_ret;
