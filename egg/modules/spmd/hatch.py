@@ -493,8 +493,10 @@ def gen_tests_for_shifts(opts, t, operator):
         }}
 
         void compute_result({typ} *dst, {typ} *a0, const size_t n, const int s) {{
+	  const size_t total_num_threads =
+	  compute_total_num_threads(n, THREADS_PER_BLOCK);
 	  sycl::queue q_ = spmd::_get_global_queue();
-	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
 	      kernel(dst, a0, n, s, item);
@@ -613,8 +615,10 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         }}
 
         void compute_result({typ} *dst, {typ} *a0, const size_t n) {{
+	  const size_t total_num_threads =
+	  compute_total_num_threads(n, THREADS_PER_BLOCK);
 	  sycl::queue q_ = spmd::_get_global_queue();
-	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, a0, n, item);
@@ -861,8 +865,10 @@ def gen_tests_for(opts, t, operator):
         }}
 
         void compute_result({typ} *dst, {k_args}, const size_t n) {{
+	  const size_t total_num_threads =
+	  compute_total_num_threads(n, THREADS_PER_BLOCK);
 	  sycl::queue q_ = spmd::_get_global_queue();
-	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, {k_call_args}, n, item);
