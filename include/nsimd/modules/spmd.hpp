@@ -98,8 +98,8 @@ static inline sycl::queue &_get_global_queue() {
   return _get_global_queue(sycl::gpu_selector{});
 }
 
-unsigned int compute_total_num_threads(const size_t init_iter_range,
-                                       const size_t num_threads_per_block) {
+size_t compute_total_num_threads(const size_t init_iter_range,
+                                 const size_t num_threads_per_block) {
 
   if (init_iter_range % num_threads_per_block == 0) {
     return init_iter_range;
@@ -232,8 +232,10 @@ unsigned int compute_total_num_threads(const size_t init_iter_range,
 // launch 1d kernel oneAPI
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
                               ...)                                            \
+  const size_t total_num_threads =                                            \
+      compute_total_num_threads(n, threads_per_block);                        \
   sycl::queue q = spmd::_get_global_queue();                                  \
-  q.parallel_for(sycl::nd_range<1>(sycl::range<1>(n),                         \
+  q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),         \
                                    sycl::range<1>(threads_per_block)),        \
                  [=](sycl::nd_item<1> item) {                                 \
                    name<spmd_scalar_bits_>(__VA_ARGS__, (size_t)n, item);     \
