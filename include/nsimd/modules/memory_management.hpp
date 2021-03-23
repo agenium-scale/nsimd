@@ -70,22 +70,24 @@ void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
              cudaMemcpyHostToDevice);
 }
 
-template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
+template <typename T>
+void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   cudaMemcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T),
              cudaMemcpyDeviceToHost);
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                               \
-  template <typename T> __global__ void kernel_##func_name##_(T *ptr, int n) { \
-    int i = threadIdx.x + blockIdx.x * blockDim.x;                             \
-    if (i < n) {                                                               \
-      ptr[i] = (T)(expr);                                                      \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  template <typename T> void func_name(T *ptr, size_t sz) {                    \
-    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128>>>(ptr,      \
-                                                                     int(sz)); \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  __global__ void kernel_##func_name##_(T *ptr, int n) {                      \
+    int i = threadIdx.x + blockIdx.x * blockDim.x;                            \
+    if (i < n) {                                                              \
+      ptr[i] = (T)(expr);                                                     \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *ptr, size_t sz) {                   \
+    kernel_##func_name##_<<<(unsigned int)((sz + 127) / 128), 128> > >(       \
+        ptr, int(sz));                                                        \
   }
 
 // ----------------------------------------------------------------------------
@@ -121,23 +123,25 @@ void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
             hipMemcpyHostToDevice);
 }
 
-template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
+template <typename T>
+void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   hipMemcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T),
             hipMemcpyDeviceToHost);
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                               \
-  template <typename T>                                                        \
-  __global__ void kernel_##func_name##_(T *ptr, size_t n) {                    \
-    size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;                 \
-    if (i < n) {                                                               \
-      ptr[i] = (T)(expr);                                                      \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  template <typename T> void func_name(T *ptr, size_t sz) {                    \
-    hipLaunchKernelGGL((kernel_##func_name##_<T>), (size_t)((sz + 127) / 128), \
-                       128, 0, NULL, ptr, (size_t)sz);                         \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  __global__ void kernel_##func_name##_(T *ptr, size_t n) {                   \
+    size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;                \
+    if (i < n) {                                                              \
+      ptr[i] = (T)(expr);                                                     \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *ptr, size_t sz) {                   \
+    hipLaunchKernelGGL((kernel_##func_name##_<T>),                            \
+                       (size_t)((sz + 127) / 128), 128, 0, NULL, ptr,         \
+                       (size_t)sz);                                           \
   }
 
 // ----------------------------------------------------------------------------
@@ -176,23 +180,26 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
   q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T)).wait();
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                               \
-  template <typename T>                                                        \
-  void kernel_##func_name##_(T *const ptr, const size_t sz,                    \
-                             sycl::nd_item<1> item) {                          \
-    const size_t i = item.get_global_id().get(0);                              \
-    if (i < sz) {                                                              \
-      ptr[i] = nsimd::to<T>(expr);                                             \
-    }                                                                          \
-  }                                                                            \
-                                                                               \
-  template <typename T> void func_name(T *const ptr, const size_t sz) {        \
-    sycl::queue q = spmd::_get_global_queue();                                 \
-    q.parallel_for(                                                            \
-         sycl::nd_range<1>(sycl::range<1>(sz),                                 \
-                           sycl::range<1>(THREADS_PER_BLOCK)),                 \
-         [=](sycl::nd_item<1> item) { kernel_##func_name##_(ptr, sz, item); }) \
-        .wait();                                                               \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  void kernel_##func_name##_(T *const ptr, const size_t sz,                   \
+                             sycl::nd_item<1> item) {                         \
+    const size_t i = item.get_global_id().get(0);                             \
+    if (i < sz) {                                                             \
+      ptr[i] = nsimd::to<T>(expr);                                            \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *const ptr, const size_t sz) {       \
+    const size_t total_num_threads =                                          \
+        compute_total_num_threads(sz, THREADS_PER_BLOCK);                     \
+    sycl::queue q = spmd::_get_global_queue();                                \
+    q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),       \
+                                     sycl::range<1>(THREADS_PER_BLOCK)),      \
+                   [=](sycl::nd_item<1> item) {                               \
+                     kernel_##func_name##_(ptr, sz, item);                    \
+                   })                                                         \
+        .wait();                                                              \
   }
 
 // ----------------------------------------------------------------------------
@@ -215,15 +222,16 @@ void copy_to_device(T *device_ptr, T *host_ptr, size_t sz) {
   memcpy((void *)device_ptr, (void *)host_ptr, sz * sizeof(T));
 }
 
-template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
+template <typename T>
+void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   memcpy((void *)host_ptr, (void *)device_ptr, sz * sizeof(T));
 }
 
-#define nsimd_fill_dev_mem_func(func_name, expr)                               \
-  template <typename T> void func_name(T *ptr, size_t sz) {                    \
-    for (size_t i = 0; i < sz; i++) {                                          \
-      ptr[i] = nsimd::to<T>(expr);                                             \
-    }                                                                          \
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T> void func_name(T *ptr, size_t sz) {                   \
+    for (size_t i = 0; i < sz; i++) {                                         \
+      ptr[i] = nsimd::to<T>(expr);                                            \
+    }                                                                         \
   }
 
 #endif
