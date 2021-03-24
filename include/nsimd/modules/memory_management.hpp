@@ -192,7 +192,7 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
                                                                               \
   template <typename T> void func_name(T *const ptr, const size_t sz) {       \
     const size_t total_num_threads =                                          \
-        compute_total_num_threads(sz, THREADS_PER_BLOCK);                     \
+        spmd::compute_total_num_threads(sz, THREADS_PER_BLOCK);               \
     sycl::queue q = spmd::_get_global_queue();                                \
     q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),       \
                                      sycl::range<1>(THREADS_PER_BLOCK)),      \
