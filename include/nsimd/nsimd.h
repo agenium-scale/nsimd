@@ -816,15 +816,6 @@ namespace nsimd {
   typedef signed   __int32 i32;
   typedef unsigned __int64 u64;
   typedef signed   __int64 i64;
-#elif defined(NSIMD_ONEAPI)
-  typedef sycl::cl_uchar u8;
-  typedef sycl::cl_char i8;
-  typedef sycl::cl_ushort u16;
-  typedef sycl::cl_short i16;
-  typedef sycl::cl_uint u32;
-  typedef sycl::cl_int i32;
-  typedef sycl::cl_ulong u64;
-  typedef sycl::cl_long i64;
 #else
   typedef unsigned char  u8;
   typedef signed   char  i8;
@@ -923,13 +914,8 @@ namespace nsimd {
   typedef struct { u16 u; } f16;
 #endif
 
-#if defined(NSIMD_ONEAPI)
-  typedef sycl::cl_float f32;
-  typedef sycl::cl_double f64;
-#else
   typedef float  f32;
   typedef double f64;
-#endif
 
 /* ------------------------------------------------------------------------- */
 /* Native register size (for now only 32 and 64 bits) types */
