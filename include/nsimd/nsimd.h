@@ -816,6 +816,15 @@ namespace nsimd {
   typedef signed   __int32 i32;
   typedef unsigned __int64 u64;
   typedef signed   __int64 i64;
+#elif defined(NSIMD_ONEAPI)
+  typedef sycl::cl_uchar u8;
+  typedef sycl::cl_char i8;
+  typedef sycl::cl_ushort u16;
+  typedef sycl::cl_short i16;
+  typedef sycl::cl_uint u32;
+  typedef sycl::cl_int i32;
+  typedef sycl::cl_ulong u64;
+  typedef sycl::cl_long i64;
 #else
   typedef unsigned char  u8;
   typedef signed   char  i8;
@@ -840,28 +849,20 @@ namespace nsimd {
     #endif
   #endif
   #if NSIMD_WORD_SIZE == 64
-    #if defined(NSIMD_ONEAPI)
-      typedef sycl::cl_ulong u64;
-      typedef sycl::cl_long i64;
+    #ifdef __UINT64_TYPE__
+      typedef nsimd_uint64_type u64;
     #else
-      #ifdef __UINT64_TYPE__
-        typedef nsimd_uint64_type u64;
-      #else
-        typedef unsigned long     u64;
-      #endif
-      #ifdef __INT64_TYPE__
-        typedef nsimd_int64_type  i64;
-      #else
-        typedef signed long       i64;
-      #endif
+      typedef unsigned long     u64;
+    #endif
+    #ifdef __INT64_TYPE__
+      typedef nsimd_int64_type  i64;
+    #else
+      typedef signed long       i64;
     #endif
   #else
     #if defined(NSIMD_IS_GCC) || defined(NSIMD_IS_CLANG)
       typedef nsimd_ulonglong u64;
       typedef nsimd_longlong i64;
-    #elif defined(NSIMD_ONEAPI)
-      typedef sycl::cl_ulong u64;
-      typedef sycl::cl_long i64;
     #else
       typedef unsigned long long u64;
       typedef signed long long   i64;
@@ -922,8 +923,13 @@ namespace nsimd {
   typedef struct { u16 u; } f16;
 #endif
 
-typedef float  f32;
-typedef double f64;
+#if defined(NSIMD_ONEAPI)
+  typedef sycl::cl_float f32;
+  typedef sycl::cl_double f64;
+#else
+  typedef float  f32;
+  typedef double f64;
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* Native register size (for now only 32 and 64 bits) types */
