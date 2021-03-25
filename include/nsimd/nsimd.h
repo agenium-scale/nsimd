@@ -1980,7 +1980,7 @@ void storel(T *ptr, NSIMD_NSV(T, SimdExt) a1, T, SimdExt, unaligned) {
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Scalar utilisties */
+/* Scalar utilities */
 
 #include <nsimd/scalar_utilities.h>
 
@@ -2129,6 +2129,75 @@ NSIMD_INLINE int diff_in_logulps(f32 a, f32 b) {
 
 NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
   return nsimd_diff_in_logulps_f64(a, b);
+}
+} // namespace nsimd
+#endif
+
+
+/* ---------------------------------------------------------------------------- */
+/* oneAPI global queue */
+
+#if defined(NSIMD_ONEAPI)
+namespace nsimd {
+class _sycl_global_queue {
+public:
+  _sycl_global_queue(const _sycl_global_queue &) = delete;
+  _sycl_global_queue &operator=(const _sycl_global_queue &) = delete;
+
+  static _sycl_global_queue &get_instance() {
+    static _sycl_global_queue s_queue;
+    return s_queue;
+  }
+
+  sycl::queue &cpu() {
+    static sycl::queue s_cpu(sycl::cpu_selector{});
+    return s_cpu;
+  }
+
+  sycl::queue &gpu() {
+    static sycl::queue s_gpu(sycl::gpu_selector{});
+    return s_gpu;
+  }
+
+private:
+  _sycl_global_queue() = default;
+};
+
+static inline sycl::queue &_get_global_queue(const sycl::cpu_selector &) {
+  return _sycl_global_queue::get_instance().cpu();
+}
+
+static inline sycl::queue &_get_global_queue(const sycl::gpu_selector &) {
+  return _sycl_global_queue::get_instance().gpu();
+}
+
+// default global queue bound to gpu
+static inline sycl::queue &_get_global_queue() {
+  return _get_global_queue(sycl::gpu_selector{});
+}
+} // namespace nsimd
+#endif
+
+/* ---------------------------------------------------------------------------- */
+/* oneAPI total num threads computation */
+
+#if defined(NSIMD_ONEAPI)
+namespace nsimd {
+size_t compute_total_num_threads(const size_t init_iter_range,
+                                 const size_t num_threads_per_block) {
+
+  if (init_iter_range % num_threads_per_block == 0) {
+    return init_iter_range;
+  }
+
+  else if (init_iter_range < num_threads_per_block) {
+    return num_threads_per_block;
+  }
+
+  else {
+    const size_t multiple = init_iter_range / num_threads_per_block + 1ul;
+    return multiple * num_threads_per_block;
+  }
 }
 } // namespace nsimd
 #endif
