@@ -525,9 +525,6 @@ def gen_tests_for_shifts(opts, t, operator):
         // clang-format on
 
         int main() {{
-          #if defined(NSIMD_ONEAPI)
-          unsigned int n_[3] = {{ 2 * THREADS_PER_BLOCK, 8 * THREADS_PER_BLOCK, 40 * THREADS_PER_BLOCK }};
-          #else
           unsigned int n_[3] = {{ 10, 1001, 10001 }};
           #endif
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
@@ -649,9 +646,6 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         // clang-format on
 
         int main() {{
-          #if defined(NSIMD_ONEAPI)
-          unsigned int n_[3] = {{ 2 * THREADS_PER_BLOCK, 8 * THREADS_PER_BLOCK, 40 * THREADS_PER_BLOCK }};
-          #else
           unsigned int n_[3] = {{ 10, 1001, 10001 }};
           #endif
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
@@ -902,9 +896,6 @@ def gen_tests_for(opts, t, operator):
 
 
         int main() {{
-          #if defined(NSIMD_ONEAPI)
-          unsigned int n_[3] = {{ 2 * THREADS_PER_BLOCK, 8 * THREADS_PER_BLOCK, 40 * THREADS_PER_BLOCK }};
-          #else
           unsigned int n_[3] = {{ 10, 1001, 10001 }};
           #endif
           for (int i = 0; i < (int)(sizeof(n_) / sizeof(int)); i++) {{
