@@ -333,8 +333,8 @@ def gen_tests_for_shifts(opts, t, operator):
 
         void compute_result({t} *dst, {t} *tab0, const size_t n, const int s) {{
 	  const size_t total_num_threads =
-	  spmd::compute_total_num_threads(n, THREADS_PER_BLOCK);
-	  sycl::queue q_ = spmd::_get_global_queue();
+	  nsimd::compute_total_num_threads(n, THREADS_PER_BLOCK);
+	  sycl::queue q_ = nsimd::_get_global_queue();
 	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{

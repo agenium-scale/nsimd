@@ -315,8 +315,8 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   }
 
   const size_t total_num_threads =
-      spmd::compute_total_num_threads(n, THREADS_PER_BLOCK);
-  sycl::queue q = spmd::_get_global_queue();
+      nsimd::compute_total_num_threads(n, THREADS_PER_BLOCK);
+  sycl::queue q = nsimd::_get_global_queue();
 
   sycl::event e1 =
       q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
@@ -353,7 +353,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
 }
 
 template <typename T> void del(T *ptr) {
-  sycl::queue q = spmd::_get_global_queue();
+  sycl::queue q = nsimd::_get_global_queue();
   sycl::free(ptr, q);
 }
 

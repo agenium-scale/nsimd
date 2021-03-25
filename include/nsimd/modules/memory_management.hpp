@@ -150,11 +150,11 @@ void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
 #elif defined(NSIMD_ONEAPI)
 
 template <typename T> T *device_malloc(const size_t sz) {
-  return sycl::malloc_device<T>(sz, spmd::_get_global_queue());
+  return sycl::malloc_device<T>(sz, nsimd::_get_global_queue());
 }
 
 template <typename T> T *device_calloc(const size_t sz) {
-  sycl::queue q = spmd::_get_global_queue();
+  sycl::queue q = nsimd::_get_global_queue();
   T *const ret = sycl::malloc_device<T>(sz, q);
   if (ret == NULL) {
     return NULL;
@@ -164,19 +164,19 @@ template <typename T> T *device_calloc(const size_t sz) {
 }
 
 template <typename T> void device_free(T *const ptr) {
-  sycl::queue q = spmd::_get_global_queue();
+  sycl::queue q = nsimd::_get_global_queue();
   sycl::free(ptr, q);
 }
 
 template <typename T>
 void copy_to_device(T *const device_ptr, T *const host_ptr, const size_t sz) {
-  sycl::queue q = spmd::_get_global_queue();
+  sycl::queue q = nsimd::_get_global_queue();
   q.memcpy((void *)device_ptr, (const void *)host_ptr, sz * sizeof(T)).wait();
 }
 
 template <typename T>
 void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
-  sycl::queue q = spmd::_get_global_queue();
+  sycl::queue q = nsimd::_get_global_queue();
   q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T)).wait();
 }
 
@@ -192,8 +192,8 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
                                                                               \
   template <typename T> void func_name(T *const ptr, const size_t sz) {       \
     const size_t total_num_threads =                                          \
-        spmd::compute_total_num_threads(sz, THREADS_PER_BLOCK);               \
-    sycl::queue q = spmd::_get_global_queue();                                \
+        nsimd::compute_total_num_threads(sz, THREADS_PER_BLOCK);              \
+    sycl::queue q = nsimd::_get_global_queue();                               \
     q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),       \
                                      sycl::range<1>(THREADS_PER_BLOCK)),      \
                    [=](sycl::nd_item<1> item) {                               \

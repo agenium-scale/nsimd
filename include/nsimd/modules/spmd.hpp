@@ -173,8 +173,8 @@ namespace spmd {
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
                               ...)                                            \
   const size_t total_num_threads =                                            \
-      spmd::compute_total_num_threads(n, threads_per_block);                  \
-  sycl::queue q = spmd::_get_global_queue();                                  \
+      nsimd::compute_total_num_threads(n, threads_per_block);                 \
+  sycl::queue q = nsimd::_get_global_queue();                                 \
   q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),         \
                                    sycl::range<1>(threads_per_block)),        \
                  [=](sycl::nd_item<1> item) {                                 \
