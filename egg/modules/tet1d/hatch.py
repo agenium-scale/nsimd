@@ -22,6 +22,7 @@ import os
 import operators
 import common
 import cuda
+import oneapi
 import gen_scalar_utilities
 #import hip
 
@@ -103,7 +104,7 @@ and the compiler to see the loop written above.
 This module provides expression templates on top of NSIMD core. As a
 consequence the loops seen by the compiler deduced from the high-level
 expressions are optimized using SIMD instructions. Note also that NVIDIA and
-AMD GPUs are supported through CUDA and ROCm/HIP. The API for expression
+AMD GPUs are supported through CUDA, ROCm/HIP and oneAPI. The API for expression
 templates in NSIMD is C++98 compatible and is able to work with any container
 as its only requirement for data is that it must be contiguous.
 
@@ -384,6 +385,8 @@ def gen_tests_for_shifts(opts, t, operator):
                    typnbits=t[1:]))
     common.clang_format(opts, filename, cuda=True)
 
+# -----------------------------------------------------------------------------
+
 def gen_tests_for(opts, t, tt, operator):
     op_name = operator.name
     dirname = os.path.join(opts.tests_dir, 'modules', 'tet1d')
@@ -521,6 +524,9 @@ def gen_tests_for(opts, t, tt, operator):
     gpu_kernel = compute_result_kernel.format(p='gpu',
                                               f32_to_f16='__float2half',
                                               f16_to_f32='__half2float')
+    oneapi_kernel = compute_result_kernel.format(p='oneapi',
+                                              f32_to_f16='sycl::half',
+                                              f16_to_f32='static_cast<f32>')
 
     if op_name in ['rec11', 'rsqrt11']:
         comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
@@ -560,6 +566,26 @@ def gen_tests_for(opts, t, tt, operator):
         void compute_result({typ} *dst, {args_tabs}, size_t n) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, {args_tabs_call},
                              n);
+        }}
+
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({typ} *dst, {args_tabs}, const size_t n, sycl::nd_item<1> item) {{
+          const size_t i = item.get_global_id().get(0);
+          if(i < n){{
+            {oneapi_kernel}
+          }}
+        }}
+
+        void compute_result({typ} *dst, {args_tabs}, const size_t n) {{
+	  const size_t total_num_threads =
+	  nsimd::compute_total_num_threads(n, THREADS_PER_BLOCK);
+	  sycl::queue q_ = nsimd::_get_global_queue();
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+	                                    sycl::range<1>(THREADS_PER_BLOCK)),
+	                                    [=](sycl::nd_item<1> item){{
+            kernel(dst, {args_tabs_call}, n, item);
+          }}).wait();
         }}
 
         #else
@@ -717,6 +743,10 @@ def gen_functions(opts):
                    format(op_name, to_typ_arg,
                           impl_args.format(cpu_gpu='gpu', tmpl=''))
 
+        impl_oneapi = 'return nsimd::oneapi_{}({}{});'. \
+                   format(op_name, to_typ_arg,
+                          impl_args.format(cpu_gpu='oneapi', tmpl=''))
+
         impl_simd = 'return nsimd::{}{}({});'. \
                       format(op_name, to_typ_tmpl_arg,
                              impl_args.format(cpu_gpu='template simd',
@@ -739,6 +769,12 @@ def gen_functions(opts):
           __device__ {return_type} gpu_get(nsimd::nat i) const {{
             {impl_gpu}
           }}
+
+	#elif defined(NSIMD_ONEAPI)
+	  {return_type} oneapi_get(nsimd::nat i) const {{
+	    {impl_oneapi}
+	  }}
+
         #else
           {return_type} scalar_get(nsimd::nat i) const {{
             {impl_scalar}
@@ -747,6 +783,7 @@ def gen_functions(opts):
           simd_get(nsimd::nat i) const {{
             {impl_simd}
           }}
+
         #endif
         }};
 
@@ -761,6 +798,7 @@ def gen_functions(opts):
                      members=members, members_assignment=members_assignment,
                      in_out_typedefs=in_out_typedefs,
                      impl_gpu=impl_gpu,
+		     impl_oneapi=impl_oneapi,
                      impl_scalar=impl_scalar,
                      impl_simd=impl_simd)
 
