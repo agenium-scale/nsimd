@@ -5,7 +5,7 @@ Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
 At its core, NSIMD is a vectorization library that abstracts [SIMD
 programming](<https://en.wikipedia.org/wiki/SIMD>). It was designed to exploit
 the maximum power of processors at a low development cost. NSIMD comes with
-modules. As of now two of them adds support for GPUs to NSIMD. The
+modules. As of now three of them adds support for GPUs to NSIMD. The
 direction that NSIMD is taking is to provide several programming paradigms
 to address different problems and to allow a wider support of architectures.
 With two of its modules NSIMD provides three programming paradigms:
