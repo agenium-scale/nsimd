@@ -125,13 +125,13 @@ int main() {{
 ```
 
 - `template <typename T, typename I> inline node in(const T *data, I sz);`{nl}
-  Construct an input for expression templates starting at address `data` and
-  containing `sz` elements. The return type of this functin `node` can be used
-  with the help of the `TET1D_IN(T)` macro where `T` if the underlying type of
+  Constructs an input for expression templates starting at address `data` and
+  containing `sz` elements. The return type of this function `node` can be used
+  with the help of the `TET1D_IN(T)` macro where `T` is the underlying type of
   data (ints, floats, doubles...).
 
 - `template <typename T> node out(T *data);`{nl}
-  Construct an output for expression templates starting at address `data`. Note
+  Constructs an output for expression templates starting at address `data`. Note
   that memory must be allocated by the user before passing it to the expression
   template engine. The output type can be used with the `TET1D_OUT(T)` where
   `T` is the underlying type (ints, floats, doubles...).
@@ -319,6 +319,27 @@ def gen_tests_for_shifts(opts, t, operator):
 
         void compute_result({t} *dst, {t} *tab0, size_t n, int s) {{
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, tab0, n, s);
+        }}
+
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({t} *dst, {t} *tab0, const size_t n,
+                           const int s, sycl::nd_item<1> item) {{
+          const size_t ii = item.get_global_id().get(0);
+          if(ii < n){{
+            dst[ii] = nsimd::oneapi_{op_name}(tab0[ii], s);
+          }}
+        }}
+
+        void compute_result({t} *dst, {t} *tab0, const size_t n, const int s) {{
+	  const size_t total_num_threads =
+	  spmd::compute_total_num_threads(n, THREADS_PER_BLOCK);
+	  sycl::queue q_ = spmd::_get_global_queue();
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+	                                    sycl::range<1>(THREADS_PER_BLOCK)),
+	                                    [=](sycl::nd_item<1> item){{
+	      kernel(dst, tab0, n, s, item);
+	    }}).wait();
         }}
 
         #else
