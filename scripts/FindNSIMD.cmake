@@ -59,7 +59,8 @@ if (NOT NSIMD_FOUND AND NOT DEFINED NSIMD_LIBRARIES)
                                        nsimd_sve1024
                                        nsimd_sve2048
                                        nsimd_cuda
-                                       nsimd_rocm)
+                                       nsimd_rocm
+				       nsimd_oneapi)
   elseif("${l}" STREQUAL "1")
     list(GET NSIMD_FIND_COMPONENTS 0 simd_ext)
     find_library(NSIMD_LIBRARIES NAMES nsimd_${simd_ext})
