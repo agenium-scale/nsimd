@@ -13,9 +13,9 @@ With two of its modules NSIMD provides three programming paradigms:
 - Imperative programming provided by NSIMD core that supports a lots of
   CPU/SIMD extensions.
 - Expressions templates provided by the TET1D module that supports all
-  architectures from NSIMD core and adds support for NVIDIA and AMD GPUs.
+  architectures from NSIMD core and adds support for NVIDIA, AMD and Intel GPUs.
 - Single Program Multiple Data provided by the SPMD module that supports all
-  architectures from NSIMD core and adds support for NVIDIA and AMD GPUs.
+  architectures from NSIMD core and adds support for NVIDIA, AMD and Intel GPUs.
 
 ## Supported architectures
 
@@ -34,6 +34,7 @@ With two of its modules NSIMD provides three programming paradigms:
 | Arm fixed sized SVE                   |     Y      |      Y       |      Y      |
 | NVIDIA CUDA                           |     N      |      Y       |      Y      |
 | AMD ROCm                              |     N      |      Y       |      Y      |
+| Intel oneAPI                          |     N      |      Y       |      Y      |
 
 ## How it works?
 
@@ -61,7 +62,7 @@ The C++ API only wraps the C calls.
 
 ## Supported compilers
 
-NSIMD is tested with GCC, Clang, MSVC, NVCC, HIPCC and ARMClang. As a C89 and a
+NSIMD is tested with GCC, Clang, MSVC, NVCC, HIPCC, ARMClang and dpcpp. As a C89 and a
 C++98 API are provided, other compilers should work fine. Old compiler versions
 should work as long as they support the targeted SIMD extension. For instance,
 NSIMD can compile SSE 4.2 code with MSVC 2010.
@@ -83,7 +84,7 @@ make install
 
 where `SIMD_EXT` is one of the following: CPU, SSE2, SSE42, AVX, AVX2,
 AVX512\_KNL, AVX512\_SKYLAKE, NEON128, AARCH64, SVE, SVE128, SVE256, SVE512,
-SVE1024, SVE2048, CUDA, ROCM.
+SVE1024, SVE2048, CUDA, ROCM, ONEAPI.
 
 Note that when compiling for NEON128 on Linux one has to choose the ABI, either
 armel or armhf. Default is armel. As CMake is unable to autodetect this
@@ -177,6 +178,7 @@ will contain the library. Supported SIMD extension are:
 - sve2048
 - cuda
 - rocm
+- oneapi
 
 Supported compiler are:
 
@@ -187,6 +189,7 @@ Supported compiler are:
 - cl
 - nvcc
 - hipcc
+- dpcpp
 
 Note that certain combination of SIMD extension/compilers are not supported
 such as aarch64 with icc, or avx512\_skylake with nvcc.
@@ -260,12 +263,13 @@ Configure project for compilation.
                     rocm      Radeon Open Compute compilers
                     cuda, cuda+gcc, cuda+clang, cuda+msvc
                               Nvidia CUDA C++ compiler
+		    dpcpp     Intel DPC++ Compiler
   -comp=COMMAND,COMPILER[,PATH[,VERSION[,ARCHI]]]
                   Use COMPILER when COMMAND is invoked for compilation
                   If VERSION and/or ARCHI are not given, nsconfig will
                   try to determine those. This is useful for cross
                   compiling and/or setting the CUDA host compiler.
-                  COMMAND must be in { cc, c++, gcc, g++, cl, icc, nvcc,
+                  COMMAND must be in { cc, c++, gcc, g++, cl, icc, nvcc,i dpcpp,
                   hipcc, hcc, clang, clang++, armclang, armclang++,
                   cuda-host-c++ } ;
                   VERSION is compiler dependant. Note that VERSION
@@ -383,13 +387,12 @@ ones especially the SPMD module.
 
 It is our belief that SPMD is a good paradigm for writing vectorized code. It
 helps both the developer and the compiler writer. It forces the developers to
-better arrange its data ion memory more suited for vectorization. On the
-compiler side it is more simplier to write a "SPMD compiler" than a standard
+better arrange its data on memory more suited for vectorization. On the
+compiler side it is simpler to write a "SPMD compiler" than a standard
 C/C++/Fortran compiler that tries to autovectorize some weird loop with data
 scattered all around the place. Our priority for our SPMD module are the
 following:
 
-- Add oneAPI/SYCL support.
 - Provide a richer API.
 - Provide cross-lane data transfer.
 - Provide a way to abstract shared memory.
@@ -426,7 +429,7 @@ explicitely to emphasize the fact that using expressions like `scalar + vector`
 might incur an optimization penalty.
 
 The use of `nsimd::pack` may not be portable to ARM SVE and therefore must be
-included manually. ARM SVE registers can only be stored in sizeless strucs
+included manually. ARM SVE registers can only be stored in sizeless structs
 (`__sizeless_struct`). This feature (as of 2019/04/05) is only supported by the
 ARM compiler. We do not know whether other compilers will use the same keyword
 or paradigm to support SVE intrinsics.
@@ -437,7 +440,7 @@ The wrapping of intrinsics, the writing of test and bench files are tedious and
 repetitive tasks. Most of those are generated using Python scripts that can be
 found in `egg`.
 
-- Intrinsics that do not require to known the vector length can be wrapped and
+- Intrinsics that do not require to know the vector length can be wrapped and
   will be accepted with no problem.
 - Intrinsics that do require the vector length at compile time can be wrapped
   but it is up to the maintainer to accept it.
