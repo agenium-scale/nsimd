@@ -68,6 +68,8 @@ maintainer will then merge or comment the pull request.
   + `CUDA` called `CUDA` in source code
 - AMD
   + `ROCm` called `ROCM` in source code
+- Intel oneAPI
+ + `oneAPI` called `ONEAPI` in source code
 
 `nsimd` currently supports the following types:
 - `i8`: signed integers over 8 bits (usually `signed char`),
@@ -130,6 +132,8 @@ follows:
   + `CUDA`: no intrinsics is provided.
 - AMD
   + `ROCM`: no intrinsics is provided.
+- Intel oneAPI
+  + `ONEAPI`: no intrinsics is provided.
 
 First thing to do is to declare this new intrinsic to the generation system.
 A lot of work is done by the generation system such as generating all functions
@@ -290,6 +294,7 @@ files:
 - `egg/scalar.py`
 - `egg/cuda.py`
 - `egg/hip.py`
+- `egg/oneapi.py`
 
 The idea is to produce plain C (not C++) code using Python string format. Each
 of the Python files provides some helper functions to ease as much as
@@ -485,10 +490,10 @@ the float32 result to a float16.
 
 ### The GPU versions
 
-The GPU generator Python files `cuda.py` and `rocm.py` are a bit different
-from the other files but it is easy to find where to add the relevant
-pieces of code as ROCm syntax is fully compatible with CUDA's one only needs
-to modify the `cuda.py` file.
+The GPU generator Python files `cuda.py`, `rocm.py` and `oneapi.py` are a
+bit different from the other files but it is easy to find where to add the
+relevant pieces of code as ROCm syntax is fully compatible with CUDA's, one
+only needs to modify the `cuda.py` file.
 
 The code to add for float32's is as follows to be added inside the `get_impl`
 Python function.
