@@ -2204,7 +2204,7 @@ public:
   }
 
   sycl::queue &gpu() {
-    static sycl::queue s_gpu(sycl::gpu_selector{}, sycl_async_error_handler{});
+    static sycl::queue s_gpu(sycl::gpu_selector{}, sycl_async_error_handler<>{});
     return s_gpu;
   }
 
@@ -2236,7 +2236,7 @@ static inline sycl::queue &_get_global_queue() {
 
 #if defined(NSIMD_ONEAPI)
 namespace nsimd {
-size_t compute_total_num_threads(const size_t init_iter_range,
+NSIMD_INLINE size_t compute_total_num_threads(const size_t init_iter_range,
                                  const size_t num_threads_per_block) {
 
   if (init_iter_range % num_threads_per_block == 0) {
