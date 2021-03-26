@@ -631,7 +631,8 @@ def gen_tests_for(opts, t, tt, operator):
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
                    args_tabs_call=args_tabs_call, gpu_params=gpu_params,
                    free_tabs=free_tabs, tet1d_code=tet1d_code, comp=comp,
-                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel))
+                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
+		   oneapi_kernel=oneapi_kernel))
 
     common.clang_format(opts, filename, cuda=True)
 
