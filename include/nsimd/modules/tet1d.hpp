@@ -46,6 +46,8 @@ const nsimd::nat end = nsimd::nat(-1);
 // ----------------------------------------------------------------------------
 // Error management
 
+// NSIMD_ONEAPI error management defined in nsimd.h
+
 #if defined(NSIMD_CUDA)
 #define nsimd_cuda_assert(ans) tet1d::gpuCheck((ans), __FILE__, __LINE__)
 inline void gpuCheck(cudaError_t code, const char *file, int line) {
@@ -103,6 +105,31 @@ __global__ void gpu_kernel_component_wise_mask(T *dst, Mask const mask,
   int i = int(hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x);
   if (i < n && mask.gpu_get(i)) {
     dst[i] = expr.gpu_get(i);
+  }
+}
+
+#elif defined(NSIMD_ONEAPI)
+
+// oneAPI component wise kernel
+template <typename T, typename Expr>
+void oneapi_kernel_component_wise(T *dst, Expr const expr,
+                                  nsimd::nat n, sycl::nd_item<1> item) {
+  const int i = static_cast<int>(item.get_global_id().get(0));
+  if (i < n) {
+    dst[i] = expr.oneapi_get(i);
+  }
+}
+
+// oneAPI component wise kernel with masked output
+template <typename T, typename Mask, typename Expr>
+void oneapi_kernel_component_wise_mask(T *dst, Mask const mask,
+                                               Expr const expr,
+                                               nsimd::nat n,
+					       sycl::nd_item<1> item) {
+
+  const int i = static_cast<int>(item.get_global_id().get(0));
+  if (i < n && mask.oneapi_get(i)) {
+    dst[i] = expr.oneapi_get(i);
   }
 }
 
@@ -199,6 +226,8 @@ template <typename T> struct node<scalar_t, none_t, none_t, T> {
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   __device__ T gpu_get(nsimd::nat) const { return value; }
+#elif defined(NSIMD_ONEAPI)
+  T oneapi_get(nsimd::nat) const { return value; }
 #else
   T scalar_get(nsimd::nat) const { return value; }
   template <typename Pack>
@@ -263,6 +292,8 @@ template <typename T> struct node<in_t, none_t, none_t, T> {
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   __device__ T gpu_get(nsimd::nat i) const { return data[i]; }
+#elif defined(NSIMD_ONEAPI)
+  T oneapi_get(nsimd::nat i) const { return data[i]; }
 #else
   T scalar_get(nsimd::nat i) const { return data[i]; }
   template <typename Pack>
@@ -333,6 +364,19 @@ struct node<mask_out_t, Mask, none_t, Pack> {
                        (unsigned int)(nt), 0, s, data, mask, expr,
                        expr_size);
 #endif
+#elif defined(NSIMD_ONEAPI)
+    const nsimd::nat expr_size = compute_size(mask.size(), expr.size());
+    const nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
+    const size_t total_num_threads =
+    nsimd::compute_total_num_threads(static_cast<size_t>(expr_size), static_cast<size_t>(nt));
+    assert(nt > 0 && nt <= UINT_MAX);
+    assert(total_num_threads > 0 && total_num_threads <= UINT_MAX);
+    sycl::queue q_ = nsimd::_get_global_queue();
+    q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                      sycl::range<1>(nt)),
+                                      [=](sycl::nd_item<1> item){
+      oneapi_kernel_component_wise_mask(data, mask, expr, expr_size, item);
+    }).wait();
 #else
     cpu_kernel_component_wise_mask<Pack>(
         data, mask, expr, compute_size(mask.size(), expr.size()));
@@ -395,6 +439,18 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
         (gpu_kernel_component_wise<T, node<Op, Left, Right, Extra> >),
         (unsigned int)(nb), (unsigned int)(nt), 0, s, data, expr, expr.size());
 #endif
+#elif defined(NSIMD_ONEAPI)
+    const nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
+    const size_t total_num_threads =
+    nsimd::compute_total_num_threads(static_cast<size_t>(expr.size()), static_cast<size_t>(nt));
+    assert(nt > 0 && nt <= UINT_MAX);
+    assert(total_num_threads > 0 && total_num_threads <= UINT_MAX);
+    sycl::queue q_ = nsimd::_get_global_queue();
+    q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                      sycl::range<1>(nt)),
+                                      [=](sycl::nd_item<1> item){
+      oneapi_kernel_component_wise(data, expr, expr.size(), item);
+    }).wait();
 #else
     cpu_kernel_component_wise<Pack>(data, expr, expr.size());
 #endif
