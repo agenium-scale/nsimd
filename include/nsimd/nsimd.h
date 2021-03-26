@@ -2133,6 +2133,55 @@ NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
 } // namespace nsimd
 #endif
 
+/* ---------------------------------------------------------------------------- */
+/* oneAPI synchronous errors management */
+
+#if defined(NSIMD_ONEAPI)
+namespace nsimd {
+
+#define nsimd_oneapi_assert_begin() try{
+
+#define nsimd_oneapi_assert_any_end() \
+  } \
+  catch(const sycl::exception& exc){ \
+    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %s %d\n", \
+        "sycl::exception: ", exc.what(), __FILE__, __LINE__); \
+    exit(1); \
+}
+
+#define nsimd_oneapi_assert_end(given_exception) \
+  } \
+  catch(const given_exception &exc){ \
+    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %s %s %d\n", \
+        #given_exception, ": ", exc.what(), __FILE__, __LINE__); \
+    exit(1); \
+}
+
+} // namespace nsimd
+#endif
+
+/* ---------------------------------------------------------------------------- */
+/* oneAPI asynchronous errors management */
+
+#if defined(NSIMD_ONEAPI)
+namespace nsimd {
+
+template<typename Exception = sycl::exception>>
+struct sycl_async_error_handler{
+   void operator()(const sycl::exception_list& elist) {
+      for (const auto& exc : elist){
+         try{ std::rethrow_exception(exc); }
+	 catch(const Exception& exc){
+	    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %d\n",
+            exc.what(), __FILE__, __LINE__);
+            exit(1);
+	 }
+      }
+   }
+};
+
+} // namespace nsimd
+#endif
 
 /* ---------------------------------------------------------------------------- */
 /* oneAPI global queue */
@@ -2155,7 +2204,7 @@ public:
   }
 
   sycl::queue &gpu() {
-    static sycl::queue s_gpu(sycl::gpu_selector{});
+    static sycl::queue s_gpu(sycl::gpu_selector{}, sycl_async_error_handler{});
     return s_gpu;
   }
 
@@ -2173,7 +2222,11 @@ static inline sycl::queue &_get_global_queue(const sycl::gpu_selector &) {
 
 // default global queue bound to gpu
 static inline sycl::queue &_get_global_queue() {
+#if defined(NSIMD_ONEAPI_CPU)
+  return _get_global_queue(sycl::cpu_selector{});
+#else
   return _get_global_queue(sycl::gpu_selector{});
+#endif
 }
 } // namespace nsimd
 #endif
@@ -2201,6 +2254,8 @@ size_t compute_total_num_threads(const size_t init_iter_range,
 }
 } // namespace nsimd
 #endif
+
+
 
 /* ------------------------------------------------------------------------- */
 
