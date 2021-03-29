@@ -30,6 +30,7 @@ SOFTWARE.
 #include <iostream>
 #include <nsimd/modules/spmd.hpp>
 #include <nsimd/nsimd.h>
+#include <cstdio>
 
 #if defined(NSIMD_ONEAPI)
 #include <CL/sycl.hpp>
@@ -155,11 +156,16 @@ template <typename T> T *device_malloc(const size_t sz) {
 
 template <typename T> T *device_calloc(const size_t sz) {
   sycl::queue q = spmd::_get_global_queue();
+  fprintf(stderr, "device_calloc - before sycl::malloc_device\n");
   T *const ret = sycl::malloc_device<T>(sz, q);
+  fprintf(stderr, "device_calloc - after sycl::malloc_device\n");
   if (ret == NULL) {
+    fprintf(stderr, "device_calloc - after sycl::malloc_device - ret == NULL\n");
     return NULL;
   }
+  fprintf(stderr, "device_calloc - after sycl::malloc_device - ret != NULL - before q.memset\n");
   q.memset((void *)ret, 0, sz * sizeof(T)).wait();
+  fprintf(stderr, "device_calloc - after sycl::malloc_device - after q.memset\n");
   return ret;
 }
 
