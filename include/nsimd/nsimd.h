@@ -2166,7 +2166,7 @@ namespace nsimd {
 #if defined(NSIMD_ONEAPI)
 namespace nsimd {
 
-template<typename Exception = sycl::exception>>
+template<typename Exception = sycl::exception>
 struct sycl_async_error_handler{
    void operator()(const sycl::exception_list& elist) {
       for (const auto& exc : elist){
