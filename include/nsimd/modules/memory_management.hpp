@@ -163,6 +163,16 @@ template <typename T> T *device_calloc(const size_t sz) {
   return ret;
 }
 
+template <typename T> void assert_device_alloc(const T *const ptr) {
+  if (ptr == NULL) {
+    fprintf(
+        stderr,
+        "ERROR: failed to allocate memory on the device %lu bytes - %s %d\n",
+        sizeof(T), __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+}
+
 template <typename T> void device_free(T *const ptr) {
   sycl::queue q = nsimd::_get_global_queue();
   sycl::free(ptr, q);
