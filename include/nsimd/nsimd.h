@@ -1098,12 +1098,11 @@ NSIMD_INLINE int nsimd_popcnt64_(u64 a) {
   return __builtin_popcountl(a);
 #endif
 #elif defined(NSIMD_IS_MSVC)
-  #if NSIMD_WORD_SIZE == 64
-    return (int)__popcnt64(a);
-  #else
-    return (int)__popcnt((u32)(a & 0xFFFFFFFF)) +
-           (int)__popcnt((u32)(a >> 32));
-  #endif
+#if NSIMD_WORD_SIZE == 64
+  return (int)__popcnt64(a);
+#else
+  return (int)__popcnt((u32)(a & 0xFFFFFFFF)) + (int)__popcnt((u32)(a >> 32));
+#endif
 #else
   int i, ret = 0;
   for (i = 0; i < 64; i++) {
@@ -1243,8 +1242,8 @@ struct unaligned {};
 
 #if NSIMD_CXX >= 2020
 template <typename T>
-concept alignment_c = std::is_same_v<T, aligned> ||
-                      std::is_same_v<T, unaligned>;
+concept alignment_c =
+    std::is_same_v<T, aligned> || std::is_same_v<T, unaligned>;
 #define NSIMD_CONCEPT_ALIGNMENT nsimd::alignment_c
 #else
 #define NSIMD_CONCEPT_ALIGNMENT typename
@@ -1509,7 +1508,7 @@ template <NSIMD_CONCEPT_VALUE_TYPE T> struct scoped_aligned_mem_for {
 /* defined as C++ classes . */
 
 #if NSIMD_CXX > 0 && !defined(NSIMD_CUDA) && !defined(NSIMD_ROCM)
-  #define NSIMD_C_LINKAGE_FOR_F16
+#define NSIMD_C_LINKAGE_FOR_F16
 #endif
 
 #ifdef NSIMD_C_LINKAGE_FOR_F16
@@ -1649,8 +1648,8 @@ namespace nsimd {
 template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T>
 NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 NSIMD_NSV(T, NSIMD_SIMD)
-if_else(NSIMD_NSVL(L, NSIMD_SIMD) a0, NSIMD_NSV(T, NSIMD_SIMD) a1,
-        NSIMD_NSV(T, NSIMD_SIMD) a2, L, T) {
+    if_else(NSIMD_NSVL(L, NSIMD_SIMD) a0, NSIMD_NSV(T, NSIMD_SIMD) a1,
+            NSIMD_NSV(T, NSIMD_SIMD) a2, L, T) {
   return if_else1(reinterpretl(a0, L(), T(), NSIMD_SIMD()), a1, a2, T(),
                   NSIMD_SIMD());
 }
@@ -1659,8 +1658,8 @@ template <NSIMD_CONCEPT_VALUE_TYPE L, NSIMD_CONCEPT_VALUE_TYPE T,
           NSIMD_CONCEPT_SIMD_EXT SimdExt>
 NSIMD_REQUIRES(sizeof_v<L> == sizeof_v<T>)
 NSIMD_NSV(T, SimdExt)
-if_else(NSIMD_NSVL(L, SimdExt) a0, NSIMD_NSV(T, SimdExt) a1,
-        NSIMD_NSV(T, SimdExt) a2, L, T, SimdExt) {
+    if_else(NSIMD_NSVL(L, SimdExt) a0, NSIMD_NSV(T, SimdExt) a1,
+            NSIMD_NSV(T, SimdExt) a2, L, T, SimdExt) {
   return if_else1(reinterpretl(a0, L(), T(), SimdExt()), a1, a2, T(),
                   SimdExt());
 }
@@ -2133,57 +2132,49 @@ NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
 } // namespace nsimd
 #endif
 
-/* ---------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 /* oneAPI synchronous errors management */
 
 #if defined(NSIMD_ONEAPI)
 namespace nsimd {
 
-#define nsimd_oneapi_assert_begin() try{
+#define catch_exit(given_exception)                                           \
+  catch (const given_exception &exc) {                                        \
+    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %s %s %d\n",       \
+            #given_exception, ": ", exc.what(), __FILE__, __LINE__);          \
+    exit(EXIT_FAILURE);                                                       \
+  }
 
-#define nsimd_oneapi_assert_any_end() \
-  } \
-  catch(const sycl::exception& exc){ \
-    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %s %d\n", \
-        "sycl::exception: ", exc.what(), __FILE__, __LINE__); \
-    exit(1); \
-}
-
-#define nsimd_oneapi_assert_end(given_exception) \
-  } \
-  catch(const given_exception &exc){ \
-    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %s %s %d\n", \
-        #given_exception, ": ", exc.what(), __FILE__, __LINE__); \
-    exit(1); \
-}
+#define oneapi_catch_exit_any() catch_exit(sycl::exception)
 
 } // namespace nsimd
 #endif
 
-/* ---------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 /* oneAPI asynchronous errors management */
 
 #if defined(NSIMD_ONEAPI)
 namespace nsimd {
 
-template<typename Exception = sycl::exception>
-struct sycl_async_error_handler{
-   void operator()(const sycl::exception_list& elist) {
-      for (const auto& exc : elist){
-         try{ std::rethrow_exception(exc); }
-	 catch(const Exception& exc){
-	    fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %d\n",
-            exc.what(), __FILE__, __LINE__);
-            exit(1);
-	 }
+template <typename Exception = sycl::exception>
+struct sycl_async_error_handler {
+  void operator()(const sycl::exception_list &elist) {
+    for (const auto &exc : elist) {
+      try {
+        std::rethrow_exception(exc);
+      } catch (const Exception &exc) {
+        fprintf(stderr, "NSIMD Internal error:\n\tError: %s %s %d\n",
+                exc.what(), __FILE__, __LINE__);
+        exit(EXIT_FAILURE);
       }
-   }
+    }
+  }
 };
 
 } // namespace nsimd
 #endif
 
-/* ---------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 /* oneAPI global queue */
 
 #if defined(NSIMD_ONEAPI)
@@ -2204,7 +2195,8 @@ public:
   }
 
   sycl::queue &gpu() {
-    static sycl::queue s_gpu(sycl::gpu_selector{}, sycl_async_error_handler<>{});
+    static sycl::queue s_gpu(sycl::gpu_selector{},
+                             sycl_async_error_handler<>{});
     return s_gpu;
   }
 
@@ -2231,13 +2223,13 @@ static inline sycl::queue &_get_global_queue() {
 } // namespace nsimd
 #endif
 
-/* ---------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 /* oneAPI total num threads computation */
 
 #if defined(NSIMD_ONEAPI)
 namespace nsimd {
-NSIMD_INLINE size_t compute_total_num_threads(const size_t init_iter_range,
-                                 const size_t num_threads_per_block) {
+NSIMD_INLINE size_t compute_total_num_threads(
+    const size_t init_iter_range, const size_t num_threads_per_block) {
 
   if (init_iter_range % num_threads_per_block == 0) {
     return init_iter_range;
@@ -2254,8 +2246,6 @@ NSIMD_INLINE size_t compute_total_num_threads(const size_t init_iter_range,
 }
 } // namespace nsimd
 #endif
-
-
 
 /* ------------------------------------------------------------------------- */
 
