@@ -246,10 +246,10 @@ void device_cmp_blocks(T *src1, T *src2, T *buf, const size_t n,
                        sycl::nd_item<1> item) {
   size_t tid = item.get_local_id().get(0);
   size_t i = item.get_global_id().get(0);
-  if (i >= n) {
-    return;
+
+  if (i < n) {
+    buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
   }
-  buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
 
   sycl::nd_range<1> nd_range = item.get_nd_range();
   sycl::range<1> range = nd_range.get_local_range();
@@ -276,7 +276,7 @@ void device_cmp_blocks(T *src1, T *src2, T *buf, const size_t n,
   */
 
   for (size_t s = size / 2; s != 0; s /= 2) {
-    if (tid < s) {
+    if (tid < s && i < n) {
       buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
     }
     // book p 217
