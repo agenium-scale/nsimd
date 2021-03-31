@@ -531,9 +531,12 @@ def gen_tests_for_shifts(opts, t, operator):
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {typ} *a0 = nsimd::device_calloc<{typ}>(n);
+              nsimd::assert_device_alloc(a0);
               prng7(a0, n);
               {typ} *ref = nsimd::device_calloc<{typ}>(n);
+              nsimd::assert_device_alloc(ref);
               {typ} *out = nsimd::device_calloc<{typ}>(n);
+              nsimd::assert_device_alloc(out);
               spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0, s);
               compute_result(ref, a0, n, s);
               if ({comp}) {{
@@ -650,9 +653,12 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
             unsigned int n = n_[i];
             int ret = 0;
             {typ} *a0 = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(a0);
             prng7(a0, n);
             {typ} *ref = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(ref);
             {typ} *out = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(out);
             spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0);
             compute_result(ref, a0, n);
             if (!cmp(ref, out, n)) {{
@@ -688,6 +694,7 @@ def gen_tests_for(opts, t, operator):
     k_call_args = ', '.join(['a{}'.format(i) for i in range(arity)])
 
     fill_tabs = '\n'.join(['{typ} *a{i} = nsimd::device_calloc<{typ}>(n);\n' \
+                           'nsimd::assert_device_alloc(a{i});\n' \
                            'prng{ip5}(a{i}, n);'. \
                            format(typ=t, i=i, ip5=i + 5) \
                            for i in range(arity)])
@@ -900,7 +907,9 @@ def gen_tests_for(opts, t, operator):
             int ret = 0;
             {fill_tabs}
             {typ} *ref = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(ref);
             {typ} *out = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(out);
             spmd_launch_kernel_1d(kernel, {typnbits}, THREADS_PER_BLOCK, n,
                                   out, {k_call_args});
             compute_result(ref, {k_call_args}, n);
