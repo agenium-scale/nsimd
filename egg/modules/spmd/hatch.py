@@ -435,36 +435,48 @@ same type as the other operands.
 # -----------------------------------------------------------------------------
 
 def gen_compare_results_gpu_cpu(typ, op_name):
-    return '''void compare_results_gpu_cpu({typ} *const gpu_rvs,
-                                    {typ} *const gpu_computed_vals,
-                                    const unsigned int n,
-                                    int *const ret) {{
-          {typ} * gpu_rvs_copied_to_host = nullptr;
-          {typ} * gpu_computed_vals_copied_to_host = nullptr;
-          try{{
-                gpu_rvs_copied_to_host = new {typ}[n];
-                gpu_computed_vals_copied_to_host = new {typ}[n];
-          }}
-          catch(std::bad_alloc& exc){{
-            fprintf(stderr,
-                    "ERROR: failed to allocate memory on host %lu bytes - %s %d\n",
-                    n * sizeof({typ}), __FILE__, __LINE__);
-            exit(EXIT_FAILURE);
-          }}
-          nsimd::copy_to_host(gpu_rvs_copied_to_host, gpu_rvs, n);
-          nsimd::copy_to_host(gpu_computed_vals_copied_to_host, gpu_computed_vals, n);
-          for (unsigned int ii = 0; ii < n; ++ii) {{
-            if (gpu_computed_vals_copied_to_host[ii] !=
-            nsimd::scalar_{op_name}(gpu_rvs_copied_to_host[ii])) {{
-              *ret = -2;
-              delete [] gpu_rvs_copied_to_host;
-              delete [] gpu_computed_vals_copied_to_host;
-              return;
-            }}
-          }}
-          delete [] gpu_rvs_copied_to_host;
-          delete [] gpu_computed_vals_copied_to_host;
-          }}'''.format(typ=typ, op_name=op_name)
+    return '''bool compare_results_gpu_cpu({typ} *const gpu_rvs,
+                                           {typ} *const gpu_computed_vals,
+                                           const unsigned int n) {{
+               {typ} *gpu_rvs_copied_to_host = nullptr;
+               {typ} *gpu_computed_vals_copied_to_host = nullptr;
+               try {{
+                 gpu_rvs_copied_to_host = new {typ}[n];
+                 gpu_computed_vals_copied_to_host = new {typ}[n];
+               }} catch (std::bad_alloc &exc) {{
+                 fprintf(stderr,
+                         "ERROR: failed to allocate memory on host %lu bytes - %s %d",
+                             n *
+                             sizeof({typ}),
+                         __FILE__, __LINE__);
+                 exit(EXIT_FAILURE);
+               }}
+               nsimd::copy_to_host(gpu_rvs_copied_to_host, gpu_rvs, n);
+               nsimd::copy_to_host(gpu_computed_vals_copied_to_host, gpu_computed_vals, n);
+               for (unsigned int ii = 0; ii < n; ++ii) {{
+                 if (gpu_computed_vals_copied_to_host[ii] !=
+                     nsimd::{op_name}(gpu_rvs_copied_to_host[ii])) {{
+                   delete[] gpu_rvs_copied_to_host;
+                   delete[] gpu_computed_vals_copied_to_host;
+                   return false;
+                 }}
+               }}
+               delete[] gpu_rvs_copied_to_host;
+               delete[] gpu_computed_vals_copied_to_host;
+               return true;
+            }}'''.format(typ=typ, op_name=op_name)
+
+
+# -----------------------------------------------------------------------------
+
+def gen_compare_results_gpu_cpu_tol(typ, op_name):
+    return '''bool compare_results_gpu_cpu({typ} *const gpu_rvs,
+                                           {typ} *const gpu_computed_vals,
+                                           const unsigned int n,
+                                           double) {{
+             return compare_results_gpu_cpu(gpu_rvs,
+                                            gpu_computed_vals, n);
+           }}'''.format(typ=typ, op_name=op_name)
 
 # -----------------------------------------------------------------------------
 
