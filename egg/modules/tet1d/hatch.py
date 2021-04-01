@@ -363,9 +363,12 @@ def gen_tests_for_shifts(opts, t, operator):
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {t} *tab0 = nsimd::device_calloc<{t}>(n);
+              nsimd::assert_device_alloc(tab0);
               prng5(tab0, n);
               {t} *ref = nsimd::device_calloc<{t}>(n);
+              nsimd::assert_device_alloc(ref);
               {t} *out = nsimd::device_calloc<{t}>(n);
+              nsimd::assert_device_alloc(out);
               compute_result(ref, tab0, n, s);
               tet1d::out(out) = tet1d::{op_name}(tet1d::in(tab0, n), s);
               if (!cmp(ref, out, n)) {{
@@ -408,6 +411,7 @@ def gen_tests_for(opts, t, tt, operator):
                                    for i in range(arity)])
 
     fill_tabs = '\n'.join(['{typ} *tab{i} = nsimd::device_calloc<{typ}>(n);\n' \
+                           'nsimd::assert_device_alloc(tab{i});\n' \
                            'prng{ip5}(tab{i}, n);'. \
                            format(typ=t, i=i, ip5=i + 5) \
                            for i in range(arity)])
@@ -613,7 +617,9 @@ def gen_tests_for(opts, t, tt, operator):
             int ret = 0;
             {fill_tabs}
             {typ} *ref = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(ref);
             {typ} *out = nsimd::device_calloc<{typ}>(n);
+            nsimd::assert_device_alloc(out);
             compute_result(ref, {args_tabs_call}, n);
             {tet1d_code}
             if ({comp}) {{
