@@ -790,6 +790,9 @@ def gen_tests_for(opts, t, operator):
     declare_gpu_rvs_args_compare_results_gpu_cpu = '\n'.join(['{typ} *const gpu_rvs_{i},'. \
             format(typ=t, i=i) for i in range(arity)])
 
+    function_call_gpu_rvs_args_compare_results_gpu_cpu = ','.join(['a{i}'. \
+            format(i=i) for i in range(arity)])
+
     declare_ptrs_compare_results_gpu_cpu = '\n'.join(['{typ} *a{i} = nullptr;'. \
             format(typ=t, i=i) for i in range(arity)])
 
@@ -923,14 +926,21 @@ def gen_tests_for(opts, t, operator):
 
     if op_name in ['rec11', 'rsqrt11']:
         comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
-        do_compare_results_gpu_cpu = '!compare_results_gpu_cpu(a0, out, n, .0009765625 /* = 2^-10 */)'
+        do_compare_results_gpu_cpu = \
+                '''!compare_results_gpu_cpu({function_call_gpu_rvs_args_compare_results_gpu_cpu},
+                out, n, .0009765625 /* = 2^-10 */)'''. \
+                format(function_call_gpu_rvs_args_compare_results_gpu_cpu=function_call_gpu_rvs_args_compare_results_gpu_cpu)
     elif op_name in ['rec8', 'rsqrt8']:
         comp = '!cmp(ref, out, n, .0078125 /* = 2^-7 */)'
-        do_compare_results_gpu_cpu = '!compare_results_gpu_cpu(a0, out, n, .0078125 /* = 2^-7 */)'
+        do_compare_results_gpu_cpu = \
+                '''!compare_results_gpu_cpu({function_call_gpu_rvs_args_compare_results_gpu_cpu},
+                out, n, .0078125 /* = 2^-7 */)'''. \
+                format(function_call_gpu_rvs_args_compare_results_gpu_cpu=function_call_gpu_rvs_args_compare_results_gpu_cpu)
     else:
         comp = '!cmp(ref, out, n)'
         compare_results_gpu_cpu_tol_fun = ''
-        do_compare_results_gpu_cpu = '!compare_results_gpu_cpu(a0, out, n)'
+        do_compare_results_gpu_cpu = '''!compare_results_gpu_cpu({function_call_gpu_rvs_args_compare_results_gpu_cpu}, out, n)'''. \
+                format(function_call_gpu_rvs_args_compare_results_gpu_cpu=function_call_gpu_rvs_args_compare_results_gpu_cpu)
 
     with common.open_utf8(opts, filename) as out:
         out.write(
