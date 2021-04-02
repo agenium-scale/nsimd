@@ -434,52 +434,6 @@ same type as the other operands.
 
 # -----------------------------------------------------------------------------
 
-def gen_compare_results_gpu_cpu(typ, op_name):
-    return '''bool compare_results_gpu_cpu({typ} *const gpu_rvs,
-                                           {typ} *const gpu_computed_vals,
-                                           const unsigned int n) {{
-               {typ} *gpu_rvs_copied_to_host = nullptr;
-               {typ} *gpu_computed_vals_copied_to_host = nullptr;
-               try {{
-                 gpu_rvs_copied_to_host = new {typ}[n];
-                 gpu_computed_vals_copied_to_host = new {typ}[n];
-               }} catch (std::bad_alloc &exc) {{
-                 fprintf(stderr,
-                         "ERROR: failed to allocate memory on host %lu bytes - %s %d",
-                             n *
-                             sizeof({typ}),
-                         __FILE__, __LINE__);
-                 exit(EXIT_FAILURE);
-               }}
-               nsimd::copy_to_host(gpu_rvs_copied_to_host, gpu_rvs, n);
-               nsimd::copy_to_host(gpu_computed_vals_copied_to_host, gpu_computed_vals, n);
-               for (unsigned int ii = 0; ii < n; ++ii) {{
-                 if (gpu_computed_vals_copied_to_host[ii] !=
-                     nsimd::scalar_{op_name}(gpu_rvs_copied_to_host[ii])) {{
-                   delete[] gpu_rvs_copied_to_host;
-                   delete[] gpu_computed_vals_copied_to_host;
-                   return false;
-                 }}
-               }}
-               delete[] gpu_rvs_copied_to_host;
-               delete[] gpu_computed_vals_copied_to_host;
-               return true;
-            }}'''.format(typ=typ, op_name=op_name)
-
-
-# -----------------------------------------------------------------------------
-
-def gen_compare_results_gpu_cpu_tol(typ, op_name):
-    return '''bool compare_results_gpu_cpu({typ} *const gpu_rvs,
-                                           {typ} *const gpu_computed_vals,
-                                           const unsigned int n,
-                                           double) {{
-             return compare_results_gpu_cpu(gpu_rvs,
-                                            gpu_computed_vals, n);
-           }}'''.format(typ=typ, op_name=op_name)
-
-# -----------------------------------------------------------------------------
-
 def gen_tests_for_shifts(opts, t, operator):
     op_name = operator.name
     dirname = os.path.join(opts.tests_dir, 'modules', 'spmd')
@@ -832,6 +786,15 @@ def gen_tests_for(opts, t, operator):
     free_tabs = '\n'.join(['nsimd::device_free(a{i});'. \
                            format(typ=t, i=i) for i in range(arity)])
 
+    declare_ptrs_compare_results_gpu_cpu = '\n'.join(['{typ} *a{i} = nullptr;\n'. \
+            format(typ=t, i=i) for i in range(arity)])
+    allocate_mem_cpu_compare_results_gpu_cpu = '\n'.join(['a{i} = new {typ}[n];\n'. \
+            format(typ=t, i=i) for i in range(arity)])
+    copy_to_host_compare_results_gpu_cpu = '\n'.join(['nsimd::copy_to_host(a{i}, gpu_rvs, n);\n'. \
+            format(i=i) for i in range(arity)])
+    deallocate_mem_cpu_compare_results_gpu_cpu = '\n'.join(['delete[] a{i};\n'. \
+            format(i=i) for i in range(arity)])
+
     # spmd
     def get_cte_spmd(typ, cte):
         if typ == 'f16':
@@ -947,7 +910,7 @@ def gen_tests_for(opts, t, operator):
 
     compare_results_gpu_cpu_tol_fun = '''bool compare_results_gpu_cpu({typ} *const gpu_rvs,
                                            {typ} *const gpu_computed_vals,
-                                           const size_t n, const int s, double) {{
+                                           const size_t n, double) {{
              return compare_results_gpu_cpu(gpu_rvs, gpu_computed_vals, n);
            }}'''.format(typ=t, op_name=op_name)
 
@@ -1029,9 +992,10 @@ def gen_tests_for(opts, t, operator):
         bool compare_results_gpu_cpu({typ} *const gpu_rvs,
                                      {typ} *const gpu_computed_vals,
                                      const size_t n) {{
-           {typ} *a0 = nullptr;
+           {declare_ptrs_compare_results_gpu_cpu}
            {typ} *gpu_computed_vals_copied_to_host = nullptr;
            try {{
+             {allocate_mem_cpu_compare_results_gpu_cpu}
              a0 = new {typ}[n];
              gpu_computed_vals_copied_to_host = new {typ}[n];
            }} catch (std::bad_alloc &exc) {{
@@ -1042,17 +1006,17 @@ def gen_tests_for(opts, t, operator):
                      __FILE__, __LINE__);
              exit(EXIT_FAILURE);
            }}
-           nsimd::copy_to_host(a0, gpu_rvs, n);
+           {copy_to_host_compare_results_gpu_cpu}
            nsimd::copy_to_host(gpu_computed_vals_copied_to_host, gpu_computed_vals, n);
            for (unsigned int i = 0; i < n; ++i) {{
              const {typ} cpu_val = {compute_cpu_fun};
              if (gpu_computed_vals_copied_to_host[i] != cpu_val) {{
-               delete[] a0;
+               {deallocate_mem_cpu_compare_results_gpu_cpu}
                delete[] gpu_computed_vals_copied_to_host;
                return false;
              }}
            }}
-           delete[] a0;
+           {deallocate_mem_cpu_compare_results_gpu_cpu}
            delete[] gpu_computed_vals_copied_to_host;
            return true;
         }}
@@ -1102,14 +1066,19 @@ def gen_tests_for(opts, t, operator):
           }}
           return 0;
         }}
-        '''.format(typ=t, free_tabs=free_tabs, fill_tabs=fill_tabs,
-                   k_code=k_code, k_call_args=k_call_args, k_args=k_args,
-                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
-                   oneapi_kernel=oneapi_kernel, comp=comp,
-                   gpu_params=gpu_params, typnbits=t[1:],
-                   compute_cpu_fun=compute_cpu_fun,
-                   compare_results_gpu_cpu_tol_fun=compare_results_gpu_cpu_tol_fun,
-                   do_compare_results_gpu_cpu=do_compare_results_gpu_cpu))
+        '''.format(typ=t,
+                  declare_ptrs_compare_results_gpu_cpu=declare_ptrs_compare_results_gpu_cpu,
+                  allocate_mem_cpu_compare_results_gpu_cpu=allocate_mem_cpu_compare_results_gpu_cpu,
+                  copy_to_host_compare_results_gpu_cpu=copy_to_host_compare_results_gpu_cpu,
+                  deallocate_mem_cpu_compare_results_gpu_cpu=deallocate_mem_cpu_compare_results_gpu_cpu,
+                  free_tabs=free_tabs, fill_tabs=fill_tabs,
+                  k_code=k_code, k_call_args=k_call_args, k_args=k_args,
+                  cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
+                  oneapi_kernel=oneapi_kernel, comp=comp,
+                  gpu_params=gpu_params, typnbits=t[1:],
+                  compute_cpu_fun=compute_cpu_fun,
+                  compare_results_gpu_cpu_tol_fun=compare_results_gpu_cpu_tol_fun,
+                  do_compare_results_gpu_cpu=do_compare_results_gpu_cpu))
 
     common.clang_format(opts, filename, cuda=True)
 
