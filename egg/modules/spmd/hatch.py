@@ -786,13 +786,20 @@ def gen_tests_for(opts, t, operator):
     free_tabs = '\n'.join(['nsimd::device_free(a{i});'. \
                            format(typ=t, i=i) for i in range(arity)])
 
-    declare_ptrs_compare_results_gpu_cpu = '\n'.join(['{typ} *a{i} = nullptr;\n'. \
+    # compare results gpu vs cpu
+    declare_gpu_rvs_args_compare_results_gpu_cpu = '\n'.join(['{typ} *const gpu_rvs_{i},'. \
             format(typ=t, i=i) for i in range(arity)])
-    allocate_mem_cpu_compare_results_gpu_cpu = '\n'.join(['a{i} = new {typ}[n];\n'. \
+
+    declare_ptrs_compare_results_gpu_cpu = '\n'.join(['{typ} *a{i} = nullptr;'. \
             format(typ=t, i=i) for i in range(arity)])
-    copy_to_host_compare_results_gpu_cpu = '\n'.join(['nsimd::copy_to_host(a{i}, gpu_rvs, n);\n'. \
+
+    allocate_mem_cpu_compare_results_gpu_cpu = '\n'.join(['a{i} = new {typ}[n];'. \
+            format(typ=t, i=i) for i in range(arity)])
+
+    copy_to_host_compare_results_gpu_cpu = '\n'.join(['nsimd::copy_to_host(a{i}, gpu_rvs_{i}, n);'. \
             format(i=i) for i in range(arity)])
-    deallocate_mem_cpu_compare_results_gpu_cpu = '\n'.join(['delete[] a{i};\n'. \
+
+    deallocate_mem_cpu_compare_results_gpu_cpu = '\n'.join(['delete[] a{i};'. \
             format(i=i) for i in range(arity)])
 
     # spmd
@@ -989,14 +996,13 @@ def gen_tests_for(opts, t, operator):
 
         #endif
 
-        bool compare_results_gpu_cpu({typ} *const gpu_rvs,
+        bool compare_results_gpu_cpu({declare_gpu_rvs_args_compare_results_gpu_cpu}
                                      {typ} *const gpu_computed_vals,
                                      const size_t n) {{
            {declare_ptrs_compare_results_gpu_cpu}
            {typ} *gpu_computed_vals_copied_to_host = nullptr;
            try {{
              {allocate_mem_cpu_compare_results_gpu_cpu}
-             a0 = new {typ}[n];
              gpu_computed_vals_copied_to_host = new {typ}[n];
            }} catch (std::bad_alloc &exc) {{
              fprintf(stderr,
@@ -1067,6 +1073,7 @@ def gen_tests_for(opts, t, operator):
           return 0;
         }}
         '''.format(typ=t,
+                   declare_gpu_rvs_args_compare_results_gpu_cpu=declare_gpu_rvs_args_compare_results_gpu_cpu,
                   declare_ptrs_compare_results_gpu_cpu=declare_ptrs_compare_results_gpu_cpu,
                   allocate_mem_cpu_compare_results_gpu_cpu=allocate_mem_cpu_compare_results_gpu_cpu,
                   copy_to_host_compare_results_gpu_cpu=copy_to_host_compare_results_gpu_cpu,
