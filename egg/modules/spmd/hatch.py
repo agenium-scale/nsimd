@@ -646,7 +646,6 @@ def gen_tests_for_shifts(opts, t, operator):
         }}
         '''.format(typ=t, op_name=op_name, typnbits=t[1:], comp=comp,
                    gpu_params=gpu_params,
-                   compare_results_gpu_cpu_fun=compare_results_gpu_cpu_fun,
                    compare_results_gpu_cpu_tol_fun=compare_results_gpu_cpu_tol_fun,
                    do_compare_results_gpu_cpu=do_compare_results_gpu_cpu))
 
@@ -933,20 +932,24 @@ def gen_tests_for(opts, t, operator):
                       for i in range(arity)])
     if op_name == 'to_mask':
         args = t + '(), ' + args
+    compute_cpu_fun = 'nsimd::scalar_{op_name}({args})'.format(op_name=op_name, args=args)
     if operator.params[0] == 'v':
-        cpu_kernel = 'dst[i] = nsimd::scalar_{}({});'.format(op_name, args)
+        cpu_kernel = 'dst[i] = {compute_cpu_fun};'.format(compute_cpu_fun=compute_cpu_fun)
     else:
-        cpu_kernel = '''if (nsimd::scalar_{op_name}({args})) {{
+        cpu_kernel = '''if ({compute_cpu_fun}) {{
                           dst[i] = {one};
                         }} else {{
                           dst[i] = {zero};
                         }}'''.format(op_name=op_name, args=args,
                                      one=get_cte_cpu(t, 1),
-                                     zero=get_cte_cpu(t, 0))
+                                     zero=get_cte_cpu(t, 0),
+                                     compute_cpu_fun=compute_cpu_fun)
 
-    compare_results_gpu_cpu_fun = gen_compare_results_gpu_cpu(typ=t, op_name=op_name)
-    compare_results_gpu_cpu_tol_fun = gen_compare_results_gpu_cpu_tol(typ=t, op_name=op_name)
-    do_compare_results_gpu_cpu = '!compare_results_gpu_cpu(a0, out, n, 0.0)'
+    compare_results_gpu_cpu_tol_fun = '''bool compare_results_gpu_cpu({typ} *const gpu_rvs,
+                                           {typ} *const gpu_computed_vals,
+                                           const size_t n, const int s, double) {{
+             return compare_results_gpu_cpu(gpu_rvs, gpu_computed_vals, n);
+           }}'''.format(typ=t, op_name=op_name)
 
     if op_name in ['rec11', 'rsqrt11']:
         comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
@@ -958,8 +961,6 @@ def gen_tests_for(opts, t, operator):
         comp = '!cmp(ref, out, n)'
         compare_results_gpu_cpu_tol_fun = ''
         do_compare_results_gpu_cpu = '!compare_results_gpu_cpu(a0, out, n)'
-
-    compare_results_gpu_cpu_fun = gen_compare_results_gpu_cpu(typ=t, op_name=op_name)
 
     with common.open_utf8(opts, filename) as out:
         out.write(
@@ -1027,11 +1028,11 @@ def gen_tests_for(opts, t, operator):
 
         bool compare_results_gpu_cpu({typ} *const gpu_rvs,
                                      {typ} *const gpu_computed_vals,
-                                     const size_t n, const int s) {{
-           {typ} *gpu_rvs_copied_to_host = nullptr;
+                                     const size_t n) {{
+           {typ} *a0 = nullptr;
            {typ} *gpu_computed_vals_copied_to_host = nullptr;
            try {{
-             gpu_rvs_copied_to_host = new {typ}[n];
+             a0 = new {typ}[n];
              gpu_computed_vals_copied_to_host = new {typ}[n];
            }} catch (std::bad_alloc &exc) {{
              fprintf(stderr,
@@ -1041,17 +1042,17 @@ def gen_tests_for(opts, t, operator):
                      __FILE__, __LINE__);
              exit(EXIT_FAILURE);
            }}
-           nsimd::copy_to_host(gpu_rvs_copied_to_host, gpu_rvs, n);
+           nsimd::copy_to_host(a0, gpu_rvs, n);
            nsimd::copy_to_host(gpu_computed_vals_copied_to_host, gpu_computed_vals, n);
-           for (unsigned int ii = 0; ii < n; ++ii) {{
-             if (gpu_computed_vals_copied_to_host[ii] !=
-                 nsimd::scalar_{op_name}(gpu_rvs_copied_to_host[ii], s)) {{
-               delete[] gpu_rvs_copied_to_host;
+           for (unsigned int i = 0; i < n; ++i) {{
+             const {typ} cpu_val = {compute_cpu_fun};
+             if (gpu_computed_vals_copied_to_host[i] != cpu_val) {{
+               delete[] a0;
                delete[] gpu_computed_vals_copied_to_host;
                return false;
              }}
            }}
-           delete[] gpu_rvs_copied_to_host;
+           delete[] a0;
            delete[] gpu_computed_vals_copied_to_host;
            return true;
         }}
@@ -1106,7 +1107,7 @@ def gen_tests_for(opts, t, operator):
                    cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
                    oneapi_kernel=oneapi_kernel, comp=comp,
                    gpu_params=gpu_params, typnbits=t[1:],
-                   compare_results_gpu_cpu_fun=compare_results_gpu_cpu_fun,
+                   compute_cpu_fun=compute_cpu_fun,
                    compare_results_gpu_cpu_tol_fun=compare_results_gpu_cpu_tol_fun,
                    do_compare_results_gpu_cpu=do_compare_results_gpu_cpu))
 
