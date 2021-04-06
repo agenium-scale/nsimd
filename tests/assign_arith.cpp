@@ -48,11 +48,11 @@ template <> f16 get_rand() {
     }                                                                         \
                                                                               \
     using namespace nsimd;                                                    \
-    typedef pack<T> vec;                                                      \
+    typedef pack<T> pack;                                                     \
     for (size_t i = 0; i < n; i += size_t(len(pack<T>()))) {                  \
-      vec tmp1 = loadu<vec>(&a[i]);                                           \
-      tmp1 op1 loadu<vec>(&b[i]);                                             \
-      vec tmp2 = loadu<vec>(&a[i]) op2 loadu<vec>(&b[i]);                     \
+      pack tmp1 = loadu<pack>(&a[i]);                                         \
+      tmp1 op1 loadu<pack>(&b[i]);                                            \
+      pack tmp2 = loadu<pack>(&a[i]) op2 loadu<pack>(&b[i]);                  \
       if (any(tmp1 != tmp2)) {                                                \
         return -1;                                                            \
       }                                                                       \
@@ -97,12 +97,12 @@ HELPER(^=, ^, xorb)
     }                                                                         \
                                                                               \
     using namespace nsimd;                                                    \
-    typedef pack<T> vec;                                                      \
+    typedef pack<T> pack;                                                     \
     for (int s = 0; s <= 3; s++) {                                            \
       for (size_t i = 0; i < n; i += size_t(len(pack<T>()))) {                \
-        vec tmp = loadu<vec>(&a[i]);                                          \
+        pack tmp = loadu<pack>(&a[i]);                                        \
         tmp op1 s;                                                            \
-        if (any(tmp != (loadu<vec>(&a[i]) op2 s))) {                          \
+        if (any(tmp != (loadu<pack>(&a[i]) op2 s))) {                         \
           return -1;                                                          \
         }                                                                     \
       }                                                                       \

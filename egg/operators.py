@@ -219,6 +219,7 @@ class Operator(object, metaclass=MAddToOperators):
     output_to = common.OUTPUT_TO_SAME_TYPE
     types = common.types
     params = []
+    aliases = []
     signature = ''
 
     # Enable bench by default

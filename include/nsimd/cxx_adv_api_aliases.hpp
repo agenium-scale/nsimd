@@ -22,12 +22,38 @@ SOFTWARE.
 
 */
 
-#ifndef NSIMD_ALL_HPP
-#define NSIMD_ALL_HPP
+#ifndef NSIMD_CXX_ADV_API_ALIASES_HPP
+#define NSIMD_CXX_ADV_API_ALIASES_HPP
 
-#include <nsimd/nsimd.h>
 #include <nsimd/cxx_adv_api.hpp>
-#include <nsimd/cxx_adv_api_aliases.hpp>
-#include <nsimd/friendly_but_not_optimized.hpp>
+
+namespace nsimd {
+
+/* ------------------------------------------------------------------------- */
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> fabs(pack<T, N, SimdExt> const &a0) {
+  return abs(a0);
+}
+
+/* ------------------------------------------------------------------------- */
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> fmin(pack<T, N, SimdExt> const &a0,
+                         pack<T, N, SimdExt> const &a1) {
+  return min(a0, a1);
+}
+
+/* ------------------------------------------------------------------------- */
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> fmax(pack<T, N, SimdExt> const &a0,
+                         pack<T, N, SimdExt> const &a1) {
+  return max(a0, a1);
+}
+
+/* ------------------------------------------------------------------------- */
+
+} // namespace nsimd
 
 #endif
