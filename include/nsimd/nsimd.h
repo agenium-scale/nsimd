@@ -1545,6 +1545,39 @@ NSIMD_DLLSPEC f32 f16_to_f32(f16);
 #endif
 
 /* ------------------------------------------------------------------------- */
+/* Helper to print scalar values, converts to bigger type */
+
+NSIMD_INLINE u64 nsimd_to_biggest_u8(u8 a) { return (u64)a; }
+NSIMD_INLINE u64 nsimd_to_biggest_u16(u16 a) { return (u64)a; }
+NSIMD_INLINE u64 nsimd_to_biggest_u32(u32 a) { return (u64)a; }
+NSIMD_INLINE u64 nsimd_to_biggest_u64(u64 a) { return a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i8(i8 a) { return (i64)a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i16(i16 a) { return (i64)a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i32(i32 a) { return (i64)a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i64(i64 a) { return a; }
+NSIMD_INLINE f64 nsimd_to_biggest_f16(f16 a) {
+  return (f64)nsimd_f16_to_f32(a);
+}
+NSIMD_INLINE f64 nsimd_to_biggest_f32(f32 a) { return (f64)a; }
+NSIMD_INLINE f64 nsimd_to_biggest_f64(f64 a) { return a; }
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+NSIMD_INLINE u64 to_biggest(u8 a) { return nsimd_to_biggest_u8(a); }
+NSIMD_INLINE u64 to_biggest(u16 a) { return nsimd_to_biggest_u16(a); }
+NSIMD_INLINE u64 to_biggest(u32 a) { return nsimd_to_biggest_u32(a); }
+NSIMD_INLINE u64 to_biggest(u64 a) { return nsimd_to_biggest_u64(a); }
+NSIMD_INLINE i64 to_biggest(i8 a) { return nsimd_to_biggest_i8(a); }
+NSIMD_INLINE i64 to_biggest(i16 a) { return nsimd_to_biggest_i16(a); }
+NSIMD_INLINE i64 to_biggest(i32 a) { return nsimd_to_biggest_i32(a); }
+NSIMD_INLINE i64 to_biggest(i64 a) { return nsimd_to_biggest_i64(a); }
+NSIMD_INLINE f64 to_biggest(f16 a) { return nsimd_to_biggest_f16(a); }
+NSIMD_INLINE f64 to_biggest(f32 a) { return nsimd_to_biggest_f32(a); }
+NSIMD_INLINE f64 to_biggest(f64 a) { return nsimd_to_biggest_f64(a); }
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
 /* General conversion for C++ */
 
 #if NSIMD_CXX > 0
