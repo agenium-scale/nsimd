@@ -89,8 +89,8 @@ def get_impl_f16(operator, totyp, typ):
     # Case 2
     elif operator.name in no_sycl_avail_f16_cast_use_sycl_f32:
       if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
-        neg = '-' if operator.name in ['fnma, fnms'] else ''
-        op = '-' if operator.name in ['fnms, fms'] else ''
+        neg = '-' if operator.name in ['fnma', 'fnms'] else ''
+        op = '-' if operator.name in ['fnms', 'fms'] else ''
         return '''// cl::sycl::half::operator float
                   f32 x0 = static_cast<f32>({in0});
 	          f32 x1 = static_cast<f32>({in1});
@@ -291,8 +291,8 @@ def get_impl(operator, totyp, typ):
   # fma's
   if operator.name in ['fma', 'fms', 'fnma', 'fnms']:
     if typ in common.ftypes:
-      neg = '-' if operator.name in ['fnma, fnms'] else ''
-      op = '-' if operator.name in ['fnms, fms'] else ''
+      neg = '-' if operator.name in ['fnma', 'fnms'] else ''
+      op = '-' if operator.name in ['fnms', 'fms'] else ''
       return 'return sycl::fma({neg}{in0}, {in1}, {op}{in2});'.\
         format(op=op, neg=neg, **fmtspec)
     else:
