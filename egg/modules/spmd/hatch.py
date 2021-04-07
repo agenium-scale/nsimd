@@ -959,7 +959,7 @@ def gen_tests_for(opts, t, operator):
         do_compare_results_gpu_cpu = '''!compare_results_gpu_cpu({function_call_gpu_rvs_args_compare_results_gpu_cpu}, out, n)'''. \
                 format(function_call_gpu_rvs_args_compare_results_gpu_cpu=function_call_gpu_rvs_args_compare_results_gpu_cpu)
 
-    if op_name in ['to_mask']:
+    if op_name in ['to_mask', 'orb']:
         test_compare_results_cpu_gpu  = '''bool cpu_equals_gpu = true;
 	                                   if(nsimd_isnan_{typ}(cpu_val) || nsimd_isnan_{typ}(gpu_computed_vals_copied_to_host[i])){{
 	                                     if(!(nsimd_isnan_{typ}(cpu_val) && nsimd_isnan_{typ}(gpu_computed_vals_copied_to_host[i]))){{
