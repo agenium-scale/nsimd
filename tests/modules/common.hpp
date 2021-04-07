@@ -266,27 +266,9 @@ void device_cmp_blocks(T *const src1, const T *const src2, T *const buf,
   item.barrier(sycl::access::fence_space::local_space);
 
   // reduction mul on the block (sub-group)
-
-  /*
-  TODO: test the following usage correctness
   sycl::ONEAPI::sub_group sg = item.get_sub_group();
   if(tid == 0){
-    src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiplies<>());
-  }
-  */
-
-  for (size_t s = size / 2; s != 0; s /= 2) {
-    if (tid < s && i < n) {
-      buf[tid] = nsimd::oneapi_mul(buf[tid], buf[tid + s]);
-    }
-    // book p 217
-    // it is critically important that either all work-items
-    // in the group execute the barrier or no work-items in
-    // the group execute the barrier.
-    item.barrier(sycl::access::fence_space::local_space);
-  }
-  if (tid == 0) {
-    src1[i] = buf[0];
+    src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiplies<T>());
   }
 }
 
