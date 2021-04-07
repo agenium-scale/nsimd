@@ -158,7 +158,7 @@ class Foo(Operator):
 
 This little class will be processed by the generation system so that operator
 `foo` will be available for the end-user of the library in both C and C++ APIs.
-Each member of this class controls how the generation is be done:
+Each member of this class controls how the generation is being done:
 - `full_name` is a string containing the human readable name of the operator.
   If not given, the class name will be taken for it.
 - `signature` is a string describing what kind of arguments and how many takes
@@ -364,7 +364,7 @@ to the `fmtspec` Python dictionary that hold some of these values:
 - `typnbits`: number of bits in `typ`.
 
 The CPU extension can emulate 64-bits or 128-bits wide SIMD vectors. Each type
-is a struct containing as much members as necessary so that `sizeof(T) *
+is a struct containing as much members as necessary such that `sizeof(T) *
 (number of members) == 64 or 128`. In order to avoid the developper to write
 two cases (64-bits wide and 128-bits wide) the `func_body` function is provided
 as a helper. Note that the index `{{i}}` is in double curly brackets to go
@@ -379,7 +379,7 @@ through two Python string formats:
 
 Then note that as plain C (and C++) does not support native 16-bits wide
 floating point types `nsimd` emulates it with a C struct containing 4 floats
-(32-bits swide floatting point numbers). In some cases extra care has to be
+(32-bits wide floating point numbers). In some cases extra care has to be
 taken to handle this type.
 
 For each SIMD extension one can find a `types.h` file (for `cpu` the files can
@@ -491,9 +491,11 @@ the float32 result to a float16.
 ### The GPU versions
 
 The GPU generator Python files `cuda.py`, `rocm.py` and `oneapi.py` are a
-bit different from the other files but it is easy to find where to add the
-relevant pieces of code as ROCm syntax is fully compatible with CUDA's, one
-only needs to modify the `cuda.py` file.
+bit different from the other files.
+
+- CUDA and ROCm:
+It is easy to find where to add the relevant pieces of code as ROCm syntax
+is fully compatible with CUDA's, one only needs to modify the `cuda.py` file.
 
 The code to add for float32's is as follows to be added inside the `get_impl`
 Python function.
@@ -505,6 +507,8 @@ return '1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}))'.format(**fmtspec)
 The code to add for float16's is as follows to be added inside the
 `get_impl_f16` Python function.
 
+
+- CUDA and ROCm:
 ```python
 arch53_code = '''__half one = __float2half(1.0f);
                  return __hadd(
@@ -514,6 +518,19 @@ arch53_code = '''__half one = __float2half(1.0f);
                                       __hdiv(one, __hsub(one, {in0}))
                                      )
                               );'''.format(**fmtspec)
+```
+
+- oneAPI:
+  + sycl provides a type for float16 named sycl::half
+  + common operators are defined for the sycl::half type
+  + conversions from and to f32 are supported
+  + sycl::half API and implementation are available on github:
+  + <https://github.com/intel/llvm/blob/sycl/sycl/include/CL/sycl/half_type.hpp>	
+  + <https://github.com/intel/llvm/blob/sycl/sycl/source/half_type.cpp>
+  + if `NSIMD_ONEAPI` is defined f16 is provided as a typedef for sycl::half in nsimd.h
+
+```python
+return 'f16(1.0f) / (f16(1.0f) - {in0}) + f16(1.0f) / ((f16(1.0f) - {in0}) * (f16(1.0f) - {in0}))'.format(**fmtspec)
 ```
 
 ### Implementing the test for the operator
