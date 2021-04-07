@@ -959,6 +959,34 @@ def gen_tests_for(opts, t, operator):
         do_compare_results_gpu_cpu = '''!compare_results_gpu_cpu({function_call_gpu_rvs_args_compare_results_gpu_cpu}, out, n)'''. \
                 format(function_call_gpu_rvs_args_compare_results_gpu_cpu=function_call_gpu_rvs_args_compare_results_gpu_cpu)
 
+    if op_name in ['to_mask']:
+        test_compare_results_cpu_gpu  = '''bool cpu_equals_gpu = true;
+	                                   if(nsimd_isnan_{typ}(cpu_val) || nsimd_isnan_{typ}(gpu_computed_vals_copied_to_host[i])){{
+	                                     if(!(nsimd_isnan_{typ}(cpu_val) && nsimd_isnan_{typ}(gpu_computed_vals_copied_to_host[i]))){{
+	                                       cpu_equals_gpu = false;
+	                                     }}
+	                                   }}
+	                                   else if(gpu_computed_vals_copied_to_host[i] != cpu_val) {{
+	                                     cpu_equals_gpu = false;
+                                           }}
+	                                   else{{
+	                                     cpu_equals_gpu = true;
+	                                   }}
+	                                   if(!cpu_equals_gpu){{
+                                            {deallocate_mem_cpu_compare_results_gpu_cpu}
+                                             delete[] gpu_computed_vals_copied_to_host;
+                                             return false;
+                                           }}'''.format(typ=t,
+                                                   deallocate_mem_cpu_compare_results_gpu_cpu=deallocate_mem_cpu_compare_results_gpu_cpu)
+    else:
+        test_compare_results_cpu_gpu = '''if (gpu_computed_vals_copied_to_host[i] != cpu_val) {{
+                                         {deallocate_mem_cpu_compare_results_gpu_cpu}
+                                         delete[] gpu_computed_vals_copied_to_host;
+                                         return false;
+                                       }}'''. \
+                                     format(deallocate_mem_cpu_compare_results_gpu_cpu =
+                                            deallocate_mem_cpu_compare_results_gpu_cpu)
+
     with common.open_utf8(opts, filename) as out:
         out.write(
         '''#include <nsimd/modules/spmd.hpp>
@@ -1043,11 +1071,7 @@ def gen_tests_for(opts, t, operator):
            nsimd::copy_to_host(gpu_computed_vals_copied_to_host, gpu_computed_vals, n);
            for (unsigned int i = 0; i < n; ++i) {{
              {cpu_val_for_compare_results_gpu_cpu}
-             if (gpu_computed_vals_copied_to_host[i] != cpu_val) {{
-               {deallocate_mem_cpu_compare_results_gpu_cpu}
-               delete[] gpu_computed_vals_copied_to_host;
-               return false;
-             }}
+             {test_compare_results_cpu_gpu}
            }}
            {deallocate_mem_cpu_compare_results_gpu_cpu}
            delete[] gpu_computed_vals_copied_to_host;
@@ -1105,6 +1129,7 @@ def gen_tests_for(opts, t, operator):
                   allocate_mem_cpu_compare_results_gpu_cpu=allocate_mem_cpu_compare_results_gpu_cpu,
                   copy_to_host_compare_results_gpu_cpu=copy_to_host_compare_results_gpu_cpu,
                   cpu_val_for_compare_results_gpu_cpu=cpu_val_for_compare_results_gpu_cpu,
+                  test_compare_results_cpu_gpu=test_compare_results_cpu_gpu,
                   deallocate_mem_cpu_compare_results_gpu_cpu=deallocate_mem_cpu_compare_results_gpu_cpu,
                   free_tabs=free_tabs, fill_tabs=fill_tabs,
                   k_code=k_code, k_call_args=k_call_args, k_args=k_args,
