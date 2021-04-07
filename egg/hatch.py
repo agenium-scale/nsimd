@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@ import gen_friendly_but_not_optimized
 import gen_ulps
 import gen_modules
 import gen_scalar_utilities
+import get_sleef_code
 
 # Dir of this script
 script_dir = os.path.dirname(__file__)
@@ -98,6 +99,8 @@ def parse_args(args):
         help='Generate code for the library and its benches')
     parser.add_argument('--library', '-l', action='store_true',
         help='Generate code of the library (C and C++ APIs)')
+    parser.add_argument('--sleef', '-s', action='store_true',
+        help='Compile Sleef')
     parser.add_argument('--ulps', '-u', action='store_true',
         help='Generate code to compute precision on big functions')
     parser.add_argument('--tests', '-t', action='store_true',
@@ -138,6 +141,7 @@ def parse_args(args):
     opts.friendly_but_not_optimized = opts.library
     opts.src = opts.library
     opts.scalar_utilities = opts.library
+    opts.sleef_version = '3.5.1'
     opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
     opts.benches_dir = os.path.join(script_dir, '..', 'benches')
@@ -173,6 +177,8 @@ def main():
         gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
+    if opts.sleef == True or opts.all == True:
+        get_sleef_code.doit(opts)
     if opts.scalar_utilities == True or opts.all == True:
         gen_scalar_utilities.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:
