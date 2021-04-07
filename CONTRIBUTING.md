@@ -69,7 +69,7 @@ maintainer will then merge or comment the pull request.
 - AMD
   + `ROCm` called `ROCM` in source code
 - Intel oneAPI
- + `oneAPI` called `ONEAPI` in source code
+  + `oneAPI` called `ONEAPI` in source code
 
 `nsimd` currently supports the following types:
 - `i8`: signed integers over 8 bits (usually `signed char`),
@@ -508,7 +508,7 @@ The code to add for float16's is as follows to be added inside the
 `get_impl_f16` Python function.
 
 
-- CUDA and ROCm:
+- `CUDA` and `ROCM`:
 ```python
 arch53_code = '''__half one = __float2half(1.0f);
                  return __hadd(
@@ -520,17 +520,19 @@ arch53_code = '''__half one = __float2half(1.0f);
                               );'''.format(**fmtspec)
 ```
 
-- oneAPI:
+- `ONEAPI`:
   + sycl provides a type for float16 named sycl::half
   + common operators are defined for the sycl::half type
   + conversions from and to f32 are supported
   + sycl::half API and implementation are available on github:
   + <https://github.com/intel/llvm/blob/sycl/sycl/include/CL/sycl/half_type.hpp>	
   + <https://github.com/intel/llvm/blob/sycl/sycl/source/half_type.cpp>
-  + if `NSIMD_ONEAPI` is defined f16 is provided as a typedef for sycl::half in nsimd.h
+  + if `NSIMD_ONEAPI` is defined f16 is provided as a typedef for sycl::half in `nsimd.h`
 
 ```python
-return 'f16(1.0f) / (f16(1.0f) - {in0}) + f16(1.0f) / ((f16(1.0f) - {in0}) * (f16(1.0f) - {in0}))'.format(**fmtspec)
+return '''f16(1.0f) /
+	     (f16(1.0f) - {in0}) + f16(1.0f) / ((f16(1.0f) - {in0}) * (f16(1.0f) - {in0}))'''. \
+	  format(**fmtspec)
 ```
 
 ### Implementing the test for the operator
