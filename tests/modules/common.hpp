@@ -242,8 +242,8 @@ template <typename T> void del(T *ptr) { hipFree(ptr); }
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
-void device_cmp_blocks(T *src1, T *src2, T *buf, const size_t n,
-                       sycl::nd_item<1> item) {
+void device_cmp_blocks(T *const src1, const T *const src2, T *const buf,
+                       const size_t n, sycl::nd_item<1> item) {
   size_t tid = item.get_local_id().get(0);
   size_t i = item.get_global_id().get(0);
 
@@ -291,7 +291,7 @@ void device_cmp_blocks(T *src1, T *src2, T *buf, const size_t n,
 }
 
 template <typename T>
-void device_cmp_array(int *dst, T *src1, const size_t n,
+void device_cmp_array(int *const dst, const T *const src1, const size_t n,
                       sycl::nd_item<1> item) {
   // reduction mul on the whole vector
   T buf = T(1);
@@ -306,7 +306,8 @@ void device_cmp_array(int *dst, T *src1, const size_t n,
   }
 }
 
-template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
+template <typename T>
+bool cmp(T *const src1, const T *const src2, unsigned int n) {
   T *buf = nsimd::device_calloc<T>(THREADS_PER_BLOCK);
   if (buf == NULL) {
     std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(T)
