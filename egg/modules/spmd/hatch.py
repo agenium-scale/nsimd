@@ -978,6 +978,16 @@ def gen_tests_for(opts, t, operator):
                                              return false;
                                            }}'''.format(typ=t,
                                                    deallocate_mem_cpu_compare_results_gpu_cpu=deallocate_mem_cpu_compare_results_gpu_cpu)
+    elif op_name in ['div']:
+        test_compare_results_cpu_gpu = '''const u{typnbits} from_cpu = nsimd::scalar_reinterpret(u{typnbits}(), cpu_val);
+                                          const u{typnbits} from_gpu = nsimd::scalar_reinterpret(u{typnbits}(), gpu_computed_vals_copied_to_host[i]);
+                                          const u{typnbits} diff = from_gpu > from_cpu ? from_gpu - from_cpu : from_cpu - from_gpu;
+                                          if (diff >= 10) {{
+                                            {deallocate_mem_cpu_compare_results_gpu_cpu}
+                                            delete[] gpu_computed_vals_copied_to_host;
+                                            return false;
+                                           }}'''.format(typnbits=t[1:], typ=t,
+                                                   deallocate_mem_cpu_compare_results_gpu_cpu=deallocate_mem_cpu_compare_results_gpu_cpu)
     else:
         test_compare_results_cpu_gpu = '''if (gpu_computed_vals_copied_to_host[i] != cpu_val) {{
                                          {deallocate_mem_cpu_compare_results_gpu_cpu}
