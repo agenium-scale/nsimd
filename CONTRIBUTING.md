@@ -490,23 +490,19 @@ the float32 result to a float16.
 
 ### The GPU versions
 
-The GPU generator Python files `cuda.py`, `rocm.py` and `oneapi.py` are a
+The GPU generator Python files `cuda.py`,`rocm.py` and `oneapi.py` are a
 bit different from the other files.
 
-- CUDA and ROCm:
-It is easy to find where to add the relevant pieces of code as ROCm syntax
+- CUDA and ROCm: it is easy to find where to add the relevant pieces of code as ROCm syntax
 is fully compatible with CUDA's, one only needs to modify the `cuda.py` file.
 
-The code to add for float32's is as follows to be added inside the `get_impl`
-Python function.
+The code for float32's to be added inside the `get_impl` Python function goes as follows:
 
 ```python
 return '1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}))'.format(**fmtspec)
 ```
 
-The code to add for float16's is as follows to be added inside the
-`get_impl_f16` Python function.
-
+The code for float16's to be added inside the `get_impl_f16` Python function goes as follows:
 
 - `CUDA` and `ROCM`:
 ```python
@@ -525,13 +521,13 @@ arch53_code = '''__half one = __float2half(1.0f);
   + common operators are defined for the sycl::half type
   + conversions from and to f32 are supported
   + sycl::half API and implementation are available on github:
-  + <https://github.com/intel/llvm/blob/sycl/sycl/include/CL/sycl/half_type.hpp>	
+  + <https://github.com/intel/llvm/blob/sycl/sycl/include/CL/sycl/half_type.hpp>
   + <https://github.com/intel/llvm/blob/sycl/sycl/source/half_type.cpp>
-  + if `NSIMD_ONEAPI` is defined f16 is provided as a typedef for sycl::half in `nsimd.h`
+  + if `NSIMD_ONEAPI` is defined, f16 is provided as a typedef for sycl::half in `nsimd.h`
 
 ```python
-return '''f16(1.0f) /
-	     (f16(1.0f) - {in0}) + f16(1.0f) / ((f16(1.0f) - {in0}) * (f16(1.0f) - {in0}))'''. \
+return '''f16(1.0f) / (f16(1.0f) - {in0}) +
+	  f16(1.0f) / ((f16(1.0f) - {in0}) * (f16(1.0f) - {in0}))'''. \
 	  format(**fmtspec)
 ```
 
