@@ -263,7 +263,7 @@ Configure project for compilation.
                     rocm      Radeon Open Compute compilers
                     cuda, cuda+gcc, cuda+clang, cuda+msvc
                               Nvidia CUDA C++ compiler
-		    dpcpp     Intel DPC++ Compiler
+		    oneapi    Intel DPC++ Compiler (dpcpp)
   -comp=COMMAND,COMPILER[,PATH[,VERSION[,ARCHI]]]
                   Use COMPILER when COMMAND is invoked for compilation
                   If VERSION and/or ARCHI are not given, nsconfig will
@@ -287,7 +287,7 @@ Configure project for compilation.
                     msvc, cl              Microsoft Visual C++
                     armclang, armclang++  ARM Compiler
                     icc                   Intel C/C++ Compiler
-                    dpcpp                 Intel DPC++ Compiler
+                    oneapi 		  Intel DPC++ Compiler (dpcpp)
                     nvcc                  Nvidia CUDA compiler
                     hipcc                 ROCm HIP compiler
   -prefix=PREFIX  Set path for installation to PREFIX
@@ -386,10 +386,10 @@ ones especially the SPMD module.
 ## The SPMD paradigm
 
 It is our belief that SPMD is a good paradigm for writing vectorized code. It
-helps both the developer and the compiler writer. It forces the developers to
-better arrange its data on memory more suited for vectorization. On the
+helps both the developer and the compiler writer. It forces the developer to
+better arrange its data on memory (in a way which is more suited for vectorization). On the
 compiler side it is simpler to write a "SPMD compiler" than a standard
-C/C++/Fortran compiler that tries to autovectorize some weird loop with data
+C/C++/Fortran compiler which tries to autovectorize some weird loop with data
 scattered all around the place. Our priority for our SPMD module are the
 following:
 
