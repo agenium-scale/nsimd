@@ -160,7 +160,9 @@ bash scripts/build.sh for simd_ext1/.../simd_extN with comp1/.../compN
 ```
 
 For each combination a directory `build-simd_ext-comp` will be created and
-will contain the library. Supported SIMD extension are:
+will contain the library.
+
+Supported SIMD extensions are:
 
 - sse2
 - sse42
@@ -180,7 +182,7 @@ will contain the library. Supported SIMD extension are:
 - rocm
 - oneapi
 
-Supported compiler are:
+Supported compilers are:
 
 - gcc
 - clang
@@ -189,7 +191,7 @@ Supported compiler are:
 - cl
 - nvcc
 - hipcc
-- dpcpp
+- oneapi
 
 Note that certain combination of SIMD extension/compilers are not supported
 such as aarch64 with icc, or avx512\_skylake with nvcc.
