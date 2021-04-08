@@ -366,15 +366,15 @@ struct node<mask_out_t, Mask, none_t, Pack> {
 #endif
 #elif defined(NSIMD_ONEAPI)
     const nsimd::nat expr_size = compute_size(mask.size(), expr.size());
-    const nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
+    const size_t nt = threads_per_block <= 0 ? 128 : static_cast<size_t>(threads_per_block);
+    assert(nt <= UINT_MAX);
     const size_t total_num_threads =
-    nsimd::compute_total_num_threads(static_cast<size_t>(expr_size), static_cast<size_t>(nt));
-    assert(nt > 0 && nt <= UINT_MAX);
+    nsimd::compute_total_num_threads(static_cast<size_t>(expr_size), nt);
     assert(total_num_threads > 0 && total_num_threads <= UINT_MAX);
     sycl::queue q_ = nsimd::_get_global_queue();
     q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
                                       sycl::range<1>(nt)),
-                                      [=](sycl::nd_item<1> item){
+                                      [=,*this](sycl::nd_item<1> item){
       oneapi_kernel_component_wise_mask(data, mask, expr, expr_size, item);
     }).wait();
 #else
@@ -440,15 +440,15 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
         (unsigned int)(nb), (unsigned int)(nt), 0, s, data, expr, expr.size());
 #endif
 #elif defined(NSIMD_ONEAPI)
-    const nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
+    const size_t nt = threads_per_block <= 0 ? 128 : static_cast<size_t>(threads_per_block);
+    assert(nt <= UINT_MAX);
     const size_t total_num_threads =
-    nsimd::compute_total_num_threads(static_cast<size_t>(expr.size()), static_cast<size_t>(nt));
-    assert(nt > 0 && nt <= UINT_MAX);
+    nsimd::compute_total_num_threads(static_cast<size_t>(expr.size()), nt);
     assert(total_num_threads > 0 && total_num_threads <= UINT_MAX);
     sycl::queue q_ = nsimd::_get_global_queue();
     q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
                                       sycl::range<1>(nt)),
-                                      [=](sycl::nd_item<1> item){
+                                      [=,*this](sycl::nd_item<1> item){
       oneapi_kernel_component_wise(data, expr, expr.size(), item);
     }).wait();
 #else
