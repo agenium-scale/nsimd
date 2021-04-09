@@ -251,21 +251,8 @@ void device_cmp_blocks(T *const src1, const T *const src2, T *const buf,
     buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
   }
 
-  sycl::nd_range<1> nd_range = item.get_nd_range();
-  sycl::range<1> range = nd_range.get_local_range();
-  const size_t block_start = nd_range.get_offset();
-  assert(block_start < n);
-  const size_t block_end = block_start + range.size();
-
-  size_t size;
-  if (block_end < n) {
-    size = range.size();
-  } else {
-    size = n - block_start;
-  }
   item.barrier(sycl::access::fence_space::local_space);
 
-  // reduction mul on the block (sub-group)
   sycl::ONEAPI::sub_group sg = item.get_sub_group();
   if(tid == 0){
     src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiplies<T>());
