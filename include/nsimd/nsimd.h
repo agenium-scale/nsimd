@@ -2190,7 +2190,8 @@ public:
   }
 
   sycl::queue &cpu() {
-    static sycl::queue s_cpu(sycl::cpu_selector{});
+    static sycl::queue s_cpu(sycl::cpu_selector{},
+                             sycl_async_error_handler<>{});
     return s_cpu;
   }
 
