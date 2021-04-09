@@ -242,21 +242,25 @@ template <typename T> void del(T *ptr) { hipFree(ptr); }
 // perform reduction on blocks first, note that this could be optimized
 // but to check correctness we don't need it now
 template <typename T>
-void device_cmp_blocks(T *const src1, const T *const src2, T *const buf,
-                       const size_t n, sycl::nd_item<1> item) {
+void device_cmp_blocks(T *const src1, const T *const src2, const size_t n,
+                       sycl::accessor<T, 1, sycl::access::mode::read_write,
+                                      sycl::access::target::local>
+                           local_buffer,
+                       sycl::nd_item<1> item) {
   size_t tid = item.get_local_id().get(0);
   size_t i = item.get_global_id().get(0);
 
   if (i < n) {
-    buf[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
+    local_buffer[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
   }
 
   item.barrier(sycl::access::fence_space::local_space);
 
   // other approach: see book p 345
-  if(tid == 0){
+  if (tid == 0) {
     sycl::ONEAPI::sub_group sg = item.get_sub_group();
-    src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiplies<T>());
+    src1[i] = sycl::ONEAPI::reduce(sg, local_buffer[0],
+                                   sycl::ONEAPI::multiplies<T>());
   }
 }
 
@@ -278,25 +282,25 @@ void device_cmp_array(int *const dst, const T *const src1, const size_t n,
 
 template <typename T>
 bool cmp(T *const src1, const T *const src2, unsigned int n) {
-  T *buf = nsimd::device_calloc<T>(THREADS_PER_BLOCK);
-  if (buf == NULL) {
-    std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(T)
-              << " bytes\n";
-    exit(EXIT_FAILURE);
-  }
 
   const size_t total_num_threads =
       nsimd::compute_total_num_threads(n, THREADS_PER_BLOCK);
+
   sycl::queue q = nsimd::_get_global_queue();
 
-  sycl::event e1 =
-      q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
-                                       sycl::range<1>(THREADS_PER_BLOCK)),
-                     [=](sycl::nd_item<1> item_) {
-                       device_cmp_blocks(src1, src2, buf, size_t(n), item_);
-                     });
-  e1.wait();
-  nsimd::device_free(buf);
+  sycl::event e1 = q.submit([=](sycl::handler &h) {
+    sycl::accessor<T, 1, sycl::access::mode::read_write,
+                   sycl::access::target::local>
+        local_buffer(THREADS_PER_BLOCK, h);
+
+    h.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                     sycl::range<1>(THREADS_PER_BLOCK)),
+                   [=](sycl::nd_item<1> item_) {
+                     device_cmp_blocks(src1, src2, size_t(n), local_buffer,
+                                       item_);
+                   });
+  });
+  e1.wait_and_throw();
 
   int *device_ret = nsimd::device_calloc<int>(n);
   if (device_ret == NULL) {
