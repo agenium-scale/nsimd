@@ -253,6 +253,7 @@ void device_cmp_blocks(T *const src1, const T *const src2, T *const buf,
 
   item.barrier(sycl::access::fence_space::local_space);
 
+  // other approach: see book p 345
   if(tid == 0){
     sycl::ONEAPI::sub_group sg = item.get_sub_group();
     src1[i] = sycl::ONEAPI::reduce(sg, buf[0], sycl::ONEAPI::multiplies<T>());
