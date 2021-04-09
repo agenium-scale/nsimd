@@ -376,7 +376,7 @@ struct node<mask_out_t, Mask, none_t, Pack> {
                                       sycl::range<1>(nt)),
                                       [=,*this](sycl::nd_item<1> item){
       oneapi_kernel_component_wise_mask(data, mask, expr, expr_size, item);
-    }).wait();
+    }).wait_and_throw();
 #else
     cpu_kernel_component_wise_mask<Pack>(
         data, mask, expr, compute_size(mask.size(), expr.size()));
@@ -450,7 +450,7 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
                                       sycl::range<1>(nt)),
                                       [=,*this](sycl::nd_item<1> item){
       oneapi_kernel_component_wise(data, expr, expr.size(), item);
-    }).wait();
+    }).wait_and_throw();
 #else
     cpu_kernel_component_wise<Pack>(data, expr, expr.size());
 #endif

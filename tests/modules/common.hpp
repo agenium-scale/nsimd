@@ -310,7 +310,7 @@ bool cmp(T *const src1, const T *const src2, unsigned int n) {
                      [=](sycl::nd_item<1> item_) {
                        device_cmp_array(device_ret, src1, size_t(n), item_);
                      });
-  e2.wait();
+  e2.wait_and_throw();
 
   int host_ret;
   q.memcpy((void *)&host_ret, (void *)device_ret, sizeof(int)).wait();

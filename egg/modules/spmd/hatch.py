@@ -510,7 +510,7 @@ def gen_tests_for_shifts(opts, t, operator):
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
 	      kernel(dst, a0, n, s, item);
-	    }}).wait();
+	    }}).wait_and_throw();
         }}
 
         #else
@@ -669,7 +669,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, a0, n, item);
-          }}).wait();
+          }}).wait_and_throw();
         }}
 
         #else
@@ -1048,7 +1048,7 @@ def gen_tests_for(opts, t, operator):
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, {k_call_args}, n, item);
-          }}).wait();
+          }}).wait_and_throw();
         }}
 
         #else

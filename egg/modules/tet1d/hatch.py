@@ -340,7 +340,7 @@ def gen_tests_for_shifts(opts, t, operator):
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
 	      kernel(dst, tab0, n, s, item);
-	    }}).wait();
+	    }}).wait_and_throw();
         }}
 
         #else
@@ -589,7 +589,7 @@ def gen_tests_for(opts, t, tt, operator):
 	                                    sycl::range<1>(THREADS_PER_BLOCK)),
 	                                    [=](sycl::nd_item<1> item){{
             kernel(dst, {args_tabs_call}, n, item);
-          }}).wait();
+          }}).wait_and_throw();
         }}
 
         #else

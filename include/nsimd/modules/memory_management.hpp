@@ -169,7 +169,7 @@ template <typename T> T *device_calloc(const size_t sz) {
   if (ret == NULL) {
     return NULL;
   }
-  q.memset((void *)ret, 0, sz * sizeof(T)).wait();
+  q.memset((void *)ret, 0, sz * sizeof(T)).wait_and_throw();
   return ret;
 }
 
@@ -181,13 +181,13 @@ template <typename T> void device_free(T *const ptr) {
 template <typename T>
 void copy_to_device(T *const device_ptr, T *const host_ptr, const size_t sz) {
   sycl::queue q = nsimd::_get_global_queue();
-  q.memcpy((void *)device_ptr, (const void *)host_ptr, sz * sizeof(T)).wait();
+  q.memcpy((void *)device_ptr, (const void *)host_ptr, sz * sizeof(T)).wait_and_throw();
 }
 
 template <typename T>
 void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
   sycl::queue q = nsimd::_get_global_queue();
-  q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T)).wait();
+  q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T)).wait_and_throw();
 }
 
 #define nsimd_fill_dev_mem_func(func_name, expr)                              \
@@ -209,7 +209,7 @@ void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
                    [=](sycl::nd_item<1> item) {                               \
                      kernel_##func_name##_(ptr, sz, item);                    \
                    })                                                         \
-        .wait();                                                              \
+        .wait_and_throw();                                                    \
   }
 
 // ----------------------------------------------------------------------------

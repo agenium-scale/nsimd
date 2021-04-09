@@ -180,7 +180,7 @@ namespace spmd {
                  [=](sycl::nd_item<1> item) {                                 \
                    name<spmd_scalar_bits_>(__VA_ARGS__, (size_t)n, item);     \
                  })                                                           \
-      .wait();
+      .wait_and_throw();
 
 #endif
 
