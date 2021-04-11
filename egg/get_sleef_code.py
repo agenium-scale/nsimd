@@ -58,7 +58,6 @@ def doit(opts):
     copy('src/libm/sleefdp.c')
     copy('src/libm/sleefsp.c')
     copy('src/common/misc.h')
-    copy('src/libm/rename.h')
     copy('src/libm/estrin.h')
     copy('src/libm/dd.h')
     copy('src/libm/df.h')

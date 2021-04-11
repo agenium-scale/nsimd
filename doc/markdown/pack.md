@@ -68,6 +68,38 @@ int main() {
 - `pack operator<<(pack const &, int);` (only available for integers)
 - `pack operator>>(pack const &, int);` (only available for integers)
 
+### Assignment operators available for packs
+
+- `pack operator+=(pack const &);`
+- `pack operator-=(pack const &);`
+- `pack operator*=(pack const &);`
+- `pack operator/=(pack const &);`
+- `pack &operator|=(pack const &other);`
+- `pack &operator&=(pack const &other);`
+- `pack &operator^=(pack const &other);`
+- `pack &operator<<=(int);`
+- `pack &operator>>=(int);`
+
+### Function aliases
+
+The C++ standard provides functions with different names that does exactly
+the same thing. This is due to the retro compatibility with C. Take the
+`fmin` C function as an example. In C this function give the minimum between
+doubles only. The C++ standard provides overloads to this function so that it
+can work on floats and long doubles. The aliases provided by NSIMD have the
+same purpose but they are not provided as operator on their own because their
+real purpose is to write generic code that can work on scalar and SIMD vector
+types. As such they are only relevant for the advanced C++ API.
+
+- `pack fmin(pack const &, pack const &);`
+- `pack fmax(pack const &, pack const &);`
+- `pack fabs(pack const &);`
+
+They are contained in the `nsimd/cxx_adv_api_aliases.hpp` header and not
+provided by default to respect the philosophy of NSIMD which is force the
+use to think different between SIMD code and scalar code. They are provided
+automatically when including `nsimd/nsimd-all.hpp`.
+
 ## The Packl type
 
 ```c++
