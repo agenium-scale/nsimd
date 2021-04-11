@@ -99,7 +99,7 @@ def parse_args(args):
         help='Generate code for the library and its benches')
     parser.add_argument('--library', '-l', action='store_true',
         help='Generate code of the library (C and C++ APIs)')
-    parser.add_argument('--sleef', '-s', action='store_true',
+    parser.add_argument('--sleef', '-s', action='store_true', default=False,
         help='Compile Sleef')
     parser.add_argument('--ulps', '-u', action='store_true',
         help='Generate code to compute precision on big functions')

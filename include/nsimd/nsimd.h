@@ -104,6 +104,7 @@ SOFTWARE.
 
 #if NSIMD_CXX >= 2020
   #include <concepts>
+  #include <cstddef>
 #endif
 
 /* ------------------------------------------------------------------------- */
