@@ -48,7 +48,8 @@ ifnot_set "Compile the libstdc++ statically" static_libstdcpp = false
 
 ## Targets for compilation
 
-set o_for_               = fp16$o memory$o ulps$o api_cpu$o rempitab$o
+set o_for_               = fp16$o memory$o ulps$o api_cpu$o rempitab$o \
+                           sleefsp$o sleefdp$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_
 set o_for_rocm           = $o_for_
@@ -141,6 +142,12 @@ build_file ulps$o autodeps $root$/src/ulps.cpp
 	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
 build_file rempitab$o autodeps $root$/src/rempitab.c
+	cc $sleef_cflags$ -c @in -o @out
+
+build_file sleefsp$o autodeps $root$/src/sleefsp.c
+	cc $sleef_cflags$ -c @in -o @out
+
+build_file sleefdp$o autodeps $root$/src/sleefdp.c
 	cc $sleef_cflags$ -c @in -o @out
 
 build_file api_cpu$o autodeps $root$/src/api_cpu.cpp

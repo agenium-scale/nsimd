@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -75,7 +75,7 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
                namespace nsimd {{
                  NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
                  {name}({cxx_args}) {{
-                   {returns}nsimd_{name}_{simd_ext}_{suf}({vas});
+                   {returns}{sleef_symbol_prefix}_{simd_ext}_{suf}({vas});
                  }}
                }} // namespace nsimd
                #endif

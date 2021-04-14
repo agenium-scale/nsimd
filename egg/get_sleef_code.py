@@ -176,16 +176,15 @@ def doit(opts):
                                                        nsimd_name_f32))
     defines = '\n'.join(defines)
 
-    for simd_ext in ['sse2', 'sse4', 'avx', 'avx2', 'avx512f', 'neon32',
+    for simd_ext in ['', 'sse2', 'sse4', 'avx', 'avx2', 'avx512f', 'neon32',
                      'advsimd', 'sve']:
         renameheader = os.path.join(opts.src_dir,
                                     'rename{}.h'.format(simd_ext))
+        se = simd_ext if simd_ext != '' else 'scalar'
         with open(renameheader, 'w') as fout:
             fout.write(
             '''#ifndef RENAME{SIMD_EXT}_H
                #define RENAME{SIMD_EXT}_H
-
-               #if defined(__SLEEFSIMDSP_C__)
 
                #ifdef DETERMINISTIC
 
@@ -197,28 +196,17 @@ def doit(opts):
 
                #endif
 
-               #elif defined(__SLEEFSIMDDP_C__)
-
-               #ifdef DETERMINISTIC
-
-               {defines_det_f64}
-
-               #else
-
-               {defines_nondet_f64}
+               #define rempi nsimd_sleef_rempi_{simd_ext}
+               #define rempif nsimd_sleef_rempif_{simd_ext}
+               #define rempisub nsimd_sleef_rempisub_{simd_ext}
+               #define rempisubf nsimd_sleef_rempisubf_{simd_ext}
+               #define gammak nsimd_gammak_{simd_ext}
+               #define gammafk nsimd_gammafk_{simd_ext}
 
                #endif
 
-               #endif
-
-               #endif
-
-               '''.format(SIMD_EXT=simd_ext.upper(),
-                          defines_det_f32=defines.format(det='d',
-                                              simd_ext=simd_ext, typ='f32'),
-                          defines_nondet_f32=defines.format(det='',
-                                              simd_ext=simd_ext, typ='f32'),
-                          defines_det_f64=defines.format(det='d',
-                                              simd_ext=simd_ext, typ='f64'),
-                          defines_nondet_f64=defines.format(det='',
-                                              simd_ext=simd_ext, typ='f64')))
+               '''.format(SIMD_EXT=simd_ext.upper(), simd_ext=se,
+                   defines_det_f32=defines.format(det='d', simd_ext=se),
+                   defines_nondet_f32=defines.format(det='', simd_ext=se),
+                   defines_det_f64=defines.format(det='d', simd_ext=se),
+                   defines_nondet_f64=defines.format(det='', simd_ext=se)))

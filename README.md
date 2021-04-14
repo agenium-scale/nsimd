@@ -406,7 +406,8 @@ NSIMD was designed following as closely as possible the following guidelines:
 - Emulate with tricks and intrinsic integer arithmetic when not available.
 - Use common names as found in common computation libraries.
 - Do not hide SIMD registers, one variable (of a type such as `nsimd::pack`)
-  matches one register.
+  matches one register. When possible force the user to think different between
+  SIMD code and scalar code.
 - Make the life of the compiler as easy as possible: keep the code simple to
   allow the compiler to perform as many optimizations as possible.
 - Favor the advanced C++ API.

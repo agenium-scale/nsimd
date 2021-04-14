@@ -1,7 +1,7 @@
 # Use utf-8 encoding
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -304,6 +304,8 @@ class Operator(object, metaclass=MAddToOperators):
         ret['name'] = self.name
         ret['hbar'] = common.hbar
         ret['simd_ext'] = simd_ext
+        if self.src and 'sleef_symbol_prefix' in self.__class__.__dict__:
+            ret['sleef_symbol_prefix'] = self.sleef_symbol_prefix
         return ret
 
     def get_generic_signature(self, lang):
@@ -1436,21 +1438,15 @@ class Subs(Operator):
     signature = 'v subs v v'
     domain = Domain('RxR')
     categories = [DocBasicArithmetic]
-    desc = 'Returns the saturated subtraction of the two vectors given as arguments'
+    desc = 'Returns the saturated subtraction of the two vectors given as ' \
+           'arguments'
 
-# -----------------------------------------------------------------------------
-# Import other operators if present: this is not very Pythonic but it is
-# simple and it works!
+class Sin_u35(SrcOperator):
+  full_name = 'sine'
+  signature = 'v sin_u35 v'
+  sleef_symbol_prefix = 'nsimd_sleef_sin_u35'
+  domain = Domain('R')
+  categories = [DocTrigo]
+  desc = 'Compute the sine of its argument with a precision of 3.5 ulps. ' \
+         'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-import os
-import sys
-import io
-
-sep = ';' if sys.platform == 'win32' else ':'
-search_dirs = os.getenv('NSIMD_OPERATORS_PATH')
-if search_dirs != None:
-    dirs = search_dirs.split(sep)
-    for d in dirs:
-        operators_file = os.path.join(d, 'operators.py')
-        with io.open(operators_file, mode='r', encoding='utf-8') as fin:
-            exec(fin.read())
