@@ -56,31 +56,80 @@ def get_simd_implementation(opts, operator, mod, simd_ext):
         to_typ = pair[1]
         fmtspec = operator.get_fmtspec(from_typ, to_typ, simd_ext)
         if operator.src:
-            ret += \
-            '''{hbar}
+            if from_typ == 'f16':
+                n = len(operator.params[1:])
+                f16_to_f32 = '\n'.join(
+                            ['nsimd_{simd_ext}_vf32x2 buf{i}' \
+                             ' = nsimd_upcvt_f32_f16({args});'. \
+                             format(i=i, args=common.get_arg(i), **fmtspec) \
+                             for i in range(n)])
+                bufsv0 = ', '.join(['buf{}.v0'.format(i) for i in range(n)])
+                bufsv1 = ', '.join(['buf{}.v1'.format(i) for i in range(n)])
+                if operator.params[0] != '_':
+                    retv0 = 'nsimd_{simd_ext}_f32 retv0 = '
+                    retv1 = 'nsimd_{simd_ext}_f32 retv1 = '
+                    f32_to_f16 = 'return nsimd_downcvt_f16_f32(retv0, retv1);'
+                else:
+                    retv0 = ''
+                    retv1 = ''
+                    f32_to_f16 = ''
+                retv0 += '{sleef_symbol_prefix}_{simd_ext}_f32({bufsv0});'. \
+                         format(bufsv0=bufsv0, **fmtspec)
+                retv1 += '{sleef_symbol_prefix}_{simd_ext}_f32({bufsv1});'. \
+                         format(bufsv1=bufsv1, **fmtspec)
+                ret += \
+                '''{hbar}
 
-               #if NSIMD_CXX > 0
-               extern "C" {{
-               #endif
+                   NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                     {f16_to_f32}
+                     {retv0}
+                     {retv1}
+                   {f32_to_f16}}}
 
-               NSIMD_DLLSPEC
-               {return_typ} NSIMD_VECTORCALL
-               nsimd_{name}_{simd_ext}_{suf}({c_args});
+                   #if NSIMD_CXX > 0
+                   namespace nsimd {{
+                     NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                     {name}({cxx_args}) {{
+                       {f16_to_f32}
+                       {retv0}
+                       {retv1}
+                     {f32_to_f16}}}
+                   }} // namespace nsimd
+                   #endif
 
-               #if NSIMD_CXX > 0
-               }} // extern "C"
-               #endif
+                   '''.format(f16_to_f32=f16_to_f32, retv0=retv0, retv1=retv1,
+                              f32_to_f16=f32_to_f16, **fmtspec)
+            else:
+                ret += \
+                '''{hbar}
 
-               #if NSIMD_CXX > 0
-               namespace nsimd {{
-                 NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
-                 {name}({cxx_args}) {{
-                   {returns}{sleef_symbol_prefix}_{simd_ext}_{suf}({vas});
-                 }}
-               }} // namespace nsimd
-               #endif
+                   #if NSIMD_CXX > 0
+                   extern "C" {{
+                   #endif
 
-               '''.format(**fmtspec)
+                   NSIMD_DLLSPEC {return_typ} NSIMD_VECTORCALL
+                   {sleef_symbol_prefix}_{simd_ext}_{suf}({c_args});
+
+                   #if NSIMD_CXX > 0
+                   }} // extern "C"
+                   #endif
+
+                   NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                   nsimd_{name}_{simd_ext}_{suf}({c_args}) {{
+                     {returns}{sleef_symbol_prefix}_{simd_ext}_{suf}({vas});
+                   }}
+
+                   #if NSIMD_CXX > 0
+                   namespace nsimd {{
+                     NSIMD_INLINE {return_typ} NSIMD_VECTORCALL
+                     {name}({cxx_args}) {{
+                       {returns}{sleef_symbol_prefix}_{simd_ext}_{suf}({vas});
+                     }}
+                   }} // namespace nsimd
+                   #endif
+
+                   '''.format(**fmtspec)
         else:
             ret += \
             '''{hbar}

@@ -50,7 +50,6 @@ import gen_benches
 import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
-import gen_ulps
 import gen_modules
 import gen_scalar_utilities
 import get_sleef_code
@@ -101,8 +100,6 @@ def parse_args(args):
         help='Generate code of the library (C and C++ APIs)')
     parser.add_argument('--sleef', '-s', action='store_true', default=False,
         help='Compile Sleef')
-    parser.add_argument('--ulps', '-u', action='store_true',
-        help='Generate code to compute precision on big functions')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
     parser.add_argument('--benches', '-b', action='store_true',
@@ -142,7 +139,6 @@ def parse_args(args):
     opts.src = opts.library
     opts.scalar_utilities = opts.library
     opts.sleef_version = '3.5.1'
-    opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
     opts.benches_dir = os.path.join(script_dir, '..', 'benches')
     opts.tests_dir = os.path.join(script_dir, '..', 'tests')
@@ -169,8 +165,6 @@ def main():
         gen_adv_cxx_api.doit(opts)
     if opts.adv_c_api == True or opts.all == True:
         gen_adv_c_api.doit(opts)
-    if opts.ulps == True or opts.all == True:
-        gen_ulps.doit(opts)
     if opts.tests == True or opts.all == True:
         gen_tests.doit(opts)
     if opts.benches == True or opts.all == True:

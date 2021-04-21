@@ -20,6 +20,7 @@
 # SOFTWARE.
 
 import os
+import math
 import sys
 import common
 import operators
@@ -269,51 +270,14 @@ def get_content(op, typ, lang):
             vin_rand = 'vin1[i] = rand() % 64;'
 
         # Make vout_ref_comp
-        # We use MPFR on Linux to compare numerical results, but it is only on
-        # Linux as MPFR does not play well on Windows. On Windows we compare
-        # against the cpu implementation. When using MPFR, we set one element
-        # at a time => cpu_step = '1'
-        if op.tests_mpfr and sys.platform.startswith('linux'):
-            cpu_step = '1'
-            variables = ', '.join(['a{}'.format(i) for i in nargs])
-            mpfr_inits = '\n'.join(['mpfr_init2(a{}, 64);'.format(i)
-                                    for i in nargs])
-            if typ == 'f16':
-                mpfr_set = '''mpfr_set_flt(a{i}, nsimd_u16_to_f32(
-                                ((u16 *)vin{i})[i]), MPFR_RNDN);'''
-                vout_ref_set = '''((u16 *)vout_ref)[i] = nsimd_f32_to_u16(
-                                 mpfr_get_flt(c, MPFR_RNDN));'''
-            elif typ == 'f32':
-                mpfr_set = 'mpfr_set_flt(a{i}, vin{i}[i], MPFR_RNDN);'
-                vout_ref_set = 'vout_ref[i] = mpfr_get_flt(c, MPFR_RNDN);'
-            else:
-                mpfr_set = 'mpfr_set_d(a{i}, vin{i}[i], MPFR_RNDN);'
-                vout_ref_set = 'vout_ref[i] = ({})mpfr_get_d(c, MPFR_RNDN);'. \
-                               format(typ)
-            mpfr_sets = '\n'.join([mpfr_set.format(i=j) for j in nargs])
-            mpfr_clears = '\n'.join(['mpfr_clear(a{});'.format(i)
-                                     for i in nargs])
-            vout_ref_comp = \
-            '''mpfr_t c, {variables};
-               mpfr_init2(c, 64);
-               {mpfr_inits}
-               {mpfr_sets}
-               {mpfr_op_name}(c, {variables}, MPFR_RNDN);
-               {vout_ref_set}
-               mpfr_clear(c);
-               {mpfr_clears}'''. \
-               format(variables=variables, mpfr_sets=mpfr_sets,
-                      mpfr_clears=mpfr_clears, vout_ref_set=vout_ref_set,
-                      mpfr_op_name=op.tests_mpfr_name(), mpfr_inits=mpfr_inits)
-        else:
-            args = ', '.join(['va{}'.format(i) for i in nargs])
-            code = ['nsimd_cpu_v{}{} {}, vc;'.format(logical, typ, args)]
-            code += ['va{} = nsimd_load{}u_cpu_{}(&vin{}[i]);'.
-                     format(i, logical, typ, i) for i in nargs]
-            code += ['vc = nsimd_{}_cpu_{}({});'.format(op.name, typ, args)]
-            code += ['nsimd_store{}u_cpu_{}(&vout_ref[i], vc);'. \
-                     format(logical, typ)]
-            vout_ref_comp = '\n'.join(code)
+        args = ', '.join(['va{}'.format(i) for i in nargs])
+        code = ['nsimd_cpu_v{}{} {}, vc;'.format(logical, typ, args)]
+        code += ['va{} = nsimd_load{}u_cpu_{}(&vin{}[i]);'.
+                 format(i, logical, typ, i) for i in nargs]
+        code += ['vc = nsimd_{}_cpu_{}({});'.format(op.name, typ, args)]
+        code += ['nsimd_store{}u_cpu_{}(&vout_ref[i], vc);'. \
+                 format(logical, typ)]
+        vout_ref_comp = '\n'.join(code)
 
         # Make vout_nsimd_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
@@ -475,7 +439,7 @@ def get_content(op, typ, lang):
 # Generate test in C, C++ (base API) and C++ (advanced API) for almost all
 # tests
 
-def gen_test(opts, op, typ, lang, ulps):
+def gen_test(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
         return
@@ -506,80 +470,15 @@ def gen_test(opts, op, typ, lang, ulps):
 
                   return nsimd_scalar_ne_{typ}(mpfr_out, nsimd_out);'''. \
                   format(typ=typ, uT=common.bitfield_type[typ])
+    elif op.src and typ in common.ftypes:
+        comp = 'return distance(mpfr_out, nsimd_out) > {}'. \
+               format(math.log(op.ulps, 2))
+        extra_code += distance[typ]
     else:
-        if op.tests_ulps and typ in common.ftypes:
-            comp = 'return distance(mpfr_out, nsimd_out) > {}'. \
-                   format(op.tests_ulps[typ])
-            extra_code += distance[typ]
-        elif op.src:
-            if op.name in ulps:
-                nbits = ulps[op.name][typ]["ulps"]
-                nbits_dnz = ulps[op.name][typ]["ulps for denormalized output"]
-                inf_error = ulps[op.name][typ]["Inf Error"]
-                nan_error = ulps[op.name][typ]["NaN Error"]
-
-                if nan_error:
-                    # Ignore error with NaN output, we know we will encounter
-                    # some
-                    comp += 'if (nsimd_isnan_{}(mpfr_out)) ' \
-                            '{{ return 0; }}\n'.format(typ)
-                else:
-                    # Return false if one is NaN and not the other
-                    comp += 'if (nsimd_isnan_{typ}(mpfr_out) ^ ' \
-                                'nsimd_isnan_{typ}(nsimd_out)) ' \
-                                '{{ return 1; }} \n'.format(typ=typ)
-
-                if inf_error:
-                    # Ignore error with infinite output, we know we will
-                    # encounter some
-                    comp += 'if (nsimd_isinf_{}(mpfr_out)) ' \
-                            '{{ return 0; }}\n'.format(typ)
-                else:
-                    # One is infinite and not the other
-                    comp += 'if (nsimd_isinf_{typ}(mpfr_out) ^ ' \
-                                'nsimd_isinf_{typ}(nsimd_out)) ' \
-                                '{{ return 1; }}\n'.format(typ=typ)
-                    # Wrong sign for infinite
-                    comp += 'if (nsimd_isinf_{typ}(mpfr_out) && ' \
-                                'nsimd_isinf_{typ}(nsimd_out) && ' \
-                                '({right} * {left} < 0)) {{ return 1; }} \n'. \
-                                format(typ=typ)
-
-                comp += \
-                '''if (nsimd_isnormal_{typ}(mpfr_out)) {{
-                    return relative_distance((double){left}, (double){right})
-                             > get_2th_power(-({nbits}));
-                }} else {{
-                    return relative_distance((double){left}, (double){right})
-                             > get_2th_power(-({nbits_dnz}));
-                }}'''
-
-                #if lang == 'c_base':
-                comp = comp.format(left=left, right=right, nbits=nbits,
-                                   nbits_dnz=nbits_dnz)
-                #else:
-                #    comp = comp.format(left=left, right=right, nbits=nbits,
-                #                       nbits_dnz=nbits_dnz)
-
-            else:
-                comp = 'return distance(mpfr_out, nsimd_out) > 1'. \
-                       format(left, right, nbits=nbits[typ])
-
-            extra_code += distance[typ]
-        else:
-            if typ in common.ftypes:
-                comp = \
-                '''return nsimd_scalar_ne_{typ}(mpfr_out, nsimd_out) &&
-                          (!nsimd_isnan_{typ}(mpfr_out) ||
-                           !nsimd_isnan_{typ}(nsimd_out));'''. \
-                           format(typ=typ)
-            else:
-                comp = 'return mpfr_out != nsimd_out;'
-
-            extra_code += ''
+        comp = 'return nsimd_scalar_ne_{}(mpfr_out, nsimd_out);'.format(typ)
 
     includes = get_includes(lang)
-    if op.src or op.tests_ulps or op.tests_mpfr:
+    if op.src:
         if lang in ['c_base', 'c_adv']:
             includes = '''{}
 
@@ -1206,7 +1105,7 @@ def get_adds_tests_cases_given_type(typ):
 # -----------------------------------------------------------------------------
 # gen_adds
 
-def gen_adds(opts, op, typ, lang, ulps):
+def gen_adds(opts, op, typ, lang):
 
     # Do not test for floats since adds(floats) == add(floats)
     if typ in common.ftypes:
@@ -1651,7 +1550,7 @@ def get_subs_tests_cases_given_type(typ):
 # -----------------------------------------------------------------------------
 # gen_subs
 
-def gen_subs(opts, op, typ, lang, ulps):
+def gen_subs(opts, op, typ, lang):
 
     # Do not test for floats since subs(floats) == sub(floats)
     if typ in common.ftypes:
@@ -3363,7 +3262,6 @@ def gen_unpack(opts, op, typ, lang):
 # Entry point
 
 def doit(opts):
-    ulps = common.load_ulps_informations(opts)
     common.myprint(opts, 'Generating tests')
     for op_name, operator in operators.operators.items():
         # Skip non-matching tests
@@ -3392,15 +3290,15 @@ def doit(opts):
                     gen_addv(opts, operator, typ, 'cxx_base')
                     gen_addv(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'adds':
-                gen_adds(opts, operator, typ, 'c_base', ulps)
-                gen_adds(opts, operator, typ, 'c_adv', ulps)
-                gen_adds(opts, operator, typ, 'cxx_base', ulps)
-                gen_adds(opts, operator, typ, 'cxx_adv', ulps)
+                gen_adds(opts, operator, typ, 'c_base')
+                gen_adds(opts, operator, typ, 'c_adv')
+                gen_adds(opts, operator, typ, 'cxx_base')
+                gen_adds(opts, operator, typ, 'cxx_adv')
             elif operator.name == 'subs':
-                gen_subs(opts, operator, typ, 'c_base', ulps)
-                gen_subs(opts, operator, typ, 'c_adv', ulps)
-                gen_subs(opts, operator, typ, 'cxx_base', ulps)
-                gen_subs(opts, operator, typ, 'cxx_adv', ulps)
+                gen_subs(opts, operator, typ, 'c_base')
+                gen_subs(opts, operator, typ, 'c_adv')
+                gen_subs(opts, operator, typ, 'cxx_base')
+                gen_subs(opts, operator, typ, 'cxx_adv')
             elif operator.name in ['all', 'any']:
                 gen_all_any(opts, operator, typ, 'c_base')
                 gen_all_any(opts, operator, typ, 'c_adv')
@@ -3472,7 +3370,7 @@ def doit(opts):
                 gen_unpack(opts, operator, typ, 'cxx_base')
                 gen_unpack(opts, operator, typ, 'cxx_adv')
             else:
-                gen_test(opts, operator, typ, 'c_base', ulps)
-                gen_test(opts, operator, typ, 'c_adv', ulps)
-                gen_test(opts, operator, typ, 'cxx_base', ulps)
-                gen_test(opts, operator, typ, 'cxx_adv', ulps)
+                gen_test(opts, operator, typ, 'c_base')
+                gen_test(opts, operator, typ, 'c_adv')
+                gen_test(opts, operator, typ, 'cxx_base')
+                gen_test(opts, operator, typ, 'cxx_adv')

@@ -1444,6 +1444,7 @@ class Subs(Operator):
 class Sin_u35(SrcOperator):
   full_name = 'sine'
   signature = 'v sin_u35 v'
+  ulps = 3.5
   sleef_symbol_prefix = 'nsimd_sleef_sin_u35'
   domain = Domain('R')
   categories = [DocTrigo]

@@ -138,9 +138,6 @@ build_file fp16$o autodeps $root$/src/fp16.cpp
 build_file memory$o autodeps $root$/src/memory.cpp
 	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
-build_file ulps$o autodeps $root$/src/ulps.cpp
-	c++ $cflags$ $cflags_for_cpu @in -c -o @out
-
 build_file rempitab$o autodeps $root$/src/rempitab.c
 	cc $sleef_cflags$ -c @in -o @out
 
@@ -315,16 +312,6 @@ build_files examples_cpp98 foreach glob:$root$/examples/*.cpp \
 	c++ -std=c++98 @item $tests_flags -o @out
 
 phony examples.cpp98 deps $examples_cpp98.files
-
-## Ulps
-
-build_files optional ulps foreach glob:$root$/ulps/*.cpp \
-                          as ulp.%b.${simd}$exe \
-                          autodeps @item libnsimd_$simd$$so$
-	c++ $flags$ $mpfr -std=c++11 @item ${cflags_for_$simd$} \
-	    $ldflags -o @out
-
-phony ulps deps $ulps.files
 
 ## Benches
 

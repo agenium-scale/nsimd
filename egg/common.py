@@ -265,6 +265,11 @@ CPU_NBITS = 128
 if CPU_NBITS != 128:
     raise ValueError('CPU_NBITS must be 128')
 
+def get_arg(i):
+    fmtspec = { 'in0': in0, 'in1': in1, 'in2': in2, 'in3': in3, 'in4': in4,
+                'in5': in5 }
+    return '{{in{}}}'.format(i).format(**fmtspec)
+
 def get_args(n):
     fmtspec = { 'in0': in0, 'in1': in1, 'in2': in2, 'in3': in3, 'in4': in4,
                 'in5': in5 }
@@ -556,24 +561,6 @@ def get_modules(opts):
 
 # -----------------------------------------------------------------------------
 # Ulps
-
-import json
-
-def load_ulps_informations(opts):
-    path = opts.script_dir
-    filename = os.path.join(path, "ulp.json")
-    with open(filename) as data_file:
-        data = json.load(data_file)
-
-    ulps = dict()
-    for info in data["ulps"]:
-        type = info["type"]
-        func = info["func"]
-        if not func in ulps:
-            ulps[func] = dict()
-        ulps[func][type] = info
-
-    return ulps
 
 def ulps_from_relative_distance_power(p):
     return {
