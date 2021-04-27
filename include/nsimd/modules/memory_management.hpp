@@ -179,13 +179,13 @@ template <typename T> void device_free(T *const ptr) {
 }
 
 template <typename T>
-void copy_to_device(T *const device_ptr, T *const host_ptr, const size_t sz) {
+void copy_to_device(T *const device_ptr, const T *const host_ptr, const size_t sz) {
   sycl::queue q = nsimd::_get_global_queue();
   q.memcpy((void *)device_ptr, (const void *)host_ptr, sz * sizeof(T)).wait_and_throw();
 }
 
 template <typename T>
-void copy_to_host(T *const host_ptr, T *const device_ptr, size_t sz) {
+void copy_to_host(T *const host_ptr, const T *const device_ptr, size_t sz) {
   sycl::queue q = nsimd::_get_global_queue();
   q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T)).wait_and_throw();
 }
