@@ -1,17 +1,13 @@
 /*
-
 Copyright (c) 2020 Agenium Scale
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,7 +15,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 */
 
 #ifndef NSIMD_H
@@ -333,12 +328,12 @@ namespace nsimd {
 
 /* PPC */
 
-#if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
-#define NSIMD_POWER8
+#if (defined(VMX) || defined(ALTIVEC)) && !defined(NSIMD_VMX)
+#define NSIMD_VMX
 #endif
 
-#if defined(POWER7) && !defined(NSIMD_POWER7)
-#define NSIMD_POWER7
+#if defined(VSX) && !defined(NSIMD_VSX)
+#define NSIMD_VSX
 #endif
 
 /* CUDA */
@@ -696,10 +691,10 @@ namespace nsimd {
     } // namespace nsimd
   #endif
 
-#elif defined(NSIMD_POWER7)
+#elif defined(NSIMD_VSX)
 
   #define NSIMD_PLATFORM ppc
-  #define NSIMD_SIMD power7
+  #define NSIMD_SIMD vsx
 
   #ifdef NSIMD_IS_CLANG
   // New version of clang are spamming useless warning comming from their
@@ -723,12 +718,12 @@ namespace nsimd {
   #if NSIMD_CXX > 0
     namespace nsimd {
       struct cpu {};
-      struct power7 {};
+      struct vsx {};
       #if NSIMD_CXX >= 2020
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
-                             std::is_same_v<T, nsimd::power7>;
-        #define NSIMD_LIST_SIMD_EXT cpu, power7
+                             std::is_same_v<T, nsimd::vsx>;
+        #define NSIMD_LIST_SIMD_EXT cpu, vsx
       #endif
     } // namespace nsimd
   #endif

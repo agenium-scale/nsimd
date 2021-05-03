@@ -67,8 +67,8 @@ set o_for_sve256         = $o_for_aarch64 api_sve256$o
 set o_for_sve512         = $o_for_aarch64 api_sve512$o
 set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
 set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
-set o_for_vmx            = $o_for_cpu ##api_vmx$o 
-set o_for_vsx            = $o_for_cpu ##api_vsx$o
+set o_for_vmx            = $o_for_cpu api_vmx$o 
+set o_for_vsx            = $o_for_cpu api_vsx$o
 
 
 
@@ -194,7 +194,7 @@ build_file api_sve2048$o autodeps $root$/src/api_sve2048.cpp
 ## PPC rules for building
 
 build_file api_vsx$o autodeps $root$/src/api_vsx.cpp
-	c++ @$cflags$ -c $cflags_for_vsx @in -o @out
+	c++ $cflags$ -c $cflags_for_vsx @in -o @out
 
 build_file api_vmx$o autodeps $root$/src/api_vmx.cpp
 	c++ $cflags$ -c $cflags_for_vmx @in -o @out
