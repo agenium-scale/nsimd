@@ -54,6 +54,10 @@ def ppc_is_vec_type(typ):
     return not typ in ["f64", "i64", "u64", "f16"]
 
 
+def ppc_is_vecl_type(typ):
+    return typ[1:] not in ["8", "16", "32"]
+
+
 ## Returns the logical power pc type corresponding to the nsimd type
 def ppc_vec_typel(typ):
     if typ[1:] == '8':
@@ -75,7 +79,6 @@ def emulate_fp16(simd_ext):
 
 ## Emulate 64 bits types (for vsx)
 def emulate_64(op, simd_ext, params, arity):
-    print("op:", op, "params:", params)
     fmtspec2 = fmtspec.copy()
     fmtspec2['op'] = op
     fmtspec2['buf_ret_decl'] = 'nsimd_cpu_{v}{typ} buf_ret;'. \
@@ -216,29 +219,32 @@ def get_additional_include(func, platform, simd_ext):
                  #include <nsimd/ppc/{simd_ext}/notl.h>
             '''.format(simd_ext=simd_ext)
 
-    if func in ['loadlu', 'loadla']:
+    elif func in ['loadlu', 'loadla']:
         ret += '''#include <nsimd/ppc/{simd_ext}/eq.h>
                   #include <nsimd/ppc/{simd_ext}/set1.h>
                   #include <nsimd/ppc/{simd_ext}/{load}.h>
                   #include <nsimd/ppc/{simd_ext}/notl.h>
                   '''.format(load='load' + func[5], **fmtspec)
 
-    if func in ['storelu']:
+    elif func in ['storelu']:
         ret += '''#include <nsimd/ppc/{simd_ext}/if_else1.h>
                   #include <nsimd/ppc/{simd_ext}/set1.h>
                   '''.format(**fmtspec)
 
-    if func in ['shr', 'shl']:
+    elif func in ['shr', 'shl']:
         ret += '''#include <nsimd/ppc/{simd_ext}/set1.h>
                   '''.format(**fmtspec)
 
-    if func[:11] == 'reinterpret':
+    elif func[:11] == 'reinterpret':
         ret += '#include <string.h>'
 
-    if func == "adds":
-        ret += "#include <limits.h>"
+    elif func in ['zip', 'unzip']:
+        ret += '''#include <nsimd/ppc/{simd_ext}/{unzip_prefix}ziplo.h>
+                  #include <nsimd/ppc/{simd_ext}/{unzip_prefix}ziphi.h>
+                  '''.format(**fmtspec,
+                             unzip_prefix="" if func == "zip" else "un")
 
-    if func[:4] == 'load':
+    elif func[:4] == 'load':
         ret += '''
         #define NSIMD_PERMUTE_MASK_32(a, b, c, d)                        \
                 {(unsigned char)(4 * a), (unsigned char)(4 * a + 1),     \
@@ -755,26 +761,6 @@ def simple_op2(op, simd_ext, typ):
         return emulate_16(op, simd_ext, 2, False)
 
     return 'return {in0} {op} {in1};'.format(op=cpuop[op], **fmtspec)
-
-
-## Adds
-
-
-def adds(simd_ext, typ):
-    if typ[0] == "f":
-        return """
-        nsimd_add_{simd_ext}_{typ}({in0}, {in1});
-        """.format(**fmtspec)
-    if ppc_is_vec_type(typ):  # floats are not compatibles with vec_adds
-        return """
-                return vec_adds({in0}, {in1});
-                """.format(**fmtspec)
-    return """
-            nsimd_{simd_ext}_v{typ} ret;
-            ret.v0 = nsimd_scalar_adds_{typ}({in0}.v0, {in1}.v0);
-            ret.v1 = nsimd_scalar_adds_{typ}({in0}.v1, {in1}.v1);
-            return ret;  
-        """.format(**fmtspec)
 
 
 ## Binary operators: and, or, xor, andnot
@@ -1377,6 +1363,25 @@ def addv(simd_ext, typ):
                 .format(size=128 // int(typ[1:]), **fmtspec)
 
 
+## Saturated sum
+
+def adds(simd_ext, typ):
+    if typ[0] == "f":
+        return """
+        nsimd_add_{simd_ext}_{typ}({in0}, {in1});
+        """.format(**fmtspec)
+    if ppc_is_vec_type(typ):  # floats are not compatibles with vec_adds
+        return """
+                return vec_adds({in0}, {in1});
+                """.format(**fmtspec)
+    return """
+            nsimd_{simd_ext}_v{typ} ret;
+            ret.v0 = nsimd_scalar_adds_{typ}({in0}.v0, {in1}.v0);
+            ret.v1 = nsimd_scalar_adds_{typ}({in0}.v1, {in1}.v1);
+            return ret;  
+        """.format(**fmtspec)
+
+
 # -----------------------------------------------------------------------------
 # Up convert
 
@@ -1518,52 +1523,92 @@ def downcvt1(simd_ext, from_typ, to_typ):
                 format(ppc_typ=ppc_vec_type(to_typ), **fmtspec)
 
 
-# # -----------------------------------------------------------------------------
-# ## zip functions
+# -----------------------------------------------------------------------------
+## zip functions
 
-# def zip(func, simd_ext, typ):
+def zip_unzip(func):
+    return """
+            nsimd_{simd_ext}_v{typ}x2 ret;
+            ret.v0 = nsimd_{unzip_prefix}ziplo_{simd_ext}_{typ}({in0}, {in1});
+            ret.v1 = nsimd_{unzip_prefix}ziphi_{simd_ext}_{typ}({in0}, {in1});
+            return ret;
+            """.format(**fmtspec,
+                       unzip_prefix="" if func == "zip" else "un")
+
+
+# def zip_unzip_l_half(func, simd_ext, typ):
 #     if typ[1:] == '64':
 #         return '''nsimd_{simd_ext}_v{typ} ret;
 #                 ret.v0 = {in0}.v{i};
 #                 ret.v1 = {in1}.v{i};
 #                 return ret;'''. \
+#             format(**fmtspec,
+#                    i='0' if func in ['zip1', 'uzp1'] else '1')
+#     else:
+#         return '''
+#             return vec_vpkudum(vec_vupk{suff}({in0}), vec_vupk{suff}({in1}));'''. \
+#             format(**fmtspec,
+#                    func=func,
+#                    suff='lsw' if func == 'ziplo' else 'hsw')
+
+
+# def zip_unzip_half(func, simd_ext, typ):
+#     if typ[1:] == "8": # TODO
+#         return """
+#         return vec_{vec_func}({in0}, {in1});
+#         """.format(**fmtspec,
+#                    vec_func = "pack" if func == "ziplo" else "unpackh")
+#     if typ[1:] == '64' and ppc_is_vec_type(typ):
+#         return '''nsimd_{simd_ext}_v{typ} ret;
+#                 ret.v0 = {in0}.v{i};
+#                 ret.v1 = {in1}.v{i};
+#                 return ret;'''. \
 #                 format(**fmtspec,
-#                     i= '0' if func in ['zip1', 'uzp1'] else '1')
-#     else :
+#                     i= '0' if func in ['ziplo', 'unziplo'] else '1')
+#     if ppc_is_vec_type(typ) and typ not in []:
+#         if True:
+#             return """
+#                 return vec_pack({in0}, {in1});
+#             """.format(**fmtspec)
 #         return '''
 #             return vec_vpkudum(vec_vupk{suff}({in0}), vec_vupk{suff}({in1}));'''. \
 #             format(**fmtspec,
 #                 func=func,
 #                 suff= 'lsw' if func == 'ziplo' else 'hsw')
+#     else:
+#         return """
+#         return {in0};
+#         """.format(**fmtspec)
 
-# # -----------------------------------------------------------------------------
+# # # -----------------------------------------------------------------------------
 # ## unzip functions
-
+#
 # def unzip(func, simd_ext, typ):
 #     if typ[1:] == '64':
 #         return '''nsimd_{simd_ext}_v{typ} ret;
 #                 ret.v0 = {in0}.v{i};
 #                 ret.v1 = {in1}.v{i};
 #                 return ret;'''. \
-#                 format(**fmtspec,
-#                     i= '0' if func in ['zip1', 'uzp1'] else '1')
-#     else :
-#         return '''{simd_typ} aps = {in0};
-#                     {simd_typ} bps = {in1};
-#                     {simd_typ} tmp;
+#             format(**fmtspec,
+#                    i='0' if func in ['zip1', 'uzp1'] else '1')
+#     else:
+#         return '''{vtyp} aps = {in0};
+#                     {vtyp} bps = {in1};
+#                     {vtyp} tmp;
 #                     int j = 0;
 #                     int step = (int)log2({nb_reg}/sizeof({typ}));
 #                     while (j < step) {{
 #                         tmp = nsimd_ziplo_{simd_ext}_{typ}(aps, bps);
 #                         bps = nsimd_ziphi_{simd_ext}_{typ}(aps, bps);
 #                         aps = tmp;
-#                         j++;
+#                         ++j;
 #                     }}
 #                     return {ret};'''. \
-#                     format(**fmtspec,
-#                             simd_typ=get_type(simd_ext, typ),
-#                             nb_reg=get_nb_registers(simd_ext),
-#                             ret='aps' if func == 'unziplo' else 'bps')
+#             format(**fmtspec,
+#                    vtyp="nsimd_" + simd_ext + "_v" + typ,
+#                    simd_typ=get_type("unzip", simd_ext, typ, typ),
+#                    nb_reg=get_nb_registers(simd_ext),
+#                    ret='aps' if func == 'unziplo' else 'bps')
 
 
 ## get_impl function
@@ -1659,8 +1704,10 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
-        # 'ziplo': 'zip("ziplo", simd_ext, from_typ)',
-        # 'ziphi': 'zip("ziphi", simd_ext, from_typ)',
+        #'ziplo': 'zip_unzip_half("ziplo", simd_ext, from_typ)',
+        #'ziphi': 'zip_unzip_half("ziphi", simd_ext, from_typ)',
+        'zip': 'zip_unzip("zip")',
+        'unzip': 'zip_unzip("unzip")',
         # 'unziplo': 'unzip("unziplo", simd_ext, from_typ)',
         # 'unziphi': 'unzip("unziphi", simd_ext, from_typ)'
     }
