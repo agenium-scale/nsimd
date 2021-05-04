@@ -234,6 +234,8 @@ def get_additional_include(func, platform, simd_ext):
     elif func in ['shr', 'shl']:
         ret += '''#include <nsimd/ppc/{simd_ext}/set1.h>
                   '''.format(**fmtspec)
+    elif func == "shra":
+        ret += '''#include <nsimd/scalar_utilities.h>'''
 
     elif func[:11] == 'reinterpret':
         ret += '#include <string.h>'
@@ -837,6 +839,10 @@ def sqrt1(simd_ext, typ):
 ## Shifts
 
 def shl_shr(op, simd_ext, typ):
+    if typ[0] == "u" and op == "shra":
+        return """
+        return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});
+        """.format(**fmtspec)
     if typ[1:] == '64':
         return '''nsimd_{simd_ext}_v{typ} ret;
                   nsimd_cpu_v{typ} buf0, bufret;
@@ -858,12 +864,29 @@ def shl_shr(op, simd_ext, typ):
                   return ret;'''. \
             format(op=op, **fmtspec)
     else:
-        ppcop = {'shl': 'sl', 'shr': 'sr'}
+        ppcop = {'shl': 'sl', 'shr': 'sr', 'shra': 'sra'}
         return '''
              nsimd_{simd_ext}_vu{type_size} tmp
                 = nsimd_set1_{simd_ext}_u{type_size}((u{type_size})({in1}));
              return vec_{op}({in0}, tmp);'''. \
             format(op=ppcop[op], type_size=typ[1:], **fmtspec)
+
+
+#def shra_u(simd_ext, typ):
+
+
+# elif ppc_is_vec_type(typ):  # TODO
+#     return """
+#       nsimd_{simd_ext}_v{typ} v0 = vec_extract({in0}, 0);
+#       nsimd_{simd_ext}_v{typ} v1 = vec_extract({in0}, 1);
+#       v0 = nsimd_shra_{simd_ext}_{typ}(v0, {in1});
+#       v1 = nsimd_shra_{simd_ext}_{typ}(v1, {in1});
+#       return ret;
+#     """
+# else:
+#     return """
+#       return {in0};
+#       """.format(**fmtspec)
 
 
 # Set1: splat functions
@@ -1667,6 +1690,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'mul': 'simple_op2("mul", simd_ext, from_typ)',
         'shl': 'shl_shr("shl", simd_ext, from_typ)',
         'shr': 'shl_shr("shr", simd_ext, from_typ)',
+        'shra': 'shl_shr("shra", simd_ext, from_typ)',
         'set1': 'set1(simd_ext, from_typ)',
         'eq': 'cmp2("eq", simd_ext, from_typ)',
         'lt': 'cmp2("lt", simd_ext, from_typ)',
@@ -1704,8 +1728,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
-        #'ziplo': 'zip_unzip_half("ziplo", simd_ext, from_typ)',
-        #'ziphi': 'zip_unzip_half("ziphi", simd_ext, from_typ)',
+        # 'ziplo': 'zip_unzip_half("ziplo", simd_ext, from_typ)',
+        # 'ziphi': 'zip_unzip_half("ziphi", simd_ext, from_typ)',
         'zip': 'zip_unzip("zip")',
         'unzip': 'zip_unzip("unzip")',
         # 'unziplo': 'unzip("unziplo", simd_ext, from_typ)',
