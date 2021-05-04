@@ -49,8 +49,10 @@ def ppc_vec_type(typ):
     else:
         raise ValueError('Unavailable type "{}" for ppc'.format(typ))
 
+
 def ppc_is_vec_type(typ):
     return not typ in ["f64", "i64", "u64", "f16"]
+
 
 ## Returns the logical power pc type corresponding to the nsimd type
 def ppc_vec_typel(typ):
@@ -763,17 +765,16 @@ def adds(simd_ext, typ):
         return """
         nsimd_add_{simd_ext}_{typ}({in0}, {in1});
         """.format(**fmtspec)
-    if ppc_is_vec_type(typ): # floats are not compatibles also
-                return """
-                       return vec_adds({in0}, {in1});
-                       """.format(**fmtspec)
-    fmtspec2 = fmtspec.copy()
-    fmtspec2["TYP"] = typ.upper()
+    if ppc_is_vec_type(typ):  # floats are not compatibles with vec_adds
+        return """
+                return vec_adds({in0}, {in1});
+                """.format(**fmtspec)
     return """
-            const nsimd_{simd_ext}_v{typ} ures = nsimd_add_{simd_ext}_{typ}({in0}, {in1});
-            const nsimd_{simd_ext}_v{typ} umax = nsimd_set1_{simd_ext}_{typ}(({typ}) NSIMD_{TYP}_MAX);
-            return nsimd_if_else1_{simd_ext}_{typ}(nsimd_lt_{simd_ext}_{typ}(ures, {in0}), umax, ures); 
-            """.format(**fmtspec2)
+            nsimd_{simd_ext}_v{typ} ret;
+            ret.v0 = nsimd_scalar_adds_{typ}({in0}.v0, {in1}.v0);
+            ret.v1 = nsimd_scalar_adds_{typ}({in0}.v1, {in1}.v1);
+            return ret;  
+        """.format(**fmtspec)
 
 
 ## Binary operators: and, or, xor, andnot
