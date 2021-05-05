@@ -22,6 +22,7 @@
 
 import common
 
+DEBUG = True  # TODO remove
 # -----------------------------------------------------------------------------
 # Helpers
 
@@ -843,6 +844,13 @@ def shl_shr(op, simd_ext, typ):
         return """
         return nsimd_shr_{simd_ext}_{typ}({in0}, {in1});
         """.format(**fmtspec)
+    if ppc_is_vec_type(typ):
+        ppcop = {'shl': 'sl', 'shr': 'sr', 'shra': 'sra'}
+        return '''
+                 nsimd_{simd_ext}_vu{type_size} tmp
+                    = nsimd_set1_{simd_ext}_u{type_size}((u{type_size})({in1}));
+                 return vec_{op}({in0}, tmp);'''. \
+            format(op=ppcop[op], type_size=typ[1:], **fmtspec)
     if typ[1:] == '64':
         return '''nsimd_{simd_ext}_v{typ} ret;
                   nsimd_cpu_v{typ} buf0, bufret;
@@ -863,16 +871,9 @@ def shl_shr(op, simd_ext, typ):
                   ret.v1 = nsimd_{op}_{nsimd_ext}_f32({in0}.v1, {in1});
                   return ret;'''. \
             format(op=op, **fmtspec)
-    else:
-        ppcop = {'shl': 'sl', 'shr': 'sr', 'shra': 'sra'}
-        return '''
-             nsimd_{simd_ext}_vu{type_size} tmp
-                = nsimd_set1_{simd_ext}_u{type_size}((u{type_size})({in1}));
-             return vec_{op}({in0}, tmp);'''. \
-            format(op=ppcop[op], type_size=typ[1:], **fmtspec)
 
 
-#def shra_u(simd_ext, typ):
+# def shra_u(simd_ext, typ):
 
 
 # elif ppc_is_vec_type(typ):  # TODO
@@ -1549,7 +1550,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
 # -----------------------------------------------------------------------------
 ## zip functions
 
-def zip_unzip(func):
+def zip_unzip(func):  # vec_pack maybe
     return """
             nsimd_{simd_ext}_v{typ}x2 ret;
             ret.v0 = nsimd_{unzip_prefix}ziplo_{simd_ext}_{typ}({in0}, {in1});
@@ -1632,6 +1633,62 @@ def zip_unzip(func):
 #                    simd_typ=get_type("unzip", simd_ext, typ, typ),
 #                    nb_reg=get_nb_registers(simd_ext),
 #                    ret='aps' if func == 'unziplo' else 'bps')
+
+
+## Masks functions
+
+# def to_mask(simd_ext, typ):
+#     if typ[1:] == "64":
+#         #non vector -> v0 v1
+#         return """
+#
+#         """
+#     if typ == "f16":
+#         # v0 v1 are vectors
+#         return """
+#         nsimd_{simd_ext}_v{typ} ret;
+#         ret.v0 = nsimd_to_mask_aarch64_f32({in0}.v0);
+#         ret.v1 = nsimd_to_mask_aarch64_f32({in0}.v1);
+#         return ret;
+#         """.format(**fmtspec)
+#     return """
+#     return nsimd_reinterpretl_{simd_ext}_{typ}_{typ}({in0});
+#     """.format(**fmtspec)
+
+
+## iota
+
+def iota(simd_ext, typ):
+    le = 256
+    if typ == "f16":    #TODO not working all datas are set to 0
+        iota = ', '.join(['(f32){i}'.format(i=i) \
+                          for i in range(8)])
+        return """
+                  nsimd_{simd_ext}_v{typ} ret;
+                  f32 buf[8] = {{ {iota} }};
+                  ret.v0 = vec_ld(0, buf);
+                  ret.v1 = vec_ld(0, buf + 4);
+                  return ret;
+               """.format(**fmtspec, iota=iota)
+
+    if typ[1:] in ['8', '16', '32']:
+        iota = ', '.join(['({typ}){i}'.format(typ=typ, i=i) \
+                          for i in range(int(le // int(typ[1:])))])
+        le //= int(typ[1:])
+        return """
+                  {typ} buf[{le}] = {{ {iota} }};
+                  return vec_ld(0, buf);
+               """.format(**fmtspec, iota=iota, le=le, le2=le // 2)
+
+    elif typ[1:] == "64":
+        return """
+           nsimd_{simd_ext}_v{typ} ret;
+           ret.v0 = ({typ}) 0;
+           ret.v1 = ({typ}) 1;
+           return ret;
+           """.format(**fmtspec)
+
+    return ""
 
 
 ## get_impl function
@@ -1728,6 +1785,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'addv': 'addv(simd_ext, from_typ)',
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        'iota': 'iota(simd_ext, from_typ)',
+        # 'to_mask': 'to_mask(simd_ext, from_typ)',
         # 'ziplo': 'zip_unzip_half("ziplo", simd_ext, from_typ)',
         # 'ziphi': 'zip_unzip_half("ziphi", simd_ext, from_typ)',
         'zip': 'zip_unzip("zip")',
