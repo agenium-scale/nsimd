@@ -1387,23 +1387,31 @@ def addv(simd_ext, typ):
                 .format(size=128 // int(typ[1:]), **fmtspec)
 
 
-## Saturated sum
+## Saturated operations
 
-def adds(simd_ext, typ):
-    if typ[0] == "f":
+def add_sub_s(op, simd_ext, typ):
+    # if i8 does not work, emulator bug
+    if typ == "f32":
         return """
-        nsimd_add_{simd_ext}_{typ}({in0}, {in1});
-        """.format(**fmtspec)
+        nsimd_{op}_{simd_ext}_{typ}({in0}, {in1});
+        """.format(**fmtspec, op=op[:-1])  # not saturated
+    if typ in ["f64", "f16"]:
+        return """
+        nsimd_{simd_ext}_v{typ} ret;
+        ret.v0 = {in0}.v0 {op} {in1}.v0;
+        ret.v1 = {in0}.v1 {op} {in1}.v1;
+        return ret;
+        """.format(**fmtspec, op="+" if op == "adds" else "-")
     if ppc_is_vec_type(typ):  # floats are not compatibles with vec_adds
         return """
-                return vec_adds({in0}, {in1});
-                """.format(**fmtspec)
+                return vec_{op}({in0}, {in1});
+                """.format(**fmtspec, op=op)
     return """
             nsimd_{simd_ext}_v{typ} ret;
-            ret.v0 = nsimd_scalar_adds_{typ}({in0}.v0, {in1}.v0);
-            ret.v1 = nsimd_scalar_adds_{typ}({in0}.v1, {in1}.v1);
+            ret.v0 = nsimd_scalar_{op}_{typ}({in0}.v0, {in1}.v0);
+            ret.v1 = nsimd_scalar_{op}_{typ}({in0}.v1, {in1}.v1);
             return ret;  
-        """.format(**fmtspec)
+        """.format(**fmtspec, op=op)
 
 
 # -----------------------------------------------------------------------------
@@ -1660,15 +1668,17 @@ def zip_unzip(func):  # vec_pack maybe
 
 def iota(simd_ext, typ):
     le = 256
-    if typ == "f16":    #TODO not working all datas are set to 0
+    if typ == "f16":  # TODO not working all datas are set to 0
         iota = ', '.join(['(f32){i}'.format(i=i) \
                           for i in range(8)])
         return """
-                  nsimd_{simd_ext}_v{typ} ret;
-                  f32 buf[8] = {{ {iota} }};
-                  ret.v0 = vec_ld(0, buf);
-                  ret.v1 = vec_ld(0, buf + 4);
-                  return ret;
+               nsimd_{simd_ext}_v{typ} ret;
+               f32 buf[8] = {{ {iota} }};
+               ret.v0 = vec_ld(0, buf);
+               ret.v1 = vec_ld(4, buf);
+               
+                   
+               return ret;
                """.format(**fmtspec, iota=iota)
 
     if typ[1:] in ['8', '16', '32']:
@@ -1739,8 +1749,9 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'andnotb': 'bop2("andnotb", simd_ext, from_typ)',
         'andnotl': 'lop2("andnotl", simd_ext, from_typ)',
         'add': 'simple_op2("add", simd_ext, from_typ)',
-        'adds': 'adds(simd_ext, from_typ)',
+        'adds': 'add_sub_s("adds",simd_ext, from_typ)',
         'sub': 'simple_op2("sub", simd_ext, from_typ)',
+        'subs': 'add_sub_s("subs",simd_ext, from_typ)',
         'div': 'simple_op2("div", simd_ext, from_typ)',
         'sqrt': 'sqrt1(simd_ext, from_typ)',
         'len': 'len1(simd_ext, from_typ)',
