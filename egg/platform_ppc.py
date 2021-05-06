@@ -1043,7 +1043,12 @@ def fnma(simd_ext, typ):
     if typ == 'f32':
         return 'return vec_nmsub({in0}, {in1}, {in2});'.format(**fmtspec)
     elif typ == 'f16':
-        return emulate_16('fnma', simd_ext, 3, False)
+        return """
+                nsimd_{simd_ext}_v{typ} ret;
+                ret.v0 = -{in0}.v0 * {in1}.v0 + {in2}.v0;
+                ret.v1 = -{in0}.v1 * {in1}.v1 + {in2}.v1;
+                return ret;
+                """.format(**fmtspec)
     elif typ[1:] == '64':
         return emulate_64('fnma', simd_ext, 4 * ['v'], 3)
     else:
