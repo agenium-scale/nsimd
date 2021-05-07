@@ -56,7 +56,7 @@ def ppc_is_vec_type(typ):
 
 
 def ppc_is_vecl_type(typ):
-    return typ[1:] not in ["8", "16", "32"]
+    return typ[1:] in ["8", "16", "32"]
 
 
 ## Returns the logical power pc type corresponding to the nsimd type
@@ -1072,7 +1072,12 @@ def fnms(op, simd_ext, typ):
     if typ == 'f32':
         return 'return vec_nmsub({in0}, {in1}, -{in2});'.format(**fmtspec)
     elif typ == 'f16':
-        return emulate_16('fnms', simd_ext, 3, False)
+        return """
+                nsimd_{simd_ext}_v{typ} ret;
+                ret.v0 = -{in0}.v0 * {in1}.v0 - {in2}.v0;
+                ret.v1 = -{in0}.v1 * {in1}.v1 - {in2}.v1;
+                return ret;
+                """.format(**fmtspec)
     elif typ[1:] == '64':
         return emulate_64('fnms', simd_ext, 4 * ['v'], 3)
     else:
@@ -1585,28 +1590,45 @@ def zip_unzip(func):  # vec_pack maybe
 
 ## Masks functions
 
-# def to_mask(simd_ext, typ):
-#     # if typ[0] == "u":
-#     #     return """
-#     #            return {in0};
-#     #            """.format(**fmtspec)
-#     if typ[1:] == "64":
-#         #non vector -> v0 v1
-#         return """
-#
-#         """
-#     if typ == "f16":
-#         # v0 v1 are vectors
-#         return """
-#         nsimd_{simd_ext}_v{typ} ret;
-#         ret.v0 = nsimd_to_mask_{simd_ext}_f32({in0}.v0);
-#         ret.v1 = nsimd_to_mask_{simd_ext}_f32({in0}.v1);
-#         return ret;
-#         """.format(**fmtspec)
-#     return """
-#     return nsimd_reinterpret_{simd_ext}_{typ}_{typ}({in0});
-#     """.format(**fmtspec)
+def to_mask(simd_ext, typ):
+    # if typ[0] == "u":
+    #     return """
+    #            return {in0};
+    #            """.format(**fmtspec)
+    # if typ[1:] == "64":
+    #     #non vector -> v0 v1
+    #     return """
+    #
+    #     """
+    # f64 f32 f16 i32 i16 i8 u32 u16
+    # f64 f32 f16 i32 i16 i8 u8 u16 u32 qui échouent to_logical ( spmd...)
 
+    if typ == "f16":
+        # v0 v1 are vectors
+        return """
+        nsimd_{simd_ext}_v{typ} ret;
+        ret.v0 = nsimd_to_mask_{simd_ext}_f32({in0}.v0);
+        ret.v1 = nsimd_to_mask_{simd_ext}_f32({in0}.v1);
+        return ret;
+        """.format(**fmtspec)
+    if typ[1:] == "64":
+        return """
+               nsimd_{simd_ext}_v{typ} ret;
+               ret.v0 = {in0}.v0 ? -1 : 0;
+               ret.v1 = {in0}.v1 ? -1 : 0;
+               return ret;
+               """.format(**fmtspec)
+    if ppc_is_vecl_type(typ):
+        nbits = 128 // int(typ[1:])
+        strue =', '.join(['({typ}){i}'.format(typ=typ, i=-1) \
+                          for _ in range(nbits)])
+
+        return \
+        """
+        /*  */
+        nsimd_{simd_ext}_v{typ} v_strue = {{{strue}}};
+        return vec_and(v_strue, {in0});
+        """.format(**fmtspec, nbits=nbits, strue = strue)
 
 ## iota
 
@@ -1649,7 +1671,11 @@ def iota(simd_ext, typ):
 # gather
 
 def gather(simd_ext, typ):
-    pass
+    if ppc_is_vec_type(typ):
+        return """
+        /* return vec_gbb({in0}); */
+        """.format(**fmtspec)
+    return ""
 
 
 # -----------------------------------------------------------------------------
@@ -1665,7 +1691,7 @@ def gather(simd_ext, typ):
 #                nsimd_{simd_ext}_v{typ} buf = {{({typ}) 0}};
 #                for(i=0; i< {len}; ++i)
 #                    if(vec_extract({in0},i))
-#                      vec_insert({in1}[i],buf,i);
+#                      vec_insert({in1}[i],buf,i);   /* vec_promote may replace insert */
 #                return buf;
 #                """.format(**fmtspec, len=128//int(typ[1:]))
 #     if typ[1:] == "64":
@@ -1674,16 +1700,34 @@ def gather(simd_ext, typ):
 
 
 
-# def to_logical(simd_ext, typ):
-#     #need to build to_mask before
-#     if typ[0] == "f":
-#         return ""
-#     return """
-#             return nsimd_ne_{simd_ext}_{typ}(
-#                 {in0}, nsimd_set1_{simd_ext}_{typ}(({typ}) 0)
-#             );
-#             """.format(**fmtspec)
-
+def to_logical(simd_ext, typ): # on peut utiliser les vec_cmp
+    # if ppc_is_vec_type(typ):
+    #     return \
+    # """
+    # return vec_cmpgt({in0}, nsimd_set1_{simd_ext}_{typ}(({typ}) 0));
+    # """.format(**fmtspec)
+    if typ[0] != 'f':
+        return """
+                return nsimd_ne_{simd_ext}_{typ}(
+                    {in0}, nsimd_set1_{simd_ext}_{typ}(({typ}) 0)
+                );
+                """.format(**fmtspec)
+    if typ == "f16":
+        return """
+               nsimd_{simd_ext}_vl{typ} ret;
+               ret.v0 = nsimd_to_logical_{simd_ext}_f32(a0.v0);
+               ret.v1 = nsimd_to_logical_{simd_ext}_f32(a0.v1);
+               return ret;
+               """.format(**fmtspec)
+    return """
+             return nsimd_reinterpretl_{simd_ext}_{typ}_u{nbits}(
+                nsimd_ne_{simd_ext}_u{nbits}(
+                    nsimd_reinterpret_{simd_ext}_u{nbits}_{typ}(
+                    {in0}
+                    ),
+                    nsimd_set1_{simd_ext}_u{nbits}((u{nbits}) 0))
+                );
+    """.format(**fmtspec, nbits=typ[1:])
 ## get_impl function
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ):
@@ -1782,13 +1826,13 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
         'iota': 'iota(simd_ext, from_typ)',
-        # 'to_logical' : 'to_logical(simd_ext, from_typ)',
+        'to_logical' : 'to_logical(simd_ext, from_typ)',
         # 'masko_loadu1': 'maskz_load("o", simd_ext, from_typ)',
         # 'maskz_loadu1': 'maskz_load("z", simd_ext, from_typ)',
         # 'masko_loada1': 'maskz_load("o", simd_ext, from_typ)',
         # 'maskz_loada1': 'maskz_load("z", simd_ext, from_typ)',
-        # 'gather' : 'gather("simd_ext", from_typ)',
-        # 'to_mask': 'to_mask(simd_ext, from_typ)',
+        'gather' : 'gather("simd_ext", from_typ)',
+        'to_mask': 'to_mask(simd_ext, from_typ)',
         # 'ziplo': 'zip_unzip_half("ziplo", simd_ext, from_typ)',
         # 'ziphi': 'zip_unzip_half("ziphi", simd_ext, from_typ)',
         'zip': 'zip_unzip("zip")',
