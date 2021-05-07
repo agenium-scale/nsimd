@@ -1666,6 +1666,27 @@ def iota(simd_ext, typ):
 
     return ""
 
+# -----------------------------------------------------------------------------
+# mask_for_loop_tail
+
+def mask_for_loop_tail(simd_ext, typ):
+    le = 128 // int(typ[1:])
+    if typ == 'f16':
+        threshold = 'nsimd_f32_to_f16((f32)({in1} - {in0}))'.format(**fmtspec)
+    else:
+        threshold = '({typ})({in1} - {in0})'.format(**fmtspec)
+    return '''if ({in0} >= {in1}) {{
+                return nsimd_set1l_{simd_ext}_{typ}(0);
+              }}
+              if ({in1} - {in0} < {le}) {{
+                nsimd_{simd_ext}_v{typ} n =
+                      nsimd_set1_{simd_ext}_{typ}({threshold});
+                return nsimd_lt_{simd_ext}_{typ}(
+                           nsimd_iota_{simd_ext}_{typ}(), n);
+              }} else {{
+                return nsimd_set1l_{simd_ext}_{typ}(1);
+              }}'''.format(le=le, threshold=threshold, **fmtspec)
+
 
 # -----------------------------------------------------------------------------
 # gather
@@ -1827,6 +1848,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
         'iota': 'iota(simd_ext, from_typ)',
         'to_logical' : 'to_logical(simd_ext, from_typ)',
+        'mask_for_loop_tail' : 'mask_for_loop_tail(simd_ext, from_typ)',
         # 'masko_loadu1': 'maskz_load("o", simd_ext, from_typ)',
         # 'maskz_loadu1': 'maskz_load("z", simd_ext, from_typ)',
         # 'masko_loada1': 'maskz_load("o", simd_ext, from_typ)',
