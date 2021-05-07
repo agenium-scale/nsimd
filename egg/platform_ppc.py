@@ -1412,7 +1412,7 @@ def add_sub_s(op, simd_ext, typ):
     # if i8 does not work, emulator bug
     if typ == "f32":
         return """
-        nsimd_{op}_{simd_ext}_{typ}({in0}, {in1});
+        return nsimd_{op}_{simd_ext}_{typ}({in0}, {in1});
         """.format(**fmtspec, op=op[:-1])  # not saturated
     if typ in ["f64", "f16"]:
         return """
