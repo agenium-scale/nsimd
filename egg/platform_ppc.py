@@ -59,6 +59,10 @@ def ppc_is_vecl_type(typ):
     return typ[1:] in ["8", "16", "32"]
 
 
+def get_nbits(typ):
+    return 128 // int(typ[1:])
+
+
 ## Returns the logical power pc type corresponding to the nsimd type
 def ppc_vec_typel(typ):
     if typ[1:] == '8':
@@ -254,7 +258,12 @@ def get_additional_include(func, platform, simd_ext):
     elif func[:5] in ["masko", "maskz"]:
         ret += "#include <nsimd/scalar_utilities.h>" \
                "".format(**fmtspec)
-
+    elif func == 'mask_for_loop_tail':
+        ret += '''#include <nsimd/ppc/{simd_ext}/set1.h>
+                  #include <nsimd/ppc/{simd_ext}/set1l.h>
+                  #include <nsimd/ppc/{simd_ext}/iota.h>
+                  #include <nsimd/ppc/{simd_ext}/lt.h>
+                  '''.format(simd_ext=simd_ext)
 
     elif func[:4] == 'load':
         ret += '''
@@ -913,11 +922,34 @@ def set1(simd_ext, typ):
                   ret.v1 = nsimd_set1_{simd_ext}_f32(f);
                   return ret;'''.format(**fmtspec)
     else:
-        nvar_in_vec = 128 // (int)(typ[1:])
+        nvar_in_vec = get_nbits(typ)
         values = ', '.join(['{in0}'.format(**fmtspec) for i in range(0, nvar_in_vec)])
         return '''{vec} tmp = {{{val}}};
                   return tmp;''' \
             .format(val=values, vec=ppc_vec_type(typ), **fmtspec)
+
+
+def lset1(simd_ext, typ):
+    if ppc_is_vec_type(typ):
+        return """
+               nsimd_{simd_ext}_vl{typ} ret = {{({typ}) {in0} ? -1 : 0}};
+               return ret;
+               """.format(**fmtspec, nbits=get_nbits(typ))
+    if typ == "f16":
+        return """
+               nsimd_{simd_ext}_vl{typ} ret;
+               nsimd_{simd_ext}_vlu32 tmp = {{(f32) {in0} ? -1 : 0}};
+               ret.v0 = tmp;
+               ret.v1 = tmp;
+               return ret;
+               """.format(**fmtspec)
+    return """
+           nsimd_{simd_ext}_vl{typ} ret;
+           ret.v0 = {in0} ? -1 : 0;
+           ret.v1 = {in0} ? -1 : 0;
+           return ret;
+           """.format(**fmtspec)
+
 
 
 ## Comparison operators: ==, <, <=, >, >=
@@ -1671,12 +1703,13 @@ def iota(simd_ext, typ):
 # mask_for_loop_tail
 
 def mask_for_loop_tail(simd_ext, typ):
-    le = 128 // int(typ[1:])
+    le = get_nbits(typ)
     if typ == 'f16':
         threshold = 'nsimd_f32_to_f16((f32)({in1} - {in0}))'.format(**fmtspec)
     else:
         threshold = '({typ})({in1} - {in0})'.format(**fmtspec)
-    return '''if ({in0} >= {in1}) {{
+    return '''
+              if ({in0} >= {in1}) {{
                 return nsimd_set1l_{simd_ext}_{typ}(0);
               }}
               if ({in1} - {in0} < {le}) {{
@@ -1712,7 +1745,7 @@ def scatter(simd_ext, typ):
                   for (i = 0; i < {nbits}; ++i)
                     {in0}[{in1}[i]] = {in2}[i];
                """.format(**fmtspec, nbits=128 // int(typ[1:]))
-    if typ == "f32":
+    if typ == "f32": # TODO
         return """
         """.format(**fmtspec)
     return """
@@ -1751,26 +1784,74 @@ def gather(simd_ext, typ):
            return ret;
            """.format(**fmtspec)
 
+def gather_linear(simd_ext, typ):
+    if ppc_is_vec_type(typ):
+        return """
+               return vec_lde({in1}, {in0});
+               """.format(**fmtspec)
+    if typ == "f16": # TODO check compiler code to see which is faster
+        return """
+               int i;
+               nsimd_{simd_ext}_v{typ} ret;
+               f32 buf[{nbits}];
+               for (i = 0; i < {nbits2}; ++i){{
+                 buf[i] = nsimd_f16_to_f32({in0}[i * {in1}]); 
+               }}
+               ret.v0 = vec_lde(0, buf);
+               ret.v1 = vec_lde(4, buf);
+               return ret;
+               """.format(**fmtspec, nbits2 = 4, nbits=get_nbits(typ))
+    return """
+           nsimd_{simd_ext}_v{typ} ret;
+           ret.v0 = {in0}[0];
+           ret.v1 = {in0}[{in1}];
+           return ret;
+           """.format(**fmtspec)
+
+
+
+
+def scatter_linear(simd_ext, typ):
+    if ppc_is_vec_type(typ):
+        return """
+           int i;
+           for (i = 0; i < {nbits}; i++)
+              {in0}[i * {in1}] = {in2}[i];
+               """.format(**fmtspec, nbits = get_nbits(typ))
+    if typ == "f16":
+        return """
+               int i;
+               for (i = 0; i < {nbits2}; i++){{
+                  {in0}[i * {in1}] = nsimd_f32_to_f16({in2}.v0[i]);
+                  {in0}[({nbits2} + i) * {in1}] = nsimd_f32_to_f16({in2}.v1[i]);
+               }}
+               """.format(**fmtspec, nbits2=4)
+    return """
+           {in0}[0] = {in2}.v0;
+           {in0}[{in1}] = {in2}.v1;
+           """.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # maskoloads
 
-# def maskz_load(oz, simd_ext, typ):
-#     # ATM maskz_loadu1   f64 i64 u64
-#     if typ in ["f32", "f16"]:
-#         return ""
-#     if ppc_is_vec_type(typ):
-#         return """
-#                int i;
-#                nsimd_{simd_ext}_v{typ} buf = {{({typ}) 0}};
-#                for(i=0; i< {len}; ++i)
-#                    if(vec_extract({in0},i))
-#                      vec_insert({in1}[i],buf,i);   /* vec_promote may replace insert */
-#                return buf;
-#                """.format(**fmtspec, len=128//int(typ[1:]))
-#     if typ[1:] == "64":
-#         return ""
-#     return ""
+def maskz_load(oz, simd_ext, typ):
+    # ATM maskz_loadu1   f64 i64 u64
+    if typ in ["f32", "f16"]:
+        return ""
+    if ppc_is_vec_type(typ):
+        return """
+               int i;
+               fprintf(stdout, "maskz_load executed on {simd_ext}\\n");
+               nsimd_{simd_ext}_v{typ} buf = {{({typ}) 0}};
+               /* for(i=0; i< {len}; ++i)
+                   if({in0}[i] != ({typ}) 0)
+                        buf[i] = {in1}[i]; */
+                     /* vec_insert({in1}[i],buf,i);   *//* vec_promote may replace insert */
+               return buf;
+               """.format(**fmtspec, len=get_nbits(typ))
+    if typ[1:] == "64":
+        return ""
+    return ""
 
 
 
@@ -1861,6 +1942,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'shr': 'shl_shr("shr", simd_ext, from_typ)',
         'shra': 'shl_shr("shra", simd_ext, from_typ)',
         'set1': 'set1(simd_ext, from_typ)',
+        'set1l': 'lset1(simd_ext, from_typ)',
         'eq': 'cmp2("eq", simd_ext, from_typ)',
         'lt': 'cmp2("lt", simd_ext, from_typ)',
         'le': 'cmp2("le", simd_ext, from_typ)',
@@ -1902,12 +1984,14 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'iota': 'iota(simd_ext, from_typ)',
         'to_logical' : 'to_logical(simd_ext, from_typ)',
         'mask_for_loop_tail' : 'mask_for_loop_tail(simd_ext, from_typ)',
-        # 'masko_loadu1': 'maskz_load("o", simd_ext, from_typ)',
-        # 'maskz_loadu1': 'maskz_load("z", simd_ext, from_typ)',
-        # 'masko_loada1': 'maskz_load("o", simd_ext, from_typ)',
-        # 'maskz_loada1': 'maskz_load("z", simd_ext, from_typ)',
+        'masko_loadu1': 'maskz_load("o", simd_ext, from_typ)',
+        'maskz_loadu1': 'maskz_load("z", simd_ext, from_typ)',
+        'masko_loada1': 'maskz_load("o", simd_ext, from_typ)',
+        'maskz_loada1': 'maskz_load("z", simd_ext, from_typ)',
         'gather' : 'gather(simd_ext, from_typ)',
         'scatter': 'scatter(simd_ext, from_typ)',
+        'gather_linear': 'gather_linear(simd_ext, from_typ)',
+        'scatter_linear': 'scatter_linear(simd_ext, from_typ)',
         'to_mask': 'to_mask(simd_ext, from_typ)',
         # 'ziplo': 'zip_unzip_half("ziplo", simd_ext, from_typ)',
         # 'ziphi': 'zip_unzip_half("ziphi", simd_ext, from_typ)',
