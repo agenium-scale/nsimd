@@ -223,7 +223,6 @@ def get_additional_include(func, platform, simd_ext):
         ret += """#include <stdio.h>
         """
 
-
     if func == 'neq':
         ret += '''#include <nsimd/ppc/{simd_ext}/eq.h>
                  #include <nsimd/ppc/{simd_ext}/notl.h>
@@ -891,23 +890,6 @@ def shl_shr(op, simd_ext, typ):
             format(op=op, **fmtspec)
 
 
-# def shra_u(simd_ext, typ):
-
-
-# elif ppc_is_vec_type(typ):  # TODO
-#     return """
-#       nsimd_{simd_ext}_v{typ} v0 = vec_extract({in0}, 0);
-#       nsimd_{simd_ext}_v{typ} v1 = vec_extract({in0}, 1);
-#       v0 = nsimd_shra_{simd_ext}_{typ}(v0, {in1});
-#       v1 = nsimd_shra_{simd_ext}_{typ}(v1, {in1});
-#       return ret;
-#     """
-# else:
-#     return """
-#       return {in0};
-#       """.format(**fmtspec)
-
-
 # Set1: splat functions
 def set1(simd_ext, typ):
     if typ[1:] == '64':
@@ -949,7 +931,6 @@ def lset1(simd_ext, typ):
            ret.v1 = {in0} ? -1 : 0;
            return ret;
            """.format(**fmtspec)
-
 
 
 ## Comparison operators: ==, <, <=, >, >=
@@ -1620,7 +1601,6 @@ def zip_unzip(func):  # vec_pack maybe
                        unzip_prefix="" if func == "zip" else "un")
 
 
-
 ## Masks functions
 
 def to_mask(simd_ext, typ):
@@ -1653,30 +1633,31 @@ def to_mask(simd_ext, typ):
                """.format(**fmtspec)
     if ppc_is_vecl_type(typ):
         nbits = 128 // int(typ[1:])
-        strue =', '.join(['({typ}){i}'.format(typ=typ, i=-1) \
-                          for _ in range(nbits)])
+        strue = ', '.join(['({typ}){i}'.format(typ=typ, i=-1) \
+                           for _ in range(nbits)])
 
         return \
-        """
-        /*  */
-        nsimd_{simd_ext}_v{typ} v_strue = {{{strue}}};
-        return vec_and(v_strue, {in0});
-        """.format(**fmtspec, nbits=nbits, strue = strue)
+            """
+            /*  */
+            nsimd_{simd_ext}_v{typ} v_strue = {{{strue}}};
+            return vec_and(v_strue, {in0});
+            """.format(**fmtspec, nbits=nbits, strue=strue)
+
 
 ## iota
 
 def iota(simd_ext, typ):
     le = 256
-    if typ == "f16":  # TODO not working all dataé are set to 0
-        iota = ', '.join(['(f32){i}'.format(i=i) \
+    if typ == "f16":  # TODO not working all data are set to 0
+        iota = ', '.join(['(f32) {i}'.format(i=i) \
                           for i in range(8)])
         return """
                nsimd_{simd_ext}_v{typ} ret;
                f32 buf[8] = {{ {iota} }};
-               ret.v0 = vec_ld(0, buf);
-               ret.v1 = vec_ld(4, buf);
                
-                   
+               ret.v0 = vec_ld(0, buf);
+               ret.v1 = vec_ld(0, buf + 4);
+
                return ret;
                """.format(**fmtspec, iota=iota)
 
@@ -1698,6 +1679,7 @@ def iota(simd_ext, typ):
            """.format(**fmtspec)
 
     return ""
+
 
 # -----------------------------------------------------------------------------
 # mask_for_loop_tail
@@ -1734,7 +1716,7 @@ def scatter(simd_ext, typ):
                     {in0}[{in1}[i]] = nsimd_f32_to_f16({in2}.v0[i]);
                     {in0}[{in1}[i + {nbits2}]] = nsimd_f32_to_f16({in2}.v1[i]);
                     }}
-               """.format(**fmtspec, nbits=128 // int(typ[1:]), nbits2= 64 // 16)
+               """.format(**fmtspec, nbits=128 // int(typ[1:]), nbits2=64 // 16)
 
     if ppc_is_vec_type(typ):
         # stmt = '\n'.join([
@@ -1745,17 +1727,17 @@ def scatter(simd_ext, typ):
                   for (i = 0; i < {nbits}; ++i)
                     {in0}[{in1}[i]] = {in2}[i];
                """.format(**fmtspec, nbits=128 // int(typ[1:]))
-    if typ == "f32": # TODO
+    if typ == "f32":  # TODO
         return """
         """.format(**fmtspec)
     return """
            {in0}[{in1}.v0] = {in2}.v0;
            {in0}[{in1}.v1] = {in2}.v1;
-           """.format(**fmtspec) # i64 u64 f64
+           """.format(**fmtspec)  # i64 u64 f64
 
 
 def gather(simd_ext, typ):
-    if ppc_is_vec_type(typ): # f32 i32 i16 i8 u32 u16 u8
+    if ppc_is_vec_type(typ):  # f32 i32 i16 i8 u32 u16 u8
         return """
                   int i;
                   {typ} buf[{nbits}];
@@ -1763,7 +1745,7 @@ def gather(simd_ext, typ):
                     buf[i] = {in0}[{in1}[i]];
                   return vec_ld(0, buf);
                 /* return vec_gbb({in0}); */
-        """.format(**fmtspec, nbits = 128 // int(typ[1:]))
+        """.format(**fmtspec, nbits=128 // int(typ[1:]))
     if typ == "f16":
         return """
                   int i;
@@ -1784,12 +1766,13 @@ def gather(simd_ext, typ):
            return ret;
            """.format(**fmtspec)
 
+
 def gather_linear(simd_ext, typ):
     if ppc_is_vec_type(typ):
         return """
                return vec_lde({in1}, {in0});
                """.format(**fmtspec)
-    if typ == "f16": # TODO check compiler code to see which is faster
+    if typ == "f16":
         return """
                int i;
                nsimd_{simd_ext}_v{typ} ret;
@@ -1800,7 +1783,7 @@ def gather_linear(simd_ext, typ):
                ret.v0 = vec_lde(0, buf);
                ret.v1 = vec_lde(4, buf);
                return ret;
-               """.format(**fmtspec, nbits2 = 4, nbits=get_nbits(typ))
+               """.format(**fmtspec, nbits2=4, nbits=get_nbits(typ))
     return """
            nsimd_{simd_ext}_v{typ} ret;
            ret.v0 = {in0}[0];
@@ -1809,15 +1792,13 @@ def gather_linear(simd_ext, typ):
            """.format(**fmtspec)
 
 
-
-
 def scatter_linear(simd_ext, typ):
     if ppc_is_vec_type(typ):
         return """
            int i;
            for (i = 0; i < {nbits}; i++)
               {in0}[i * {in1}] = {in2}[i];
-               """.format(**fmtspec, nbits = get_nbits(typ))
+               """.format(**fmtspec, nbits=get_nbits(typ))
     if typ == "f16":
         return """
                int i;
@@ -1831,31 +1812,78 @@ def scatter_linear(simd_ext, typ):
            {in0}[{in1}] = {in2}.v1;
            """.format(**fmtspec)
 
+
 # -----------------------------------------------------------------------------
 # maskoloads
 
-def maskz_load(oz, simd_ext, typ):
-    # ATM maskz_loadu1   f64 i64 u64
-    if typ in ["f32", "f16"]:
-        return ""
-    if ppc_is_vec_type(typ):
+def masko_load_f16(simd_ext, typ):
+    if typ == "f16":
         return """
                int i;
-               fprintf(stdout, "maskz_load executed on {simd_ext}\\n");
-               nsimd_{simd_ext}_v{typ} buf = {{({typ}) 0}};
-               /* for(i=0; i< {len}; ++i)
-                   if({in0}[i] != ({typ}) 0)
-                        buf[i] = {in1}[i]; */
-                     /* vec_insert({in1}[i],buf,i);   *//* vec_promote may replace insert */
-               return buf;
-               """.format(**fmtspec, len=get_nbits(typ))
+               
+               nsimd_{simd_ext}_v{typ} ret;
+               ret.v0 = {in2}.v0;
+               ret.v1 = {in2}.v1;
+               for(i=0; i< {len2}; i++){{
+                    if({in0}.v0[i])
+                        ret.v0[i] = nsimd_f16_to_f32({in1}[i]);
+                    if({in0}.v1[i])
+                        ret.v1[i] = nsimd_f16_to_f32({in1}[i + {len2}]);
+               }}
+               return ret;
+               """.format(**fmtspec, len2=4)
+
+
+def maskz_load(oz, simd_ext, typ):
+    # ATM maskz_loadu1   f64 i64 u64
+    if typ == "f16":
+        if oz=="o":
+            return masko_load_f16(simd_ext, typ)
+        return """
+               int i;
+               
+               nsimd_{simd_ext}_v{typ} ret;
+               f32 buf[{len}] = {{(f32) 0}};
+               for(i=0; i< {len2}; i++){{
+                    if({in0}.v0[i])
+                        buf[i] = nsimd_f16_to_f32({in1}[i]);
+                    if({in0}.v1[i])
+                        buf[i + 4] = nsimd_f16_to_f32({in1}[i + {len2}]);
+               }}
+               ret.v0 = vec_ld(0, buf);
+               ret.v1 = vec_ld(0, buf +4);
+               return ret;
+               """.format(**fmtspec, len=get_nbits(typ), len2=4)
+    if ppc_is_vec_type(typ):
+        buf_init = "{in2};".format(**fmtspec) if oz == "o" \
+            else "{{0}}".format(**fmtspec)
+        return """
+               int i;
+               nsimd_{simd_ext}_v{typ} ret = {buf_init};
+               for(i=0; i< {len}; ++i)
+                   if({in0}[i])
+                        ret[i] = {in1}[i];
+               return ret;
+               """.format(**fmtspec, len=get_nbits(typ), buf_init=buf_init)
     if typ[1:] == "64":
-        return ""
-    return ""
+        if oz == "z":
+            stmt = "\n".join("if({in0}.v{i}) ret.v{i} = {in1}[{i}];".format(i=i, **fmtspec)
+                             for i in range(2))
+        else:
+            stmt = "\n".join("ret.v{i} = {in0}.v{i} ? {in1}[{i}]: {in2}.v{i};".format(i=i, **fmtspec)
+                             for i in range(2))
+        return """
+               int i;
+               nsimd_{simd_ext}_v{typ} ret;
+               {stmt}
+               return ret;
+               """.format(**fmtspec, stmt=stmt)
+    return """
+
+           """.format(**fmtspec)
 
 
-
-def to_logical(simd_ext, typ): # on peut utiliser les vec_cmp
+def to_logical(simd_ext, typ):  # on peut utiliser les vec_cmp
     # if ppc_is_vec_type(typ):
     #     return \
     # """
@@ -1883,6 +1911,8 @@ def to_logical(simd_ext, typ): # on peut utiliser les vec_cmp
                     nsimd_set1_{simd_ext}_u{nbits}((u{nbits}) 0))
                 );
     """.format(**fmtspec, nbits=typ[1:])
+
+
 ## get_impl function
 
 def get_impl(opts, func, simd_ext, from_typ, to_typ):
@@ -1982,13 +2012,13 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
         'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
         'iota': 'iota(simd_ext, from_typ)',
-        'to_logical' : 'to_logical(simd_ext, from_typ)',
-        'mask_for_loop_tail' : 'mask_for_loop_tail(simd_ext, from_typ)',
+        'to_logical': 'to_logical(simd_ext, from_typ)',
+        'mask_for_loop_tail': 'mask_for_loop_tail(simd_ext, from_typ)',
         'masko_loadu1': 'maskz_load("o", simd_ext, from_typ)',
         'maskz_loadu1': 'maskz_load("z", simd_ext, from_typ)',
         'masko_loada1': 'maskz_load("o", simd_ext, from_typ)',
         'maskz_loada1': 'maskz_load("z", simd_ext, from_typ)',
-        'gather' : 'gather(simd_ext, from_typ)',
+        'gather': 'gather(simd_ext, from_typ)',
         'scatter': 'scatter(simd_ext, from_typ)',
         'gather_linear': 'gather_linear(simd_ext, from_typ)',
         'scatter_linear': 'scatter_linear(simd_ext, from_typ)',
