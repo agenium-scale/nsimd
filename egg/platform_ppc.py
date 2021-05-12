@@ -1754,10 +1754,15 @@ def gather(simd_ext, typ):
 
 
 def gather_linear(simd_ext, typ):
-    if ppc_is_vec_type(typ):# TODO f32 i16 i32 i8 u16 u32 u8 bug here
-        return """ 
-               return vec_lde({in1}, {in0});
-               """.format(**fmtspec)
+    if ppc_is_vec_type(typ):
+        return """      
+               int i;
+               nsimd_{simd_ext}_v{typ} ret;
+               {typ} buf[{nbits}];
+               for (i = 0; i < {nbits}; ++i)
+                 buf[i] = {in0}[i * {in1}]; 
+               return vec_lde(0, buf);
+               """.format(**fmtspec, nbits=get_nbits(typ))
     if typ == "f16":
         return """
                int i;
@@ -1782,7 +1787,7 @@ def scatter_linear(simd_ext, typ):
         return """
            int i;
            for (i = 0; i < {nbits}; i++)
-              {in0}[i * {in1}] = {in2}[i];
+              {in0}[i * {in1}] = {in2}[i];              
                """.format(**fmtspec, nbits=get_nbits(typ))
     if typ == "f16":
         return """
