@@ -305,7 +305,7 @@ def get_additional_include(func, platform, simd_ext):
 # Get SoA types
 
 def get_soa_typ(simd_ext, typ, deg):
-    ntyp = get_type(simd_ext, typ) if typ != 'f16' else 'float16x8_t'
+    ntyp = get_type("", simd_ext, typ, fmtspec["styp"]) if typ != 'f16' else 'float16x8_t'
     return '{}x{}_t'.format(ntyp[:-2], deg)
 
 
@@ -1757,7 +1757,6 @@ def gather_linear(simd_ext, typ):
     if ppc_is_vec_type(typ):
         return """      
                int i;
-               nsimd_{simd_ext}_v{typ} ret;
                {typ} buf[{nbits}];
                for (i = 0; i < {nbits}; ++i)
                  buf[i] = {in0}[i * {in1}]; 

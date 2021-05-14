@@ -727,6 +727,42 @@ namespace nsimd {
       #endif
     } // namespace nsimd
   #endif
+#elif defined(NSIMD_VMX)
+
+  #define NSIMD_PLATFORM ppc
+  #define NSIMD_SIMD vmx
+
+  #ifdef NSIMD_IS_CLANG
+  // New version of clang are spamming useless warning comming from their
+  // altivec.h file
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wc++11-long-long"
+  #endif
+
+  #include <altivec.h>
+
+  #ifdef bool
+    #undef bool
+  #endif
+  #ifdef pixel
+    #undef pixel
+  #endif
+  #ifdef vector
+    #undef vector
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct vmx {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::vmx>;
+        #define NSIMD_LIST_SIMD_EXT cpu, vmx
+      #endif
+    } // namespace nsimd
+  #endif
 
 #else
 
