@@ -1286,7 +1286,7 @@ def convert1(simd_ext, from_typ, to_typ):
             return \
                 '''nsimd_{simd_ext}_vf16 ret;
                    /* Unpack extends the sign, we need to remove the extra 1s */
-                   nsimd_vsx_vi32 mask = {{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}};
+                   nsimd_{simd_ext}_vi32 mask = {{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}};
     
                    ret.v0 = vec_ctf(vec_and(vec_unpackh((__vector short)a0), mask), 0);
                    ret.v1 = vec_ctf(vec_and(vec_unpackl((__vector short)a0), mask), 0);
