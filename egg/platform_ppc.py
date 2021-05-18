@@ -185,12 +185,10 @@ def get_logical_type(opts, simd_ext, typ, nsimd_typ):
 
 
 def get_nb_registers(simd_ext):
-    if simd_ext in 'vsx':
-        # TODO
+    if simd_ext == 'vsx':
         return '64'
     elif simd_ext == 'vmx':
-        # TODO
-        return '128'
+        return '32'
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
@@ -318,6 +316,23 @@ def get_soa_typ(simd_ext, typ, deg):
 # -----------------------------------------------------------------------------
 
 ## Loads of degree 1, 2, 3 and 4
+def printf(func):
+    """
+    used for debugging
+    juste decorate the function with it ( here is for load1234 and storeu)
+    """
+    def wrapper(*args):
+        ret = func(*args)
+        typ=args[1]; deg = args[2]; aligned=args[3]
+        return """
+        printf("\\n---------------\\n");
+        printf("{func} executed with {typ} -- deg:{deg} -- Aligned: {aligned}\\n");
+        int i;
+        printf("{func}.{typ} values of in0:");
+        for(i=0;i<{nbits};++i)printf(" %f", {in0}[i]);
+        printf("\\n");
+         """.format(aligned=aligned, deg=deg, func=func.__name__, nbits=get_nbits(typ), **fmtspec) + ret
+    return wrapper
 
 def load1234(simd_ext, typ, deg, aligned):
     # Load n for every 64bits types
@@ -376,10 +391,13 @@ def load1234(simd_ext, typ, deg, aligned):
     # Load 1 for every supported types
     if deg == 1:
         if aligned:
-            return 'return vec_ld(0, {in0});'.format(**fmtspec)
+            return """
+                   return vec_ld(0, {in0});
+                   """.format(**fmtspec, nbits=get_nbits(typ))
         else:
-            return 'return *(({ppc_typ}*) {in0});'. \
-                format(ppc_typ=ppc_vec_type(typ), **fmtspec)
+            return '''
+                   return *(({ppc_typ}*) {in0});
+                   '''.format(ppc_typ=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
 
     # Code to load aligned/unaligned vectors
     if aligned:
@@ -399,7 +417,6 @@ def load1234(simd_ext, typ, deg, aligned):
         if typ[1:] == '32':
             return '''
                 {load}
-
                 nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in1);
                 nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in1);
 
@@ -411,7 +428,6 @@ def load1234(simd_ext, typ, deg, aligned):
         elif typ[1:] == '16':
             return '''
                 {load}
-
                 nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in1);
                 nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in1);
 
@@ -443,7 +459,6 @@ def load1234(simd_ext, typ, deg, aligned):
         if typ[1:] == '32':
             return '''
                 __vector char perm1 = NSIMD_PERMUTE_MASK_32(0, 3, 6, 0);
-
                 {load}
 
                 nsimd_{simd_ext}_v{typ} tmp0 = vec_perm(in0, in1, perm1);
@@ -464,7 +479,6 @@ def load1234(simd_ext, typ, deg, aligned):
         elif typ[1:] == '16':
             return '''
                 {load}
-
                 __vector char permRAB = NSIMD_PERMUTE_MASK_16(0, 3, 6, 9, 12, 15, 0, 0);
                 __vector char permRDC = NSIMD_PERMUTE_MASK_16(0, 1, 2, 3, 4, 5, 10, 13);
 
@@ -489,7 +503,6 @@ def load1234(simd_ext, typ, deg, aligned):
         elif typ[1:] == '8':
             return '''
                 {load}
-
                 __vector char permRAB = NSIMD_PERMUTE_MASK_8(0, 3, 6, 9, 12, 15,
                     18, 21, 24, 27, 30, 0, 0, 0, 0, 0);
                 __vector char permRDC = NSIMD_PERMUTE_MASK_8(0, 1, 2, 3, 4, 5, 6,
@@ -522,7 +535,6 @@ def load1234(simd_ext, typ, deg, aligned):
         if typ[1:] == '32':
             return '''
                 {load}
-
                 nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in2);
                 nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in2);
                 nsimd_{simd_ext}_v{typ} tmp2 = vec_mergeh(in1, in3);
@@ -538,7 +550,6 @@ def load1234(simd_ext, typ, deg, aligned):
         elif typ[1:] == '16':
             return '''
                 {load}
-
                 ret.v0 = vec_mergeh(in0, in2);
                 ret.v1 = vec_mergel(in0, in2);
                 ret.v2 = vec_mergeh(in1, in3);
@@ -560,7 +571,6 @@ def load1234(simd_ext, typ, deg, aligned):
         elif typ[1:] == '8':
             return '''
                     {load}
-
                     nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in2);
                     nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in2);
                     nsimd_{simd_ext}_v{typ} tmp2 = vec_mergeh(in1, in3);
@@ -586,7 +596,6 @@ def load1234(simd_ext, typ, deg, aligned):
 
 
 ## Stores of degree 1, 2, 3 and 4
-
 def store1234(simd_ext, typ, deg, aligned):
     # store n for 64 bits types
     if typ[1:] == '64':
@@ -631,8 +640,12 @@ def store1234(simd_ext, typ, deg, aligned):
         if aligned:
             return 'vec_st({in1}, 0, {in0});'.format(**fmtspec)
         else:
-            return '*(({ppc_typ}*) {in0}) = {in1};'. \
-                format(ppc_typ=ppc_vec_type(typ), **fmtspec)
+            return """
+                   /* we have to loop otherwise the last element is omitted  */
+                   int i;
+                   for(i=0;i<{nbits};++i)
+                       *(({typ}*){in0} + i) = {in1}[i]; 
+                   """.format(ppc_typ=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ), ntyp=typ[1:])
 
     # Code to store aligned/unaligned vectors
     if aligned:
@@ -641,7 +654,7 @@ def store1234(simd_ext, typ, deg, aligned):
                            for i in range(0, deg)])
     else:
         store = '\n'.join(['*({ppc_typ}*) ({in0} + {i}*{vec_size}) = ret{i};'. \
-                          format(vec_size=str(128 // int(typ[1:])),
+                          format(vec_size=get_nbits(typ),
                                  ppc_typ=ppc_vec_type(typ), i=i, **fmtspec) \
                            for i in range(0, deg)])
 
@@ -915,27 +928,29 @@ def set1(simd_ext, typ):
         values = ', '.join(['{in0}'.format(**fmtspec) for i in range(0, nvar_in_vec)])
         return '''{vec} tmp = {{{val}}};
                   return tmp;''' \
-            .format(val=values, vec=ppc_vec_type(typ), **fmtspec)
+            .format(val=values, vec=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
 
 
 def lset1(simd_ext, typ):
     if ppc_is_vec_type(typ):
         return """
-               nsimd_{simd_ext}_vl{typ} ret = {{ ({typ}){in0} ? ({typ})-1 : 0}};
+               nsimd_{simd_ext}_vl{typ} ret = {{{in0} ? -1 : 0}};
                return ret;
                """.format(**fmtspec, nbits=get_nbits(typ))
     if typ == "f16":
         return """
                nsimd_{simd_ext}_vl{typ} ret;
-               ret.v0 = (nsimd_{simd_ext}_vlf32){{(f32) {in0} ? (f32)-1 : 0}};
-               ret.v1 = (nsimd_{simd_ext}_vlf32){{(f32) {in0} ? (f32)-1 : 0}};               
+               ret.v0 = (nsimd_{simd_ext}_vlf32){{(f32) {in0} ? (u32)-1 : 0}};
+               ret.v1 = (nsimd_{simd_ext}_vlf32){{(f32) {in0} ? (u32)-1 : 0}};       
                
                return ret;
-               """.format(**fmtspec)
+               """.format(**fmtspec,
+                          f32type=ppc_vec_type("f32")
+                          )
     return """
            nsimd_{simd_ext}_vl{typ} ret;
-           ret.v0 = ({typ}){in0} ? ({typ})-1 : 0;
-           ret.v1 = ({typ}){in0} ? ({typ})-1 : 0;
+           ret.v0 = {in0} ? (u64)-1 : 0;
+           ret.v1 = {in0} ? (u64)-1 : 0;
            return ret;
            """.format(**fmtspec)
 
@@ -1061,9 +1076,7 @@ def fma(simd_ext, typ):
 
 ## FNMA
 def fnma(simd_ext, typ):
-    if typ == 'f32':
-        return 'return vec_nmsub({in0}, {in1}, {in2});'.format(**fmtspec)
-    elif typ == 'f16':
+    if typ == 'f16':
         return """
                 nsimd_{simd_ext}_v{typ} ret;
                 ret.v0 = -{in0}.v0 * {in1}.v0 + {in2}.v0;
@@ -1154,6 +1167,7 @@ def loadl(aligned, simd_ext, typ):
 ## Store of logicals
 
 def storel(aligned, simd_ext, typ):
+    # TODO improve if time
     return \
         '''/* This can surely be improved but it is not our priority. */
            nsimd_store{align}_{simd_ext}_{typ}({in0},
