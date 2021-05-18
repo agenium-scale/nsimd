@@ -22,7 +22,7 @@
 
 import common
 
-DEBUG = True  # TODO remove
+DEBUG = False  # TODO remove
 # -----------------------------------------------------------------------------
 # Helpers
 
@@ -314,26 +314,40 @@ def get_soa_typ(simd_ext, typ, deg):
 
 
 # -----------------------------------------------------------------------------
-
+import inspect
 ## Loads of degree 1, 2, 3 and 4
 def printf(func):
     """
     used for debugging
     juste decorate the function with it ( here is for load1234 and storeu)
     """
-    def wrapper(*args):
+    def wrapper(*args, **kwargs):
         ret = func(*args)
         typ=args[1]; deg = args[2]; aligned=args[3]
         return """
         printf("\\n---------------\\n");
         printf("{func} executed with {typ} -- deg:{deg} -- Aligned: {aligned}\\n");
-        int i;
+        int j;
         printf("{func}.{typ} values of in0:");
-        for(i=0;i<{nbits};++i)printf(" %f", {in0}[i]);
+        for(j=0;j<{nbits};++j)printf(" %u", {in0}[j]);
         printf("\\n");
          """.format(aligned=aligned, deg=deg, func=func.__name__, nbits=get_nbits(typ), **fmtspec) + ret
     return wrapper
+def printf2(func):
+    def wrapper(*args, **kwargs):
+        func_args = inspect.signature(func).bind(*args, **kwargs).arguments
+        func_args_str = f"{func.__name__} called on {fmtspec['typ']}\\n"  + ", ".join(
+            "{} = {!r}".format(*item) for item in func_args.items())
+        ret = func(*args)
+        if not DEBUG:
+            return ret
+        return f"""
+               printf("\\n---------------\\n");
+               printf("{func.__module__}.{func.__qualname__} ( {func_args_str} )\\n");
+               """ + ret
+    return wrapper
 
+@printf2
 def load1234(simd_ext, typ, deg, aligned):
     # Load n for every 64bits types
     if typ[1:] == '64':
@@ -596,6 +610,7 @@ def load1234(simd_ext, typ, deg, aligned):
 
 
 ## Stores of degree 1, 2, 3 and 4
+@printf2
 def store1234(simd_ext, typ, deg, aligned):
     # store n for 64 bits types
     if typ[1:] == '64':
@@ -803,7 +818,7 @@ def simple_op2(op, simd_ext, typ):
 
 
 ## Binary operators: and, or, xor, andnot
-
+@printf2
 def bop2(op, simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64(op, simd_ext, 3 * ['v'], 2)
@@ -816,7 +831,7 @@ def bop2(op, simd_ext, typ):
 
 
 ## Logical operators: and, or, xor, andnot
-
+@printf2
 def lop2(op, simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64(op, simd_ext, 3 * ['l'], 2)
@@ -910,6 +925,7 @@ def shl_shr(op, simd_ext, typ):
 
 
 # Set1: splat functions
+@printf2
 def set1(simd_ext, typ):
     if typ[1:] == '64':
         return '''nsimd_{simd_ext}_v{typ} ret;
@@ -930,13 +946,21 @@ def set1(simd_ext, typ):
                   return tmp;''' \
             .format(val=values, vec=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
 
-
+@printf2
 def lset1(simd_ext, typ):
-    if ppc_is_vec_type(typ):
+    if ppc_is_vec_type(typ): #TODO check u{tbits} si il fait aucune erreur supp
+        nvar_in_vec = get_nbits(typ)
+        zeros = ', '.join(['0'.format(**fmtspec) for i in range(0, nvar_in_vec)])
+        ones = ', '.join(['-1'.format(**fmtspec) for i in range(0, nvar_in_vec)])
         return """
-               nsimd_{simd_ext}_vl{typ} ret = {{{in0} ? -1 : 0}};
-               return ret;
-               """.format(**fmtspec, nbits=get_nbits(typ))
+               if({in0}){{
+                 nsimd_{simd_ext}_vl{typ} ret = {{ {ones} }};
+                 return ret;
+                }}else{{
+                 nsimd_{simd_ext}_vl{typ} ret =  {{ {zeros} }};
+                 return ret;
+                 }}
+               """.format(**fmtspec, nbits=get_nbits(typ), tbits=typ[1:], zeros=zeros, ones=ones)
     if typ == "f16":
         return """
                nsimd_{simd_ext}_vl{typ} ret;
@@ -956,7 +980,7 @@ def lset1(simd_ext, typ):
 
 
 ## Comparison operators: ==, <, <=, >, >=
-
+@printf2
 def cmp2(op, simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64(op, simd_ext, ['l', 'v', 'v'], 2)
@@ -1016,7 +1040,7 @@ def abs1(simd_ext, typ):
 
 
 ## Round, trunc and ceil
-
+@printf2
 def round1(op, simd_ext, typ):
     ppcop = {'round': 'round', 'trunc': 'trunc', 'ceil': 'ceil',
              'floor': 'floor'}
@@ -1034,6 +1058,7 @@ def round1(op, simd_ext, typ):
 
 
 # Round to even
+@printf2
 def round_to_even1(simd_ext, typ):
     if typ[0] == 'i' or typ[0] == 'u':
         return 'return {in0};'.format(**fmtspec)
@@ -1137,6 +1162,7 @@ def neg1(simd_ext, typ):
 
 
 ## Reciprocals
+@printf2
 def recs1(op, simd_ext, typ):
     if typ == 'f16':
         return emulate_16(op, simd_ext, 1, False)
@@ -1153,6 +1179,7 @@ def recs1(op, simd_ext, typ):
 
 
 ## Load of logicals
+@printf2
 def loadl(aligned, simd_ext, typ):
     return \
         '''/* This can surely be improved but it is not our priority. */
@@ -1165,9 +1192,9 @@ def loadl(aligned, simd_ext, typ):
 
 
 ## Store of logicals
-
+@printf2
 def storel(aligned, simd_ext, typ):
-    # TODO improve if time
+    #TODO improve if time
     return \
         '''/* This can surely be improved but it is not our priority. */
            nsimd_store{align}_{simd_ext}_{typ}({in0},
@@ -1182,6 +1209,7 @@ def storel(aligned, simd_ext, typ):
 
 
 ## All and any
+@printf2
 def allany1(op, simd_ext, typ):
     binop = '&&' if op == 'all' else '||'
 
