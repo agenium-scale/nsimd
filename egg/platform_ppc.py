@@ -43,6 +43,8 @@ def ppc_vec_type(typ):
         return '__vector signed short'
     elif typ == 'u32':
         return '__vector unsigned int'
+    # elif typ == 'u64':
+    #     return '__vector unsigned long long'
     elif typ == 'i32':
         return '__vector signed int'
     elif typ == 'f32':
@@ -52,7 +54,12 @@ def ppc_vec_type(typ):
 
 
 def ppc_is_vec_type(typ):
-    return not typ in ["f64", "i64", "u64", "f16"]
+    # TODO implements __vector unsigned long long for vmx
+    types = {
+        'vsx': ["f64", "i64", "u64", "f16"],
+        'vmx': ["f64", "i64", "f16"]
+    }
+    return not typ in types['vsx']
 
 
 def ppc_is_vecl_type(typ):
@@ -153,7 +160,6 @@ def get_simd_exts():
 
 
 def get_type(opts, simd_ext, typ, nsimd_typ):
-    # TODO: vmx
     if simd_ext in get_simd_exts():
         if typ == 'f64':
             struct = 'struct {double v0; double v1;}'
@@ -314,38 +320,45 @@ def get_soa_typ(simd_ext, typ, deg):
 
 
 # -----------------------------------------------------------------------------
-import inspect
-## Loads of degree 1, 2, 3 and 4
-def printf(func):
-    """
-    used for debugging
-    juste decorate the function with it ( here is for load1234 and storeu)
-    """
-    def wrapper(*args, **kwargs):
-        ret = func(*args)
-        typ=args[1]; deg = args[2]; aligned=args[3]
-        return """
-        printf("\\n---------------\\n");
-        printf("{func} executed with {typ} -- deg:{deg} -- Aligned: {aligned}\\n");
-        int j;
-        printf("{func}.{typ} values of in0:");
-        for(j=0;j<{nbits};++j)printf(" %u", {in0}[j]);
-        printf("\\n");
-         """.format(aligned=aligned, deg=deg, func=func.__name__, nbits=get_nbits(typ), **fmtspec) + ret
-    return wrapper
+
+
 def printf2(func):
+    """
+    debugging purposes
+    juste decorate the function with it and when executed on test, it will print the environnements
+    """
+    import inspect
+
     def wrapper(*args, **kwargs):
         func_args = inspect.signature(func).bind(*args, **kwargs).arguments
-        func_args_str = f"{func.__name__} called on {fmtspec['typ']}\\n"  + ", ".join(
+        func_args_str = f"{func.__name__} called on {fmtspec['typ']}\\n" + ", ".join(
             "{} = {!r}".format(*item) for item in func_args.items())
         ret = func(*args)
         if not DEBUG:
             return ret
+        if func.__name__ == "store1234" and fmtspec["typ"][1:] == "64":
+            ret += """
+                   int k;
+                   printf("element to store: %llx %llx", {in1}.v0, {in1}.v1);
+                   printf("\\n");
+                   """.format(**fmtspec, nbits=get_nbits(fmtspec["typ"]))
+        elif func.__name__ == "store1234" and fmtspec["typ"][1:] == "32":
+            ret += """
+                   int k;
+                   printf("element to store:");
+                   for(k=0;k<4;k++)printf(" %lx", {in1}[k]);
+                   printf("\\n");
+                   """.format(**fmtspec, nbits=get_nbits(fmtspec["typ"]))
         return f"""
                printf("\\n---------------\\n");
                printf("{func.__module__}.{func.__qualname__} ( {func_args_str} )\\n");
                """ + ret
+
     return wrapper
+
+
+## Loads of degree 1, 2, 3 and 4
+
 
 @printf2
 def load1234(simd_ext, typ, deg, aligned):
@@ -409,9 +422,8 @@ def load1234(simd_ext, typ, deg, aligned):
                    return vec_ld(0, {in0});
                    """.format(**fmtspec, nbits=get_nbits(typ))
         else:
-            return '''
-                   return *(({ppc_typ}*) {in0});
-                   '''.format(ppc_typ=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
+            return 'return *(({ppc_typ}*) {in0});'. \
+                format(ppc_typ=ppc_vec_type(typ), **fmtspec)
 
     # Code to load aligned/unaligned vectors
     if aligned:
@@ -654,13 +666,13 @@ def store1234(simd_ext, typ, deg, aligned):
     if deg == 1:
         if aligned:
             return 'vec_st({in1}, 0, {in0});'.format(**fmtspec)
-        else:
+        else:  # todo check if typ[0] != f may be optimized
             return """
                    /* we have to loop otherwise the last element is omitted  */
                    int i;
                    for(i=0;i<{nbits};++i)
-                       *(({typ}*){in0} + i) = {in1}[i]; 
-                   """.format(ppc_typ=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ), ntyp=typ[1:])
+                       *(({typ}*){in0} + i) = {in1}[i];
+                   """.format(ppc_typ=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
 
     # Code to store aligned/unaligned vectors
     if aligned:
@@ -805,6 +817,7 @@ def len1(simd_ext, typ):
 
 ## Function for all the operators that take 2 operands and whose Altivec
 ## function is vec_opname()
+@printf2
 def simple_op2(op, simd_ext, typ):
     cpuop = {'mul': '*', 'div': '/', 'add': '+', 'sub': '-'}
     if simd_ext == 'vsx' or simd_ext == 'vmx':
@@ -844,7 +857,7 @@ def lop2(op, simd_ext, typ):
 
 
 ## Binary not
-
+@printf2
 def notb1(simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64('notb', simd_ext, 2 * ['v'], 1)
@@ -855,7 +868,7 @@ def notb1(simd_ext, typ):
 
 
 ## Logical not
-
+@printf2
 def lnot1(simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64('notl', simd_ext, 2 * ['l'], 1)
@@ -866,7 +879,7 @@ def lnot1(simd_ext, typ):
 
 
 ## Square root
-
+@printf2
 def sqrt1(simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64('sqrt', simd_ext, 2 * ['v'], 1)
@@ -889,7 +902,7 @@ def sqrt1(simd_ext, typ):
 
 
 ## Shifts
-
+@printf2
 def shl_shr(op, simd_ext, typ):
     if typ[0] == "u" and op == "shra":
         return """
@@ -946,9 +959,10 @@ def set1(simd_ext, typ):
                   return tmp;''' \
             .format(val=values, vec=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
 
+
 @printf2
 def lset1(simd_ext, typ):
-    if ppc_is_vec_type(typ): #TODO check u{tbits} si il fait aucune erreur supp
+    if ppc_is_vec_type(typ):  # TODO check u{tbits} si il fait aucune erreur supp
         nvar_in_vec = get_nbits(typ)
         zeros = ', '.join(['0'.format(**fmtspec) for i in range(0, nvar_in_vec)])
         ones = ', '.join(['-1'.format(**fmtspec) for i in range(0, nvar_in_vec)])
@@ -964,8 +978,9 @@ def lset1(simd_ext, typ):
     if typ == "f16":
         return """
                nsimd_{simd_ext}_vl{typ} ret;
-               ret.v0 = (nsimd_{simd_ext}_vlf32){{(f32) {in0} ? (u32)-1 : 0}};
-               ret.v1 = (nsimd_{simd_ext}_vlf32){{(f32) {in0} ? (u32)-1 : 0}};       
+               nsimd_{simd_ext}_vlf32 tmp = {{(f32) {in0} ? (u32)-1 : 0}};
+               ret.v0 = tmp;
+               ret.v1 = tmp;      
                
                return ret;
                """.format(**fmtspec,
@@ -992,7 +1007,7 @@ def cmp2(op, simd_ext, typ):
 
 
 ## Not equal
-
+@printf2
 def neq2(simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64('ne', simd_ext, ['l', 'v', 'v'], 2)
@@ -1005,7 +1020,7 @@ def neq2(simd_ext, typ):
 
 
 ## If_else
-
+@printf2
 def if_else3(simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64('if_else1', simd_ext, ['v', 'l', 'v', 'v'], 3)
@@ -1016,7 +1031,7 @@ def if_else3(simd_ext, typ):
 
 
 ## Minimum and maximum
-
+@printf2
 def minmax2(op, simd_ext, typ):
     if typ[1:] == '64':
         return emulate_64(op, simd_ext, 3 * ['v'], 2)
@@ -1027,7 +1042,7 @@ def minmax2(op, simd_ext, typ):
 
 
 ## Abs
-
+@printf2
 def abs1(simd_ext, typ):
     if typ == 'f16':
         return emulate_16('abs', simd_ext, 1, False)
@@ -1088,6 +1103,7 @@ def round_to_even1(simd_ext, typ):
 
 
 ## FMA
+@printf2
 def fma(simd_ext, typ):
     if typ == 'f32':
         return 'return vec_madd({in0}, {in1}, {in2});'.format(**fmtspec)
@@ -1100,6 +1116,7 @@ def fma(simd_ext, typ):
 
 
 ## FNMA
+@printf2
 def fnma(simd_ext, typ):
     if typ == 'f16':
         return """
@@ -1115,6 +1132,7 @@ def fnma(simd_ext, typ):
 
 
 ## FMS
+@printf2
 def fms(op, simd_ext, typ):
     if typ == 'f32':
         return 'return vec_madd({in0}, {in1}, -{in2});'.format(**fmtspec)
@@ -1127,6 +1145,7 @@ def fms(op, simd_ext, typ):
 
 
 ## FNMS
+@printf2
 def fnms(op, simd_ext, typ):
     if typ == 'f32':
         return 'return vec_nmsub({in0}, {in1}, -{in2});'.format(**fmtspec)
@@ -1144,7 +1163,7 @@ def fnms(op, simd_ext, typ):
 
 
 ## Neg
-
+@printf2
 def neg1(simd_ext, typ):
     if typ[1] == 'u':
         return '''
@@ -1194,7 +1213,7 @@ def loadl(aligned, simd_ext, typ):
 ## Store of logicals
 @printf2
 def storel(aligned, simd_ext, typ):
-    #TODO improve if time
+    # TODO improve if time
     return \
         '''/* This can surely be improved but it is not our priority. */
            nsimd_store{align}_{simd_ext}_{typ}({in0},
@@ -1231,7 +1250,7 @@ def allany1(op, simd_ext, typ):
 
 
 ## nbtrue
-
+@printf2
 def nbtrue1(simd_ext, typ):
     if typ == 'f16':
         return \
@@ -1255,7 +1274,7 @@ def nbtrue1(simd_ext, typ):
 
 
 ## Reinterpret logical
-
+@printf2
 def reinterpretl1(simd_ext, from_typ, to_typ):
     if from_typ == to_typ:
         return 'return {in0};'.format(**fmtspec)
@@ -1311,7 +1330,7 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
 
 
 ## Convert
-
+@printf2
 def convert1(simd_ext, from_typ, to_typ):
     if from_typ == to_typ:
         return 'return {in0};'.format(**fmtspec)
@@ -1365,11 +1384,12 @@ def convert1(simd_ext, from_typ, to_typ):
 
 
 ## Reinterpret
-
+@printf2
 def reinterpret1(simd_ext, from_typ, to_typ):
     if from_typ == to_typ:
         return 'return {in0};'.format(**fmtspec)
     elif from_typ[1:] == '64':
+
         return '''
             nsimd_{simd_ext}_v{to_typ} ret;
             memcpy(&ret.v0, &{in0}.v0, sizeof(ret.v0));
@@ -1418,7 +1438,7 @@ def reinterpret1(simd_ext, from_typ, to_typ):
 
 
 ## reverse
-
+@printf2
 def reverse1(simd_ext, typ):
     if typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
@@ -1448,7 +1468,7 @@ def reverse1(simd_ext, typ):
 
 
 ## Horizontal sum
-
+@printf2
 def addv(simd_ext, typ):
     if typ == 'f16':
         return '''return nsimd_f32_to_f16(nsimd_addv_{simd_ext}_f32({in0}.v0)
@@ -1470,7 +1490,7 @@ def addv(simd_ext, typ):
 
 
 ## Saturated operations
-
+@printf2
 def add_sub_s(op, simd_ext, typ):
     if typ == "f32":
         return """
@@ -1497,7 +1517,7 @@ def add_sub_s(op, simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 # Up convert
-
+@printf2
 def upcvt1(simd_ext, from_typ, to_typ):
     if from_typ == 'f16' and to_typ == 'f32':
         return \
@@ -1590,7 +1610,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
 
 # -----------------------------------------------------------------------------
 # Down convert
-
+@printf2
 def downcvt1(simd_ext, from_typ, to_typ):
     if from_typ[1:] == '64' and to_typ[1:] == '32':
         return \
@@ -1657,9 +1677,9 @@ def unzip(func, simd_ext, typ):
                return ret;
                """.format(**fmtspec,
                           nbits=nbits // 2,
-                          pre = 0 if func =="unziplo" else 1
+                          pre=0 if func == "unziplo" else 1
                           )
-    if ppc_is_vec_type(typ): # TODO check compiler
+    if ppc_is_vec_type(typ):  # TODO check compiler
         return """
                nsimd_{simd_ext}_v{typ} ret;
                int i;
@@ -1670,7 +1690,7 @@ def unzip(func, simd_ext, typ):
                return ret;
                """.format(**fmtspec,
                           nbits=nbits // 2,
-                          pre = 0 if func =="unziplo" else 1
+                          pre=0 if func == "unziplo" else 1
                           )
     return """
            nsimd_{simd_ext}_v{typ} ret;
@@ -1722,6 +1742,7 @@ def zip(op, simd_ext, typ):
            """.format(**fmtspec,
                       i=1 if op == "ziphi" else 0)
 
+
 def zip_unzip_basic(op, simd_ext, typ):
     return """
            nsimd_{simd_ext}_v{typ}x2 ret;
@@ -1732,26 +1753,50 @@ def zip_unzip_basic(op, simd_ext, typ):
                       pre="un" if op[:2] == "un" else ""
                       )
 
-## Masks functions
 
+## Masks functions
+@printf2
 def to_mask(simd_ext, typ):
     if typ == "f16":
         return """
-        nsimd_{simd_ext}_v{typ} ret;
-        ret.v0 = nsimd_to_mask_{simd_ext}_f32({in0}.v0);
-        ret.v1 = nsimd_to_mask_{simd_ext}_f32({in0}.v1);
-        return ret;
-        """.format(**fmtspec)
+        nsimd_{simd_ext}_vu16 ret;
+       
+        int i;
+        for(i=0; i<{nbits}; ++i){{
+           ret[i] = (u32)({in0}.v0[i]  !=  0?  -1 : 0);
+           ret[i + {nbits}] = (u32)({in0}.v1[i]  !=  0?  -1 : 0);
+}}
+        return nsimd_reinterpret_{simd_ext}_f16_u16(ret);
+        """.format(**fmtspec, nbits=get_nbits(typ)//2)
+    if typ == "f64":
+        return """
+               nsimd_{simd_ext}_vu64 ret;
+               ret.v0 = (u64)({in0}.v0  !=  0?  -1 : 0);
+               ret.v1 = (u64)({in0}.v1  !=  0?  -1 : 0);
+               
+               return nsimd_reinterpret_{simd_ext}_f64_u64(ret);
+               """.format(**fmtspec)
+    if typ == "f32":
+               return """
+               nsimd_{simd_ext}_vu32 ret;
+               
+               int i;
+               for(i=0; i<{nbits}; ++i)
+                  ret[i] = (u32)({in0}[i]  !=  0?  (u32)-1 : 0);
+        
+               return nsimd_reinterpret_{simd_ext}_f32_u32(ret);
+               """.format(**fmtspec, nbits=get_nbits(typ))
     if typ[1:] == "64":
         return """
                nsimd_{simd_ext}_v{typ} ret;
-               ret.v0 = {in0}.v0 ? ({typ})-1 : 0;
-               ret.v1 = {in0}.v1 ? ({typ})-1 : 0;
+               ret.v0 = {in0}.v0 != (u32)0  ? (u{nbits2})-1 : (u{nbits2})0;
+               ret.v1 = {in0}.v1 != (u32)0  ? (u{nbits2})-1 : (u{nbits2})0;
+               
                return ret;
-               """.format(**fmtspec)
-    if ppc_is_vecl_type(typ):
+               """.format(**fmtspec, nbits2=typ[1:])
+    if ppc_is_vecl_type(typ) and typ[0]:
         nbits = get_nbits(typ)
-        strue = ', '.join(['({typ}){i}'.format(typ=typ, i=-1) \
+        strue = ', '.join(['(u{nbits2})-1'.format(typ=typ, nbits2=typ[1:]) \
                            for _ in range(nbits)])
 
         return \
@@ -1763,7 +1808,7 @@ def to_mask(simd_ext, typ):
 
 
 ## iota
-
+@printf2
 def iota(simd_ext, typ):
     le = 256
     if typ == "f16":
@@ -1801,7 +1846,7 @@ def iota(simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 # mask_for_loop_tail
-
+@printf2
 def mask_for_loop_tail(simd_ext, typ):
     le = get_nbits(typ)
     if typ == 'f16':
@@ -1824,7 +1869,7 @@ def mask_for_loop_tail(simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 # gather and scatter
-
+@printf2
 def scatter(simd_ext, typ):
     nbits = get_nbits(typ)
     if typ == "f16":
@@ -1851,6 +1896,7 @@ def scatter(simd_ext, typ):
            """.format(**fmtspec)  # i64 u64 f64
 
 
+@printf2
 def gather(simd_ext, typ):
     if ppc_is_vec_type(typ):  # f32 i32 i16 i8 u32 u16 u8
         return """
@@ -1882,6 +1928,7 @@ def gather(simd_ext, typ):
            """.format(**fmtspec)
 
 
+@printf2
 def gather_linear(simd_ext, typ):
     if ppc_is_vec_type(typ):
         return """      
@@ -1933,7 +1980,7 @@ def scatter_linear(simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 # maskoloads
-
+@printf2
 def masko_load_f16():
     return """
            int i;
@@ -1951,6 +1998,7 @@ def masko_load_f16():
            """.format(**fmtspec, len=get_nbits("f16"), len2=4)
 
 
+@printf2
 def maskz_load(oz, simd_ext, typ):
     if typ == "f16":
         if oz == "o":
@@ -1999,7 +2047,7 @@ def maskz_load(oz, simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 # mask store function
-
+@printf2
 def mask_store(simd_ext, typ):
     if typ == "f16":  # in1[i] = in2[i]
         return """
@@ -2025,29 +2073,45 @@ def mask_store(simd_ext, typ):
            """.format(**fmtspec)  # TODO check if for loop faster
 
 
-def to_logical(simd_ext, typ):  # on peut utiliser les vec_cmp
-    if typ[0] != 'f':
+@printf2
+def to_logical(simd_ext, typ):
+    if typ == "f64":
         return """
-                return nsimd_ne_{simd_ext}_{typ}(
-                    {in0}, nsimd_set1_{simd_ext}_{typ}(({typ}) 0)
-                );
-                """.format(**fmtspec)
+               nsimd_{simd_ext}_vl{typ} ret;
+               nsimd_{simd_ext}_vu64 tmp = nsimd_reinterpret_{simd_ext}_u64_f64({in0});
+               ret.v0 = tmp.v0 != (u64) 0? (u32) -1 : (u32)0;
+               ret.v1 = tmp.v1 != (u64) 0? (u32) -1 : (u32)0;
+               return ret;
+               """.format(**fmtspec)
     if typ == "f16":
         return """
                nsimd_{simd_ext}_vl{typ} ret;
-               ret.v0 = nsimd_to_logical_{simd_ext}_f32(a0.v0);
-               ret.v1 = nsimd_to_logical_{simd_ext}_f32(a0.v1);
+               ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
+               ret.v1 = nsimd_to_logical_{simd_ext}_f32({in0}.v1);
                return ret;
                """.format(**fmtspec)
+    if typ == "f32":
+        nvar_in_vec = get_nbits(typ)
+        return """
+               int i;
+               nsimd_{simd_ext}_vl{typ} ret;
+               nsimd_{simd_ext}_vu32 tmp = nsimd_reinterpret_{simd_ext}_u32_{typ}({in0});
+               for(i=0; i<{nbits}; ++i)
+                    ret[i] = tmp[i] != (u32) 0? (u32) -1 : (u32)0;
+               return ret;
+        """.format(**fmtspec, nbits=nvar_in_vec)
+
+    if typ[1:] == "64":
+        return """
+                         return nsimd_ne_{simd_ext}_{typ}(
+                {in0}, nsimd_set1_{simd_ext}_{typ}(({typ}) 0)
+                         );
+               """.format(**fmtspec)
     return """
-             return nsimd_reinterpretl_{simd_ext}_{typ}_u{nbits}(
-                nsimd_ne_{simd_ext}_u{nbits}(
-                    nsimd_reinterpret_{simd_ext}_u{nbits}_{typ}(
-                    {in0}
-                    ),
-                    nsimd_set1_{simd_ext}_u{nbits}((u{nbits}) 0))
-                );
-    """.format(**fmtspec, nbits=typ[1:])
+            return nsimd_ne_{simd_ext}_{typ}(
+                {in0}, nsimd_set1_{simd_ext}_{typ}(({typ}) 0)
+                         );       
+            """.format(**fmtspec, nbits=get_nbits(typ))
 
 
 ## get_impl function

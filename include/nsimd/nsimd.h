@@ -704,12 +704,15 @@ namespace nsimd {
     #pragma clang diagnostic ignored "-Wc++11-long-long"
     #pragma clang diagnostic ignored "-Wc++11-narrowing"
     #pragma clang diagnostic ignored "-Wsign-conversion"
+    #pragma clang diagnostic ignored "-Wconversion"
+    #pragma clang diagnostic ignored "-Wconstant-conversion"
+
   #endif
   #ifdef NSIMD_IS_GCC
     #pragma GCC diagnostic ignored "-Wnarrowing"
     #pragma GCC diagnostic ignored "-Wconversion"
     #pragma GCC diagnostic ignored "-Wsign-conversion"
-    #pragma GCC diagnostic ignored "-Wpedantic"
+   /* #pragma GCC diagnostic ignored "-Wpedantic" */
     #pragma GCC diagnostic ignored "-Woverflow"
   #endif
 
@@ -743,10 +746,20 @@ namespace nsimd {
   #define NSIMD_SIMD vmx
 
   #ifdef NSIMD_IS_CLANG
-  // New version of clang are spamming useless warning comming from their
-  // altivec.h file
+  /* New version of clang are spamming useless warning comming from their */
+  /* altivec.h file */
     #pragma clang diagnostic ignored "-Wc11-extensions"
     #pragma clang diagnostic ignored "-Wc++11-long-long"
+    #pragma clang diagnostic ignored "-Wc++11-narrowing"
+    #pragma clang diagnostic ignored "-Wconversion"
+    #pragma clang diagnostic ignored "-Wsign-conversion"
+  #endif
+  #ifdef NSIMD_IS_GCC
+    #pragma GCC diagnostic ignored "-Wnarrowing"
+    #pragma GCC diagnostic ignored "-Wconversion"
+    #pragma GCC diagnostic ignored "-Wsign-conversion"
+    #pragma GCC diagnostic ignored "-Wpedantic"
+    #pragma GCC diagnostic ignored "-Woverflow"
   #endif
 
   #include <altivec.h>
