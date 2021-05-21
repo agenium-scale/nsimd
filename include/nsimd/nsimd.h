@@ -712,8 +712,10 @@ namespace nsimd {
     #pragma GCC diagnostic ignored "-Wnarrowing"
     #pragma GCC diagnostic ignored "-Wconversion"
     #pragma GCC diagnostic ignored "-Wsign-conversion"
-   /* #pragma GCC diagnostic ignored "-Wpedantic" */
     #pragma GCC diagnostic ignored "-Woverflow"
+    /* gcc sometimes send this error while using the var */
+    #pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+
   #endif
 
   #include <altivec.h>

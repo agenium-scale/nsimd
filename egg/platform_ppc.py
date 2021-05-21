@@ -1118,19 +1118,44 @@ def fma(simd_ext, typ):
 ## FNMA
 @printf2
 def fnma(simd_ext, typ):
-    if typ == 'f16' or typ[1:] == '64':
+    if typ == 'f16' or typ[1:] == '64' and typ != 'f64':
         return """
                 nsimd_{simd_ext}_v{typ} ret;
                 ret.v0 = -{in0}.v0 * {in1}.v0 + {in2}.v0;
                 ret.v1 = -{in0}.v1 * {in1}.v1 + {in2}.v1;
                 return ret;
                 """.format(**fmtspec)
+    if typ == "f64":
+        return """
+               #if defined(NSIMD_IS_GCC)
+               nsimd_{simd_ext}_v{typ} ret;
+               ret.v0 = -{in0}.v0 * {in1}.v0 + {in2}.v0;
+               ret.v1 = -{in0}.v1 * {in1}.v1 + {in2}.v1;
+               return ret;
+               #else
+               nsimd_{simd_ext}_v{typ} ret;
+               ret.v0 = nsimd_scalar_fnma_f64({in0}.v0, {in1}.v0, {in2}.v0);
+               ret.v1 = nsimd_scalar_fnma_f64({in0}.v1, {in1}.v1, {in2}.v1);
+               return ret;
+               #endif
+               """.format(**fmtspec, emulate_f64=emulate_64('fnma', simd_ext, 4 * ['v'], 3))
     elif typ == "f32":
+        return """
+               #if defined(NSIMD_IS_GCC)
+               return vec_add(vec_mul(-{in0},{in1}), {in2});
+               #else
+               {emulate_f32}
+               #endif
+               """.format(**fmtspec, emulate_f32=emulate_64('fnma', simd_ext, 4 * ['v'], 3))
+
+    elif ppc_is_vec_type(typ):
         return '''
                return vec_add(vec_mul(-{in0},{in1}), {in2});
                '''.format(**fmtspec)
     else:
-        return 'return -{in0}*{in1}+{in2};'.format(**fmtspec)
+        return '''
+               return -{in0}*{in1}+{in2};
+               '''.format(**fmtspec)
 
 
 ## FMS
@@ -1930,7 +1955,7 @@ def gather_linear(simd_ext, typ):
                {typ} buf[{nbits}];
                for (i = 0; i < {nbits}; ++i)
                  buf[i] = {in0}[i * {in1}]; 
-               return vec_lde(0, buf);
+               return vec_ld(0, buf);
                """.format(**fmtspec, nbits=get_nbits(typ))
     if typ == "f16":
         return """
