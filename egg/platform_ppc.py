@@ -1118,15 +1118,17 @@ def fma(simd_ext, typ):
 ## FNMA
 @printf2
 def fnma(simd_ext, typ):
-    if typ == 'f16':
+    if typ == 'f16' or typ[1:] == '64':
         return """
                 nsimd_{simd_ext}_v{typ} ret;
                 ret.v0 = -{in0}.v0 * {in1}.v0 + {in2}.v0;
                 ret.v1 = -{in0}.v1 * {in1}.v1 + {in2}.v1;
                 return ret;
                 """.format(**fmtspec)
-    elif typ[1:] == '64':
-        return emulate_64('fnma', simd_ext, 4 * ['v'], 3)
+    elif typ == "f32":
+        return '''
+               return vec_add(vec_mul(-{in0},{in1}), {in2});
+               '''.format(**fmtspec)
     else:
         return 'return -{in0}*{in1}+{in2};'.format(**fmtspec)
 
@@ -1664,22 +1666,23 @@ def unzip(func, simd_ext, typ):
     rf Operators.py
     """
     nbits = get_nbits(typ)
-    if typ == 'f16':
+    if typ == 'f16':  # vec_vpkudum only with clang
         return """
                nsimd_{simd_ext}_v{typ} ret;
-               int i;
-               for(i=0; i<{nbits}; ++i){{
-                  ret.v0[i] = {in0}.v0[(2*i) + {pre}];
-                  ret.v0[i + {nbits}] = {in0}.v1[(2*i) +  {pre}];
-                  ret.v1[i] = {in1}.v0[(2*i) + {pre}];
-                  ret.v1[i + {nbits}] = {in1}.v1[(2*i) +  {pre}];
-               }}
+               ret.v0[0] = {in0}.v0[0 + {i}];
+               ret.v0[1] = {in0}.v0[2 + {i}];
+               ret.v0[2] = {in0}.v1[0 + {i}];
+               ret.v0[3] = {in0}.v1[2 + {i}];
+               
+               ret.v1[0] = {in1}.v0[0 + {i}];
+               ret.v1[1] = {in1}.v0[2 + {i}];
+               ret.v1[2] = {in1}.v1[0 + {i}];
+               ret.v1[3] = {in1}.v1[2 + {i}];
                return ret;
                """.format(**fmtspec,
-                          nbits=nbits // 2,
-                          pre=0 if func == "unziplo" else 1
+                          i=0 if func == "unziplo" else 1,
                           )
-    if ppc_is_vec_type(typ):  # TODO check compiler
+    if ppc_is_vec_type(typ):
         return """
                nsimd_{simd_ext}_v{typ} ret;
                int i;
@@ -1706,32 +1709,23 @@ def zip(op, simd_ext, typ):
     """
     nbits = get_nbits(typ)
     if typ == "f16":  # TODO check COMPILER
+
         return """
                nsimd_{simd_ext}_v{typ} ret;
-               int i;
-               for(i=0; i<{nbits}; ++i){{
-                  ret.v0[2*i] = {in0}.v0[i + {pre}];
-                  ret.v0[(2*i) + 1] = {in1}.v0[i + {pre}];
-                  ret.v1[2*i] = {in0}.v1[i + {pre}];
-                  ret.v1[(2*i) + 1] = {in1}.v1[i + {pre}];
-               }}
+
+               ret.v0 = vec_mergeh({in0}.v{i}, {in1}.v{i});
+               ret.v1 = vec_mergel({in0}.v{i}, {in1}.v{i});
+
                return ret;
                """.format(**fmtspec,
                           op=op,
-                          nbits=nbits // 2,
-                          pre=nbits // 2 if op == "ziphi" else 0
+                          i='1' if op == "ziphi" else '0'
                           )
     if ppc_is_vec_type(typ):
         return """
-               nsimd_{simd_ext}_v{typ} ret;
-               int i;
-               for(i=0; i<{nbits}; ++i){{
-                  ret[2*i ] = {in0}[i + {pre}];
-                  ret[(2*i)+ 1] = {in1}[i + {pre}];
-               }}
-               return ret;
+               return vec_merge{pre}({in0}, {in1});
                """.format(**fmtspec,
-                          pre=nbits // 2 if op == "ziphi" else 0,
+                          pre='l' if op == "ziphi" else 'h',
                           nbits=nbits // 2
                           )
     return """
@@ -1767,7 +1761,7 @@ def to_mask(simd_ext, typ):
            ret[i + {nbits}] = (u32)({in0}.v1[i]  !=  0?  -1 : 0);
 }}
         return nsimd_reinterpret_{simd_ext}_f16_u16(ret);
-        """.format(**fmtspec, nbits=get_nbits(typ)//2)
+        """.format(**fmtspec, nbits=get_nbits(typ) // 2)
     if typ == "f64":
         return """
                nsimd_{simd_ext}_vu64 ret;
@@ -1777,7 +1771,7 @@ def to_mask(simd_ext, typ):
                return nsimd_reinterpret_{simd_ext}_f64_u64(ret);
                """.format(**fmtspec)
     if typ == "f32":
-               return """
+        return """
                nsimd_{simd_ext}_vu32 ret;
                
                int i;
@@ -1981,45 +1975,48 @@ def scatter_linear(simd_ext, typ):
 # -----------------------------------------------------------------------------
 # maskoloads
 @printf2
-def masko_load_f16():
+def mask_load_f16(oz):
+    typ = "f16"
+    if oz == "o":
+        return """
+               int i;
+               
+               nsimd_{simd_ext}_v{typ} ret;
+               ret.v0 = {in2}.v0;
+               ret.v1 = {in2}.v1;
+               for(i=0; i< {len2}; i++)
+                    if({in0}.v0[i])
+                        ret.v0[i] = nsimd_f16_to_f32({in1}[i]);
+               for(i=0; i< {len2}; i++) 
+                    if({in0}.v1[i])
+                        ret.v1[i] = nsimd_f16_to_f32({in1}[i + {len2}]);
+               return ret;
+               """.format(**fmtspec, len=get_nbits("f16"), len2=4)
+    s_zeros = ', '.join(['(f32) 0' for _ in range(get_nbits(typ))])
     return """
-           int i;
-           
-           nsimd_{simd_ext}_v{typ} ret;
-           ret.v0 = {in2}.v0;
-           ret.v1 = {in2}.v1;
-           for(i=0; i< {len2}; i++)
-                if({in0}.v0[i])
-                    ret.v0[i] = nsimd_f16_to_f32({in1}[i]);
-           for(i=0; i< {len2}; i++) 
-                if({in0}.v1[i])
-                    ret.v1[i] = nsimd_f16_to_f32({in1}[i + {len2}]);
-           return ret;
-           """.format(**fmtspec, len=get_nbits("f16"), len2=4)
+                   int i;
+
+                   nsimd_{simd_ext}_v{typ} ret;
+                   f32 buf[{len}] = {{ {s_zeros} }};
+                   for(i=0; i< {len2}; i++)
+                       buf[i] = {in0}.v0[i] ? nsimd_f16_to_f32({in1}[i]) : 0;
+
+
+                   for(i=0; i<{len2}; ++i)
+                        if({in0}.v1[i])
+                            buf[i + 4] = {in0}.v0[i + 4] ? nsimd_f16_to_f32({in1}[i + 4]) : 0;
+
+                   ret.v0 = vec_ld(0, buf);
+                   ret.v1 = vec_ld(0, buf +4);
+                   return ret;
+                   """.format(**fmtspec, len=get_nbits(typ), len2=4, s_zeros=s_zeros)
 
 
 @printf2
 def maskz_load(oz, simd_ext, typ):
     if typ == "f16":
-        if oz == "o":
-            return masko_load_f16()
-        return """
-               int i;
-               
-               nsimd_{simd_ext}_v{typ} ret;
-               f32 buf[{len}] = {{(f32) 0}};
-               for(i=0; i< {len2}; i++)
-                    if({in0}.v0[i])
-                        buf[i] = nsimd_f16_to_f32({in1}[i]);
-                        
-               for(; i<{len}; ++i)
-                    if({in0}.v1[i -4])
-                        buf[i] = nsimd_f16_to_f32({in1}[i]);
-               
-               ret.v0 = vec_ld(0, buf);
-               ret.v1 = vec_ld(0, buf +4);
-               return ret;
-               """.format(**fmtspec, len=get_nbits(typ), len2=4)
+        return mask_load_f16(oz)
+
     if ppc_is_vec_type(typ):
         buf_init = "{in2};".format(**fmtspec) if oz == "o" \
             else "{{0}}".format(**fmtspec)
@@ -2039,7 +2036,7 @@ def maskz_load(oz, simd_ext, typ):
             stmt = "\n".join("ret.v{i} = {in0}.v{i} ? {in1}[{i}]: {in2}.v{i};".format(i=i, **fmtspec)
                              for i in range(2))
         return """
-               nsimd_{simd_ext}_v{typ} ret;
+               nsimd_{simd_ext}_v{typ} ret = {{0, 0}};
                {stmt}
                return ret;
                """.format(**fmtspec, stmt=stmt)
