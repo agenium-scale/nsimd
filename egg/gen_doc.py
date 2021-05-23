@@ -580,8 +580,7 @@ doc_header = '''\
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src=\"assets/polyfill.min.js\"></script>
-    <script id=\"MathJax-script\" async src=\"assets/tex-mml-chtml.js\">
-    </script>
+    <script id=\"MathJax-script\" async src=\"assets/tex-svg.js\"></script>
     <!-- Highlight.js -->
     <link rel=\"stylesheet\" href= \"assets/highlight.js.default.min.css\">
     <script src=\"assets/highlight.min.js\"></script>
