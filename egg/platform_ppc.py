@@ -22,7 +22,7 @@
 
 import common
 
-DEBUG = False  # TODO remove
+DEBUG = False
 # -----------------------------------------------------------------------------
 # Helpers
 
@@ -259,7 +259,7 @@ def get_additional_include(func, platform, simd_ext):
                     '''.format(**fmtspec,
                                unzip_prefix="" if func == "zip" else "un")
 
-    elif func in ['unziplo', 'unziphi']:  # TODO math.h maybe useless
+    elif func in ['unziplo', 'unziphi']:
         ret += '''#include <nsimd/ppc/{simd_ext}/ziplo.h>
                   #include <nsimd/ppc/{simd_ext}/ziphi.h>
                   #include <math.h>
@@ -666,13 +666,16 @@ def store1234(simd_ext, typ, deg, aligned):
     if deg == 1:
         if aligned:
             return 'vec_st({in1}, 0, {in0});'.format(**fmtspec)
-        else:  # todo check if typ[0] != f may be optimized
+        elif typ[0] == 'f':
             return """
                    /* we have to loop otherwise the last element is omitted  */
                    int i;
                    for(i=0;i<{nbits};++i)
                        *(({typ}*){in0} + i) = {in1}[i];
                    """.format(ppc_typ=ppc_vec_type(typ), **fmtspec, nbits=get_nbits(typ))
+        else:
+            return '*(({ppc_typ}*) {in0}) = {in1};'. \
+                format(ppc_typ=ppc_vec_type(typ), **fmtspec)
 
     # Code to store aligned/unaligned vectors
     if aligned:
@@ -1127,27 +1130,11 @@ def fnma(simd_ext, typ):
                 """.format(**fmtspec)
     if typ == "f64":
         return """
-               #if defined(NSIMD_IS_GCC)
                nsimd_{simd_ext}_v{typ} ret;
                ret.v0 = -{in0}.v0 * {in1}.v0 + {in2}.v0;
                ret.v1 = -{in0}.v1 * {in1}.v1 + {in2}.v1;
                return ret;
-               #else
-               nsimd_{simd_ext}_v{typ} ret;
-               ret.v0 = nsimd_scalar_fnma_f64({in0}.v0, {in1}.v0, {in2}.v0);
-               ret.v1 = nsimd_scalar_fnma_f64({in0}.v1, {in1}.v1, {in2}.v1);
-               return ret;
-               #endif
-               """.format(**fmtspec, emulate_f64=emulate_64('fnma', simd_ext, 4 * ['v'], 3))
-    elif typ == "f32":
-        return """
-               #if defined(NSIMD_IS_GCC)
-               return vec_add(vec_mul(-{in0},{in1}), {in2});
-               #else
-               {emulate_f32}
-               #endif
-               """.format(**fmtspec, emulate_f32=emulate_64('fnma', simd_ext, 4 * ['v'], 3))
-
+               """.format(**fmtspec)
     elif ppc_is_vec_type(typ):
         return '''
                return vec_add(vec_mul(-{in0},{in1}), {in2});
@@ -1240,7 +1227,6 @@ def loadl(aligned, simd_ext, typ):
 ## Store of logicals
 @printf2
 def storel(aligned, simd_ext, typ):
-    # TODO improve if time
     return \
         '''/* This can surely be improved but it is not our priority. */
            nsimd_store{align}_{simd_ext}_{typ}({in0},
@@ -1691,7 +1677,7 @@ def unzip(func, simd_ext, typ):
     rf Operators.py
     """
     nbits = get_nbits(typ)
-    if typ == 'f16':  # vec_vpkudum only with clang
+    if typ == 'f16':  # vec_vpkudum is generated only with clang
         return """
                nsimd_{simd_ext}_v{typ} ret;
                ret.v0[0] = {in0}.v0[0 + {i}];
@@ -1733,7 +1719,7 @@ def zip(op, simd_ext, typ):
     op: used operation, possible values: ["ziplo", ziphi"]
     """
     nbits = get_nbits(typ)
-    if typ == "f16":  # TODO check COMPILER
+    if typ == "f16":
 
         return """
                nsimd_{simd_ext}_v{typ} ret;
@@ -1917,7 +1903,7 @@ def scatter(simd_ext, typ):
 
 @printf2
 def gather(simd_ext, typ):
-    if ppc_is_vec_type(typ):  # f32 i32 i16 i8 u32 u16 u8
+    if ppc_is_vec_type(typ):
         return """
                   int i;
                   {typ} buf[{nbits}];
@@ -2092,7 +2078,7 @@ def mask_store(simd_ext, typ):
     return """
            if({in0}.v0){in1}[0] = {in2}.v0; 
            if({in0}.v1){in1}[1] = {in2}.v1; 
-           """.format(**fmtspec)  # TODO check if for loop faster
+           """.format(**fmtspec)
 
 
 @printf2

@@ -300,7 +300,7 @@ build_files optional benches \
             foreach glob:$root$/benches/*.$simd$.*.cpp \
             as benches.%b.cpp11$exe \
             autodeps @item libnsimd_$simd$$so$
-	c++ benches_flags @item -o @out
+	c++ $benches_flags @item -o @out
 
 phony benches deps $benches.files$
 
