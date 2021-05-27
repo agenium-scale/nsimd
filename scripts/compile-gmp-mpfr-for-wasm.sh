@@ -22,7 +22,7 @@
 cd `dirname $0`
 
 set -e
-set -x
+#set -x
 
 PREFIX="${PWD}/../_wasm-deps"
 rm -rf ${PREFIX}

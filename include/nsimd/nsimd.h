@@ -35,6 +35,8 @@ SOFTWARE.
   #define NSIMD_IS_MSVC
 #elif defined(__FCC_version__)
   #define NSIMD_IS_FCC
+#elif defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN)
+  #define NSIMD_IS_EMSCRIPTEN
 #elif defined(__INTEL_COMPILER)
   #define NSIMD_IS_ICC
 #elif defined(__clang__)
@@ -156,7 +158,8 @@ namespace nsimd {
 
 #if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__) ||         \
     defined(__amd64) || defined(_M_AMD64) || defined(__aarch64__) ||          \
-    defined(_M_ARM64) || defined(__PPC64__)
+    defined(_M_ARM64) || defined(__PPC64__) || defined(__wasm64__) ||         \
+    defined(__wasm64)
   #define NSIMD_WORD_SIZE 64
 #else
   #define NSIMD_WORD_SIZE 32
@@ -176,6 +179,8 @@ namespace nsimd {
     defined(__TARGET_ARCH_ARM) || defined(__TARGET_ARCH_THUMB) ||             \
     defined(_M_ARM) || defined(_M_ARM64) || defined(__arch64__)
   #define NSIMD_ARM
+#elif defined(__wasm__) || defined(__wasm)
+  #define NSIMD_WASM
 #elif defined(__ppc__) || defined(__powerpc__) || defined(__PPC__)
   #define NSIMD_POWERPC
 #else
@@ -329,6 +334,12 @@ namespace nsimd {
 #if defined(SVE2048) && !defined(NSIMD_SVE2048)
   #define NSIMD_SVE2048
   #define NSIMD_SVE_FAMILY
+#endif
+
+/* WASM */
+
+#if defined(WASM_SIMD128) && !defined(NSIMD_WASM_SIMD128)
+  #define NSIMD_WASM_SIMD128
 #endif
 
 /* PPC */
@@ -692,6 +703,25 @@ namespace nsimd {
                              std::is_same_v<T, nsimd::aarch64> ||
                              std::is_same_v<T, nsimd::sve2048>;
         #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve2048
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_WASM_SIMD128)
+
+  #define NSIMD_PLATFORM wasm
+  #define NSIMD_SIMD wasm_simd128
+  #include <wasm_simd128.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct wasm_simd128 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::wasm_simd128>;
+        #define NSIMD_LIST_SIMD_EXT cpu, wasm_simd128
       #endif
     } // namespace nsimd
   #endif
