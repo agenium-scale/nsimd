@@ -722,7 +722,7 @@ namespace nsimd {
     } // namespace nsimd
   #endif
 
-#elif defined(NSIMD_POWER7)
+#elif defined(NSIMD_VSX)
 
   #define NSIMD_PLATFORM ppc
   #define NSIMD_SIMD vsx
@@ -803,6 +803,7 @@ namespace nsimd {
     #undef pixel
   #endif
   #ifdef vector
+    #undef vector
     #undef vector
   #endif
 

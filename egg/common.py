@@ -192,7 +192,11 @@ ppc_simds = [
     'vmx',
 ]
 
-simds = ['cpu'] + x86_simds + arm_simds + ppc_simds
+wasm_simds = [
+'wasm_simd128'
+]
+
+simds = ['cpu'] + x86_simds + arm_simds + ppc_simds + wasm_simds
 
 simds_deps = {
     'cpu': ['cpu'],
@@ -212,7 +216,8 @@ simds_deps = {
     'sve1024': ['cpu', 'aarch64', 'sve1024'],
     'sve2048': ['cpu', 'aarch64', 'sve2048'],
     'vsx': ['cpu', 'vsx'],
-    'vmx': ['cpu', 'vmx']
+    'vmx': ['cpu', 'vmx'],
+    'wasm_simd128':  ['cpu', 'wasm_simd128']
 }
 
 ftypes = ['f64', 'f32', 'f16']
@@ -1122,7 +1127,8 @@ def sleef_name(name, simd, typ, ulp=None):
         'sve1024': types_unknown,
         'sve2048': types_unknown,
         'vsx': types_128,
-        'vmx': types_128
+        'vmx': types_128,
+        'wasm_simd128' : types_128
     })[simd][typ]
     ## 4. (We cannot really guess that...
     ##     Instead you have to add bench manually)

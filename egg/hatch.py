@@ -113,10 +113,11 @@ def parse_args(args):
     def parse_simd(value):
         ## Split .simd now
         values = {
-            'x86': common.x86_simds,
-            'arm': common.arm_simds,
-            'ppc': common.ppc_simds,
-            'all': common.simds,
+            'x86' : common.x86_simds,
+            'arm' : common.arm_simds,
+            'ppc' : common.ppc_simds,
+            'wasm': common.wasm_simds,
+            'all' : common.simds,
         }.get(value, value.split(','))
         ## Check that all simd are valid
         ret = []

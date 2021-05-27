@@ -84,7 +84,7 @@ def get_additional_include(func, platform, simd_ext):
 # -----------------------------------------------------------------------------
 # Function prefixes
 
-def pre(simd_ext);
+def pre(simd_ext):
     return 'wasm_v128_'
 
 def pretyp(simd_ext, typ):
@@ -171,7 +171,7 @@ def how_it_should_be_op2(func, intrin, simd_ext, typ):
 
 def load(simd_ext, typ):
     if typ == 'f16':
-        def helper(var_name, i_src, i_dst)
+        def helper(var_name, i_src, i_dst):
             scalar = 'nsimd_u16_to_f32({})'. \
                      format(get_lane(simd_ext, 'u16', 'buf', i_src))
             return set_lane(simd_ext, 'f32', var_name, scalar, i_dst)
@@ -355,6 +355,7 @@ def store_deg234(simd_ext, typ, align, deg):
 # -----------------------------------------------------------------------------
 # Store
 
+# TODO to implements
 def store(simd_ext, typ, aligned):
     align = '' if aligned else 'u'
     cast = castsi(simd_ext, typ)
@@ -3348,8 +3349,8 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
       'from_typ': from_typ,
       'to_typ': to_typ,
       'pre': pre(simd_ext),
-      'suf': suf_ep(from_typ),
-      'sufsi': suf_si(simd_ext, from_typ),
+    #  'suf': suf_ep(from_typ),
+    #  'sufsi': suf_si(simd_ext, from_typ),
       'in0': common.in0,
       'in1': common.in1,
       'in2': common.in2,

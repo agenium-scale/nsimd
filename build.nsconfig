@@ -69,7 +69,7 @@ set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
 set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
 set o_for_vmx            = $o_for_cpu api_vmx$o 
 set o_for_vsx            = $o_for_cpu api_vsx$o
-
+set o_for_wasm_simd128   = $o_for_cpu api_wasm_simd128$o
 
 
 ## SIMD compiler flags
@@ -102,6 +102,9 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 set cflags_for_vmx            = -DVMX -mvmx
 set cflags_for_vsx            = -DVSX -mvsx
 
+set cflags_for_wasm32         = -DWASM32
+set cflags_for_wasm64         = -DWASM64
+
 
 ## std default flag
 
@@ -112,7 +115,7 @@ set    std_flag_for_oneapi = -std=c++17
 ## libstdc++ linking mode
 
 set libstdcpp_static_link_true  = -static-libstdc++
-set libstdcpp_static_link_false = 
+set libstdcpp_static_link_false =
 
 ## Some defaults
 
@@ -199,6 +202,12 @@ build_file api_vsx$o autodeps $root$/src/api_vsx.cpp
 build_file api_vmx$o autodeps $root$/src/api_vmx.cpp
 	c++ $cflags$ -c $cflags_for_vmx @in -o @out
 
+## WASM rules for building
+
+build_file api_wasm_simd128$o autodeps $root$/src/api_wasm_simd128.cpp
+	c++ $cflags$ -c $cflags_for_wasm_simd128 @in -o @out
+
+
 
 ## Installation and packaging
 
@@ -215,6 +224,7 @@ lambda tests_comp_for_*     = c++
 set    tests_comp_for_cuda  = nvcc $cuda_arch_flags
 set    tests_comp_for_rocm  = hipcc $cuda_arch_flags
 set    tests_comp_for_dpcpp = dpcpp
+set    tests_comp_for_wasm  = em++
 
 set tests_comp = ${tests_comp_for_$simd$}
 
