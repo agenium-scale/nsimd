@@ -67,6 +67,10 @@ set o_for_sve256         = $o_for_aarch64 api_sve256$o
 set o_for_sve512         = $o_for_aarch64 api_sve512$o
 set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
 set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
+set o_for_vmx            = $o_for_cpu api_vmx$o 
+set o_for_vsx            = $o_for_cpu api_vsx$o
+
+
 
 ## SIMD compiler flags
 
@@ -94,6 +98,10 @@ set cflags_for_sve256         = -DSVE256 -msve256
 set cflags_for_sve512         = -DSVE512 -msve512
 set cflags_for_sve1024        = -DSVE1024 -msve1024
 set cflags_for_sve2048        = -DSVE2048 -msve2048
+
+set cflags_for_vmx            = -DVMX -mvmx
+set cflags_for_vsx            = -DVSX -mvsx
+
 
 ## std default flag
 
@@ -183,6 +191,15 @@ build_file api_sve1024$o autodeps $root$/src/api_sve1024.cpp
 build_file api_sve2048$o autodeps $root$/src/api_sve2048.cpp
 	c++ $cflags$ -c $cflags_for_sve2048 @in -o @out
 
+## PPC rules for building
+
+build_file api_vsx$o autodeps $root$/src/api_vsx.cpp
+	c++ $cflags$ -c $cflags_for_vsx @in -o @out
+
+build_file api_vmx$o autodeps $root$/src/api_vmx.cpp
+	c++ $cflags$ -c $cflags_for_vmx @in -o @out
+
+
 ## Installation and packaging
 
 install_file libnsimd_${simd}$so lib
@@ -249,6 +266,8 @@ set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
 set    phony_tests_for_rocm  = tests.cpp11
 set    phony_tests_for_dpcpp = tests.cpp11
 set    phony_tests_for_sve   = tests.c11 tests.cpp11
+set    phony_tests_for_vsx   = tests.c99 tests.cpp98 tests.cpp11
+set    phony_tests_for_vmx   = tests.c99 tests.cpp98 tests.cpp11
 
 phony tests deps ${phony_tests_for_$simd$}
 
@@ -281,7 +300,7 @@ build_files optional benches \
             foreach glob:$root$/benches/*.$simd$.*.cpp \
             as benches.%b.cpp11$exe \
             autodeps @item libnsimd_$simd$$so$
-	c++ benches_flags @item -o @out
+	c++ $benches_flags @item -o @out
 
 phony benches deps $benches.files$
 
