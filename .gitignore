@@ -24,6 +24,7 @@ include/nsimd/cxx_adv_api_functions.hpp
 include/nsimd/friendly_but_not_optimized.hpp
 include/nsimd/functions.h
 include/nsimd/ppc
+include/nsimd/wasm
 include/nsimd/x86
 
 ## Tests

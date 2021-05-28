@@ -102,9 +102,7 @@ set cflags_for_sve2048        = -DSVE2048 -msve2048
 set cflags_for_vmx            = -DVMX -mvmx
 set cflags_for_vsx            = -DVSX -mvsx
 
-set cflags_for_wasm32         = -DWASM32
-set cflags_for_wasm64         = -DWASM64
-
+set cflags_for_wasm_simd128   = -DWASM_SIMD128 -mwasm_simd128
 
 ## std default flag
 
@@ -224,7 +222,6 @@ lambda tests_comp_for_*     = c++
 set    tests_comp_for_cuda  = nvcc $cuda_arch_flags
 set    tests_comp_for_rocm  = hipcc $cuda_arch_flags
 set    tests_comp_for_dpcpp = dpcpp
-set    tests_comp_for_wasm  = em++
 
 set tests_comp = ${tests_comp_for_$simd$}
 

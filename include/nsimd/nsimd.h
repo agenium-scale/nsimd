@@ -702,12 +702,16 @@ namespace nsimd {
     } // namespace nsimd
   #endif
 
-#elif defined(NSIMD_VSX)
 #elif defined(NSIMD_WASM_SIMD128)
 
   #define NSIMD_PLATFORM wasm
   #define NSIMD_SIMD wasm_simd128
   #include <wasm_simd128.h>
+
+  #ifdef NSIMD_IS_EMSCRIPTEN
+   #pragma emscripten diagnostic ignored "-Wc11-extensions"
+   #pragma emscripten diagnostic ignored "-Wunused-parameter"
+  #endif
 
   #if NSIMD_CXX > 0
     namespace nsimd {
@@ -717,6 +721,7 @@ namespace nsimd {
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
                              std::is_same_v<T, nsimd::wasm_simd128>;
+        #define NSIMD_LIST_SIMD_EXT cpu, wasm_simd128
         #define NSIMD_LIST_SIMD_EXT cpu, wasm_simd128
       #endif
     } // namespace nsimd
