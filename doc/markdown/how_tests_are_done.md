@@ -233,7 +233,8 @@ by definition equivalent to $U(a_1, a_2) = 1$.
 $V \leq U \leq bV$.
 
 **Proof:** The proposition is true if $e_1 = e_2$. Suppose now that
-$e_2 = e_1 + 1$. Then we have $b^p + m_2 - m_1 \geq b^p + b^{p - 1} - b^p$
+$e_2 = e_1 + 1$. Then we have
+$b^p + m_2 - m_1 \geq b^p + b^{p - 1} - b^p \geq 0$
 so that $V(a_1, a_2) = b^p + m_2 - m_1 = b^p + m_2(1 - b) + bm_2 - m_1$. But
 $b^p + m_2(1 - b) \leq b^p + b^p(1 - b) \leq 0$ and
 $bm_2 - m_1 \geq bb^{p - 1} - b^p = 0$ so that $V(a_1, a_2) \leq bm_2 - m_1
@@ -254,37 +255,48 @@ $a_1$ and $a_2$ to be $|a_1 - a_2| / \min(|a_1|, |a_2|)$.
 
 **Proposition:** As $U$ is defined in a "mathematical" way compared to $V$ then
 the relation between $U$ and $D$ is straightforward and we have
-$D(a_1, a_2) = U(a_1, a_2) / m_1$. Moreover we have
-$b^{-p}U \leq D \leq b^{1 - p}U$.
+$D(a_1, a_2) = U(a_1, a_2) / |m_1|$. Moreover we have
+$b^{-q}U \leq D \leq b^{1 - q}U$ where $q$ is the greatest integer such that
+$b^{q - 1} \leq |m_1| < b^q$. In particular if $a_1$ is a normal number then
+$p = q$.
 
-**Proof:** Suppose that $|a_1| < |a_2|$, then $m_1/m_2 b^{e_1 - e_2} < 1$
-but $m_1/m_2 \geq b^{p - 1} / b^p = b^{-1}$ and we have $b^{e_1 - e_2 - 1} < 1$
-and $e_1 < e_2 + 1$ or $e_1 \leq e_2$. As a consequence we have
-$D(a_1, a_2) = |m_1b^{e_1} - m_2b^{e_2}| / \min(m_1b^{e_1}, m_2b^{e_2})
-= |m_1 - m_2b^{e_2 - e_1}| / \min(m_1, m_2b^{e_2 - e_1})$. Therefore
-$D(a_1, a_2) = U(a_1, a_2) / \min(m_1, m_2b^{e_2 - e_1})$. Now if $e_1 = e_2$
-then $\min(m_1, m_2) = m_1$ but if $e_2 > e_1$ then
-$m_1 < b^p = b \times b^{p - 1} \leq b^{e_2 - e_1} m_2$ and again
-$\min(m_1, m_2b^{e_2 - e_1}) = m_1$. Applying $b^{p - 1} \leq m_1 < b^p$ we get
-that $b^{-p}U \leq D \leq b^{1 - p}U$.
+**Proof:** Suppose that $|a_1| < |a_2|$, then we have three cases:
+- If $a_2$ is denormal, then so is $a_1$ and $e_1 = -M = e_2$.
+- If $a_2$ is normal, then:
+  + If $a_1$ is denormal then $e_1 < e_2$.
+  + If $a_1$ and $a_2$ are normal numbers then $|m_1/m_2| b^{e_1 - e_2} < 1$
+    but $|m_1/m_2| \geq b^{p - 1} / b^p = b^{-1}$ and we have
+    $b^{e_1 - e_2 - 1} < 1$ so that $e_1 < e_2 + 1$ or $e_1 \leq e_2$.
+In any case we have $e_1 \leq e_2$, as a consequence we have
+$D(a_1, a_2) = |m_1b^{e_1} - m_2b^{e_2}| / \min(|m_1|b^{e_1}, |m_2|b^{e_2})
+= |m_1 - m_2b^{e_2 - e_1}| / \min(|m_1|, |m_2|b^{e_2 - e_1})$. Therefore
+$D(a_1, a_2) = U(a_1, a_2) / \min(|m_1|, |m_2|b^{e_2 - e_1})$. Now if
+$e_1 = e_2$ then $\min(|m_1|, |m_2|) = |m_1|$ but if $e_2 > e_1$ then $a_2$ is
+a normal number and $|m_1| < b^p = b \times b^{p - 1} \leq b^{e_2 - e_1} |m_2|$
+and again $\min(|m_1|, |m_2|b^{e_2 - e_1}) = |m_1|$.
+
+Applying $b^{q - 1} \leq |m_1| < b^q$ we get that
+$b^{-q}U \leq D \leq b^{1 - q}U$. If moreover $a_1$ is a normal number then
+by definition $p = q$.
 
 **Remark:** Using the inequality of the previous proposition and taking the
-base-$b$ logarithm we get $-p + \log U \leq \log D \leq 1 - p + \log U$ and
-then $-p + \lfloor \log U \rfloor \leq \lfloor \log D \rfloor
-\leq 1 - p + \lfloor \log U \rfloor$ hence two possibilities:
-- $-p + \lfloor \log U \rfloor = \lfloor \log D \rfloor$ in which case
-  $\lfloor \log U \rfloor + (-\lfloor \log D \rfloor) = p$.
-- $1 - p + \lfloor \log U \rfloor = \lfloor \log D \rfloor$ in which case
-  $1 + \lfloor \log U \rfloor + (-\lfloor \log D \rfloor) = p$.
+base-$b$ logarithm we get $-q + \log U \leq \log D \leq 1 - q + \log U$ and
+then $-q + \lfloor \log U \rfloor \leq \lfloor \log D \rfloor
+\leq 1 - q + \lfloor \log U \rfloor$ hence two possibilities:
+- $-q + \lfloor \log U \rfloor = \lfloor \log D \rfloor$ in which case
+  $\lfloor \log U \rfloor + (-\lfloor \log D \rfloor) = q$.
+- $1 - q + \lfloor \log U \rfloor = \lfloor \log D \rfloor$ in which case
+  $1 + \lfloor \log U \rfloor + (-\lfloor \log D \rfloor) = q$.
 According to a above proposition we know that $f = 1 + \lfloor \log U \rfloor$
 can be interpreted as the number of differents digits in the last places of the
 mantissa. Write $\mathcal{D} = - \lfloor \log D \rfloor$ then
-$p \leq f + \mathcal{D} \leq p + 1$. The latter inequality shows that
+$q \leq f + \mathcal{D} \leq q + 1$. The latter inequality shows that
 $\mathcal{D}$ can be interpreted as the number of digits which are the same in
-the mantissa near the "first" place. We can conclude this remark with the
-interpretation that two floatting point numbers have at least $\mathcal{D} - 1$
-digits in common in the first place of the mantissa and $f$ digits which are
-different in the last place of the mantissa.
+the mantissa near the "first" place. Note that for denormal numbers the "first"
+places are near the bit of most significance. We can conclude this remark with
+the interpretation that two floatting point numbers have at least
+$\mathcal{D} - 1$ digits in common in the first place of the mantissa and $f$
+digits which are different in the last place of the mantissa.
 
 **Algorithm:** We give below the C code for $U$ with a caveat. As seen in a
 previous proposition when $e_2 \geq e_1 + 2$ the arguments have no digit in
@@ -295,31 +307,74 @@ lesser dependencies, readability, maintainability and performances.
 When $|e_2 - e_1| \leq 1$ we use the formula of the definition.
 
 ```c
-/* We suppose that floats are IEEE754 */
+/* We suppose that floats are IEEE754 and not NaN nor infinity */
+
+struct fl_t{
+  int mantissa;
+  int exponent;
+};
+
+fl_t decompose(float a_) {
+  fl_t ret;
+  unsigned int a;
+  memcpy(&a, &a_, sizeof(float)); /* avoid aliasing */
+  ret.exponent = (int)((a >> 23) & 0xff) - 127;
+  if (ret.exponent == -127) {
+    /* denormal number */
+    ret.mantissa = (int)a;
+  } else {
+    ret.mantissa = (int)((1 << 23) | a);
+  }
+  if (a >> 31) {
+    ret.mantissa = -ret.mantissa;
+  }
+  return ret;
+}
+
 int distance_ulps(float a_, float b_) {
-  unsigned int a, b;
-  memcpy(&a, &a_, sizeof(float));
-  memcpy(&b, &b_, sizeof(float));
+  fl_t a, b;
+  a = decompose(a_);
+  b = decompose(b_);
 
-  int ma = (int)(a & 0x007fffff);
-  int ea = (int)((a >> 23) & 0xff)
-
-  int mb = (int)(b & 0x007fffff);
-  int eb = (int)((b >> 23) & 0xff)
-
-  if (ea - eb < -1 && ea - eb > 1) {
+  if (a.exponent - b.exponent < -1 || a.exponent - b.exponent > 1) {
     return INT_MAX;
   }
   
   int d;
-  if (ea == eb) {
-    d = ma - mb;
-  } else if (ea > eb) {
-    d = (ma << 1) - mb;
+  if (a.exponent == b.exponent) {
+    d = a.mantissa = b.mantissa;
+  } else if (a.exponent > b.exponent) {
+    d = 2 * a.mantissa - b.mantissa;
   } else {
-    d = (mb << 1) - ma;
+    d = 2 * b.mantissa - a.mantissa;
   }
 
   return d > 0 ? d : -d;
+}
+```
+
+The algorithm for computing $\mathcal{D} - 1$ follows:
+
+```c
+int d(float a_, float b_) {
+  float absa = fabsf(a_);
+  float absb = fabsf(b_);
+
+  /* ensure that |a_| <= |b_| */
+  if (absb < absa) {
+    float tmp = absa;
+    absa = absb;
+    absb = tmp;
+  }
+
+  fl_t a = decompose(a_);
+  int q = 0;
+  for (q = 0; q <= 23 && (2 << q) <= a.mantissa; q++);
+
+  int ulps = distance_ulps(a_, b_);
+  int lu;
+  for (lu = 0; lu <= 30 && (2 << (lu + 1)) <= a.mantissa; lu++);
+
+  return q - (lu + 1) - 1;
 }
 ```
