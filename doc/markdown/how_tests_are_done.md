@@ -81,35 +81,38 @@ We assume the reader is familiar with basic mathematics.
 For this entire chapter fix the following:
 - an integer $b > 1$ (will be our radix),
 - an integer $p > 1$ (will be the number of digits in the mantissa)
-- $F = \{ m \in \mathbb{Z} \text{ with } |m| < b^p \} \times \mathbb{Z}$
-  (the set of floatting point numbers)
+- an integer $M > 1$ (will be the minimum exponent allowed for floatting
+  point numbers)
+A floatting point number is an element of $\mathbb{R}$ of the form
+$m b^e$ with $e \geq -M$ and $m \in \mathbb{Z}$. More precisely we define
+the set of floatting point numbers $F$ to be the union of the following two
+sets:
+- $\{ mb^e \in F \text{ with } e > -M \}$ the *normal* numbers.
+- $\{ mb^{-M} \in F \text{ with } m \in \mathbb{Z} \text{ and }
+  0 < |m| < b^p \}$ the *denormal* or *subnormal* numbers.
 
-The set $F$ can be viwed as a subset (non injectively) of $\mathbb{R}$ with
-the mapping $\phi : (m, e) \mapsto mb^e$ and we will make this abuse of
-notation in what follows.
+The set $F$ can be viewed as a subset of $\mathbb{R}$ with the mapping
+$\phi : (m, e) \mapsto mb^e$ and we will make this abuse of
+notation in what follows. Usually the sign of the floatting point number
+is separated from $m$ but we include it "inside" $m$ as it does not change
+the proofs below and simplifies the notations.
 
-Let $a_i \in F$ for $i = 1,2$ such that $a_i = m_i b^{e_i}$ with $|m_i| < b^p$
-and $e_i \in \mathbb{Z}$. We define the *distance in ULPs between $a_1$ and
-$a_2$* denoted by $U(a_1, a_2)$ to be:
+Let $a_i \in F$ for $i = 1,2$ such that $a_i = m_i b^{e_i}$.
+
+**Proposition:** $\phi$ is injective.
+
+**Proof:** Suppose that $a_1 = a_2$ or $m_1b^{e_1} = m_2b^{e_2}$. If $a_1$
+and $a_2$ are subnormal numbers then $e_1 = e_2 = -M$ and $m_1 = m_2$. If
+$a_1$ and $a_2$ are normal numbers suppose that $e_2 > e_1$, then
+$|\frac{m_2b^{e_2}}{m_1b^{e_1}}| > b^{e_2 + p - 1 - e_1 - p}
+= b^{e_2 - e_1 - 1} \geq b^{1 - 1} = 1$ therefore
+$m_2b^{e_2} \neq m_1b^{e_1}$ which is absurd hence $e_1 = e_2$ and as a
+consequence $m_1 = m_2$.
+
+**Definition:** We define the *distance in ULPs between $a_1$ and $a_2$*
+denoted by $U(a_1, a_2)$ to be:
 - $|m_1b^{e_1 - e_2} - m_2|$ if $e_1 \geq e_2$,
 - $|m_1 - m_2b^{e_2 - e_1}|$ otherwise.
-
-**Proposition:** Suppose that $\phi(a_1) = \phi(a_1')$ and
-$\phi(a_2) = \phi(a_2')$. Then $U(a_1, a_2) / U(a_1', a_2')$ (or its inverse)
-is a power of $b$. If moreover we impose that $|m_i| \geq b^{p - 1}$ then
-$\phi$ will be injective and $U(a_1, a_2) = U(a_1', a_2')$.
-
-**Proof:** Suppose that for $i = 1,2$, we have  $m_i b^{e_i} = m_i' b^{e_i'}$.
-Suppose that $e_1 \geq e_2$ and $e_1' \geq e_2'$ then $|m_1b^{e_1 - e_2} - m_2|
-= |m_1'b^{e_1' - e_2} - m_2'b^{e_2' - e_2}|
-= b^{e_2' - e_2} |m_1'b^{e_1' - e_2'} - m_2'|$. Now suppose that $e_1' < e_2'$,
-$|m_1b^{e_1 - e_2} - m_2| = |m_1'b^{e_1' - e_2} - m_2'b^{e_2' - e_2}|
-= b^{e_1' - e_2} |m_1' - m_2'b^{e_2' - e_1'}|$.
-
-Finally suppose that $mb^e = nb^f$ with $b^{p - 1} \leq |m|, |n| < b^p$.
-Suppose that $e > f$, then $|\frac{mb^e}{nb^f}| > b^{e + p - 1 - f - p}
-= b^{e - f - 1} \geq b^{1 - 1} = 1$ therefore $mb^e \neq nb^f$ which is absurd
-hence $e = f$ and as a consequence $m = n$.
 
 **Example:** Take $a_1 = 123456 \times 10^5$ and $a_2 = 123789 \times 10^5$
 Then as the exponents of $a_1$ and $a_2$ are the same we have
@@ -123,7 +126,7 @@ first $p - f$ digits of $m_1$ and $m_2$ are identical or their difference is
 $\pm 1$.
 
 **Proof:** For $i = 1,2$ there exists $q_i \in \mathbb{Z}$ and
-$0 \leq r_i < p^f$ such that $m_i = q_i b^f + r_i$. Then
+$0 \leq r_i < b^f$ such that $m_i = q_i b^f + r_i$. Then
 $|q_1 - q_2| \leq \frac{|m_1 - m_2| + |r_1 - r_2|}{b^f}
 < \frac{b^{\log_b(U(a_1, a_2)} + b^f}{b^f} = 2$
 
@@ -143,7 +146,7 @@ and $a_2$ that are identical and they differ by their last
 $\log_{10} \lfloor U(a_1, a_2) \rfloor + 1
 = \lfloor \log_{10}(333) \rfloor + 1 = 3$
 
-**Example:** Now take back $a_1 = 899900 \times 10^5$ and
+**Example:** Now take $a_1 = 899900 \times 10^5$ and
 $a_2 = 900100 \times 10^5$. We have $f = 3$ but $q_2 = q_1 + 1$ and
 $r_2 = 900 > 100 = r_1$ and $r_2 + U(a_1, a_2) = 1100 \geq 1000 = 10^3$.
 
@@ -157,29 +160,28 @@ choosen as we have the following results:
   difference in scaling of both representations of floatting point numbers.
 
 We show now how to compute it using the IEEE 754 floatting point numbers
-representation. A floatting point number $(m, e) \in F$ with $e \geq -M$ where
-$M$ is a positive integer is stored in memory (and registers) as the integer
-$(\pm (e + M)b^p + |m|)$ with $|m| \geq b^{p - 1}$ if we consider
-a non zero element of $F$.
+representation. A floatting point number $(m, e) \in F$ is stored in memory
+(and registers) as the integer $\pm ((e + M)b^p + |m|)$.
 
-**Proposition:** If $e_1 \geq e_2 + 2$ then $U(a_1, a_2) \geq b^p$.
+**Proposition:** If $e_2 \geq e_1 + 2$ then $U(a_1, a_2) \geq b^p$.
 
-**Proof:** We have $U(a_1, a_2) = |m_1 b^{e_1 - e_2} - m_2|
-\geq ||m_1| b^{e_1 - e_2} - |m_2||$. But as $|m_1| \geq b^{p - 1}$ we have
-$|m_1| b^{e_1 - e_2} \geq b^{p - 1 + e_1 - e_2} \geq p^{p + 1} > |m_2|$,
-therefore $||m_1| b^{e_1 - e_2} - |m_2|| \geq |m_1|b^2 - |m_2|
+**Proof:** We have $U(a_1, a_2) = |m_2 b^{e_2 - e_1} - m_1|
+\geq ||m_2| b^{e_2 - e_1} - |m_1||$. But $m_2$ is a normal number otherwise we
+would have $e_2 = -M = e_1$ so that $|m_2| \geq b^{p - 1}$ and we have
+$|m_2| b^{e_2 - e_1} \geq b^{p - 1 + e_2 - e_1} \geq b^{p + 1} > |m_1|$,
+therefore $||m_2| b^{e_2 - e_1} - |m_1|| \geq |m_2|b^2 - |m_1|
 > b^{p - 1 + 2} - b^p = b^p$.
 
-The proprosition above basically states that if two floatting point numbers
-are two orders of magnitude away then that have no digits in common, nothing
-in common.
+The proposition above basically states that if two floatting point numbers
+are two orders of magnitude away then that have no digits in common, and
+that there are godd chances that comparing them is not interesting at all.
 
-The usual definition of the distance in ULPs is usually given as the number
+The usual definition of the distance in ULPs is roughly given as the number
 of floatting point numbers between the two considered floatting point numbers.
-We will denote it by $V$ and can be easily calculated as follows:
-- $V(a_1, a_2) = |(e_1 + M)b^p + m_1 - (e_2 + M)b^p - m_2|$ if $a_1$ and
+More precisely we will denote it by $V$ and it is defined as follows:
+- $V(a_1, a_2) = |(e_1 + M)b^p + |m_1| - (e_2 + M)b^p - |m_2||$ if $a_1$ and
   $a_2$ have the same signs
-- $V(a_1, a_2) = V(a_1, 0) + V(a_2, 0)$ otherwise.
+- $V(a_1, a_2) = (e_1 + M)b^p + |m_1| + (e_2 + M)b^p + |m_2|$ otherwise.
 
 **Proposition:** If $e_1 = e_2$ and $a_1$, $a_2$ have the same sign then
 $U(a_1, a_2) = V(a_1, a_2)$.
@@ -189,13 +191,21 @@ but as $e_1 = e_2$, we end up with $V(a_1, a_2) = |m_1 - m_2| = U(a_1, a_2)$.
 
 **Proposition:** $V(a_1, a_2) = 1$ is equivalent to $U(a_1, a_2) = 1$.
 
-**Proof:** The proposition is true if $e_1 = e_2$. Suppose that $e_2 > e_1$,
-and that $a_1, a_2 > 0$. We first suppose that $V(a_1, a_2) = 1$.
-Then $e_2 = e_1 + 1$ otherwise we have that
+**Proof:** The proposition is true if $e_1 = e_2$. Suppose that $e_2 > e_1$.
+Note that $a_2$ is a normal number so that $m_2 \geq b^{p - 1}$.
+
+We first suppose that $V(a_1, a_2) = 1$. Then by the definition of $V$, $a_1$
+and $a_2$ have same sign otherwise $V(a_1, a_2) \geq 2$ and we suppose that
+$a_i \geq 0$. Moreover we have $e_2 = e_1 + 1$ otherwise we would have that
 $a_1 = m_1b^{e_1} < m_1b^{e_1 + 1} < m_2b^{e_1 + 2} \leq a_2$. Now we have
 $(b^p - 1)b^{e_1} < b^{p - 1}b^{e_1 + 1}$ and let
-$(b^p - 1)b^{e_1} \leq mb^e \leq b^{p - 1}b^{e_1 + 1}$. Then
-$(b^p - 1)/m b^{e_1} < b^e < b^{p - 1}/m b^{e_1 + 1}$. But
+$(b^p - 1)b^{e_1} \leq mb^e \leq b^{p - 1}b^{e_1 + 1}$.
+
+First note that if $a = mb^e$ is a normal number then $m \geq b^{p - 1}$ and if
+$a$ is a subnormal number then $e = -M$ in which case we also have $e_1 = -M$
+and $m \geq b^p - 1 \geq b^{p - 1}$. In any case $m \geq b^{p - 1}$.
+
+We have $(b^p - 1)/m b^{e_1} < b^e < b^{p - 1}/m b^{e_1 + 1}$. But
 $1 \leq (b^p - 1) / m$ and $b^{p - 1} / m \leq 1$ so that
 $b^{e_1} \leq b^e \leq b^{e_1 + 1}$ and $e = e_1$ or $e = e_1 + 1$. In the
 first case $(b^p - 1)b^{e_1} \leq mb^{e_1}$ so that $b^p - 1 \leq m$ but
@@ -275,3 +285,41 @@ the mantissa near the "first" place. We can conclude this remark with the
 interpretation that two floatting point numbers have at least $\mathcal{D} - 1$
 digits in common in the first place of the mantissa and $f$ digits which are
 different in the last place of the mantissa.
+
+**Algorithm:** We give below the C code for $U$ with a caveat. As seen in a
+previous proposition when $e_2 \geq e_1 + 2$ the arguments have no digit in
+common and can be considered too far away in which case we return `INT_MAX` (or
+`LONG_MAX`). As a side effect is that the code will be free of multiprecision
+integers (which would be necessary as soon as $|e_2 - e_1| \geq 12$) hence
+lesser dependencies, readability, maintainability and performances.
+When $|e_2 - e_1| \leq 1$ we use the formula of the definition.
+
+```c
+/* We suppose that floats are IEEE754 */
+int distance_ulps(float a_, float b_) {
+  unsigned int a, b;
+  memcpy(&a, &a_, sizeof(float));
+  memcpy(&b, &b_, sizeof(float));
+
+  int ma = (int)(a & 0x007fffff);
+  int ea = (int)((a >> 23) & 0xff)
+
+  int mb = (int)(b & 0x007fffff);
+  int eb = (int)((b >> 23) & 0xff)
+
+  if (ea - eb < -1 && ea - eb > 1) {
+    return INT_MAX;
+  }
+  
+  int d;
+  if (ea == eb) {
+    d = ma - mb;
+  } else if (ea > eb) {
+    d = (ma << 1) - mb;
+  } else {
+    d = (mb << 1) - ma;
+  }
+
+  return d > 0 ? d : -d;
+}
+```
