@@ -48,7 +48,7 @@ ifnot_set "Compile the libstdc++ statically" static_libstdcpp = false
 
 ## Targets for compilation
 
-set o_for_               = fp16$o memory$o ulps$o api_cpu$o rempitab$o \
+set o_for_               = fp16$o memory$o ufp$o api_cpu$o rempitab$o \
                            sleefsp$o sleefdp$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_

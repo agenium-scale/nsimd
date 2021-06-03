@@ -2126,9 +2126,9 @@ NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
 extern "C" {
 #endif
 
-NSIMD_DLLSPEC int nsimd_diff_in_logulps_f16(f16, f16);
-NSIMD_DLLSPEC int nsimd_diff_in_logulps_f32(f32, f32);
-NSIMD_DLLSPEC int nsimd_diff_in_logulps_f64(f64, f64);
+NSIMD_DLLSPEC nsimd_nat nsimd_ufp_f16(f16, f16);
+NSIMD_DLLSPEC nsimd_nat nsimd_ufp_f32(f32, f32);
+NSIMD_DLLSPEC nsimd_nat nsimd_ufp_f64(f64, f64);
 
 #if NSIMD_CXX > 0
 } // extern "C"
@@ -2136,17 +2136,9 @@ NSIMD_DLLSPEC int nsimd_diff_in_logulps_f64(f64, f64);
 
 #if NSIMD_CXX > 0
 namespace nsimd {
-NSIMD_INLINE int diff_in_logulps(f16 a, f16 b) {
-  return nsimd_diff_in_logulps_f16(a, b);
-}
-
-NSIMD_INLINE int diff_in_logulps(f32 a, f32 b) {
-  return nsimd_diff_in_logulps_f32(a, b);
-}
-
-NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
-  return nsimd_diff_in_logulps_f64(a, b);
-}
+NSIMD_INLINE nsimd_nat ufp(f16 a, f16 b) { return nsimd_ufp_f16(a, b); }
+NSIMD_INLINE nsimd_nat ufp(f32 a, f32 b) { return nsimd_ufp_f32(a, b); }
+NSIMD_INLINE nsimd_nat ufp(f64 a, f64 b) { return nsimd_ufp_f64(a, b); }
 } // namespace nsimd
 #endif
 

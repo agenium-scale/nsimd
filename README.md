@@ -402,7 +402,14 @@ but from a library point of view.
 
 NSIMD was designed following as closely as possible the following guidelines:
 
-- Correctness primes over speed.
+- Correctness primes over speed except for corner cases which may include the
+  following:
+  + Buggy intrinsics on rare input values (denormal numbers, infinities,
+    NaNs) in which case a slower but correct alternative may be
+    proposed to bypass the buggy intrinsics.
+  + A buggy intrinsics but for a specific version of a family of chips. It
+    would be unreasonable to penalize the majority of users vs. a few (or
+    even no) users.
 - Emulate with tricks and intrinsic integer arithmetic when not available.
 - Use common names as found in common computation libraries.
 - Do not hide SIMD registers, one variable (of a type such as `nsimd::pack`)

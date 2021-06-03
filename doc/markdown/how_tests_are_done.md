@@ -321,9 +321,9 @@ fl_t decompose(float a_) {
   ret.exponent = (int)((a >> 23) & 0xff) - 127;
   if (ret.exponent == -127) {
     /* denormal number */
-    ret.mantissa = (int)a;
+    ret.mantissa = (int)(a & 0x007fffff);
   } else {
-    ret.mantissa = (int)((1 << 23) | a);
+    ret.mantissa = (int)((1 << 23) | (a & 0x007fffff));
   }
   if (a >> 31) {
     ret.mantissa = -ret.mantissa;
@@ -367,7 +367,7 @@ int d(float a_, float b_) {
     absb = tmp;
   }
 
-  fl_t a = decompose(a_);
+  fl_t a = decompose(absa);
   int q = 0;
   for (q = 0; q <= 23 && (2 << q) <= a.mantissa; q++);
 
@@ -376,5 +376,59 @@ int d(float a_, float b_) {
   for (lu = 0; lu <= 30 && (2 << (lu + 1)) <= a.mantissa; lu++);
 
   return q - (lu + 1) - 1;
+}
+```
+
+## What we really do in the tests
+
+As said above buggy intrinsics can be easily found. But the bugs appears for
+corner cases typically involving NaNs and/or infinities. But according to the
+philosophy of NSIMD, it is not the job of its standard operators to propose a
+non buggy alternative to a buggy intrinsics. But we still have the problem of
+testing. A consequence of the philosophy of NSIMD is that we only have to test
+that intrinsics are correctly wrapped. We can reasonably assume that testing
+for floatting point numbers on only normal numbers is more than sufficient.
+
+Moreover, an implementation (buggy or not), may have different parameters set
+that controls how floatting point arithmetic is done on various components of
+the chip. An non exhaustive list includes:
+- Rounding modes (which is not controlled by NSIMD as it is a library)
+- FTZ/DAZ (flush to zero) denormal values never appear.
+- FTZ/DAZ on some components (SIMD parts) and not others (scalar parts)
+- Non IEEE behavior (eg. some NVIDIA GPU and ARMv7 chips)
+- A mix of the above
+- A buggy mix of the above
+
+As a consequence we do not compare floats using the operator `=` nor do we
+use a weird-buggy formula involving the machine epsilon. Instead we use
+the algorithm above to make sure that the first bits are correct. More
+precisely we use the following algorithm and its variants for float16 and
+doubles where `ufp` stands for `units in the first place`.
+
+```c
+/* a_ and b_ must be IEEE754 and normal numbers */
+int ufps(float a_, float b_) {
+  unsigned int a, b;
+  memcpy(&a, &a_, 4);
+  memcpy(&b, &b_, 4);
+  int ea = (int)((a >> 23) & 0xff);
+  int eb = (int)((b >> 23) & 0xff);
+  if (ea - eb > 1 || ea - eb < -1) {
+    return 0;
+  }
+  int ma = (int)(a & 0x007fffff);
+  int mb = (int)(b & 0x007fffff);
+  int d = 0;
+  if (ea == eb) {
+    d = ma - mb;
+  } else if (ea > eb) {
+    d = 2 * ma - mb;
+  } else {
+    d = 2 * mb - ma);
+  }
+  d = (d >= 0 ? d : -d);
+  int i = 0;
+  for (; i < 30 && d >= (1 << i); i++);
+  return 23 - i;
 }
 ```
