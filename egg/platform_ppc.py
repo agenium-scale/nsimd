@@ -19,7 +19,13 @@
 # SOFTWARE.
 
 # This file gives the implementation for the Power PC platform.
+# This script tries to be as readable as possible. It implements
+# SVX SSX
 
+# Documentation found from:
+# https://www.nxp.com/docs/en/reference-manual/ALTIVECPIM.pdf
+# https://www.ibm.com/docs/en/xl-c-and-cpp-linux/13.1.6?topic=functions-vector-built-in
+# https://gcc.gnu.org/onlinedocs/gcc-9.1.0/gcc/PowerPC-AltiVec-Built-in-Functions-Available-on-ISA-2_002e06.html
 import common
 
 DEBUG = False
