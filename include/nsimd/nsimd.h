@@ -30,6 +30,8 @@ SOFTWARE.
   #define NSIMD_IS_MSVC
 #elif defined(__FCC_version__)
   #define NSIMD_IS_FCC
+#elif defined(__EMSCRIPTEN__) || defined(EMSCRIPTEN)
+  #define NSIMD_IS_EMSCRIPTEN
 #elif defined(__INTEL_COMPILER)
   #define NSIMD_IS_ICC
 #elif defined(__clang__)
@@ -737,7 +739,7 @@ namespace nsimd {
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
                              std::is_same_v<T, nsimd::vsx>;
-        #define NSIMD_LIST_SIMD_EXT cpu, vsx
+        #define NSIMD_LIST_SIMD_EXT cpu, vmx, vsx
       #endif
     } // namespace nsimd
   #endif
@@ -772,6 +774,7 @@ namespace nsimd {
     #undef pixel
   #endif
   #ifdef vector
+    #undef vector
     #undef vector
   #endif
 
