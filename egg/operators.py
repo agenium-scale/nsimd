@@ -201,7 +201,7 @@ class MAddToOperators(type):
                'vx4' in dct['params'] or \
                dct['output_to'] in [common.OUTPUT_TO_UP_TYPES,
                                     common.OUTPUT_TO_DOWN_TYPES] or \
-               dct['load_store'] or get_member_value('src'):
+               dct['load_store']:
                 dct['has_scalar_impl'] = False
             else:
                 dct['has_scalar_impl'] = True
@@ -1444,7 +1444,6 @@ class Subs(Operator):
 class Sin_u35(SrcOperator):
   full_name = 'sine'
   signature = 'v sin_u35 v'
-  ulps = 3.5
   sleef_symbol_prefix = 'nsimd_sleef_sin_u35'
   domain = Domain('R')
   categories = [DocTrigo]

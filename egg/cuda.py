@@ -109,6 +109,77 @@ def get_impl(operator, totyp, typ):
       'typnbits': typ[1:]
     }
 
+    # src operators
+    if operator.src:
+        cuda_ops = {
+          'sin_u35': 'sin',
+          'cos_u35': 'cos',
+          'tan_u35': 'tan',
+          'asin_u35': 'asin',
+          'acos_u35': 'acos',
+          'atan_u35': 'atan',
+          'atan2_u35': 'atan2',
+          'log_u35': 'log',
+          'cbrt_u35': 'cbrt',
+          'sin_u10': 'sin',
+          'cos_u10': 'cos',
+          'tan_u10': 'tan',
+          'asin_u10': 'asin',
+          'acos_u10': 'acos',
+          'atan_u10': 'atan',
+          'atan2_u10': 'atan2',
+          'log_u10': 'log',
+          'cbrt_u10': 'cbrt',
+          'exp_u10': 'exp',
+          'pow_u10': 'pow',
+          'sinh_u10': 'sinh',
+          'cosh_u10': 'cosh',
+          'tanh_u10': 'tanh',
+          'sinh_u35': 'sinh',
+          'cosh_u35': 'cosh',
+          'tanh_u35': 'tanh',
+          'fastsin_u3500': 'sin',
+          'fastcos_u3500': 'cos',
+          'fastpow_u3500': 'pow',
+          'asinh_u10': 'asinh',
+          'acosh_u10': 'acosh',
+          'atanh_u10': 'atanh',
+          'exp2_u10': 'exp2',
+          'exp2_u35': 'exp2',
+          'exp10_u10': 'exp10',
+          'exp10_u35': 'exp10',
+          'expm1_u10': 'expm1',
+          'log10_u10': 'log10',
+          'log2_u10': 'log2',
+          'log2_u35': 'log2',
+          'log1p_u10': 'log1p',
+          'sinpi_u05': 'sinpi',
+          'cospi_u05': 'cospi',
+          'hypot_u05': 'hypot',
+          'hypot_u35': 'hypot',
+          'remainder': 'remainder',
+          'fmod': 'fmod',
+          'lgamma_u10': 'lgamma',
+          'tgamma_u10': 'tgamma',
+          'erf_u10': 'erf',
+          'erfc_u15': 'erfc'
+        }
+        args = common.get_args(len(operator.params[1:]))
+        cuda_op = cuda_ops[operator.name]
+        if typ == 'f16':
+            # For f16 CUDA offers only a few operator
+            if cuda_op in ['cos', 'exp', 'exp10', 'exp2', 'log', 'log10',
+                           'log2', 'sin']:
+                return 'return h{}({});'.format(cuda_op, args)
+            else:
+                args = ', '.join(['(f32){}'.format(common.get_arg(i)) \
+                                  for i in range(len(operator.params[1:]))])
+                return 'return (f16){}f({});'.format(cuda_op, args)
+        elif typ == 'f32':
+            return 'return {}f({});'.format(cuda_op, args)
+        else:
+            return 'return {}({});'.format(cuda_op, args)
+
     # bool first, no special treatment for f16's
     bool_operators = {
         'andl': 'return {in0} && {in1};',

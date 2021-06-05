@@ -123,5 +123,4 @@ def doit(opts):
     for platform in opts.platforms:
         mod = opts.platforms[platform]
         for simd_ext in mod.get_simd_exts():
-            write_cpp(opts, simd_ext,
-                      mod.emulate_fp16(simd_ext))
+            write_cpp(opts, simd_ext, mod.emulate_fp16(simd_ext))

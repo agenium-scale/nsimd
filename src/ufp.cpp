@@ -31,9 +31,9 @@ namespace nsimd {
 
 template <int MantissaSize, int ExponentSize, typename UnsignedType,
           typename T>
-nsimd_nat ufp(T a_, T, b_) {
-  UnsignedType a = nsimd_scalar_reinterpret(UnsignedType(), a_);
-  UnsignedType b = nsimd_scalar_reinterpret(UnsignedType(), b_);
+int ufp(T a_, T b_) {
+  UnsignedType a = nsimd::scalar_reinterpret(UnsignedType(), a_);
+  UnsignedType b = nsimd::scalar_reinterpret(UnsignedType(), b_);
   UnsignedType exp_mask = ((UnsignedType)1 << ExponentSize) - 1;
   nsimd_nat ea = (nsimd_nat)((a >> MantissaSize) & exp_mask);
   nsimd_nat eb = (nsimd_nat)((b >> MantissaSize) & exp_mask);
@@ -41,8 +41,8 @@ nsimd_nat ufp(T a_, T, b_) {
     return 0;
   }
   UnsignedType man_mask = ((UnsignedType)1 << MantissaSize) - 1;
-  nsimd_nat ma = (nismd_nat)(a & man_mask) & ((nsimd_nat)1 << MantissaSize);
-  nsimd_nat mb = (nismd_nat)(b & man_mask) & ((nsimd_nat)1 << MantissaSize);
+  nsimd_nat ma = (nsimd_nat)(a & man_mask) & ((nsimd_nat)1 << MantissaSize);
+  nsimd_nat mb = (nsimd_nat)(b & man_mask) & ((nsimd_nat)1 << MantissaSize);
   nsimd_nat d = 0;
   if (ea == eb) {
     d = ma - mb;
@@ -52,8 +52,10 @@ nsimd_nat ufp(T a_, T, b_) {
     d = 2 * mb - ma;
   }
   d = (d >= 0 ? d : -d);
-  for (int i = 0; i <= MantissaSize + 1 && ; i++);
-  return MantissaSize + 1 - i;
+  int i = 0;
+  for (; i <= MantissaSize + 1 && d >= ((nsimd_nat)1 << i); i++)
+    ;
+  return (int)(MantissaSize + 1 - i);
 }
 
 } // namespace nsimd
@@ -63,15 +65,15 @@ nsimd_nat ufp(T a_, T, b_) {
 
 extern "C" {
 
-NSIMD_DLLSPEC nsimd_nat nsimd_ufp_f16(f16 a, f16 b) {
+NSIMD_DLLSPEC int nsimd_ufp_f16(f16 a, f16 b) {
   return nsimd::ufp<5, 10, u16>(a, b);
 }
 
-NSIMD_DLLSPEC nsimd_nat nsimd_ufp_f32(f32 a, f32 b) {
+NSIMD_DLLSPEC int nsimd_ufp_f32(f32 a, f32 b) {
   return nsimd::ufp<8, 23, u32>(a, b);
 }
 
-NSIMD_DLLSPEC nsimd_nat nsimd_ufp_f16(f64 a, f64 b) {
+NSIMD_DLLSPEC int nsimd_ufp_f64(f64 a, f64 b) {
   return nsimd::ufp<11, 52, u64>(a, b);
 }
 

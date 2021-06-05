@@ -132,6 +132,9 @@ set ldflags = -fPIC -L. -lnsimd_$simd
 
 ## Generic (emulation) rules for building
 
+build_file ufp$o autodeps $root$/src/ufp.cpp
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
+
 build_file fp16$o autodeps $root$/src/fp16.cpp
 	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
