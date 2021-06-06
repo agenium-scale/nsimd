@@ -76,6 +76,15 @@ def doit(opts):
                                               for sig in scalar_tmp])
         gpu_reinterpret_decls = '\n'.join(['inline ' + sig + ';' \
                                            for sig in gpu_tmp])
+        sleef_decls = ''
+        for op in operators.operators.values():
+            if 'sleef_symbol_prefix' in op.__class__.__dict__:
+                sleef_decls += 'f32 {}_scalar_f32({});\n'. \
+                               format(op.sleef_symbol_prefix,
+                                      ', '.join(['f32'] * len(op.params[1:])))
+                sleef_decls += 'f64 {}_scalar_f64({});\n'. \
+                               format(op.sleef_symbol_prefix,
+                                      ', '.join(['f64'] * len(op.params[1:])))
         out.write(
         '''#ifndef NSIMD_SCALAR_UTILITIES_H
            #define NSIMD_SCALAR_UTILITIES_H
@@ -98,6 +107,12 @@ def doit(opts):
              #endif
            #endif
 
+           {hbar}
+
+           {sleef_decls}
+
+           {hbar}
+
            {scalar_reinterpret_decls}
 
            #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
@@ -110,7 +125,8 @@ def doit(opts):
 
            #endif
            '''. \
-           format(scalar_reinterpret_decls=scalar_reinterpret_decls,
+           format(hbar=common.hbar, sleef_decls=sleef_decls,
+                  scalar_reinterpret_decls=scalar_reinterpret_decls,
                   gpu_reinterpret_decls=gpu_reinterpret_decls))
         for op_name, operator in operators.operators.items():
             if not operator.has_scalar_impl:

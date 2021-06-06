@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace nsimd {
 
-template <int MantissaSize, int ExponentSize, typename UnsignedType,
+template <int ExponentSize, int MantissaSize, typename UnsignedType,
           typename T>
 int ufp(T a_, T b_) {
   UnsignedType a = nsimd::scalar_reinterpret(UnsignedType(), a_);
@@ -41,9 +41,10 @@ int ufp(T a_, T b_) {
     return 0;
   }
   UnsignedType man_mask = ((UnsignedType)1 << MantissaSize) - 1;
-  nsimd_nat ma = (nsimd_nat)(a & man_mask) & ((nsimd_nat)1 << MantissaSize);
-  nsimd_nat mb = (nsimd_nat)(b & man_mask) & ((nsimd_nat)1 << MantissaSize);
+  nsimd_nat ma = (nsimd_nat)(a & man_mask) | ((nsimd_nat)1 << MantissaSize);
+  nsimd_nat mb = (nsimd_nat)(b & man_mask) | ((nsimd_nat)1 << MantissaSize);
   nsimd_nat d = 0;
+
   if (ea == eb) {
     d = ma - mb;
   } else if (ea > eb) {
