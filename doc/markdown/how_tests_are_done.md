@@ -24,8 +24,8 @@ SOFTWARE.
 
 # How tests are done?
 
-First and foremost note that this a work in progress and that we are doing our
-best to have serious testing of the library.
+First and foremost note that this is a work in progress and that we are doing
+our best to have serious testing of the library.
 
 We can also state our conclusion on testing: we are not and never will be
 satisfied with our tests, there are not enough of them, we want more.

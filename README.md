@@ -1,4 +1,5 @@
-Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
+Documentation can be found [here](https://agenium-scale.github.io/nsimd/).  
+We put a lot of effort into [testing](how_tests_are_done.md).
 
 # What is NSIMD?
 
@@ -137,15 +138,6 @@ install it directly from <https://www.python.org/>.
 The Python code can call `clang-format` to properly format all generated C/C++
 source. On Linux you can install it via your package manager. On Windows you
 can use the official binary at <https://llvm.org/builds/>.
-
-Testing the library requires the MPFR library that can be found at
-<https://www.mpfr.org/>.
-
-Benchmarking the library requires Google Benchmark version 1.3 that can be
-found at <https://github.com/google/benchmark> plus all the other SIMD
-libraries used for comparison:
-- MIPP (<https://github.com/aff3ct/MIPP>)
-- Sleef (<https://sleef.org/>)
 
 Compiling the library requires a C++98 compiler. Any version of GCC, Clang or
 MSVC will do. Note that the produced library and header files for the end-user
@@ -313,10 +305,6 @@ name               | description
 -------------------|---------------------------------------------------------
 simd               | SIMD extension to use
 cuda_arch_flags    | CUDA target arch flag(s) for tests
-mpfr               | MPFR compilation flags (for tests only)
-sleef              | Sleef compilation flags (for benchmarks only)
-benchmark          | Google benchmark compilation flags (for benchmarks only)
-build_library_only | Turn off tests/bench/ulps
 static_libstdcpp   | Compile the libstdc++ statically
 ```
 
@@ -324,17 +312,6 @@ Finally one can choose what to do and compile NSIMD and its tests.
 
 ```bash
 $ ../nstools/bin/nsconfig .. -Dsimd=avx2
-$ ninja
-$ ninja tests
-```
-
-Note that MPFR (<https://www.mpfr.org/>) is needed to compile the tests. If you
-do not have the MPFR header installed on your system or if you want to use a
-custom version of MPFR you can tell nsconfig how where to find it.
-
-```bash
-$ ../nstools/bin/nsconfig .. -Dsimd=avx2 \
-      -Dmpfr="-Iwhere/is/mpfr/include -Lwhere/is/mpfr/lib -lmpfr"
 $ ninja
 $ ninja tests
 ```
