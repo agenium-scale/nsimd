@@ -38,13 +38,7 @@ set root  = @source_dir
 
 ifnot_set "SIMD extension to use" simd = cpu
 ifnot_set "CUDA target arch flag(s) for tests" cuda_arch_flags = ""
-[L] ifnot_set "MPFR compilation flags (for tests only)" mpfr = -lmpfr
-[W] ifnot_set "MPFR compilation flags (for tests only)" mpfr = ""
-ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
-ifnot_set "Google benchmark compilation flags (for benchmarks only)" \
-          benchmark = -lbenchmark
-ifnot_set "Turn off tests/bench/ulps" build_library_only = false
-ifnot_set "Compile the libstdc++ statically" static_libstdcpp = false
+ifnot_set "Compile the libstdc++ statically" static_libstdcpp = true
 
 ## Targets for compilation
 
@@ -244,8 +238,6 @@ install_file libnsimd_${simd}$so lib
 install_dir $root$/include/nsimd include
 install_dir $root$/doc/html doc
 
-begin_translate_if $build_library_only == false
-
 ## Tests
 
 lambda tests_comp_for_*     = c++
@@ -255,7 +247,7 @@ set    tests_comp_for_dpcpp = dpcpp
 
 set tests_comp = ${tests_comp_for_$simd$}
 
-set tests_flags = $flags$ $mpfr ${cflags_for_$simd$} -lm $ldflags
+set tests_flags = $flags$ ${cflags_for_$simd$} -lm $ldflags
 
 echo Test compilation flags: $tests_flags$
 
@@ -315,19 +307,3 @@ build_files examples_cpp98 foreach glob:$root$/examples/*.cpp \
 	c++ -std=c++98 @item $tests_flags -o @out
 
 phony examples.cpp98 deps $examples_cpp98.files
-
-## Benches
-
-set benches_flags  = -std=c++11 ${cflags_for_$simd$} $flags $sleef $benchmark
-
-echo Benches compilation flags: $benches_flags
-
-build_files optional benches \
-            foreach glob:$root$/benches/*.$simd$.*.cpp \
-            as benches.%b.cpp11$exe \
-            autodeps @item libnsimd_$simd$$so$
-	c++ benches_flags @item -o @out
-
-phony benches deps $benches.files$
-
-end_translate

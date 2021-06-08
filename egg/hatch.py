@@ -46,7 +46,6 @@ import gen_base_apis
 import gen_adv_cxx_api
 import gen_adv_c_api
 import gen_tests
-import gen_benches
 import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
@@ -84,7 +83,7 @@ def parse_args(args):
             return None
         else:
             return re.compile(value)
-    # In pratice, we either generate all or all except benches and we never
+    # In pratice, we either generate all or all except tests and we never
     # change default directories for code generation. So we remove unused
     # options and regroup some into --library.
     parser = argparse.ArgumentParser(
@@ -95,15 +94,13 @@ def parse_args(args):
         default=False,
         help='List files that will be created by hatch.py')
     parser.add_argument('--all', '-A', action='store_true',
-        help='Generate code for the library and its benches')
+        help='Generate code for the library and its tests')
     parser.add_argument('--library', '-l', action='store_true',
         help='Generate code of the library (C and C++ APIs)')
     parser.add_argument('--sleef', '-s', action='store_true', default=False,
         help='Compile Sleef')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--benches', '-b', action='store_true',
-        help='Generate benches in C and C++')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
     parser.add_argument('--enable-clang-format', '-F', action='store_false',
@@ -126,7 +123,6 @@ def parse_args(args):
     if opts.list_files:
         opts.library = True
         opts.tests = True
-        opts.benches = True
         opts.force = True
         opts.doc = True
     # We set variables here because all the code depends on them + we do want
@@ -140,7 +136,6 @@ def parse_args(args):
     opts.scalar_utilities = opts.library
     opts.sleef_version = '3.5.1'
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
-    opts.benches_dir = os.path.join(script_dir, '..', 'benches')
     opts.tests_dir = os.path.join(script_dir, '..', 'tests')
     opts.src_dir = os.path.join(script_dir, '..', 'src')
     return opts
@@ -167,8 +162,6 @@ def main():
         gen_adv_c_api.doit(opts)
     if opts.tests == True or opts.all == True:
         gen_tests.doit(opts)
-    if opts.benches == True or opts.all == True:
-        gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
     if opts.sleef == True or opts.all == True:

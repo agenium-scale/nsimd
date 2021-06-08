@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -88,16 +88,8 @@ def get_includes(lang):
 
 distance_int = '''
 int distance({typ} a, {typ} b) {{
-  {typ} d;
-  if (a > b) {{
-    d = ({typ})(a - b);
-  }} else {{
-    d = ({typ})(b - a);
-  }}
-  if ((u64)d > (u64)INT_MAX) {{
-    return INT_MAX;
-  }}
-  return (int)d;
+  {typ} d = (a > b ? a - b : b - a);
+  return (int)((u64)d > (u64)INT_MAX) ? (u64)INT_MAX : (u64)d);
 }}
 '''
 
@@ -119,7 +111,7 @@ int distance({typ} a, {typ} b) {{
     return -1;
   }}
 
-  return nsimd_diff_in_logulps_{typ}(a, b);
+  return nsimd_ufp_{typ}(a, b);
 }}
 
 /* ------------------------------------------------------------------------- */
@@ -139,6 +131,58 @@ distance = {
   'f64': distance_float.format(typ='f64')
 }
 
+# -----------------------------------------------------------------------------
+# PRNG
+
+prng_int = '''
+{typ} prng_{typ}() {{
+  int i;
+  int mask = (1 << CHAR_BIT) - 1;
+  {utyp} ret = 0;
+  for (i = 0; i < sizeof({typ}); i++) {{
+    ret = ({utyp})(ret | ({utyp})(({utyp})(rand() & mask) << (CHAR_BIT * i)));
+  }}
+  return nsimd_scalar_reinterpret_{typ}_{utyp}(ret);
+}}
+'''
+
+prng_uint = '''
+{typ} prng_{typ}() {{
+  int i;
+  int mask = (1 << CHAR_BIT) - 1;
+  {typ} ret = 0;
+  for (i = 0; i < sizeof({typ}); i++) {{
+    ret = ({typ})(ret | ({typ})(({typ})(rand() & mask) << (CHAR_BIT * i)));
+  }}
+  return ret;
+}}
+'''
+
+prng_float = '''
+{typ} prng_{typ}() {{
+  return ({typ})20 * ({typ})rand() / ({typ})INT_MAX - ({typ})10;
+}}
+'''
+
+prng_f16 = '''
+f16 prng_f16() {
+  return nsimd_f32_to_f16(20.0f * (f32)rand() / (f32)INT_MAX - 10.0f);
+}
+'''
+
+prng = {
+  'i8': prng_int.format(typ='i8', utyp='u8'),
+  'u8': prng_uint.format(typ='u8'),
+  'i16': prng_int.format(typ='i16', utyp='u16'),
+  'u16': prng_uint.format(typ='u16'),
+  'i32': prng_int.format(typ='i32', utyp='u32'),
+  'u32': prng_uint.format(typ='u32'),
+  'i64': prng_int.format(typ='i64', utyp='u64'),
+  'u64': prng_uint.format(typ='u64'),
+  'f16': prng_f16,
+  'f32': prng_float.format(typ='f32'),
+  'f64': prng_float.format(typ='f64')
+}
 
 # -----------------------------------------------------------------------------
 # Template for a lot of tests
@@ -164,7 +208,7 @@ template = \
 
 {extra_code}
 
-int comp_function({typ} mpfr_out, {typ} nsimd_out)
+int comp_function({typ} ref_out, {typ} nsimd_out)
 {{
    {comp};
 }}
@@ -187,7 +231,7 @@ int main(void) {{
     {vin_rand}
   }}
 
-  /* we ensure that ipnuts are normal numbers */
+  /* We ensure that inputs are normal numbers */
   for (i = 0; i < SIZE; i++) {{
     {denormalize_inputs}
   }}
@@ -254,20 +298,8 @@ def get_content(op, typ, lang):
         code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'.
                  format(i, typ, common.sizeof(typ)) for i in nargs]
         vin_defi = '\n'.join(code)
-        if op.name in ['rec11', 'rec8', 'rsqrt11', 'rsqrt8']:
-            if typ == 'f16':
-                code = ['vin{}[i] = nsimd_f32_to_f16((float)rand() / ' \
-                        '(float)INT_MAX);'.format(i) for i in nargs]
-            else:
-                code = ['vin{}[i] = ({})((float)rand() / (float)INT_MAX);'. \
-                        format(i, typ) for i in nargs]
-        else:
-            code = ['vin{}[i] = rand{}();'.format(i, i) for i in nargs]
-        vin_rand = '\n'.join(code)
-
-        # lgamma doesn't work for negative input or for too big inputs.
-        if op.name == 'lgamma' and typ == 'f64':
-            vin_rand = 'vin1[i] = rand() % 64;'
+        vin_rand = '\n'.join(['vin{}[i] = prng_{}();'.format(i, typ) \
+                              for i in nargs])
 
         # Make vout_ref_comp
         args = ', '.join(['va{}'.format(i) for i in nargs])
@@ -446,58 +478,53 @@ def gen_test(opts, op, typ, lang):
 
     content = get_content(op, typ, lang)
 
-    extra_code = op.domain.gen_rand(typ)
+    extra_code = prng[typ]
 
     if op.name in ['notb', 'andb', 'orb', 'xorb', 'andnotb']:
-        comp = 'return nsimd_scalar_reinterpret_{uT}_{typ}(mpfr_out) != ' \
+        comp = 'return nsimd_scalar_reinterpret_{uT}_{typ}(ref_out) != ' \
                       'nsimd_scalar_reinterpret_{uT}_{typ}(nsimd_out)'. \
                format(typ=typ, uT=common.bitfield_type[typ])
     elif op.name in ['max', 'min'] and typ in common.ftypes:
-        comp = '''/* None of the architecture correctly manage NaN with the  */
-                  /* function min and max. According to IEEE754, min(a, NaN) */
-                  /* should return a but every architecture returns NaN.     */
-                  if (nsimd_isnan_{typ}(nsimd_out)) {{
-                    return 0;
-                  }}
-
-                  /* PPC doesn't correctly manage +Inf and -Inf in relation */
-                  /* with NaN either (min(NaN, -Inf) returns -Inf).         */
-                  #ifdef NSIMD_POWERPC
-                  if (nsimd_isinf_{typ}(nsimd_out)) {{
-                    return 0;
-                  }}
-                  #endif
-
-                  return nsimd_scalar_ne_{typ}(mpfr_out, nsimd_out);'''. \
-                  format(typ=typ, uT=common.bitfield_type[typ])
-    elif op.src and typ in common.ftypes:
-        comp = 'return distance(mpfr_out, nsimd_out) > {}'. \
-               format(math.log(op.ulps, 2))
-        extra_code += distance[typ]
+        comp = 'return nsimd_scalar_ne_{}(ref_out, nsimd_out);'.format(typ)
     else:
-        comp = 'return nsimd_scalar_ne_{}(mpfr_out, nsimd_out);'.format(typ)
+        if typ in common.ftypes:
+            if op.name in ['rec8', 'rsqrt8']:
+                d = 7
+            elif op.name in ['rec11', 'rsqrt11']:
+                d = 10
+            elif op.name in ['fastsin_u3500', 'fastcos_u3500',
+                             'fastpow_u3500']:
+                log_ulp = 1 + math.floor(math.log2(3500))
+                d = {'f16': 5, 'f32': 24 - log_ulp, 'f64': 53 - log_ulp}[typ]
+            else:
+                d = {'f16': 8, 'f32': 18, 'f64': 45}[typ]
+            comp = 'return distance(ref_out, nsimd_out) < {}'.format(d)
+            extra_code += distance[typ]
+        else:
+            comp = 'return nsimd_scalar_ne_{}(ref_out, nsimd_out);'. \
+                   format(typ)
 
     includes = get_includes(lang)
-    if op.src:
-        if lang in ['c_base', 'c_adv']:
-            includes = '''{}
+    #if op.src:
+    #    if lang in ['c_base', 'c_adv']:
+    #        includes = '''{}
 
-                          #include <math.h>
-                          #include <float.h>
-                          {}'''.format(posix_c_source, includes)
-        else:
-            includes = '''{}
+    #                      #include <math.h>
+    #                      #include <float.h>
+    #                      {}'''.format(posix_c_source, includes)
+    #    else:
+    #        includes = '''{}
 
-                          #include <cmath>
-                          #include <cfloat>
-                          {}'''.format(posix_c_source, includes)
-        if op.tests_mpfr and sys.platform.startswith('linux'):
-            includes = includes + '''
-            #pragma GCC diagnostic push
-            #pragma GCC diagnostic ignored "-Wsign-conversion"
-            #include <mpfr.h>
-            #pragma GCC diagnostic pop
-            '''
+    #                      #include <cmath>
+    #                      #include <cfloat>
+    #                      {}'''.format(posix_c_source, includes)
+    #    if op.tests_mpfr and sys.platform.startswith('linux'):
+    #        includes = includes + '''
+    #        #pragma GCC diagnostic push
+    #        #pragma GCC diagnostic ignored "-Wsign-conversion"
+    #        #include <mpfr.h>
+    #        #pragma GCC diagnostic pop
+    #        '''
 
     if typ in common.ftypes:
         dnz_flush_to_zero = \
@@ -2912,13 +2939,13 @@ def gen_unpack_half(opts, op, typ, lang):
     if filename == None:
         return
     if typ == 'f16':
-        left = '(double)nsimd_f16_to_f32(mpfr_out)'
+        left = '(double)nsimd_f16_to_f32(ref_out)'
         right = '(double)nsimd_f16_to_f32(nsimd_out)'
     elif typ == 'f32':
-        left = '(double)mpfr_out'
+        left = '(double)ref_out'
         right = '(double)nsimd_out'
     else:
-        left = 'mpfr_out'
+        left = 'ref_out'
         right = 'nsimd_out'
 
     if lang == 'c_base':
@@ -3087,13 +3114,13 @@ def gen_unpack(opts, op, typ, lang):
     if filename == None:
         return
     if typ == 'f16':
-        left = '(double)nsimd_f16_to_f32(mpfr_out)'
+        left = '(double)nsimd_f16_to_f32(ref_out)'
         right = '(double)nsimd_f16_to_f32(nsimd_out)'
     elif typ == 'f32':
-        left = '(double)mpfr_out'
+        left = '(double)ref_out'
         right = '(double)nsimd_out'
     else:
-        left = 'mpfr_out'
+        left = 'ref_out'
         right = 'nsimd_out'
 
     if lang == 'c_base':

@@ -236,10 +236,6 @@ class Operator(object, metaclass=MAddToOperators):
     bench_auto_against_std = False
     use_for_parsing = True
 
-    # Defaults values (for tests)
-    tests_mpfr = False
-    tests_ulps = {}
-
     @property
     def returns(self):
         return self.params[0]
@@ -1144,7 +1140,6 @@ class Fma(Operator):
     signature = 'v fma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Multiply the first and second inputs and then adds the third ' + \
            'input.'
 
@@ -1153,7 +1148,6 @@ class Fnma(Operator):
     signature = 'v fnma v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Multiply the first and second inputs, negate the intermediate ' + \
            'result and then adds the third input.'
 
@@ -1162,7 +1156,6 @@ class Fms(Operator):
     signature = 'v fms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Substracts the third input to multiplication the first and ' + \
            'second inputs.'
 
@@ -1171,7 +1164,6 @@ class Fnms(Operator):
     signature = 'v fnms v v v'
     domain = Domain('RxRxR')
     categories = [DocBasicArithmetic]
-    tests_ulps = {'f16':'10', 'f32':'22', 'f64':'50'}
     desc = 'Multiply the first and second inputs, negate the intermediate ' + \
            'result and then substracts the third input to the ' + \
            'intermediate result.'
@@ -1300,15 +1292,13 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = common.ulps_from_relative_distance_power(11)
 
 class Rec8(Operator):
-    full_name = 'reciprocal with relative error at most 2^{-8}'
+    full_name = 'reciprocal with relative error at most $2^{-8}$'
     signature = 'v rec8 v'
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = Domain('R\{0}')
-    tests_ulps = common.ulps_from_relative_distance_power(8)
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -1327,7 +1317,6 @@ class Rsqrt11(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = common.ulps_from_relative_distance_power(11)
 
 class Rsqrt8(Operator):
     full_name = 'square root with relative error at most $2^{-8}$'
@@ -1335,7 +1324,6 @@ class Rsqrt8(Operator):
     types = common.ftypes
     domain = Domain('[0,Inf)')
     categories = [DocBasicArithmetic]
-    tests_ulps = common.ulps_from_relative_distance_power(8)
 
 class Ziplo(Operator):
     full_name = 'zip low halves'

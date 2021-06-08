@@ -109,7 +109,15 @@ def doit(opts):
 
            {hbar}
 
+           #if NSIMD_CXX > 0
+           extern "C" {{
+           #endif
+
            {sleef_decls}
+
+           #if NSIMD_CXX > 0
+           }} // extern "C"
+           #endif
 
            {hbar}
 
