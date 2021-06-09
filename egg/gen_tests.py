@@ -139,7 +139,7 @@ prng_int = '''
   int i;
   int mask = (1 << CHAR_BIT) - 1;
   {utyp} ret = 0;
-  for (i = 0; i < sizeof({typ}); i++) {{
+  for (i = 0; i < (int)sizeof({typ}); i++) {{
     ret = ({utyp})(ret | ({utyp})(({utyp})(rand() & mask) << (CHAR_BIT * i)));
   }}
   return nsimd_scalar_reinterpret_{typ}_{utyp}(ret);
@@ -151,7 +151,7 @@ prng_uint = '''
   int i;
   int mask = (1 << CHAR_BIT) - 1;
   {typ} ret = 0;
-  for (i = 0; i < sizeof({typ}); i++) {{
+  for (i = 0; i < (int)sizeof({typ}); i++) {{
     ret = ({typ})(ret | ({typ})(({typ})(rand() & mask) << (CHAR_BIT * i)));
   }}
   return ret;
@@ -360,7 +360,7 @@ def get_content(op, typ, lang):
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
            CHECK(vin2 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        code = ['vin{}[i] = rand{}();'.format(i,i) for i in nargs]
+        code = ['vin{}[i] = prng_{}();'.format(i, typ) for i in nargs]
         vin_rand = '\n'.join(code)
 
         vout_ref_comp = '''nsimd_cpu_v{typ} va1, va2;
@@ -418,7 +418,7 @@ def get_content(op, typ, lang):
         '''{typ} *vin1;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        vin_rand = 'vin1[i] = rand1();'.format(typ=typ)
+        vin_rand = 'vin1[i] = prng_{}();'.format(typ)
         vout_ref_comp = \
         '''nsimd_cpu_v{typ} va1, vc;
            va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
@@ -464,7 +464,8 @@ def get_content(op, typ, lang):
         raise ValueError('No test available for operator "{}" on type "{}"'.
                          format(op.name, typ))
     return { 'vin_defi': vin_defi, 'vin_rand': vin_rand, 'cpu_step': cpu_step,
-             'vout_ref_comp': vout_ref_comp, 'vout_nsimd_comp': vout_nsimd_comp,
+             'vout_ref_comp': vout_ref_comp,
+             'vout_nsimd_comp': vout_nsimd_comp,
              'denormalize_inputs': denormalize_inputs }
 
 # -----------------------------------------------------------------------------
@@ -505,26 +506,6 @@ def gen_test(opts, op, typ, lang):
                    format(typ)
 
     includes = get_includes(lang)
-    #if op.src:
-    #    if lang in ['c_base', 'c_adv']:
-    #        includes = '''{}
-
-    #                      #include <math.h>
-    #                      #include <float.h>
-    #                      {}'''.format(posix_c_source, includes)
-    #    else:
-    #        includes = '''{}
-
-    #                      #include <cmath>
-    #                      #include <cfloat>
-    #                      {}'''.format(posix_c_source, includes)
-    #    if op.tests_mpfr and sys.platform.startswith('linux'):
-    #        includes = includes + '''
-    #        #pragma GCC diagnostic push
-    #        #pragma GCC diagnostic ignored "-Wsign-conversion"
-    #        #include <mpfr.h>
-    #        #pragma GCC diagnostic pop
-    #        '''
 
     if typ in common.ftypes:
         dnz_flush_to_zero = \

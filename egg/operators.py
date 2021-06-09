@@ -1429,462 +1429,478 @@ class Subs(Operator):
     desc = 'Returns the saturated subtraction of the two vectors given as ' \
            'arguments'
 
-class Sin_u35:
+class Sin_u35(SrcOperator):
     full_name = 'sine'
     signature = 'v sin_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_sin_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the sin_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the sine of its argument with a precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cos_u35:
-    full_name = 'cos'
+class Cos_u35(SrcOperator):
+    full_name = 'cosine'
     signature = 'v cos_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_cos_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cos_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the cosine of its argument with a precision of ' \
+           '3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Tan_u35:
-    full_name = 'tan'
+class Tan_u35(SrcOperator):
+    full_name = 'tangent'
     signature = 'v tan_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_tan_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the tan_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the tangent of its argument with a precision of ' \
+           '3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Asin_u35:
-    full_name = 'asin'
+class Asin_u35(SrcOperator):
+    full_name = 'arcsine'
     signature = 'v asin_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_asin_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the asin_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the arcsine of its argument with a precision of ' \
+           '3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Acos_u35:
-    full_name = 'acos'
+class Acos_u35(SrcOperator):
+    full_name = 'arccosine'
     signature = 'v acos_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_acos_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the acos_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the arccosine of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Atan_u35:
-    full_name = 'atan'
+class Atan_u35(SrcOperator):
+    full_name = 'arctangent'
     signature = 'v atan_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_atan_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the atan_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the arctangent of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Atan2_u35:
-    full_name = 'atan2'
-    signature = 'v atan2_u35 v'
+class Atan2_u35(SrcOperator):
+    full_name = 'arctangent'
+    signature = 'v atan2_u35 v v'
     sleef_symbol_prefix = 'nsimd_sleef_atan2_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the atan2_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the arctangent of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Log_u35:
-    full_name = 'log'
+class Log_u35(SrcOperator):
+    full_name = 'natural logarithm'
     signature = 'v log_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_log_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the log_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the natural logarithm of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cbrt_u35:
-    full_name = 'cbrt'
+class Cbrt_u35(SrcOperator):
+    full_name = 'cube root'
     signature = 'v cbrt_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_cbrt_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cbrt_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the cube root of its argument with a precision of ' \
+           '3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Sin_u10:
-    full_name = 'sin'
+class Sin_u10(SrcOperator):
+    full_name = 'sine'
     signature = 'v sin_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_sin_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the sin_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the sine of its argument with a precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cos_u10:
-    full_name = 'cos'
+class Cos_u10(SrcOperator):
+    full_name = 'cosine'
     signature = 'v cos_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_cos_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cos_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the cosine of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Tan_u10:
-    full_name = 'tan'
+class Tan_u10(SrcOperator):
+    full_name = 'tangent'
     signature = 'v tan_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_tan_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the tan_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the tangent of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Asin_u10:
-    full_name = 'asin'
+class Asin_u10(SrcOperator):
+    full_name = 'arcsine'
     signature = 'v asin_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_asin_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the asin_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the arcsine of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Acos_u10:
-    full_name = 'acos'
+class Acos_u10(SrcOperator):
+    full_name = 'arccosine'
     signature = 'v acos_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_acos_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the acos_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the arccosine of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Atan_u10:
-    full_name = 'atan'
+class Atan_u10(SrcOperator):
+    full_name = 'arctangent'
     signature = 'v atan_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_atan_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the atan_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the arctangent of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Atan2_u10:
-    full_name = 'atan2'
-    signature = 'v atan2_u10 v'
+class Atan2_u10(SrcOperator):
+    full_name = 'arctangent'
+    signature = 'v atan2_u10 v v'
     sleef_symbol_prefix = 'nsimd_sleef_atan2_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the atan2_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the arctangent of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Log_u10:
-    full_name = 'log'
+class Log_u10(SrcOperator):
+    full_name = 'natural logarithm'
     signature = 'v log_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the log_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the natural logarithm of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cbrt_u10:
-    full_name = 'cbrt'
+class Cbrt_u10(SrcOperator):
+    full_name = 'cube root'
     signature = 'v cbrt_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_cbrt_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cbrt_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the cube root of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Exp_u10:
-    full_name = 'exp'
+class Exp_u10(SrcOperator):
+    full_name = 'base-e exponential'
     signature = 'v exp_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the exp_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the base-e exponential of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Pow_u10:
-    full_name = 'pow'
-    signature = 'v pow_u10 v'
+class Pow_u10(SrcOperator):
+    full_name = 'power'
+    signature = 'v pow_u10 v v'
     sleef_symbol_prefix = 'nsimd_sleef_pow_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the pow_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the power of its argument with a precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Sinh_u10:
-    full_name = 'sinh'
+class Sinh_u10(SrcOperator):
+    full_name = 'hyperbolic sine'
     signature = 'v sinh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_sinh_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the sinh_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the hyperbolic sine of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cosh_u10:
-    full_name = 'cosh'
+class Cosh_u10(SrcOperator):
+    full_name = 'hyperbolic cosine'
     signature = 'v cosh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_cosh_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cosh_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the hyperbolic cosine of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Tanh_u10:
-    full_name = 'tanh'
+class Tanh_u10(SrcOperator):
+    full_name = 'hyperbolic tangent'
     signature = 'v tanh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_tanh_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the tanh_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the hyperbolic tangent of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Sinh_u35:
-    full_name = 'sinh'
+class Sinh_u35(SrcOperator):
+    full_name = 'hyperbolic sine'
     signature = 'v sinh_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_sinh_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the sinh_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the hyperbolic sine of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cosh_u35:
-    full_name = 'cosh'
+class Cosh_u35(SrcOperator):
+    full_name = 'hyperbolic cosine'
     signature = 'v cosh_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_cosh_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cosh_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the hyperbolic cosine of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Tanh_u35:
-    full_name = 'tanh'
+class Tanh_u35(SrcOperator):
+    full_name = 'hyperbolic tangent'
     signature = 'v tanh_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_tanh_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the tanh_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the hyperbolic tangent of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Fastsin_u3500:
-    full_name = 'sin'
-    signature = 'v fastsin_u3500 v'
-    sleef_symbol_prefix = 'nsimd_sleef_fastsin_u3500'
-    domain = Domain('R')
-    categories = [DocTrigo]
-    desc = 'Compute the fastsin_u3500 of its argument with a precision of 350.0 ulps. ' \
-           'For more informations visit <https://sleef.org/purec.xhtml>.'
-
-class Fastcos_u3500:
-    full_name = 'cos'
-    signature = 'v fastcos_u3500 v'
-    sleef_symbol_prefix = 'nsimd_sleef_fastcos_u3500'
-    domain = Domain('R')
-    categories = [DocTrigo]
-    desc = 'Compute the fastcos_u3500 of its argument with a precision of 350.0 ulps. ' \
-           'For more informations visit <https://sleef.org/purec.xhtml>.'
-
-class Fastpow_u3500:
-    full_name = 'pow'
-    signature = 'v fastpow_u3500 v'
-    sleef_symbol_prefix = 'nsimd_sleef_fastpow_u3500'
-    domain = Domain('R')
-    categories = [DocTrigo]
-    desc = 'Compute the fastpow_u3500 of its argument with a precision of 350.0 ulps. ' \
-           'For more informations visit <https://sleef.org/purec.xhtml>.'
-
-class Asinh_u10:
-    full_name = 'asinh'
+class Asinh_u10(SrcOperator):
+    full_name = 'inverse hyperbolic sine'
     signature = 'v asinh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_asinh_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the asinh_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the inverse hyperbolic sine of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Acosh_u10:
-    full_name = 'acosh'
+class Acosh_u10(SrcOperator):
+    full_name = 'inverse hyperbolic cosine'
     signature = 'v acosh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_acosh_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the acosh_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the inverse hyperbolic cosine of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Atanh_u10:
-    full_name = 'atanh'
+class Atanh_u10(SrcOperator):
+    full_name = 'inverse hyperbolic tangent'
     signature = 'v atanh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_atanh_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the atanh_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the inverse hyperbolic tangent of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Exp2_u10:
-    full_name = 'exp2'
+class Exp2_u10(SrcOperator):
+    full_name = 'base-2 exponential'
     signature = 'v exp2_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp2_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the exp2_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the base-2 exponential of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Exp2_u35:
-    full_name = 'exp2'
+class Exp2_u35(SrcOperator):
+    full_name = 'base-2 exponential'
     signature = 'v exp2_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp2_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the exp2_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the base-2 exponential of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Exp10_u10:
-    full_name = 'exp10'
+class Exp10_u10(SrcOperator):
+    full_name = 'base-10 exponential'
     signature = 'v exp10_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp10_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the exp10_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the base-10 exponential of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Exp10_u35:
-    full_name = 'exp10'
+class Exp10_u35(SrcOperator):
+    full_name = 'base-10 exponential'
     signature = 'v exp10_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp10_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the exp10_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the base-10 exponential of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Expm1_u10:
-    full_name = 'expm1'
+class Expm1_u10(SrcOperator):
+    full_name = 'exponential minus 1'
     signature = 'v expm1_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_expm1_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the expm1_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the exponential minus 1 of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Log10_u10:
-    full_name = 'log10'
+class Log10_u10(SrcOperator):
+    full_name = 'base-10 logarithm'
     signature = 'v log10_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log10_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the log10_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the base-10 logarithm of its argument with a precision ' \
+           'of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Log2_u10:
-    full_name = 'log2'
+class Log2_u10(SrcOperator):
+    full_name = 'base-2 logarithm'
     signature = 'v log2_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log2_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the log2_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the base-2 logarithm of its argument with a precision ' \
+           'of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Log2_u35:
-    full_name = 'log2'
+class Log2_u35(SrcOperator):
+    full_name = 'base-2 logarithm'
     signature = 'v log2_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_log2_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the log2_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the base-2 logarithm of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Log1p_u10:
-    full_name = 'log1p'
+class Log1p_u10(SrcOperator):
+    full_name = 'logarithm of 1 plus argument'
     signature = 'v log1p_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log1p_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the log1p_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the logarithm of 1 plus argument of its argument with ' \
+           'a precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Sinpi_u05:
-    full_name = 'sinpi'
+class Sinpi_u05(SrcOperator):
+    full_name = 'sine of pi times argument'
     signature = 'v sinpi_u05 v'
     sleef_symbol_prefix = 'nsimd_sleef_sinpi_u05'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the sinpi_u05 of its argument with a precision of 0.5 ulps. ' \
+    desc = 'Compute the sine of pi times argument of its argument with a ' \
+           'precision of 0.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Cospi_u05:
-    full_name = 'cospi'
+class Cospi_u05(SrcOperator):
+    full_name = 'cosine of pi times argument'
     signature = 'v cospi_u05 v'
     sleef_symbol_prefix = 'nsimd_sleef_cospi_u05'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the cospi_u05 of its argument with a precision of 0.5 ulps. ' \
+    desc = 'Compute the cosine of pi times argument of its argument with ' \
+           'a precision of 0.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Hypot_u05:
-    full_name = 'hypot'
-    signature = 'v hypot_u05 v'
+class Hypot_u05(SrcOperator):
+    full_name = 'Euclidean distance'
+    signature = 'v hypot_u05 v v'
     sleef_symbol_prefix = 'nsimd_sleef_hypot_u05'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the hypot_u05 of its argument with a precision of 0.5 ulps. ' \
+    desc = 'Compute the Euclidean distance of its argument with a ' \
+           'precision of 0.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Hypot_u35:
-    full_name = 'hypot'
-    signature = 'v hypot_u35 v'
+class Hypot_u35(SrcOperator):
+    full_name = 'Euclidean distance'
+    signature = 'v hypot_u35 v v'
     sleef_symbol_prefix = 'nsimd_sleef_hypot_u35'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the hypot_u35 of its argument with a precision of 3.5 ulps. ' \
+    desc = 'Compute the Euclidean distance of its argument with a ' \
+           'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Remainder:
-    full_name = 'remainder'
-    signature = 'v remainder v'
+class Remainder(SrcOperator):
+    full_name = 'floating-point remainder'
+    signature = 'v remainder v v'
     sleef_symbol_prefix = 'nsimd_sleef_remainder'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the remainder of its argument. ' \
+    desc = 'Compute the floating-point remainder of its arguments. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Fmod:
-    full_name = 'fmod'
-    signature = 'v fmod v'
+class Fmod(SrcOperator):
+    full_name = 'floating-point remainder'
+    signature = 'v fmod v v'
     sleef_symbol_prefix = 'nsimd_sleef_fmod'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the fmod of its argument. ' \
+    desc = 'Compute the floating-point remainder of its argument. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Lgamma_u10:
-    full_name = 'lgamma'
+class Lgamma_u10(SrcOperator):
+    full_name = 'log gamma'
     signature = 'v lgamma_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_lgamma_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the lgamma_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the log gamma of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Tgamma_u10:
-    full_name = 'tgamma'
+class Tgamma_u10(SrcOperator):
+    full_name = 'true gamma'
     signature = 'v tgamma_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_tgamma_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the tgamma_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the true gamma of its argument with a precision of ' \
+           '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Erf_u10:
-    full_name = 'erf'
+class Erf_u10(SrcOperator):
+    full_name = 'complementary error'
     signature = 'v erf_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_erf_u10'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the erf_u10 of its argument with a precision of 1.0 ulps. ' \
+    desc = 'Compute the complementary error of its argument with a ' \
+           'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
-class Erfc_u15:
-    full_name = 'erfc'
+class Erfc_u15(SrcOperator):
+    full_name = 'complementary error'
     signature = 'v erfc_u15 v'
     sleef_symbol_prefix = 'nsimd_sleef_erfc_u15'
     domain = Domain('R')
     categories = [DocTrigo]
-    desc = 'Compute the erfc_u15 of its argument with a precision of 1.5 ulps. ' \
+    desc = 'Compute the complementary error of its argument with a ' \
+           'precision of 1.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 

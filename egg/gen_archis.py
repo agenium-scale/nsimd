@@ -35,7 +35,7 @@ def get_simd_implementation_src(operator, simd_ext, from_typ, fmtspec):
         params = operator.params[1:]
         for i in range(len(params)):
             if params[i] in ['v', 'l', 'vi']:
-                vasi.append('a{}.v{{}}'.format(i))
+                vasi.append('a{}.v{{i}}'.format(i))
             else:
                 vasi.append('a{}'.format(i))
         vasi = ', '.join(vasi)
@@ -44,13 +44,13 @@ def get_simd_implementation_src(operator, simd_ext, from_typ, fmtspec):
             body = '\n'.join(
                         ['nsimd_scalar_{op_name}_{typ2}({vasi});'. \
                          format(op_name=operator.name, typ2=typ2,
-                                vasi=vasi.format(i)) for i in range(vlen)])
+                                vasi=vasi.format(i=i)) for i in range(vlen)])
         else:
             body = 'nsimd_cpu_v{} ret;\n'.format(from_typ)
             body += '\n'.join(
                     ['ret.v{i} = nsimd_scalar_{op_name}_{typ2}({vasi});'. \
                      format(i=i, op_name=operator.name, typ2=typ2,
-                            vasi=vasi.format(i)) for i in range(vlen)])
+                            vasi=vasi.format(i=i)) for i in range(vlen)])
             body += '\nreturn ret;\n'
         return \
         '''{hbar}
