@@ -18,6 +18,47 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+## -----------------------------------------------------------------------------
+
+op_list = [
+    'len',
+    'set1',
+    'loadu',
+    'loada',
+    'loadlu',
+    'loadla',
+    'storeu',
+    'storea',
+    'storelu',
+    'storela',
+    'add',
+    'sub',
+    'mul',
+    'div',
+    'fma',
+    'min',
+    'max',
+    'abs',
+    'rec',
+    'eq',
+    'ne',
+    'le',
+    'lt',
+    'ge',
+    'gt',
+    'ifelse1',
+    'andb',
+    'andnotb',
+    'notb',
+    'orb',
+    'xorb',
+    'andl',
+    'andnotl',
+    'notl',
+    'orl',
+    'xorl'
+]
+
 # -----------------------------------------------------------------------------
 # Imports
 
@@ -45,4 +86,4 @@ def doit(opts):
     if opts.tests == True or opts.all == True:
         modules.fixed_point.gen_tests.doit(opts)
     if opts.doc == True or opts.all == True:
-        modules.fixed_point.gen_doc.doit(opts)
+        modules.fixed_point.gen_doc.doit(opts, op_list)

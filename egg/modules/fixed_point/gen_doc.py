@@ -33,17 +33,6 @@ import string
 import common
 import operators
 
-## List of the NSIMD operators currently suppported by the module
-# op_list = [
-#     'len', 'set1', 'loadu', 'loada', 'loadlu', 'loadla', 'storeu', 'storea',
-#     'add', 'sub', 'mul', 'div', 'fma', 'min', 'max', 'eq', 'ne', 'le', 'lt',
-#     'ge', 'gt', 'if_else1', 'andb', 'andnotb', 'notb', 'orb', 'xorb', 'andl',
-#     'andnotl', 'orl']
-
-from modules.fixed_point.operators import *
-
-operators = fp_operators
-
 # ------------------------------------------------------------------------------
 
 def gen_overview(opts):
@@ -158,91 +147,76 @@ template <typename T>
 
 # -----------------------------------------------------------------------------
 
-def get_type(param):
-    if param == 'V':
-        return 'void '
-    elif param == 'T':
-        return 'T '
-    elif param == 's': # Scalar parameter
-        return 'typename T::value_type '
-    elif param == 'cs': # Const scalar parameter
-        return 'const typename T::value_type '
-    elif param == 'cs&': # Const scalar parameter
-        return 'const typename T::value_type &'
-    elif param == 'cT&':
-        return 'const T &'
-    elif param == 's*': # Pointer to a scalar
+def get_type(param, return_typ=False):
+    if param == '_':
+        return 'void'
+    elif param == '*':
         return 'typename T::value_type *'
-    elif param == 'v': # Vector type
-        return 'pack<T> '
-    elif param == 'v&': # Vector type ref
-        return 'pack<T> &'
-    elif param == 'cv': # Const vector type
-        return 'const pack<T> '
-    elif param == 'cv&': # Const vector type reference
-        return 'const pack<T> &'
-    elif param == 'vl': # Vector of logical type
-        return 'packl<T> '
-    elif param == 'vl&': # Vector of logical type reference
-        return 'packl<T> &'
-    elif param == 'cvl': # Const vector of logical type
-        return 'const packl<T> '
-    elif param == 'cvl&': # Const vector of logical type reference
-        return 'const packl<T> &'
+    elif param == 'c*':
+        return 'const typename T::value_type *'
+    elif param == 's':
+        return 'typename T::value_type'
+    elif param in 'v':
+        return 'pack<T>' if return_typ else 'const pack<T> &'
+    elif param == 'l':
+        return 'packl<T>' if return_typ else 'const packl<T> &'
     elif param == 'p':
         return 'int '
     else:
-        return '<unknown>'
+        return None
 
 # -----------------------------------------------------------------------------
 
 def gen_decl(op):
-    ret = ''
-    op_sign = op.cxx_operator
-    for signature in op.signatures:
-        signature = signature.split(' ')
-        params = signature[2:]
-        args = ', '.join('{}{}'.format(get_type(params[i]),'a{}'.format(i)) \
-                         for i in range(0, len(params)))
-        decl_base = decl_template.format(ret=get_type(signature[0]),
-                                         op=signature[1], args=args)
-        decl_op = ''
-        if op_sign != '':
-            decl_op = decl_template.format(ret=get_type(signature[0]),
-                                           op='operator{}'.format(op_sign),
-                                           args=args)
-        ret += decl_base + decl_op
-
+    sig = '{}{} {{}}({});'.format(
+            'template <typename T> ' \
+                if 'v' not in op.params[1:] and \
+                   'l' not in op.params[1:] else '',
+            get_type(op.params[0], True),
+            ', '.join(['{} {}'.format(
+                               get_type(op.params[i + 1]),
+                                        common.get_arg(i)) \
+                                        for i in range(len(op.params[1:]))])
+          )
     ret = 'namespace nsimd {\n' \
-        +'namespace fixed_point {\n' \
-        + ret \
-        + '} // namespace fixed_point\n' \
-        + '} // namespace nsimd'
+          'namespace fixed_point {\n\n' + sig.format(op.name) + '\n\n'
+    if op.cxx_operator != None:
+        ret += sig.format('operator' + op.cxx_operator) + '\n\n'
+    ret += '} // namespace fixed_point\n' \
+           '} // namespace nsimd'
     return ret
 
 # -----------------------------------------------------------------------------
 
-def gen_api(opts):
+def gen_api(opts, op_list):
+    api = dict()
+    for _, operator in operators.operators.items():
+        if operator.name not in op_list:
+            continue
+        for c in operator.categories:
+            if c not in api:
+                api[c] = [operator]
+            else:
+                api[c].append(operator)
+
     filename = common.get_markdown_file(opts, 'api', 'fixed_point')
     with common.open_utf8(opts, filename) as fout:
         fout.write('''# NSIMD fixed point API\n''')
-        for cat in fp_categories:
-            ops = [op for op in fp_operators if cat in op.categories]
-            if(len(ops) == 0):
+        for c, ops in api.items():
+            if len(ops) == 0:
                 continue
-
-            fout.write('\n## {}\n\n'.format(cat))
-
+            fout.write('\n## {}\n\n'.format(c.title))
             for op in ops:
-                fout.write(
-                    '- [{} ({})](module_fixed_point_api_{}.md)\n'\
-                           .format(op.full_name, op.name,
-                                   common.to_filename(op.name)))
+                fout.write('- [{} ({})](module_fixed_point_api_{}.md)\n'. \
+                           format(op.full_name, op.name,
+                                  common.to_filename(op.name)))
 
 # -----------------------------------------------------------------------------
 
-def gen_doc(opts):
-    for op in operators:
+def gen_doc(opts, op_list):
+    for _, op in operators.operators.items():
+        if op.name not in op_list:
+            continue
         filename = common.get_markdown_api_file(opts, op.name, 'fixed_point')
         with common.open_utf8(opts, filename) as fout:
             fout.write(api_template.format(full_name=op.full_name,
@@ -250,9 +224,9 @@ def gen_doc(opts):
 
 # -----------------------------------------------------------------------------
 
-def doit(opts):
+def doit(opts, op_list):
     common.myprint(opts, 'Generating doc for module fixed_point')
     gen_overview(opts)
-    gen_api(opts)
-    gen_doc(opts)
+    gen_api(opts, op_list)
+    gen_doc(opts, op_list)
 
