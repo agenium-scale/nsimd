@@ -74,11 +74,15 @@ def get_includes(lang):
         ret += '''#include <stdlib.h>
                   #include <stdio.h>
                   #include <errno.h>
+                  #include <stdio.h>
+                  #include <assert.h>
                   #include <string.h>'''
     else:
         ret += '''#include <cstdlib>
                   #include <cstdio>
                   #include <cerrno>
+                  #include <iostream>
+                  #include <cassert>
                   #include <cstring>'''
     return ret
 
@@ -134,55 +138,41 @@ distance = {
 # -----------------------------------------------------------------------------
 # PRNG
 
-prng_int = '''
-{typ} prng_{typ}() {{
-  int i;
-  int mask = (1 << CHAR_BIT) - 1;
-  {utyp} ret = 0;
-  for (i = 0; i < (int)sizeof({typ}); i++) {{
-    ret = ({utyp})(ret | ({utyp})(({utyp})(rand() & mask) << (CHAR_BIT * i)));
-  }}
-  return nsimd_scalar_reinterpret_{typ}_{utyp}(ret);
-}}
-'''
-
-prng_uint = '''
-{typ} prng_{typ}() {{
-  int i;
-  int mask = (1 << CHAR_BIT) - 1;
-  {typ} ret = 0;
-  for (i = 0; i < (int)sizeof({typ}); i++) {{
-    ret = ({typ})(ret | ({typ})(({typ})(rand() & mask) << (CHAR_BIT * i)));
-  }}
-  return ret;
-}}
-'''
-
-prng_float = '''
-{typ} prng_{typ}() {{
-  return ({typ})20 * ({typ})rand() / ({typ})INT_MAX - ({typ})10;
-}}
-'''
-
-prng_f16 = '''
-f16 prng_f16() {
-  return nsimd_f32_to_f16(20.0f * (f32)rand() / (f32)INT_MAX - 10.0f);
-}
-'''
-
-prng = {
-  'i8': prng_int.format(typ='i8', utyp='u8'),
-  'u8': prng_uint.format(typ='u8'),
-  'i16': prng_int.format(typ='i16', utyp='u16'),
-  'u16': prng_uint.format(typ='u16'),
-  'i32': prng_int.format(typ='i32', utyp='u32'),
-  'u32': prng_uint.format(typ='u32'),
-  'i64': prng_int.format(typ='i64', utyp='u64'),
-  'u64': prng_uint.format(typ='u64'),
-  'f16': prng_f16,
-  'f32': prng_float.format(typ='f32'),
-  'f64': prng_float.format(typ='f64')
-}
+def prng(typ, domain):
+    def c_code(a0, a1, typ):
+        if typ == 'f16':
+            return 'return nsimd_f32_to_f16(' \
+                   '(f32){} + (f32){} * (f32)rand() / (f32)RAND_MAX);'. \
+                   format(a0, a1 - a0)
+        elif typ in ['f32', 'f64']:
+            return 'return ({}){} + ({}){} * ({})rand() / ({})RAND_MAX;'. \
+                   format(typ, a0, typ, a1 - a0, typ, typ)
+        elif typ in common.itypes:
+            return '''f64 a0 = nsimd_scalar_ceil_f64({});
+                      f64 le = nsimd_scalar_floor_f64({}) - a0;
+                      assert(le >= 0.0); /* be sure that there are numbers */
+                      return ({})(a0 + le * (f64)rand() / (f64)RAND_MAX);'''. \
+                      format(a0, a1, typ)
+        else:
+            return \
+            '''f64 le, a0 = nsimd_scalar_ceil_f64({});
+               assert(a0 >= 0.0); /* be sure that numbers will be positive */
+               le = nsimd_scalar_floor_f64({}) - a0;
+               assert(le >= 0.0); /* be sure that there are numbers */
+               return ({})(a0 + le * (f64)rand() / (f64)RAND_MAX);'''. \
+               format(a0, a1, typ)
+    nb_intervals = len(domain) // 2
+    if nb_intervals == 1:
+        return '  {}'.format(c_code(domain[0], domain[1], typ))
+    ret = 'int piece = (int)(rand() % {});'.format(nb_intervals)
+    for i in range(nb_intervals - 1):
+        ret += '\nif (piece == {}) {{\n'.format(i)
+        ret += '  {}\n'.format(c_code(domain[2 * i], domain[2 * i + 1], typ))
+        ret += '} else '
+    ret += '{\n'
+    ret += '  {}\n'.format(c_code(domain[-2], domain[-1], typ))
+    ret += '}'
+    return ret
 
 # -----------------------------------------------------------------------------
 # Template for a lot of tests
@@ -298,7 +288,7 @@ def get_content(op, typ, lang):
         code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'.
                  format(i, typ, common.sizeof(typ)) for i in nargs]
         vin_defi = '\n'.join(code)
-        vin_rand = '\n'.join(['vin{}[i] = prng_{}();'.format(i, typ) \
+        vin_rand = '\n'.join(['vin{}[i] = prng_vin{}();'.format(i, i) \
                               for i in nargs])
 
         # Make vout_ref_comp
@@ -360,7 +350,7 @@ def get_content(op, typ, lang):
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
            CHECK(vin2 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        code = ['vin{}[i] = prng_{}();'.format(i, typ) for i in nargs]
+        code = ['vin{}[i] = prng_vin{}();'.format(i, i) for i in nargs]
         vin_rand = '\n'.join(code)
 
         vout_ref_comp = '''nsimd_cpu_v{typ} va1, va2;
@@ -418,7 +408,7 @@ def get_content(op, typ, lang):
         '''{typ} *vin1;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        vin_rand = 'vin1[i] = prng_{}();'.format(typ)
+        vin_rand = 'vin1[i] = prng_vin1();'
         vout_ref_comp = \
         '''nsimd_cpu_v{typ} va1, vc;
            va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
@@ -479,7 +469,11 @@ def gen_test(opts, op, typ, lang):
 
     content = get_content(op, typ, lang)
 
-    extra_code = prng[typ]
+    extra_code = ''
+    for i in range(len(op.params[1:])):
+        extra_code += '{typ} prng_vin{i}() {{\n'.format(typ=typ, i=i + 1)
+        extra_code += prng(typ, op.domain[i])
+        extra_code += '\n}\n\n'
 
     if op.name in ['notb', 'andb', 'orb', 'xorb', 'andnotb']:
         comp = 'return nsimd_scalar_reinterpret_{uT}_{typ}(ref_out) != ' \
@@ -540,101 +534,91 @@ def gen_addv(opts, op, typ, lang):
     filename = get_filename(opts, op, typ, lang)
     if filename == None:
         return
-    if lang == 'c_base':
-        op_test = 'v{}(vloada(buf, {}), {})'.format(op.name, typ, typ)
-    elif lang == 'c_adv':
-        op_test = 'nsimd_{}(nsimd_loada(nsimd_pack_{}, buf))'. \
-                  format(op.name, typ)
-    elif lang == 'cxx_base':
-        op_test = 'nsimd::{}(nsimd::loada(buf, {}()), {}())'.format(
-            op.name, typ, typ)
-    else:
-        op_test = 'nsimd::{}(nsimd::loada<nsimd::pack<{}> >(buf))'.format(
-            op.name, typ)
-
-    head = '''{posix_c_source}
-              {includes}
-              #include <float.h>
-              #include <math.h>
-
-              #define CHECK(a) {{ \\
-                errno = 0; \\
-                if (!(a)) {{ \\
-                fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
-                        __LINE__, strerror(errno)); \\
-                fflush(stderr); \\
-                exit(EXIT_FAILURE); \\
-                }} \\
-              }}
-
-              {distance}
-
-              ''' .format(year=date.today().year, includes=get_includes(lang),
-                          posix_c_source=posix_c_source,
-                          distance=distance[typ])
 
     if typ == 'f16':
-        # Variables initialization
-        init = '''f16 res = nsimd_f32_to_f16(0.0f);
-                  f16 ref = nsimd_f32_to_f16(0.0f);'''
-        rand = '''nsimd_f32_to_f16((f32)(2 * (rand() % 2) - 1) *
-                         (f32)(1 << (rand() % 4)) /
-                           (f32)(1 << (rand() % 4)))'''
-        init_statement = 'buf[i] = {};'.format(rand)
-        ref_statement = 'ref = nsimd_scalar_add_f16(ref, buf[i]);'
-        test = 'if (distance(ref, res) > 1) { return EXIT_FAILURE; }'
-    elif typ in ['f32', 'f64']:
-        init = '''{typ} ref = ({typ})0;
-                  {typ} res = ({typ})0;''' .format(typ=typ)
-        rand = '''({typ})(2 * (rand() % 2) - 1) *
-                      ({typ})(1 << (rand() % 4)) /
-                        ({typ})(1 << (rand() % 4))'''.format(typ=typ)
-        init_statement = 'buf[i] = {};'.format(rand)
-        ref_statement = 'ref += buf[i];'
-        test = 'if (distance(ref, res) > 1) { return EXIT_FAILURE; }'
+        rand = 'nsimd_f32_to_f16((f32)(rand() % 3) - 1.0f)'
+        zero = 'nsimd_f32_to_f16(0.0f)'
+        comp = 'nsimd_f16_to_f32(vout[i]) != nsimd_f16_to_f32(vref[i])'
     else:
-        init = '''{typ} ref = ({typ}) 0;
-                  {typ} res = ({typ}) 0;'''.format(typ=typ)
-        rand = '({})(rand() % 4)'.format(typ)
-        init_statement = 'buf[i] = {rand};' .format(rand=rand)
-        ref_statement = 'ref += buf[i];'
-        test = 'if (ref != res) { return EXIT_FAILURE; }'
+        rand = '({})((int)(rand() % 3) - 1)'.format(typ)
+        zero = '({})0'.format(typ)
+        comp = 'vout[i] != vref[i]'
+
+    if lang == 'c_base':
+        nsimd = 'vaddv(vloada(vin + (i * step), {typ}), {typ})'. \
+                format(typ=typ)
+    elif lang == 'c_adv':
+        nsimd = 'nsimd_addv(nsimd_loada(nsimd_pack_{}, vin + (i * step)))'. \
+                format(typ)
+    elif lang == 'cxx_base':
+        nsimd = 'nsimd::addv(nsimd::loada(vin + (i * step), {}()), {}())'. \
+                format(typ, typ)
+    elif lang == 'cxx_adv':
+        nsimd = 'nsimd::addv(nsimd::loada<nsimd::pack<{}> >' \
+                             '(vin + (i * step)))'.format(typ)
 
     with common.open_utf8(opts, filename) as out:
         out.write(
-            ''' \
-            {head}
+        '''{posix_c_source}
+           {includes}
 
-            int main(void) {{
+           #define CHECK(a) {{ \\
+             errno = 0; \\
+             if (!(a)) {{ \\
+               fprintf(stderr, "ERROR: " #a ":%d: %s\\n", \\
+                       __LINE__, strerror(errno)); \\
+               fflush(stderr); \\
+               exit(EXIT_FAILURE); \\
+             }} \\
+           }}
 
-            const int len = vlen({typ});
-            {typ} *buf;
-            int i;
-            {init}
+           #define STATUS "test of addv over {typ}"
 
-            fprintf(stdout, "test of {op_name} over {typ}...\\n");
-            CHECK(buf = ({typ} *)nsimd_aligned_alloc(len * {sizeof}));
+           int main() {{
+             int step = vlen({typ});
+             int size = 2048;
+             int i;
+             {typ} *vin, *vref, *vout;
 
-            for (i = 0; i < len; i++) {{
-                {init_statement}
-            }}
+             CHECK(vin = ({typ} *)nsimd_aligned_alloc(size * {sizeof} * step));
+             CHECK(vref = ({typ} *)nsimd_aligned_alloc(size * {sizeof}));
+             CHECK(vout = ({typ} *)nsimd_aligned_alloc(size * {sizeof}));
 
-            for (i = 0; i < len; i++) {{
-                {ref_statement}
-            }}
+             fprintf(stdout, STATUS "...\\n");
+             fflush(stdout);
 
-            res = {op_test};
+             for (i = 0; i < step * size; i++) {{
+               vin[i] = {rand};
+             }}
 
-            {test}
+             for (i = 0; i < size; i++) {{
+               int j;
+               {typ} acc = {zero};
+               for (j = step * i; j < step * i + step; j++) {{
+                   acc = nsimd_scalar_add_{typ}(acc, vin[j]);
+               }}
+               vref[i] = acc;
+             }}
 
-            fprintf(stdout, "test of {op_name} over {typ}... OK\\n");
-            return EXIT_SUCCESS;
-            }}
-            '''.format(head=head, init=init, op_name=op.name, typ=typ,
-                       sizeof=common.sizeof(typ),
-                       init_statement=init_statement,
-                       ref_statement=ref_statement, op_test=op_test, test=test)
-        )
+             for (i = 0; i < size; i++) {{
+               vout[i] = {nsimd};
+             }}
+
+             for (i = 0; i < size; i++) {{
+               if ({comp}) {{
+                 fprintf(stdout, STATUS "... FAIL\\n");
+                 fflush(stdout);
+                 return -1;
+               }}
+             }}
+
+             fprintf(stdout, STATUS "... OK\\n");
+             fflush(stdout);
+             return 0;
+           }}
+           '''.format(typ=typ, sizeof=common.sizeof(typ), zero=zero, rand=rand,
+                      comp=comp, nsimd=nsimd, posix_c_source=posix_c_source,
+                      includes=get_includes(lang)))
     common.clang_format(opts, filename)
 
 # -----------------------------------------------------------------------------
