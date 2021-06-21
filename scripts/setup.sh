@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright (c) 2019 Agenium Scale
+#!/bin/bash
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,7 @@ NSTOOLS_DIR="${PWD}/../nstools"
 ###############################################################################
 # Build nsconfig (if not already built)
 
-[ -e "${NSTOOLS_DIR}/README.md" ] && \
-    ( cd "${NSTOOLS_DIR}" && ( git pull || true ) ) || \
+[ -d "${NSTOOLS_DIR}" ] || \
     ( cd "${PWD}/.." && \
       ( [ -d .git ] \
         && ( git clone `git remote get-url origin | sed s/nsimd/nstools/g` ) \
@@ -44,12 +43,9 @@ if [ "${NSTOOLS_CHECKOUT_LAST_COMMIT}" == "" ]; then
   git -C "${NSTOOLS_DIR}" checkout v2.2
 else
   git -C "${NSTOOLS_DIR}" checkout master
+  git -C "${NSTOOLS_DIR}" pull
 fi
 
-[ -e "${NSTOOLS_DIR}/bin" ] || ( mkdir -p "${NSTOOLS_DIR}/bin" )
-
 ( cd "${NSTOOLS_DIR}/nsconfig" && \
-  make -j8 -f Makefile.nix nsconfig && \
-  make -j8 -f Makefile.nix nstest && \
-  cp "nsconfig" "${NSTOOLS_DIR}/bin" && \
-  cp "nstest" "${NSTOOLS_DIR}/bin" )
+  make -B -j8 -f Makefile.nix nsconfig && \
+  make -B -j8 -f Makefile.nix nstest )

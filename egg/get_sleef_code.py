@@ -159,22 +159,34 @@ def doit(opts):
                 sleef_name_f32 = items[0] + 'f' + ulp_suffix[items[2]]
                 items[1] = items[1] if items[1] != '5' else '05'
                 if items[1] == '-1':
-                    nsimd_name_f64 = 'nsimd_sleef_{}_{{simd_ext}}_f64'. \
+                    nsimd_name_f64 = 'nsimd_sleef_{}_{{nsimd_ext}}_f64'. \
                                      format(items[0])
-                    nsimd_name_f32 = 'nsimd_sleef_{}_{{simd_ext}}_f32'. \
+                    nsimd_name_f32 = 'nsimd_sleef_{}_{{nsimd_ext}}_f32'. \
                                      format(items[0])
                 else:
                     nsimd_name_f64 = \
-                    'nsimd_sleef_{}_u{}{{det}}_{{simd_ext}}_f64'. \
+                    'nsimd_sleef_{}_u{}{{det}}_{{nsimd_ext}}_f64'. \
                     format(items[0], items[1])
                     nsimd_name_f32 = \
-                    'nsimd_sleef_{}_u{}{{det}}_{{simd_ext}}_f32'. \
+                    'nsimd_sleef_{}_u{}{{det}}_{{nsimd_ext}}_f32'. \
                     format(items[0], items[1])
                 defines.append('#define x{} {}'.format(sleef_name_f64,
                                                        nsimd_name_f64))
                 defines.append('#define x{} {}'.format(sleef_name_f32,
                                                        nsimd_name_f32))
     defines = '\n'.join(defines)
+
+    sleef_to_nsimd = {
+        '':        ['scalar'],
+        'sse2':    ['sse2'],
+        'sse4':    ['sse42'],
+        'avx':     ['avx'],
+        'avx2':    ['avx2'],
+        'avx512f': ['avx512_knl', 'avx512_skylake'],
+        'neon32':  ['neon128'],
+        'advsimd': ['aarch64'],
+        'sve':     ['sve128', 'sve256', 'sve512', 'sve1024', 'sve2048']
+    }
 
     for simd_ext in ['', 'sse2', 'sse4', 'avx', 'avx2', 'avx512f', 'neon32',
                      'advsimd', 'sve']:
@@ -186,27 +198,43 @@ def doit(opts):
             '''#ifndef RENAME{SIMD_EXT}_H
                #define RENAME{SIMD_EXT}_H
 
-               #ifdef DETERMINISTIC
+               '''.format(SIMD_EXT=se.upper()))
+            for nse in sleef_to_nsimd[simd_ext]:
+                ifdef = '' if simd_ext == '' \
+                           else '#ifdef NSIMD_{}'.format(nse.upper())
+                endif = '' if simd_ext == '' else '#endif'
+                fout.write(
+                '''{hbar}
+                   /* Naming of functions {nsimd_ext} */
 
-               {defines_det_f32}
+                   {ifdef}
 
-               #else
+                   #ifdef DETERMINISTIC
 
-               {defines_nondet_f32}
+                   {defines_det_f32}
 
-               #endif
+                   #else
 
-               #define rempi nsimd_sleef_rempi_{simd_ext}
-               #define rempif nsimd_sleef_rempif_{simd_ext}
-               #define rempisub nsimd_sleef_rempisub_{simd_ext}
-               #define rempisubf nsimd_sleef_rempisubf_{simd_ext}
-               #define gammak nsimd_gammak_{simd_ext}
-               #define gammafk nsimd_gammafk_{simd_ext}
+                   {defines_nondet_f32}
 
-               #endif
+                   #endif
 
-               '''.format(SIMD_EXT=simd_ext.upper(), simd_ext=se,
-                   defines_det_f32=defines.format(det='d', simd_ext=se),
-                   defines_nondet_f32=defines.format(det='', simd_ext=se),
-                   defines_det_f64=defines.format(det='d', simd_ext=se),
-                   defines_nondet_f64=defines.format(det='', simd_ext=se)))
+                   #define rempi nsimd_sleef_rempi_{nsimd_ext}
+                   #define rempif nsimd_sleef_rempif_{nsimd_ext}
+                   #define rempisub nsimd_sleef_rempisub_{nsimd_ext}
+                   #define rempisubf nsimd_sleef_rempisubf_{nsimd_ext}
+                   #define gammak nsimd_gammak_{nsimd_ext}
+                   #define gammafk nsimd_gammafk_{nsimd_ext}
+
+                   #endif
+
+                   {endif}
+
+                   '''.format(NSIMD_EXT=nse.upper(), nsimd_ext=nse,
+                   hbar=common.hbar, ifdef=ifdef, endif=endif,
+                   defines_det_f32=defines.format(det='d', nsimd_ext=nse),
+                   defines_nondet_f32=defines.format(det='', nsimd_ext=nse),
+                   defines_det_f64=defines.format(det='d', nsimd_ext=nse),
+                   defines_nondet_f64=defines.format(det='', nsimd_ext=nse)))
+
+            common.clang_format(opts, renameheader)

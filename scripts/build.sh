@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright (c) 2020 Agenium Scale
+#!/bin/bash
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,14 +29,14 @@ set -e
 # Init
 
 SETUP_SH="${PWD}/setup.sh"
-NSCONFIG="${PWD}/../nstools/bin/nsconfig"
+NSCONFIG="${PWD}/../nstools/nsconfig/nsconfig"
 HATCH_PY="${PWD}/../egg/hatch.py"
 BUILD_ROOT="${PWD}/.."
 
 ###############################################################################
 # Run setup
 
-sh "${SETUP_SH}"
+bash "${SETUP_SH}"
 
 ###############################################################################
 # Generate NSIMD

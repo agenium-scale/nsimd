@@ -153,55 +153,61 @@ build_file api_sse2$o autodeps $root$/src/api_sse2.cpp
 	c++ $cflags$ -c $cflags_for_sse2 @in -o @out
 
 build_file sleef_sse2_f32$o autodeps $root$/src/sleefsimdsp.c
-	cc $sleef_cflags$ -c -msse2 -DENABLE_SSE2=1 @in -o @out
+	cc $sleef_cflags$ -c -msse2 -DNSIMD_SSE2 -DENABLE_SSE2=1 @in -o @out
 
 build_file sleef_sse2_f64$o autodeps $root$/src/sleefsimddp.c
-	cc $sleef_cflags$ -c -msse2 -DENABLE_SSE2=1 @in -o @out
+	cc $sleef_cflags$ -c -msse2 -DNSIMD_SSE2 -DENABLE_SSE2=1 @in -o @out
 
 build_file api_sse42$o autodeps $root$/src/api_sse42.cpp
 	c++ $cflags$ -c $cflags_for_sse42 @in -o @out
 
 build_file sleef_sse42_f32$o autodeps $root$/src/sleefsimdsp.c
-	cc $sleef_cflags$ -c -msse42 -DENABLE_SSE4=1 @in -o @out
+	cc $sleef_cflags$ -c -msse42 -DNSIMD_SSE42 -DENABLE_SSE4=1 @in -o @out
 
 build_file sleef_sse42_f64$o autodeps $root$/src/sleefsimddp.c
-	cc $sleef_cflags$ -c -msse42 -DENABLE_SSE4=1 @in -o @out
+	cc $sleef_cflags$ -c -msse42 -DNSIMD_SSE42 -DENABLE_SSE4=1 @in -o @out
 
 build_file api_avx$o autodeps $root$/src/api_avx.cpp
 	c++ $cflags$ -c $cflags_for_avx @in -o @out
 
 build_file sleef_avx_f32$o autodeps $root$/src/sleefsimdsp.c
-	cc $sleef_cflags$ -c -mavx -DENABLE_AVX=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx -DNSIMD_AVX -DENABLE_AVX=1 @in -o @out
 
 build_file sleef_avx_f64$o autodeps $root$/src/sleefsimddp.c
-	cc $sleef_cflags$ -c -mavx -DENABLE_AVX=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx -DNSIMD_AVX -DENABLE_AVX=1 @in -o @out
 
 build_file api_avx2$o autodeps $root$/src/api_avx2.cpp
 	c++ $cflags$ -c $cflags_for_avx2 @in -o @out
 
 build_file sleef_avx2_f32$o autodeps $root$/src/sleefsimdsp.c
-	cc $sleef_cflags$ -c -mavx2 -mfma -DENABLE_AVX2=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx2 -mfma -DNSIMD_AVX2 -DENABLE_AVX2=1 \
+	   @in -o @out
 
 build_file sleef_avx2_f64$o autodeps $root$/src/sleefsimddp.c
-	cc $sleef_cflags$ -c -mavx2 -mfma -DENABLE_AVX2=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx2 -mfma -DNSIMD_AVX2 -DENABLE_AVX2=1 \
+	   @in -o @out
 
 build_file api_avx512_knl$o autodeps $root$/src/api_avx512_knl.cpp
 	c++ $cflags$ -c $cflags_for_avx512_knl @in -o @out
 
 build_file sleef_avx512_knl_f32$o autodeps $root$/src/sleefsimdsp.c
-	cc $sleef_cflags$ -c -mavx512_knl -DENABLE_AVX512F=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_KNL \
+	   -DENABLE_AVX512F=1 @in -o @out
 
 build_file sleef_avx512_knl_f64$o autodeps $root$/src/sleefsimddp.c
-	cc $sleef_cflags$ -c -mavx512_knl -DENABLE_AVX512F=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_KNL \
+	   -DENABLE_AVX512F=1 @in -o @out
 
 build_file api_avx512_skylake$o autodeps $root$/src/api_avx512_skylake.cpp
 	c++ $cflags$ -c $cflags_for_avx512_skylake @in -o @out
 
 build_file sleef_avx512_skylake_f32$o autodeps $root$/src/sleefsimdsp.c
-	cc $sleef_cflags$ -c -mavx512_knl -DENABLE_AVX512F=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_SKYLAKE \
+	   -DENABLE_AVX512F=1 @in -o @out
 
 build_file sleef_avx512_skylake_f64$o autodeps $root$/src/sleefsimddp.c
-	cc $sleef_cflags$ -c -mavx512_knl -DENABLE_AVX512F=1 @in -o @out
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_SKYLAKE \
+	   -DENABLE_AVX512F=1 @in -o @out
 
 ## ARM 32 bits rules for building
 
