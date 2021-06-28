@@ -161,6 +161,10 @@ class MAddToOperators(type):
         if 'domain' not in dct:
             dct['domain'] = [[-20, 20], [-20, 20], [-20, 20]]
 
+        # Number of UFP (cf. documentation) for testing
+        if 'ufp' not in dct:
+            dct['ufp'] = {'f16': 8, 'f32': 18, 'f64': 45}
+
         # Check that params is not empty
         if len(dct['params']) == 0:
             raise Exception('"params" is empty for operator "{}"'. \
@@ -1153,6 +1157,7 @@ class Rec11(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = [[-20, -0.5, 0.5, 20]]
+    ufp = { 'f16': 10, 'f32': 10, 'f64': 10 }
 
 class Rec8(Operator):
     full_name = 'reciprocal with relative error at most $2^{-8}$'
@@ -1160,6 +1165,7 @@ class Rec8(Operator):
     types = common.ftypes
     categories = [DocBasicArithmetic]
     domain = [[-20, -0.5, 0.5, 20]]
+    ufp = { 'f16': 7, 'f32': 7, 'f64': 7 }
 
 class Sqrt(Operator):
     full_name = 'square root'
@@ -1173,6 +1179,7 @@ class Rsqrt11(Operator):
     signature = 'v rsqrt11 v'
     types = common.ftypes
     domain = [[0.5, 20]]
+    ufp = { 'f16': 10, 'f32': 10, 'f64': 10 }
     categories = [DocBasicArithmetic]
 
 class Rsqrt8(Operator):
@@ -1180,6 +1187,7 @@ class Rsqrt8(Operator):
     signature = 'v rsqrt8 v'
     types = common.ftypes
     domain = [[0.5, 20]]
+    ufp = { 'f16': 7, 'f32': 7, 'f64': 7 }
     categories = [DocBasicArithmetic]
 
 class Ziplo(Operator):

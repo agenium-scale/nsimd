@@ -26,6 +26,156 @@ import common
 import operators
 from datetime import date
 
+# -----------------------------------------------------------------------------
+# Helper functions
+
+def should_i_do_the_test(operator, tt='', t=''):
+    if operator.name == 'cvt' and t in common.ftypes and tt in common.iutypes:
+        # When converting from float to int to float then we may not
+        # get the initial result because of roundings. As tests are usually
+        # done by going back and forth then both directions get tested in the
+        # end
+        return False
+    if operator.name == 'reinterpret' and t in common.ftypes and \
+       tt in common.iutypes:
+        # When reinterpreting from int to float we may get NaN or infinities
+        # and no ones knows what this will give when going back to ints
+        # especially when float16 are emulated. Again as tests are done by
+        # going back and forth both directions get tested in the end.
+        return False
+    if operator.name in ['notb', 'andb', 'andnotb', 'xorb', 'orb'] and \
+       t == 'f16':
+        # Bit operations on float16 are hard to check because they are
+        # emulated in most cases. Therefore going back and forth with
+        # reinterprets for doing bitwise operations make the bit in the last
+        # place to wrong. This is normal but makes testing real hard. So for
+        # now we do not test them on float16.
+        return False
+    if operator.name in ['len', 'set1', 'set1l', 'mask_for_loop_tail',
+                         'loadu', 'loada', 'storeu', 'storea', 'loadla',
+                         'loadlu', 'storela', 'storelu', 'if_else1']:
+        # These functions are used in almost every tests so we consider
+        # that they are extensively tested.
+        return False
+    if operator.name in ['store2a', 'store2u', 'store3a', 'store3u',
+                         'store4a', 'store4u', 'scatter', 'scatter_linear',
+                         'downcvt', 'to_logical']:
+        # These functions are tested along with their load counterparts.
+        # downcvt is tested along with upcvt and to_logical is tested with
+        # to_mask
+        return False
+    return True
+
+# -----------------------------------------------------------------------------
+# CBPRNG
+
+def cbprng_impl(typ, domain_, for_cpu):
+    code = '((((unsigned int)(1 + i) * 69342380u + 414585u) ' \
+           '^ ((unsigned int)(1 + j) * 89375027u + 952905u))' \
+           '% 1000000u)'
+    def c_code(a0_, a1_):
+        if a1_ < a0_:
+            raise ValueError("a0 must be lesser than a1")
+        if typ in common.utypes and a0_ < 0.0 and a1_ < 0.0:
+            raise ValueError("a0 and a1 must be positive")
+        if typ in common.ftypes:
+            a0 = a0_
+            a1 = a1_
+        else:
+            a0 = 0 if typ in common.utypes and a0_ < 0 else math.ceil(a0_)
+            a1 = math.floor(a1_)
+        if a1 < a0:
+            raise ValueError("a0 and a1 must be positive after filtering")
+
+        if typ in common.iutypes:
+            return 'return ({})({} + (f32)((i32){} % {}));'. \
+                   format(typ, a0, code, a1 - a0 + 1)
+        elif typ == 'f16':
+            return 'return {}((f32){} + (f32){} * (f32)({}) / 1000000.0f);'. \
+                   format('(f16)' if not for_cpu else 'nsimd_f32_to_f16',
+                          a0, a1 - a0, code)
+        elif typ in ['f32', 'f64']:
+            return 'return ({}){} + ({}){} * ({}){} / ({})1000000;'. \
+                   format(typ, a0, typ, a1 - a0, typ, code, typ)
+
+    if typ not in common.utypes:
+        domain = domain_
+    domain = []
+    for i in range(len(domain_) // 2):
+        if domain_[2 * i + 1] > 0:
+            domain.append(domain_[2 * i])
+            domain.append(domain_[2 * i + 1])
+    if len(domain) == 0:
+        raise ValueError('domain {} is empty after filtering'.format(domain_))
+
+    nb_intervals = len(domain) // 2
+    if nb_intervals == 1:
+        return '  {}'.format(c_code(domain[0], domain[1]))
+    ret = 'int piece = ((1 + i) * (1 + j)) % {};'.format(nb_intervals)
+    for i in range(nb_intervals - 1):
+        ret += '\nif (piece == {}) {{\n'.format(i)
+        ret += '  {}\n'.format(c_code(domain[2 * i], domain[2 * i + 1]))
+        ret += '} else '
+    ret += '{\n'
+    ret += '  {}\n'.format(c_code(domain[-2], domain[-1]))
+    ret += '}'
+    return ret
+
+def cbprng(typ, operator, target):
+    if target not in ['cpu', 'cuda', 'hip']:
+        raise ValueError('Unsupported target, must be cpu, cuda or hip')
+
+    arity = len(operator.params[1:])
+    ret = '{}{} random_impl(int i, int j) {{\n'. \
+          format('' if target == 'cpu' else '__device__ ', typ)
+    for_cpu = (target == 'cpu')
+
+    if arity == 1:
+        ret += cbprng_impl(typ, operator.domain[0], for_cpu)
+    else:
+        for i in range(arity - 1):
+            ret += 'if (j == {}) {{\n  {}\n}} else '. \
+                   format(i, cbprng_impl(typ, operator.domain[i], for_cpu))
+        ret += '{{\n{}\n}} '.format(cbprng_impl(typ, operator.domain[-1],
+                                                True))
+    ret += '\n}\n\n'
+
+    if target == 'cpu':
+        ret += '''void random({} *dst, unsigned int n, int j) {{
+                    unsigned int i;
+                    for (i = 0; i < n; i++) {{
+                      dst[i] = random_impl((int)i, j);
+                    }}
+                  }}'''.format(typ)
+    elif target == 'cuda':
+        ret += '''__kernel__ random_kernel({typ} *dst, int n, int j) {{
+                    int i = threadIdx.x + blockIdx.x * blockDim.x;
+                    if (i < n) {{
+                      dst[i] = random_impl((int)i, j);
+                    }}
+                  }}
+
+                  void random({typ} *dst, unsigned int n, int j) {{
+                    kernel<<<{{gpu_params}}>>>(dst, (int)n, j);
+                  }}
+                  '''.format(typ=typ)
+    elif target == 'hip':
+        ret += '''__kernel__ random_kernel({typ} *dst, size_t n, int j) {{
+                    size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
+                    if (i < n) {{
+                      dst[i] = random_impl((int)i, j);
+                    }}
+                  }}
+
+                  void random({typ} *dst, unsigned int n, int j) {{
+                    hipLaunchKernelGGL(kernel, {{gpu_params}}, 0, 0,
+                                       dst, n, j);
+                  }}
+                  '''.format(typ=typ)
+    return ret
+
+# -----------------------------------------------------------------------------
+
 posix_c_source = \
 '''#if !defined(_POSIX_C_SOURCE)
    #define _POSIX_C_SOURCE 200112L
@@ -136,45 +286,6 @@ distance = {
 }
 
 # -----------------------------------------------------------------------------
-# PRNG
-
-def prng(typ, domain):
-    def c_code(a0, a1, typ):
-        if typ == 'f16':
-            return 'return nsimd_f32_to_f16(' \
-                   '(f32){} + (f32){} * (f32)rand() / (f32)RAND_MAX);'. \
-                   format(a0, a1 - a0)
-        elif typ in ['f32', 'f64']:
-            return 'return ({}){} + ({}){} * ({})rand() / ({})RAND_MAX;'. \
-                   format(typ, a0, typ, a1 - a0, typ, typ)
-        elif typ in common.itypes:
-            return '''f64 a0 = nsimd_scalar_ceil_f64({});
-                      f64 le = nsimd_scalar_floor_f64({}) - a0;
-                      assert(le >= 0.0); /* be sure that there are numbers */
-                      return ({})(a0 + le * (f64)rand() / (f64)RAND_MAX);'''. \
-                      format(a0, a1, typ)
-        else:
-            return \
-            '''f64 le, a0 = nsimd_scalar_ceil_f64({});
-               assert(a0 >= 0.0); /* be sure that numbers will be positive */
-               le = nsimd_scalar_floor_f64({}) - a0;
-               assert(le >= 0.0); /* be sure that there are numbers */
-               return ({})(a0 + le * (f64)rand() / (f64)RAND_MAX);'''. \
-               format(a0, a1, typ)
-    nb_intervals = len(domain) // 2
-    if nb_intervals == 1:
-        return '  {}'.format(c_code(domain[0], domain[1], typ))
-    ret = 'int piece = (int)(rand() % {});'.format(nb_intervals)
-    for i in range(nb_intervals - 1):
-        ret += '\nif (piece == {}) {{\n'.format(i)
-        ret += '  {}\n'.format(c_code(domain[2 * i], domain[2 * i + 1], typ))
-        ret += '} else '
-    ret += '{\n'
-    ret += '  {}\n'.format(c_code(domain[-2], domain[-1], typ))
-    ret += '}'
-    return ret
-
-# -----------------------------------------------------------------------------
 # Template for a lot of tests
 
 template = \
@@ -217,9 +328,7 @@ int main(void) {{
   fflush(stdout);
 
   /* Fill input vector(s) with random values */
-  for (i = 0; i < SIZE; i++) {{
-    {vin_rand}
-  }}
+  {vin_rand}
 
   /* We ensure that inputs are normal numbers */
   for (i = 0; i < SIZE; i++) {{
@@ -260,7 +369,6 @@ int main(void) {{
 # -----------------------------------------------------------------------------
 # Common to most of the tests
 
-
 def get_content(op, typ, lang):
     cast = 'f32' if typ in ['f16', 'f32'] else 'f64'
     zero = 'nsimd_f32_to_f16(0.0f)' if typ == 'f16' else '({})0'.format(typ)
@@ -288,7 +396,7 @@ def get_content(op, typ, lang):
         code += ['CHECK(vin{} = ({}*)nsimd_aligned_alloc(SIZE * {}));'.
                  format(i, typ, common.sizeof(typ)) for i in nargs]
         vin_defi = '\n'.join(code)
-        vin_rand = '\n'.join(['vin{}[i] = prng_vin{}();'.format(i, i) \
+        vin_rand = '\n'.join(['random(vin{}, SIZE, {});'.format(i, i - 1) \
                               for i in nargs])
 
         # Make vout_ref_comp
@@ -350,7 +458,7 @@ def get_content(op, typ, lang):
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));
            CHECK(vin2 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        code = ['vin{}[i] = prng_vin{}();'.format(i, i) for i in nargs]
+        code = ['random(vin{}, SIZE, {});'.format(i, i - 1) for i in nargs]
         vin_rand = '\n'.join(code)
 
         vout_ref_comp = '''nsimd_cpu_v{typ} va1, va2;
@@ -408,7 +516,7 @@ def get_content(op, typ, lang):
         '''{typ} *vin1;
            CHECK(vin1 = ({typ}*)nsimd_aligned_alloc(SIZE * {sizeof}));'''. \
            format(typ=typ, sizeof=common.sizeof(typ))
-        vin_rand = 'vin1[i] = prng_vin1();'
+        vin_rand = 'random(vin1, SIZE, 0);'
         vout_ref_comp = \
         '''nsimd_cpu_v{typ} va1, vc;
            va1 = nsimd_loadu_cpu_{typ}(&vin1[i]);
@@ -469,11 +577,7 @@ def gen_test(opts, op, typ, lang):
 
     content = get_content(op, typ, lang)
 
-    extra_code = ''
-    for i in range(len(op.params[1:])):
-        extra_code += '{typ} prng_vin{i}() {{\n'.format(typ=typ, i=i + 1)
-        extra_code += prng(typ, op.domain[i])
-        extra_code += '\n}\n\n'
+    extra_code = cbprng(typ, op, 'cpu')
 
     if op.name in ['notb', 'andb', 'orb', 'xorb', 'andnotb']:
         comp = 'return nsimd_scalar_reinterpret_{uT}_{typ}(ref_out) != ' \
@@ -483,17 +587,8 @@ def gen_test(opts, op, typ, lang):
         comp = 'return nsimd_scalar_ne_{}(ref_out, nsimd_out);'.format(typ)
     else:
         if typ in common.ftypes:
-            if op.name in ['rec8', 'rsqrt8']:
-                d = 7
-            elif op.name in ['rec11', 'rsqrt11']:
-                d = 10
-            elif op.name in ['fastsin_u3500', 'fastcos_u3500',
-                             'fastpow_u3500']:
-                log_ulp = 1 + math.floor(math.log2(3500))
-                d = {'f16': 5, 'f32': 24 - log_ulp, 'f64': 53 - log_ulp}[typ]
-            else:
-                d = {'f16': 8, 'f32': 18, 'f64': 45}[typ]
-            comp = 'return distance(ref_out, nsimd_out) < {}'.format(d)
+            comp = 'return distance(ref_out, nsimd_out) < {}'. \
+                   format(op.ufp[typ])
             extra_code += distance[typ]
         else:
             comp = 'return nsimd_scalar_ne_{}(ref_out, nsimd_out);'. \
@@ -3259,16 +3354,8 @@ def doit(opts):
         # Skip non-matching tests
         if opts.match and not opts.match.match(op_name):
             continue
-        if op_name  in ['if_else1', 'loadu', 'loada', 'storeu', 'storea',
-                        'len', 'loadlu', 'loadla', 'storelu', 'storela',
-                        'set1', 'store2a', 'store2u', 'store3a', 'store3u',
-                        'store4a', 'store4u', 'downcvt', 'to_logical',
-                        'mask_for_loop_tail', 'set1l', 'scatter',
-                        'scatter_linear']:
-            continue
         for typ in operator.types:
-            if operator.name in ['notb', 'andb', 'xorb', 'orb', 'andnotb'] and \
-               typ == 'f16':
+            if not should_i_do_the_test(operator, '', typ):
                 continue
             elif operator.name == 'nbtrue':
                 gen_nbtrue(opts, operator, typ, 'c_base')
@@ -3304,6 +3391,8 @@ def doit(opts):
             elif operator.name in ['reinterpret', 'reinterpretl', 'cvt',
                                    'upcvt', 'to_mask']:
                 for to_typ in common.get_output_types(typ, operator.output_to):
+                    if not should_i_do_the_test(operator, to_typ, typ):
+                        continue
                     gen_reinterpret_convert(opts, operator, typ, to_typ,
                                             'c_base')
                     gen_reinterpret_convert(opts, operator, typ, to_typ,

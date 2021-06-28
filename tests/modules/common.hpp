@@ -121,7 +121,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   return bool(host_ret);
 }
 
-template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n, int) {
   return cmp(src1, src2, n);
 }
 
@@ -195,7 +195,7 @@ template <typename T> bool cmp(T *src1, T *src2, size_t n) {
   return bool(host_ret);
 }
 
-template <typename T> bool cmp(T *src1, T *src2, size_t n, double) {
+template <typename T> bool cmp(T *src1, T *src2, size_t n, int) {
   return cmp(src1, src2, n);
 }
 
@@ -210,48 +210,12 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   return memcmp(src1, src2, n * sizeof(T)) == 0;
 }
 
-inline double to_double(f64 a) { return a; }
-inline double to_double(f32 a) { return (double)a; }
-inline double to_double(f16 a) { return (double)nsimd_f16_to_f32(a); }
-
-template <typename T>
-bool cmp(T *src1, T *src2, unsigned int n, double epsilon) {
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n, int ufp) {
   for (unsigned int i = 0; i < n; i++) {
-    double a = to_double(src1[i]);
-    double b = to_double(src2[i]);
-    double ma, mi;
-
-    if (std::isnan(a) && std::isnan(b)) {
-      continue;
-    }
-
-    if (std::isnan(a) || std::isnan(b)) {
-      return false;
-    }
-
-    if (std::isinf(a) && std::isinf(b) &&
-        ((a > 0 && b > 0) || (a < 0 && b < 0))) {
-      continue;
-    }
-
-    if (std::isinf(a) || std::isinf(b)) {
-      return false;
-    }
-
-    a = (a > 0.0 ? a : -a);
-    b = (b > 0.0 ? b : -b);
-    ma = (a > b ? a : b);
-    mi = (a < b ? a : b);
-
-    if (ma == 0.0) {
-      continue;
-    }
-
-    if ( (ma - mi) / ma > epsilon) {
+    if (nsimd::ufp(src1[i], src2[i]) < ufp) {
       return false;
     }
   }
-
   return true;
 }
 

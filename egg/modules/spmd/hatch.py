@@ -21,9 +21,8 @@
 import os
 import operators
 import common
-import cuda
 import gen_scalar_utilities
-#import hip
+import gen_tests as nsimd_tests
 
 # -----------------------------------------------------------------------------
 # CUDA: default number of threads per block
@@ -441,14 +440,6 @@ def gen_tests_for_shifts(opts, t, operator):
     filename = os.path.join(dirname, '{}.{}.cpp'.format(op_name, t))
     if not common.can_create_filename(opts, filename):
         return
-
-    if op_name in ['rec11', 'rsqrt11']:
-        comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
-    elif op_name in ['rec8', 'rsqrt8']:
-        comp = '!cmp(ref, out, n, .0078125 /* = 2^-7 */)'
-    else:
-        comp = '!cmp(ref, out, n)'
-
     with common.open_utf8(opts, filename) as out:
         out.write(
         '''#include <nsimd/modules/spmd.hpp>
@@ -469,6 +460,8 @@ def gen_tests_for_shifts(opts, t, operator):
           kernel<<<{gpu_params}>>>(dst, a0, int(n), s);
         }}
 
+        {cbprng_cuda}
+
         #elif defined(NSIMD_ROCM)
 
         __global__ void kernel({typ} *dst, {typ} *a0, size_t n, int s) {{
@@ -482,6 +475,8 @@ def gen_tests_for_shifts(opts, t, operator):
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n, s);
         }}
 
+        {cbprng_hip}
+
         #else
 
         void compute_result({typ} *dst, {typ} *a0, unsigned int n, int s) {{
@@ -490,12 +485,11 @@ def gen_tests_for_shifts(opts, t, operator):
           }}
         }}
 
+        {cbprng_cpu}
+
         #endif
 
         // clang-format off
-
-        nsimd_fill_dev_mem_func(prng7,
-            1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         spmd_kernel_1d(kernel, {typ} *dst, {typ} *a0, int s)
           k_store(dst, k_{op_name}(k_load(a0), s));
@@ -510,12 +504,12 @@ def gen_tests_for_shifts(opts, t, operator):
             for (int s = 0; s < {typnbits}; s++) {{
               int ret = 0;
               {typ} *a0 = nsimd::device_calloc<{typ}>(n);
-              prng7(a0, n);
+              random(a0, n, 0);
               {typ} *ref = nsimd::device_calloc<{typ}>(n);
               {typ} *out = nsimd::device_calloc<{typ}>(n);
               spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0, s);
               compute_result(ref, a0, n, s);
-              if ({comp}) {{
+              if (!cmp(ref, out, n)) {{
                 ret = -1;
               }}
               nsimd::device_free(a0);
@@ -528,7 +522,10 @@ def gen_tests_for_shifts(opts, t, operator):
           }}
           return 0;
         }}
-        '''.format(typ=t, op_name=op_name, typnbits=t[1:], comp=comp,
+        '''.format(typ=t, op_name=op_name, typnbits=t[1:],
+                   cbprng_cpu=nsimd_tests.cbprng(t, operator, 'cpu'),
+                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda'),
+                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip'),
                    gpu_params=gpu_params))
 
     common.clang_format(opts, filename, cuda=True)
@@ -564,6 +561,8 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
           kernel<<<{gpu_params}>>>(dst, a0, int(n));
         }}
 
+        {cbprng_cuda}
+
         #elif defined(NSIMD_ROCM)
 
         __global__ void kernel({typ} *dst, {typ} *a0, size_t n) {{
@@ -578,6 +577,8 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
           hipLaunchKernelGGL(kernel, {gpu_params}, 0, 0, dst, a0, n);
         }}
 
+        {cbprng_hip}
+
         #else
 
         void compute_result({typ} *dst, {typ} *a0, unsigned int n) {{
@@ -587,12 +588,11 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
           }}
         }}
 
+        {cbprng_cpu}
+
         #endif
 
         // clang-format off
-
-        nsimd_fill_dev_mem_func(prng7,
-            1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         spmd_kernel_1d(kernel, {typ} *dst, {typ} *a0)
           k_store(dst, k_{op_name}({k_typ}, k_{op_name}({k_totyp},
@@ -607,7 +607,7 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
             unsigned int n = n_[i];
             int ret = 0;
             {typ} *a0 = nsimd::device_calloc<{typ}>(n);
-            prng7(a0, n);
+            random(a0, n, 0);
             {typ} *ref = nsimd::device_calloc<{typ}>(n);
             {typ} *out = nsimd::device_calloc<{typ}>(n);
             spmd_launch_kernel_1d(kernel, {typnbits}, 1, n, out, a0);
@@ -626,6 +626,9 @@ def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
         }}
         '''.format(typ=t, totyp=tt, op_name=op_name, typnbits=t[1:],
                    gpu_params=gpu_params, k_typ=k_typ[t[0]],
+                   cbprng_cpu=nsimd_tests.cbprng(t, operator, 'cpu'),
+                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda'),
+                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip'),
                    k_totyp=k_typ[tt[0]]))
 
     common.clang_format(opts, filename, cuda=True)
@@ -645,8 +648,7 @@ def gen_tests_for(opts, t, operator):
     k_call_args = ', '.join(['a{}'.format(i) for i in range(arity)])
 
     fill_tabs = '\n'.join(['{typ} *a{i} = nsimd::device_calloc<{typ}>(n);\n' \
-                           'prng{ip5}(a{i}, n);'. \
-                           format(typ=t, i=i, ip5=i + 5) \
+                           'random(a{i}, n, {i});'.format(typ=t, i=i) \
                            for i in range(arity)])
 
     free_tabs = '\n'.join(['nsimd::device_free(a{i});'. \
@@ -735,12 +737,8 @@ def gen_tests_for(opts, t, operator):
                                      one=get_cte_cpu(t, 1),
                                      zero=get_cte_cpu(t, 0))
 
-    if op_name in ['rec11', 'rsqrt11']:
-        comp = '!cmp(ref, out, n, .0009765625 /* = 2^-10 */)'
-    elif op_name in ['rec8', 'rsqrt8']:
-        comp = '!cmp(ref, out, n, .0078125 /* = 2^-7 */)'
-    else:
-        comp = '!cmp(ref, out, n)'
+    comp = '!cmp(ref, out, n{})'.format('' if t in common.iutypes \
+                                        else ', {}'.format(operator.ufp[t]))
 
     with common.open_utf8(opts, filename) as out:
         out.write(
@@ -762,6 +760,8 @@ def gen_tests_for(opts, t, operator):
           kernel<<<{gpu_params}>>>(dst, {k_call_args}, int(n));
         }}
 
+        {cbprng_cuda}
+
         #elif defined(NSIMD_ROCM)
 
         __global__ void kernel({typ} *dst, {k_args}, size_t n) {{
@@ -776,6 +776,8 @@ def gen_tests_for(opts, t, operator):
                              n);
         }}
 
+        {cbprng_hip}
+
         #else
 
         void compute_result({typ} *dst, {k_args}, unsigned int n) {{
@@ -784,16 +786,11 @@ def gen_tests_for(opts, t, operator):
           }}
         }}
 
+        {cbprng_cpu}
+
         #endif
 
         // clang-format off
-
-        nsimd_fill_dev_mem_func(prng5,
-            1 + (((unsigned int)i * 69342380 + 414585) % 5))
-        nsimd_fill_dev_mem_func(prng6,
-            1 + (((unsigned int)i * 12528380 + 784535) % 6))
-        nsimd_fill_dev_mem_func(prng7,
-            1 + (((unsigned int)i * 22328380 + 644295) % 7))
 
         spmd_kernel_1d(kernel, {typ} *dst, {k_args})
           {k_code}
@@ -833,6 +830,9 @@ def gen_tests_for(opts, t, operator):
         '''.format(typ=t, free_tabs=free_tabs, fill_tabs=fill_tabs,
                    k_code=k_code, k_call_args=k_call_args, k_args=k_args,
                    cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel, comp=comp,
+                   cbprng_cpu=nsimd_tests.cbprng(t, operator, 'cpu'),
+                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda'),
+                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip'),
                    gpu_params=gpu_params, typnbits=t[1:]))
 
     common.clang_format(opts, filename, cuda=True)
@@ -841,22 +841,13 @@ def gen_tests(opts):
     for op_name, operator in operators.operators.items():
         if not operator.has_scalar_impl:
             continue
-
         not_closed = (operator.output_to == common.OUTPUT_TO_SAME_SIZE_TYPES \
                       or ('v' not in operator.params[1:] and 'l' not in
                       operator.params[1:]))
-
         for t in operator.types:
-
-            if operator.name in ['notb', 'andb', 'xorb', 'orb',
-                                 'andnotb'] and t == 'f16':
-                continue
-
             tts = common.get_output_types(t, operator.output_to)
-
             for tt in tts:
-                if t == 'f16' and op_name in ['notb', 'andnotb', 'orb',
-                                              'xorb', 'andb']:
+                if not nsimd_tests.should_i_do_the_test(operator, tt, t):
                     continue
                 if operator.name in ['shl', 'shr', 'shra']:
                     gen_tests_for_shifts(opts, t, operator)
