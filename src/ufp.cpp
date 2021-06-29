@@ -35,15 +35,15 @@ int ufp(T a_, T b_) {
   UnsignedType a = nsimd::scalar_reinterpret(UnsignedType(), a_);
   UnsignedType b = nsimd::scalar_reinterpret(UnsignedType(), b_);
   UnsignedType exp_mask = ((UnsignedType)1 << ExponentSize) - 1;
-  nsimd_nat ea = (nsimd_nat)((a >> MantissaSize) & exp_mask);
-  nsimd_nat eb = (nsimd_nat)((b >> MantissaSize) & exp_mask);
+  i64 ea = (i64)((a >> MantissaSize) & exp_mask);
+  i64 eb = (i64)((b >> MantissaSize) & exp_mask);
   if (ea - eb > 1 || ea - eb < -1) {
     return 0;
   }
   UnsignedType man_mask = ((UnsignedType)1 << MantissaSize) - 1;
-  nsimd_nat ma = (nsimd_nat)(a & man_mask) | ((nsimd_nat)1 << MantissaSize);
-  nsimd_nat mb = (nsimd_nat)(b & man_mask) | ((nsimd_nat)1 << MantissaSize);
-  nsimd_nat d = 0;
+  i64 ma = (i64)(a & man_mask) | ((i64)1 << MantissaSize);
+  i64 mb = (i64)(b & man_mask) | ((i64)1 << MantissaSize);
+  i64 d = 0;
 
   if (ea == eb) {
     d = ma - mb;
@@ -54,7 +54,7 @@ int ufp(T a_, T b_) {
   }
   d = (d >= 0 ? d : -d);
   int i = 0;
-  for (; i <= MantissaSize + 1 && d >= ((nsimd_nat)1 << i); i++)
+  for (; i <= MantissaSize + 1 && d >= ((i64)1 << i); i++)
     ;
   return (int)(MantissaSize + 1 - i);
 }

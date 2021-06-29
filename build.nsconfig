@@ -61,14 +61,22 @@ set o_for_avx512_knl     = $o_for_avx2 api_avx512_knl$o \
 set o_for_avx512_skylake = $o_for_avx2 api_avx512_skylake$o \
                            sleef_avx512_skylake_f32$o \
                            sleef_avx512_skylake_f64$o
-set o_for_neon128        = $o_for_cpu api_neon128$o
-set o_for_aarch64        = $o_for_cpu api_aarch64$o
-set o_for_sve            = $o_for_aarch64 api_sve$o
-set o_for_sve128         = $o_for_aarch64 api_sve128$o
-set o_for_sve256         = $o_for_aarch64 api_sve256$o
-set o_for_sve512         = $o_for_aarch64 api_sve512$o
-set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
-set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
+set o_for_neon128        = $o_for_cpu api_neon128$o sleef_neon128_f32$o \
+                           sleef_neon128_f64$o
+set o_for_aarch64        = $o_for_cpu api_aarch64$o sleef_aarch64_f32$o \
+                           sleef_aarch64_f64$o
+set o_for_sve            = $o_for_aarch64 api_sve$o sleef_sve_f32$o \
+                           sleef_sve_f64$o
+set o_for_sve128         = $o_for_aarch64 api_sve128$o sleef_sve128_f32$o \
+                           sleef_sve128_f64$o
+set o_for_sve256         = $o_for_aarch64 api_sve256$o sleef_sve256_f32$o \
+                           sleef_sve256_f64$o
+set o_for_sve512         = $o_for_aarch64 api_sve512$o sleef_sve512_f32$o \
+                           sleef_sve512_f64$o
+set o_for_sve1024        = $o_for_aarch64 api_sve1024$o sleef_sve1024_f32$o \
+                           sleef_sve1024_f64$o
+set o_for_sve2048        = $o_for_aarch64 api_sve2048$o sleef_sve2048_f32$o \
+                           sleef_sve2048_f64$o
 
 ## SIMD compiler flags
 
@@ -219,8 +227,8 @@ build_file sleef_neon128_f32$o autodeps $root$/src/sleefsimdsp.c
 	   -DENABLE_NEON32=1 @in -o @out
 
 build_file sleef_neon128_f64$o autodeps $root$/src/sleefsimddp_emulation.c
-	cc $sleef_cflags$ -c -mneon128 -DNSIMD_NEON128 \
-	   -DENABLE_NEON32=1 @in -o @out
+	cc $sleef_cflags$ -c -mneon128 -DNSIMD_NEON128 -DENABLE_NEON32=1 \
+	   -I$root$/include @in -o @out
 
 ## ARM 64 bits rules for building
 
