@@ -68,7 +68,7 @@ set o_for_sve512         = $o_for_aarch64 api_sve512$o
 set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
 set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
 set o_for_vmx            = $o_for_cpu api_vmx$o 
-set o_for_vsx            = $o_for_cpu api_vsx$o
+set o_for_vsx            = $o_for_vmx api_vsx$o
 set o_for_wasm_simd128   = $o_for_cpu api_wasm_simd128$o
 
 

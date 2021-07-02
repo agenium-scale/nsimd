@@ -709,8 +709,8 @@ namespace nsimd {
   #include <wasm_simd128.h>
 
   #ifdef NSIMD_IS_EMSCRIPTEN
-   #pragma emscripten diagnostic ignored "-Wc11-extensions"
-   #pragma emscripten diagnostic ignored "-Wunused-parameter"
+   #pragma clang diagnostic ignored "-Wc11-extensions"
+   #pragma clang diagnostic ignored "-Wunused-parameter"
   #endif
 
   #if NSIMD_CXX > 0
@@ -773,7 +773,7 @@ namespace nsimd {
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
                              std::is_same_v<T, nsimd::vsx>;
-        #define NSIMD_LIST_SIMD_EXT cpu, vsx
+        #define NSIMD_LIST_SIMD_EXT cpu, vmx, vsx
       #endif
     } // namespace nsimd
   #endif

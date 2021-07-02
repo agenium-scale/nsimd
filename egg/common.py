@@ -215,8 +215,8 @@ simds_deps = {
     'sve512': ['cpu', 'aarch64', 'sve512'],
     'sve1024': ['cpu', 'aarch64', 'sve1024'],
     'sve2048': ['cpu', 'aarch64', 'sve2048'],
-    'vsx': ['cpu', 'vsx'],
     'vmx': ['cpu', 'vmx'],
+    'vsx': ['cpu', 'vmx', 'vsx'],
     'wasm_simd128':  ['cpu', 'wasm_simd128']
 }
 
