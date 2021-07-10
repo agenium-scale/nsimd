@@ -861,6 +861,8 @@ class Andnotb(Operator):
     full_name = 'bitwise andnot'
     signature = 'v andnotb v v'
     categories = [DocBitsOperators]
+    desc = 'Returns the bitwise andnot of its arguments, more precisely ' \
+           '"arg1 and (not arg2)"'
 
 class Notb(Operator):
     full_name = 'bitwise not'
@@ -890,6 +892,8 @@ class Andnotl(Operator):
     full_name = 'logical andnot'
     signature = 'l andnotl l l'
     categories = [DocLogicalOperators]
+    desc = 'Returns the logical andnot of its arguments, more precisely ' \
+           '"arg1 and (not arg2)"'
 
 class Xorl(Operator):
     full_name = 'logical xor'
