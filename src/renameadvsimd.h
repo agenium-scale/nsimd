@@ -1,14 +1,14 @@
 #ifndef RENAMEADVSIMD_H
-#define RENAMEADVSIMD_H
+               #define RENAMEADVSIMD_H
 
-/* ------------------------------------------------------------------------- */
-/* Naming of functions aarch64 */
+               /* ------------------------------------------------------------------------- */
+                   /* Naming of functions aarch64 */
 
-#ifdef NSIMD_AARCH64
+                   #ifdef NSIMD_AARCH64
 
-#ifdef DETERMINISTIC
+                   #ifdef DETERMINISTIC
 
-#define xsin nsimd_sleef_sin_u35d_aarch64_f64
+                   #define xsin nsimd_sleef_sin_u35d_aarch64_f64
 #define xsinf nsimd_sleef_sin_u35d_aarch64_f32
 #define xcos nsimd_sleef_cos_u35d_aarch64_f64
 #define xcosf nsimd_sleef_cos_u35d_aarch64_f32
@@ -163,9 +163,9 @@
 #define xgetPtr nsimd_sleef_getPtr_aarch64_f64
 #define xgetPtrf nsimd_sleef_getPtr_aarch64_f32
 
-#else
+                   #else
 
-#define xsin nsimd_sleef_sin_u35_aarch64_f64
+                   #define xsin nsimd_sleef_sin_u35_aarch64_f64
 #define xsinf nsimd_sleef_sin_u35_aarch64_f32
 #define xcos nsimd_sleef_cos_u35_aarch64_f64
 #define xcosf nsimd_sleef_cos_u35_aarch64_f32
@@ -320,15 +320,18 @@
 #define xgetPtr nsimd_sleef_getPtr_aarch64_f64
 #define xgetPtrf nsimd_sleef_getPtr_aarch64_f32
 
+                   #endif
+
+                   #define rempi nsimd_sleef_rempi_aarch64
+                   #define rempif nsimd_sleef_rempif_aarch64
+                   #define rempisub nsimd_sleef_rempisub_aarch64
+                   #define rempisubf nsimd_sleef_rempisubf_aarch64
+                   #define gammak nsimd_gammak_aarch64
+                   #define gammafk nsimd_gammafk_aarch64
+
+                   #endif
+
+                   
+
 #endif
 
-#define rempi nsimd_sleef_rempi_aarch64
-#define rempif nsimd_sleef_rempif_aarch64
-#define rempisub nsimd_sleef_rempisub_aarch64
-#define rempisubf nsimd_sleef_rempisubf_aarch64
-#define gammak nsimd_gammak_aarch64
-#define gammafk nsimd_gammafk_aarch64
-
-#endif
-
-#endif

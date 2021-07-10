@@ -116,19 +116,23 @@ def doit(opts):
     # in the past. We also rename some exported symbols.
     with open(os.path.join(opts.src_dir, 'misc.h'), 'a') as fout:
         fout.write(
-        '''/* NSIMD specific */
-           #ifndef NSIMD_SLEEF_MISC_H
-           #define NSIMD_SLEEF_MISC_H
+        '''
 
-           #ifdef INLINE
-           #undef INLINE
-           #endif
-           #define INLINE inline
+        /* NSIMD specific */
+        #ifndef NSIMD_SLEEF_MISC_H
+        #define NSIMD_SLEEF_MISC_H
 
-           #define Sleef_rempitabdp nsimd_sleef_rempitab_f64
-           #define Sleef_rempitabsp nsimd_sleef_rempitab_f32
+        #ifdef INLINE
+        #undef INLINE
+        #endif
+        #define INLINE inline
 
-           #endif''')
+        #define Sleef_rempitabdp nsimd_sleef_rempitab_f64
+        #define Sleef_rempitabsp nsimd_sleef_rempitab_f32
+
+        #endif
+
+        ''')
 
     # Sleef functions must be renamed properly for each SIMD extensions.
     # Moreover their name must contain their precision (in ULPs). This
@@ -226,8 +230,6 @@ def doit(opts):
                    #define gammak nsimd_gammak_{nsimd_ext}
                    #define gammafk nsimd_gammafk_{nsimd_ext}
 
-                   #endif
-
                    {endif}
 
                    '''.format(NSIMD_EXT=nse.upper(), nsimd_ext=nse,
@@ -236,5 +238,7 @@ def doit(opts):
                    defines_nondet_f32=defines.format(det='', nsimd_ext=nse),
                    defines_det_f64=defines.format(det='d', nsimd_ext=nse),
                    defines_nondet_f64=defines.format(det='', nsimd_ext=nse)))
+
+            fout.write('\n\n#endif\n\n')
 
             common.clang_format(opts, renameheader)

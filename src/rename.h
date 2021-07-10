@@ -1,12 +1,14 @@
 #ifndef RENAMESCALAR_H
-#define RENAMESCALAR_H
+               #define RENAMESCALAR_H
 
-/* ------------------------------------------------------------------------- */
-/* Naming of functions scalar */
+               /* ------------------------------------------------------------------------- */
+                   /* Naming of functions scalar */
 
-#ifdef DETERMINISTIC
+                   
 
-#define xsin nsimd_sleef_sin_u35d_scalar_f64
+                   #ifdef DETERMINISTIC
+
+                   #define xsin nsimd_sleef_sin_u35d_scalar_f64
 #define xsinf nsimd_sleef_sin_u35d_scalar_f32
 #define xcos nsimd_sleef_cos_u35d_scalar_f64
 #define xcosf nsimd_sleef_cos_u35d_scalar_f32
@@ -161,9 +163,9 @@
 #define xgetPtr nsimd_sleef_getPtr_scalar_f64
 #define xgetPtrf nsimd_sleef_getPtr_scalar_f32
 
-#else
+                   #else
 
-#define xsin nsimd_sleef_sin_u35_scalar_f64
+                   #define xsin nsimd_sleef_sin_u35_scalar_f64
 #define xsinf nsimd_sleef_sin_u35_scalar_f32
 #define xcos nsimd_sleef_cos_u35_scalar_f64
 #define xcosf nsimd_sleef_cos_u35_scalar_f32
@@ -318,13 +320,18 @@
 #define xgetPtr nsimd_sleef_getPtr_scalar_f64
 #define xgetPtrf nsimd_sleef_getPtr_scalar_f32
 
+                   #endif
+
+                   #define rempi nsimd_sleef_rempi_scalar
+                   #define rempif nsimd_sleef_rempif_scalar
+                   #define rempisub nsimd_sleef_rempisub_scalar
+                   #define rempisubf nsimd_sleef_rempisubf_scalar
+                   #define gammak nsimd_gammak_scalar
+                   #define gammafk nsimd_gammafk_scalar
+
+                   
+
+                   
+
 #endif
 
-#define rempi nsimd_sleef_rempi_scalar
-#define rempif nsimd_sleef_rempif_scalar
-#define rempisub nsimd_sleef_rempisub_scalar
-#define rempisubf nsimd_sleef_rempisubf_scalar
-#define gammak nsimd_gammak_scalar
-#define gammafk nsimd_gammafk_scalar
-
-#endif

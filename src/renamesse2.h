@@ -1,14 +1,14 @@
 #ifndef RENAMESSE2_H
-#define RENAMESSE2_H
+               #define RENAMESSE2_H
 
-/* ------------------------------------------------------------------------- */
-/* Naming of functions sse2 */
+               /* ------------------------------------------------------------------------- */
+                   /* Naming of functions sse2 */
 
-#ifdef NSIMD_SSE2
+                   #ifdef NSIMD_SSE2
 
-#ifdef DETERMINISTIC
+                   #ifdef DETERMINISTIC
 
-#define xsin nsimd_sleef_sin_u35d_sse2_f64
+                   #define xsin nsimd_sleef_sin_u35d_sse2_f64
 #define xsinf nsimd_sleef_sin_u35d_sse2_f32
 #define xcos nsimd_sleef_cos_u35d_sse2_f64
 #define xcosf nsimd_sleef_cos_u35d_sse2_f32
@@ -163,9 +163,9 @@
 #define xgetPtr nsimd_sleef_getPtr_sse2_f64
 #define xgetPtrf nsimd_sleef_getPtr_sse2_f32
 
-#else
+                   #else
 
-#define xsin nsimd_sleef_sin_u35_sse2_f64
+                   #define xsin nsimd_sleef_sin_u35_sse2_f64
 #define xsinf nsimd_sleef_sin_u35_sse2_f32
 #define xcos nsimd_sleef_cos_u35_sse2_f64
 #define xcosf nsimd_sleef_cos_u35_sse2_f32
@@ -320,15 +320,18 @@
 #define xgetPtr nsimd_sleef_getPtr_sse2_f64
 #define xgetPtrf nsimd_sleef_getPtr_sse2_f32
 
+                   #endif
+
+                   #define rempi nsimd_sleef_rempi_sse2
+                   #define rempif nsimd_sleef_rempif_sse2
+                   #define rempisub nsimd_sleef_rempisub_sse2
+                   #define rempisubf nsimd_sleef_rempisubf_sse2
+                   #define gammak nsimd_gammak_sse2
+                   #define gammafk nsimd_gammafk_sse2
+
+                   #endif
+
+                   
+
 #endif
 
-#define rempi nsimd_sleef_rempi_sse2
-#define rempif nsimd_sleef_rempif_sse2
-#define rempisub nsimd_sleef_rempisub_sse2
-#define rempisubf nsimd_sleef_rempisubf_sse2
-#define gammak nsimd_gammak_sse2
-#define gammafk nsimd_gammafk_sse2
-
-#endif
-
-#endif

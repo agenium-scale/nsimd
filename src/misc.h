@@ -347,16 +347,20 @@ typedef union {
 #else
 #define VECTOR_CC
 #endif
-/* NSIMD specific */
-           #ifndef NSIMD_SLEEF_MISC_H
-           #define NSIMD_SLEEF_MISC_H
 
-           #ifdef INLINE
-           #undef INLINE
-           #endif
-           #define INLINE inline
 
-           #define Sleef_rempitabdp nsimd_sleef_rempitab_f64
-           #define Sleef_rempitabsp nsimd_sleef_rempitab_f32
+        /* NSIMD specific */
+        #ifndef NSIMD_SLEEF_MISC_H
+        #define NSIMD_SLEEF_MISC_H
 
-           #endif
+        #ifdef INLINE
+        #undef INLINE
+        #endif
+        #define INLINE inline
+
+        #define Sleef_rempitabdp nsimd_sleef_rempitab_f64
+        #define Sleef_rempitabsp nsimd_sleef_rempitab_f32
+
+        #endif
+
+        

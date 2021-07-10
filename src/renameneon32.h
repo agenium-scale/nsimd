@@ -1,14 +1,14 @@
 #ifndef RENAMENEON32_H
-#define RENAMENEON32_H
+               #define RENAMENEON32_H
 
-/* ------------------------------------------------------------------------- */
-/* Naming of functions neon128 */
+               /* ------------------------------------------------------------------------- */
+                   /* Naming of functions neon128 */
 
-#ifdef NSIMD_NEON128
+                   #ifdef NSIMD_NEON128
 
-#ifdef DETERMINISTIC
+                   #ifdef DETERMINISTIC
 
-#define xsin nsimd_sleef_sin_u35d_neon128_f64
+                   #define xsin nsimd_sleef_sin_u35d_neon128_f64
 #define xsinf nsimd_sleef_sin_u35d_neon128_f32
 #define xcos nsimd_sleef_cos_u35d_neon128_f64
 #define xcosf nsimd_sleef_cos_u35d_neon128_f32
@@ -163,9 +163,9 @@
 #define xgetPtr nsimd_sleef_getPtr_neon128_f64
 #define xgetPtrf nsimd_sleef_getPtr_neon128_f32
 
-#else
+                   #else
 
-#define xsin nsimd_sleef_sin_u35_neon128_f64
+                   #define xsin nsimd_sleef_sin_u35_neon128_f64
 #define xsinf nsimd_sleef_sin_u35_neon128_f32
 #define xcos nsimd_sleef_cos_u35_neon128_f64
 #define xcosf nsimd_sleef_cos_u35_neon128_f32
@@ -320,15 +320,18 @@
 #define xgetPtr nsimd_sleef_getPtr_neon128_f64
 #define xgetPtrf nsimd_sleef_getPtr_neon128_f32
 
+                   #endif
+
+                   #define rempi nsimd_sleef_rempi_neon128
+                   #define rempif nsimd_sleef_rempif_neon128
+                   #define rempisub nsimd_sleef_rempisub_neon128
+                   #define rempisubf nsimd_sleef_rempisubf_neon128
+                   #define gammak nsimd_gammak_neon128
+                   #define gammafk nsimd_gammafk_neon128
+
+                   #endif
+
+                   
+
 #endif
 
-#define rempi nsimd_sleef_rempi_neon128
-#define rempif nsimd_sleef_rempif_neon128
-#define rempisub nsimd_sleef_rempisub_neon128
-#define rempisubf nsimd_sleef_rempisubf_neon128
-#define gammak nsimd_gammak_neon128
-#define gammafk nsimd_gammafk_neon128
-
-#endif
-
-#endif

@@ -1,14 +1,14 @@
 #ifndef RENAMEAVX512F_H
-#define RENAMEAVX512F_H
+               #define RENAMEAVX512F_H
 
-/* ------------------------------------------------------------------------- */
-/* Naming of functions avx512_knl */
+               /* ------------------------------------------------------------------------- */
+                   /* Naming of functions avx512_knl */
 
-#ifdef NSIMD_AVX512_KNL
+                   #ifdef NSIMD_AVX512_KNL
 
-#ifdef DETERMINISTIC
+                   #ifdef DETERMINISTIC
 
-#define xsin nsimd_sleef_sin_u35d_avx512_knl_f64
+                   #define xsin nsimd_sleef_sin_u35d_avx512_knl_f64
 #define xsinf nsimd_sleef_sin_u35d_avx512_knl_f32
 #define xcos nsimd_sleef_cos_u35d_avx512_knl_f64
 #define xcosf nsimd_sleef_cos_u35d_avx512_knl_f32
@@ -163,9 +163,9 @@
 #define xgetPtr nsimd_sleef_getPtr_avx512_knl_f64
 #define xgetPtrf nsimd_sleef_getPtr_avx512_knl_f32
 
-#else
+                   #else
 
-#define xsin nsimd_sleef_sin_u35_avx512_knl_f64
+                   #define xsin nsimd_sleef_sin_u35_avx512_knl_f64
 #define xsinf nsimd_sleef_sin_u35_avx512_knl_f32
 #define xcos nsimd_sleef_cos_u35_avx512_knl_f64
 #define xcosf nsimd_sleef_cos_u35_avx512_knl_f32
@@ -320,27 +320,25 @@
 #define xgetPtr nsimd_sleef_getPtr_avx512_knl_f64
 #define xgetPtrf nsimd_sleef_getPtr_avx512_knl_f32
 
-#endif
+                   #endif
 
-#define rempi nsimd_sleef_rempi_avx512_knl
-#define rempif nsimd_sleef_rempif_avx512_knl
-#define rempisub nsimd_sleef_rempisub_avx512_knl
-#define rempisubf nsimd_sleef_rempisubf_avx512_knl
-#define gammak nsimd_gammak_avx512_knl
-#define gammafk nsimd_gammafk_avx512_knl
+                   #define rempi nsimd_sleef_rempi_avx512_knl
+                   #define rempif nsimd_sleef_rempif_avx512_knl
+                   #define rempisub nsimd_sleef_rempisub_avx512_knl
+                   #define rempisubf nsimd_sleef_rempisubf_avx512_knl
+                   #define gammak nsimd_gammak_avx512_knl
+                   #define gammafk nsimd_gammafk_avx512_knl
 
-#endif
+                   #endif
 
-#endif
+                   /* ------------------------------------------------------------------------- */
+                   /* Naming of functions avx512_skylake */
 
-/* ------------------------------------------------------------------------- */
-/* Naming of functions avx512_skylake */
+                   #ifdef NSIMD_AVX512_SKYLAKE
 
-#ifdef NSIMD_AVX512_SKYLAKE
+                   #ifdef DETERMINISTIC
 
-#ifdef DETERMINISTIC
-
-#define xsin nsimd_sleef_sin_u35d_avx512_skylake_f64
+                   #define xsin nsimd_sleef_sin_u35d_avx512_skylake_f64
 #define xsinf nsimd_sleef_sin_u35d_avx512_skylake_f32
 #define xcos nsimd_sleef_cos_u35d_avx512_skylake_f64
 #define xcosf nsimd_sleef_cos_u35d_avx512_skylake_f32
@@ -495,9 +493,9 @@
 #define xgetPtr nsimd_sleef_getPtr_avx512_skylake_f64
 #define xgetPtrf nsimd_sleef_getPtr_avx512_skylake_f32
 
-#else
+                   #else
 
-#define xsin nsimd_sleef_sin_u35_avx512_skylake_f64
+                   #define xsin nsimd_sleef_sin_u35_avx512_skylake_f64
 #define xsinf nsimd_sleef_sin_u35_avx512_skylake_f32
 #define xcos nsimd_sleef_cos_u35_avx512_skylake_f64
 #define xcosf nsimd_sleef_cos_u35_avx512_skylake_f32
@@ -652,15 +650,18 @@
 #define xgetPtr nsimd_sleef_getPtr_avx512_skylake_f64
 #define xgetPtrf nsimd_sleef_getPtr_avx512_skylake_f32
 
+                   #endif
+
+                   #define rempi nsimd_sleef_rempi_avx512_skylake
+                   #define rempif nsimd_sleef_rempif_avx512_skylake
+                   #define rempisub nsimd_sleef_rempisub_avx512_skylake
+                   #define rempisubf nsimd_sleef_rempisubf_avx512_skylake
+                   #define gammak nsimd_gammak_avx512_skylake
+                   #define gammafk nsimd_gammafk_avx512_skylake
+
+                   #endif
+
+                   
+
 #endif
 
-#define rempi nsimd_sleef_rempi_avx512_skylake
-#define rempif nsimd_sleef_rempif_avx512_skylake
-#define rempisub nsimd_sleef_rempisub_avx512_skylake
-#define rempisubf nsimd_sleef_rempisubf_avx512_skylake
-#define gammak nsimd_gammak_avx512_skylake
-#define gammafk nsimd_gammafk_avx512_skylake
-
-#endif
-
-#endif
