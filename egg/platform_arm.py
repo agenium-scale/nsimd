@@ -913,7 +913,7 @@ def lop2(opts, op, simd_ext, typ):
                                   (svuint{typnbits}_t){in1});'''. \
             format(armop=armop[op], **fmtspec)
         else:
-            return '''return sv{armop}_x({svtrue}, {in0}, {in1});'''. \
+            return '''return sv{armop}_z({svtrue}, {in0}, {in1});'''. \
             format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -948,7 +948,7 @@ def lnot1(opts, simd_ext, typ):
             # it needs to be deleted when the bug is corrected
             return 'return svnot_x({svtrue}, (svuint{typnbits}_t){in0});'.format(**fmtspec)
         else:
-            return 'return svnot_x({svtrue}, {in0});'.format(**fmtspec)
+            return 'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Square root
@@ -1469,7 +1469,7 @@ def allany1(opts, op, simd_ext, typ):
             return '''return svptest_any({svtrue}, {operand});'''. \
                     format(operand=operand, **fmtspec)
         else:
-            operand='svnot_x({svtrue}, {op})'. \
+            operand='svnot_z({svtrue}, {op})'. \
             format(op=convert_to_predicate(opts, '{in0}'.format(**fmtspec)),
                    **fmtspec)
 
