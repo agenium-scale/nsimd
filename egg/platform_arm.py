@@ -764,7 +764,7 @@ def addsub(op, simd_ext, typ):
         return 'return v{op}q_{suf}({in0}, {in1});'. \
                format(op=op, **fmtspec)
     else:
-        return 'return sv{op}_{suf}_z({svtrue}, {in0}, {in1});'. \
+        return 'return sv{op}_{suf}_x({svtrue}, {in0}, {in1});'. \
                format(op=op, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -780,7 +780,7 @@ def mul2(simd_ext, typ):
         if simd_ext in neon:
             return 'return vmulq_{suf}({in0}, {in1});'.format(**fmtspec)
         else:
-            return 'return svmul_{suf}_z({svtrue}, {in0}, {in1});'. \
+            return 'return svmul_{suf}_x({svtrue}, {in0}, {in1});'. \
                    format(**fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -791,7 +791,7 @@ def div2(simd_ext, typ):
         return 'return vdivq_{suf}({in0}, {in1});'.format(**fmtspec)
     elif simd_ext in sve and \
          typ in ['f16', 'f32', 'f64', 'i32', 'u32', 'i64', 'u64']:
-        return 'return svdiv_{suf}_z({svtrue}, {in0}, {in1});'. \
+        return 'return svdiv_{suf}_x({svtrue}, {in0}, {in1});'. \
                format(**fmtspec)
     else:
         ret = f16f64(simd_ext, typ, 'div', 'div', 2)
@@ -809,7 +809,7 @@ def binop2(op, simd_ext, typ):
             return 'return v{armop}q_{suf}({in0}, {in1});'. \
                    format(armop=armop[op], **fmtspec)
         else:
-            return 'return sv{armop}_{suf}_z({svtrue}, {in0}, {in1});'. \
+            return 'return sv{armop}_{suf}_x({svtrue}, {in0}, {in1});'. \
                    format(armop=armop[op], **fmtspec)
     # From here only float types
     if typ == 'f16':
@@ -831,7 +831,7 @@ def binop2(op, simd_ext, typ):
     else:
         return \
         '''return svreinterpret_f{typnbits}_u{typnbits}(
-                    sv{armop}_u{typnbits}_z({svtrue},
+                    sv{armop}_u{typnbits}_x({svtrue},
                       svreinterpret_u{typnbits}_f{typnbits}({in0}),
                       svreinterpret_u{typnbits}_f{typnbits}({in1})));'''. \
                       format(armop=armop[op], **fmtspec)
@@ -850,7 +850,7 @@ def not1(simd_ext, typ):
                             vreinterpretq_u32_{suf}({in0})));'''. \
                             format(**fmtspec)
         if simd_ext in sve:
-            return 'return svnot_{suf}_z({svtrue}, {in0});'.format(**fmtspec)
+            return 'return svnot_{suf}_x({svtrue}, {in0});'.format(**fmtspec)
     # From here only float types
     if typ == 'f16':
         intrinsics = \
@@ -868,7 +868,7 @@ def not1(simd_ext, typ):
                     format(**fmtspec)
     else:
         return \
-        '''return svreinterpret_{suf}_u{typnbits}(svnot_u{typnbits}_z(
+        '''return svreinterpret_{suf}_u{typnbits}(svnot_u{typnbits}_x(
                     {svtrue}, svreinterpret_u{typnbits}_{suf}({in0})));'''. \
                     format(**fmtspec)
 
@@ -908,12 +908,12 @@ def lop2(opts, op, simd_ext, typ):
             # TODO: the casts are a workaround to avoid a bug in gcc trunk for sve
             # it needs to be deleted when the bug is corrected
             return \
-            '''return sv{armop}_z({svtrue},
+            '''return sv{armop}_x({svtrue},
                                   (svuint{typnbits}_t){in0},
                                   (svuint{typnbits}_t){in1});'''. \
             format(armop=armop[op], **fmtspec)
         else:
-            return '''return sv{armop}_z({svtrue}, {in0}, {in1});'''. \
+            return '''return sv{armop}_x({svtrue}, {in0}, {in1});'''. \
             format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -948,7 +948,7 @@ def lnot1(opts, simd_ext, typ):
             # it needs to be deleted when the bug is corrected
             return 'return svnot_x({svtrue}, (svuint{typnbits}_t){in0});'.format(**fmtspec)
         else:
-            return 'return svnot_z({svtrue}, {in0});'.format(**fmtspec)
+            return 'return svnot_x({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Square root
@@ -970,7 +970,7 @@ def sqrt1(simd_ext, typ):
         else:
             return 'return vsqrtq_{suf}({in0});'.format(**fmtspec)
     else:
-        return 'return svsqrt_{suf}_z({svtrue}, {in0});'.format(**fmtspec)
+        return 'return svsqrt_{suf}_x({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Shifts
@@ -992,7 +992,7 @@ def shl_shr(op, simd_ext, typ):
        armop = 'lsl' if op == 'shl' else 'lsr'
        if op == 'shr' and typ in common.itypes:
            return \
-           '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_z({svtrue},
+           '''return svreinterpret_{suf}_{suf2}(sv{armop}_{suf2}_x({svtrue},
                        svreinterpret_{suf2}_{suf}({in0}),
                        svdup_n_u{typnbits}((u{typnbits}){in1})));'''. \
                        format(suf2=common.bitfield_type[typ], armop=armop,
@@ -1202,7 +1202,7 @@ def minmax2(op, simd_ext, typ):
             return 'return v{op}q_{suf}({in0}, {in1});'. \
                    format(op=op, **fmtspec)
     else:
-        return 'return sv{op}_{suf}_z({svtrue}, {in0}, {in1});'. \
+        return 'return sv{op}_{suf}_x({svtrue}, {in0}, {in1});'. \
                format(op=op, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1222,7 +1222,7 @@ def abs1(simd_ext, typ):
         else:
             return f16f64(simd_ext, 'f64', 'abs', 'abs', 1)
     else:
-        return 'return svabs_{suf}_z({svtrue}, {in0});'. \
+        return 'return svabs_{suf}_x({svtrue}, {in0});'. \
                format(**fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1248,7 +1248,7 @@ def round1(op, simd_ext, typ):
     else:
         armop = {'floor': 'rintm', 'ceil': 'rintp', 'trunc': 'rintz',
                  'round_to_even': 'rintn'}
-        return 'return sv{armop}_{suf}_z({svtrue}, {in0});'. \
+        return 'return sv{armop}_{suf}_x({svtrue}, {in0});'. \
                format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1287,7 +1287,7 @@ def fmafnma3(op, simd_ext, typ):
         else:
             return normal
     else:
-        return 'return sv{armop}_{suf}_z({svtrue}, {in2}, {in1}, {in0});'. \
+        return 'return sv{armop}_{suf}_x({svtrue}, {in2}, {in1}, {in0});'. \
                format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1306,7 +1306,7 @@ def fmsfnms3(op, simd_ext, typ):
                       format(op2='fma' if op == 'fms' else 'fnma', **fmtspec)
     else:
         armop = {'fnms': 'nmla', 'fms': 'nmls'}
-        return 'return sv{armop}_{suf}_z({svtrue}, {in2}, {in1}, {in0});'. \
+        return 'return sv{armop}_{suf}_x({svtrue}, {in2}, {in1}, {in0});'. \
                format(armop=armop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1344,11 +1344,11 @@ def neg1(simd_ext, typ):
         if typ in common.utypes:
             return \
             '''return svreinterpret_{suf}_s{typnbits}(
-                        svneg_s{typnbits}_z({svtrue},
+                        svneg_s{typnbits}_x({svtrue},
                           svreinterpret_s{typnbits}_{suf}({in0})));'''. \
                           format(**fmtspec)
         else:
-            return 'return svneg_{suf}_z({svtrue}, {in0});'.format(**fmtspec)
+            return 'return svneg_{suf}_x({svtrue}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Reciprocals
@@ -1469,7 +1469,7 @@ def allany1(opts, op, simd_ext, typ):
             return '''return svptest_any({svtrue}, {operand});'''. \
                     format(operand=operand, **fmtspec)
         else:
-            operand='svnot_z({svtrue}, {op})'. \
+            operand='svnot_x({svtrue}, {op})'. \
             format(op=convert_to_predicate(opts, '{in0}'.format(**fmtspec)),
                    **fmtspec)
 
@@ -1603,7 +1603,7 @@ def convert1(simd_ext, from_typ, to_typ):
             return 'return svreinterpret_{to_suf}_{from_suf}({in0});'. \
                    format(**fmtspec2)
     if simd_ext in sve:
-        return 'return svcvt_{to_suf}_{from_suf}_z({svtrue}, {in0});'. \
+        return 'return svcvt_{to_suf}_{from_suf}_x({svtrue}, {in0});'. \
                format(**fmtspec2)
     to_f16_with_f32 = \
     '''nsimd_{simd_ext}_vf16 ret;
@@ -1926,9 +1926,9 @@ def upcvt1(simd_ext, from_typ, to_typ):
     elif from_typ in common.iutypes and to_typ in common.ftypes:
         return \
         '''nsimd_{simd_ext}_v{to_typ}x2 ret;
-           ret.v0 = svcvt_{suf_to_typ}_{suf_int_typ}_z(
+           ret.v0 = svcvt_{suf_to_typ}_{suf_int_typ}_x(
                       {svtrue}, svunpklo_{suf_int_typ}({in0}));
-           ret.v1 = svcvt_{suf_to_typ}_{suf_int_typ}_z(
+           ret.v1 = svcvt_{suf_to_typ}_{suf_int_typ}_x(
                       {svtrue}, svunpkhi_{suf_int_typ}({in0}));
            return ret;'''. \
            format(suf_to_typ=suf(to_typ),
@@ -1936,9 +1936,9 @@ def upcvt1(simd_ext, from_typ, to_typ):
     else:
         return \
         '''nsimd_{simd_ext}_v{to_typ}x2 ret;
-           ret.v0 = svcvt_{suf_to_typ}_{suf}_z({svtrue}, svzip1_{suf}(
+           ret.v0 = svcvt_{suf_to_typ}_{suf}_x({svtrue}, svzip1_{suf}(
                       {in0}, {in0}));
-           ret.v1 = svcvt_{suf_to_typ}_{suf}_z({svtrue}, svzip2_{suf}(
+           ret.v1 = svcvt_{suf_to_typ}_{suf}_x({svtrue}, svzip2_{suf}(
                       {in0}, {in0}));
            return ret;'''.format(suf_to_typ=suf(to_typ), **fmtspec)
 
@@ -1996,16 +1996,16 @@ def downcvt1(simd_ext, from_typ, to_typ):
     elif from_typ in common.ftypes and to_typ in common.iutypes:
         return \
         '''return svuzp1_{suf_to_typ}(svreinterpret_{suf_to_typ}_{suf_int_typ}(
-                    svcvt_{suf_int_typ}_{suf}_z({svtrue}, {in0})),
+                    svcvt_{suf_int_typ}_{suf}_x({svtrue}, {in0})),
                       svreinterpret_{suf_to_typ}_{suf_int_typ}(
-                        svcvt_{suf_int_typ}_{suf}_z({svtrue}, {in1})));'''. \
+                        svcvt_{suf_int_typ}_{suf}_x({svtrue}, {in1})));'''. \
                         format(suf_to_typ=suf(to_typ),
                                suf_int_typ=suf(to_typ[0] + from_typ[1:]),
                                **fmtspec)
     else:
         return \
-        '''return svuzp1_{suf_to_typ}(svcvt_{suf_to_typ}_{suf}_z(
-                    {svtrue}, {in0}), svcvt_{suf_to_typ}_{suf}_z(
+        '''return svuzp1_{suf_to_typ}(svcvt_{suf_to_typ}_{suf}_x(
+                    {svtrue}, {in0}), svcvt_{suf_to_typ}_{suf}_x(
                       {svtrue}, {in1}));'''. \
                     format(suf_to_typ=suf(to_typ), **fmtspec)
 
@@ -2085,7 +2085,7 @@ def iota(simd_ext, typ):
             return 'return svindex_{suf}(0, 1);'.format(**fmtspec)
         else:
             return \
-            '''return svcvt_{suf}_s{typnbits}_z({svtrue},
+            '''return svcvt_{suf}_s{typnbits}_x({svtrue},
                         svindex_s{typnbits}(0, 1));'''.format(**fmtspec)
     if typ == 'f64' and simd_ext == 'neon128':
         return '''nsimd_neon128_vf64 ret;

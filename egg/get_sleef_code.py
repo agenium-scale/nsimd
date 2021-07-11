@@ -68,6 +68,7 @@ def doit(opts):
     copy('src/arch/helperavx512f.h')
     copy('src/arch/helperneon32.h')
     copy('src/arch/helperadvsimd.h')
+    copy('src/arch/helpersve.h')
 
     # Sleef uses aliases but we don't need those so we comment them
     def comment_DALIAS_lines(filename):
