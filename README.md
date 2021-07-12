@@ -33,6 +33,8 @@ With two of its modules NSIMD provides three programming paradigms:
 | Arm NEON 128 bits (ARMv8 and later)   |     Y      |      Y       |      Y      |
 | Arm SVE (original sizeless SVE)       |     Y      |      Y       |      Y      |
 | Arm fixed sized SVE                   |     Y      |      Y       |      Y      |
+| IBM POWERPC VMX                       |     Y      |      Y       |      Y      |
+| IBM POWERPC VSX                       |     Y      |      Y       |      Y      |
 | NVIDIA CUDA                           |     N      |      Y       |      Y      |
 | AMD ROCm                              |     N      |      Y       |      Y      |
 
@@ -168,6 +170,8 @@ will contain the library. Supported SIMD extension are:
 - sve512
 - sve1024
 - sve2048
+- vmx
+- vsx
 - cuda
 - rocm
 
