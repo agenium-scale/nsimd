@@ -2071,8 +2071,7 @@ def to_mask1(opts, simd_ext, typ):
            return '''return svreinterpret_{suf}_{utyp}(svsel_{utyp}(
                           {in0}, svdup_n_{utyp}(({utyp})-1),
                           svdup_n_{utyp}(({utyp})0)));'''. \
-               format(utyp=utyp, **fmtspec)
-
+                          format(utyp=utyp, **fmtspec)
     else:
         return normal
 
