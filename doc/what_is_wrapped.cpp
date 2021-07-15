@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -180,7 +180,7 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
   // now split string on spaces and removes some tokens
   std::vector<std::string> to_be_removed(
       ns2::split("return,signed,unsigned,char,short,int,long,float,double,"
-                 "const,void," +
+                 "const,void,__vector,__bool,bool,vector" +
                      type_names_str + "," + input_vars,
                  ','));
   std::vector<std::string> to_be_removed_by_prefix(ns2::split(
@@ -251,15 +251,20 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
       if (simd_ext == "neon128" || simd_ext == "aarch64") {
         table[op_name][typ] +=
             "(https://developer.arm.com/architectures/instruction-sets/"
-            "simd-isas/neon/intrinsics?search=" +
-            tokens[i0 + 1] + ")";
+            "intrinsics/" + tokens[i0 + 1] + ")";
       } else if (ns2::startswith(simd_ext, "sve")) {
         table[op_name][typ] +=
             "(https://developer.arm.com/documentation/100987/0000)";
-      } else {
+      } else if (simd_ext == "sse2" || simd_ext == "sse42" ||
+                 simd_ext == "avx" || simd_ext == "avx2" ||
+                 simd_ext == "avx512_knl" || simd_ext == "avx512_skylake") {
         table[op_name][typ] += "(https://software.intel.com/sites/landingpage/"
                                "IntrinsicsGuide/#text=" +
                                tokens[i0 + 1] + ")";
+      } else if (simd_ext == "vsx" || simd_ext == "vmx") {
+        table[op_name][typ] +=
+            "(https://www.ibm.com/docs/en/xl-c-aix/13.1.3?topic=functions-" +
+            ns2::replace(tokens[i0 + 1], "_", "-") + ")";
       }
     } else {
       if (find(std::vector<std::string>(tokens.begin() + i0,

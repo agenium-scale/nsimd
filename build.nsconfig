@@ -77,6 +77,8 @@ set o_for_sve1024        = $o_for_aarch64 api_sve1024$o sleef_sve1024_f32$o \
                            sleef_sve1024_f64$o
 set o_for_sve2048        = $o_for_aarch64 api_sve2048$o sleef_sve2048_f32$o \
                            sleef_sve2048_f64$o
+set o_for_vmx            = $o_for_cpu api_vmx$o 
+set o_for_vsx            = $o_for_vmx api_vsx$o
 
 ## SIMD compiler flags
 
@@ -104,6 +106,8 @@ set cflags_for_sve256         = -DSVE256 -msve256
 set cflags_for_sve512         = -DSVE512 -msve512
 set cflags_for_sve1024        = -DSVE1024 -msve1024
 set cflags_for_sve2048        = -DSVE2048 -msve2048
+set cflags_for_vmx            = -DVMX -mvmx
+set cflags_for_vsx            = -DVSX -mvsx
 
 ## std default flag
 
@@ -300,6 +304,14 @@ build_file sleef_sve2048_f32$o autodeps $root$/src/sleefsimdsp.c
 build_file sleef_sve2048_f64$o autodeps $root$/src/sleefsimddp.c
 	cc $sleef_cflags$ -c -msve2048 -DNSIMD_SVE2048 -DENABLE_SVE=1 \
 	   @in -o @out
+
+## POWERPC rules for building
+
+build_file api_vsx$o autodeps $root$/src/api_vsx.cpp
+	c++ $cflags$ -c $cflags_for_vsx @in -o @out
+
+build_file api_vmx$o autodeps $root$/src/api_vmx.cpp
+	c++ $cflags$ -c $cflags_for_vmx @in -o @out
 
 ## Installation and packaging
 

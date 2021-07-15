@@ -87,6 +87,8 @@ following defines.
 | `NSIMD_SVE2048`        | Arm SVE (size known at compilation to 2048 bits)  |
 | `NSIMD_CUDA`           | Nvidia CUDA                                       |
 | `NSIMD_ROCM`           | AMD ROCm architectures                            |
+| `NSIMD_VMX`            | IBM POWERPC VMX (Altivec)                         |
+| `NSIMD_VSX`            | IBM POWERPC VSX (Altivec)                         |
 | `NSIMD_FP16`           | Architecture supports natively IEEE float16       |
 | `NSIMD_FMA`            | Architecture supports natively FMAs               |
 

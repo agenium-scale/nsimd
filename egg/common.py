@@ -93,7 +93,7 @@ def open_utf8(opts, filename):
             if opts.simple_license:
                 fout.write('''{}
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 {}
 
@@ -101,7 +101,7 @@ Copyright (c) 2020 Agenium Scale
             else:
                 fout.write('''{}
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -189,11 +189,11 @@ arm_simds = [
 ]
 
 ppc_simds = [
-    'power7',
-    'power8',
+    'vmx',
+    'vsx',
 ]
 
-simds = ['cpu'] + x86_simds + arm_simds
+simds = ['cpu'] + x86_simds + arm_simds + ppc_simds
 
 simds_deps = {
     'cpu': ['cpu'],
@@ -212,8 +212,8 @@ simds_deps = {
     'sve512': ['cpu', 'aarch64', 'sve512'],
     'sve1024': ['cpu', 'aarch64', 'sve1024'],
     'sve2048': ['cpu', 'aarch64', 'sve2048'],
-    'power7': ['cpu', 'power7'],
-    'power8': ['cpu', 'power8']
+    'vmx': ['cpu', 'vmx'],
+    'vsx': ['cpu', 'vmx', 'vsx']
 }
 
 ftypes = ['f64', 'f32', 'f16']

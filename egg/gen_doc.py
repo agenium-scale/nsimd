@@ -457,8 +457,8 @@ def gen_what_is_wrapped(opts):
                                          common.in1, common.in2, common.in3,
                                          common.in4, common.in5)
 
-    # For now we only list Intel and Arm intrinsics
-    simd_exts = common.x86_simds + common.arm_simds
+    # For now we only list Intel, Arm and POWERPC intrinsics
+    simd_exts = common.x86_simds + common.arm_simds + common.ppc_simds
     for p in common.get_platforms(opts):
         index_simds = ''
         for simd_ext in opts.platforms_list[p].get_simd_exts():
