@@ -852,13 +852,9 @@ def len1(simd_ext, typ):
 def simple_op2(op, simd_ext, typ):
     if typ == 'f16':
         return emulate_16(op, simd_ext, 2, False)
-
-    cpuop = {'mul': '*', 'div': '/', 'add': '+', 'sub': '-'}
     if not ppc_is_vec_type(typ):
         return emulate_64(op, simd_ext, 3 * ['v'], 2)
-
-    return 'return {in0} {op} {in1};'.format(op=cpuop[op], **fmtspec)
-
+    return 'return vec_{op}({in0}, {in1});'.format(op=op, **fmtspec)
 
 # Binary operators: and, or, xor, andnot
 

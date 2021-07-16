@@ -145,8 +145,7 @@ int is_number(std::string const &s) {
 
 int is_macro(std::string const &s) {
   for (size_t i = 0; i < s.size(); i++) {
-    if (s[i] != '_' && !(s[i] >= 'A' && s[i] <= 'Z') &&
-        !(s[i] >= 'a' && s[i] <= 'z')) {
+    if (s[i] != '_' || !(s[i] >= 'A' && s[i] <= 'Z')) {
       return false;
     }
   }
@@ -211,8 +210,6 @@ void parse_file(std::string const &input_vars, std::string const &simd_ext,
     // find func_name
     size_t pos = find(tokens, func_name);
     if (pos == not_found) {
-      std::cerr << "WARNING: cannot find function '" << func_name << "' in '"
-                << filename << "'\n";
       table[op_name][typ] = "NA";
       continue;
     }
