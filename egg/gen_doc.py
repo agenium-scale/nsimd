@@ -470,6 +470,8 @@ def gen_what_is_wrapped(opts):
                            format(simd_ext.upper(), simd_ext)
             ops = [[], [], [], []]
             for op_name, operator in operators.items():
+                if operator.src:
+                    continue
                 c_src = os.path.join(opts.include_dir, p, simd_ext,
                                      '{}.h'.format(op_name))
                 ops[operator.output_to].append('{} "{}"'. \
