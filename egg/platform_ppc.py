@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +19,7 @@
 # SOFTWARE.
 
 # This file gives the implementation for the Power PC platform.
-# This script tries to be as readable as possible. It implements
-# SVX SSX
+# This script tries to be as readable as possible. It implements VMX and VSX.
 
 # Documentation found from:
 # https://www.nxp.com/docs/en/reference-manual/ALTIVECPIM.pdf
@@ -85,35 +84,36 @@ def get_len(typ):
 
 # Emulate 64 bits types for vmx only
 def emulate_64(op, typ, params):
-    l = 'l' if params[0] == 'l' else ''
-    def arg(param):
+    def arg(param, i):
         if param == 'v':
-            return '{}.v{{}}'.format(get_arg(i))
+            return '{}.v{{i}}'.format(common.get_arg(i))
         elif param == 'l':
-            return '(int)({}.v{{}} & ((u64)1))'.format(get_arg(i))
+            return '(int)({}.v{{i}} & ((u64)1))'.format(common.get_arg(i))
         else:
-            return get_arg(i)
-    args = ', '.join(arg(params[i + 1] for i in len(params[1:])))
-    args0 = args.format(0)
-    args1 = args.format(1)
+            return common.get_arg(i)
+    args = ', '.join(arg(params[i + 1], i) for i in range(len(params[1:])))
+    args0 = args.format(i=0)
+    args1 = args.format(i=1)
     if params[0] == 'v':
-        return '''nsimd_vmx_v{l}{typ} ret;
+        return '''nsimd_vmx_v{typ} ret;
                   ret.v0 = nsimd_scalar_{op}_{typ}({args0});
                   ret.v1 = nsimd_scalar_{op}_{typ}({args1});
-                  return ret;'''.format(l=l, typ=typ, op=op, args0=args0,
-                                        args1=args1)
+                  return ret;'''. \
+                  format(typ=typ, op=op, args0=args0, args1=args1)
     else:
-        return '''nsimd_vmx_v{l}{typ} ret;
-                  ret.v0 = (u64)(nsimd_scalar_{op}_{typ}({args0}) ? -1 : 0);
-                  ret.v1 = (u64)(nsimd_scalar_{op}_{typ}({args1}) ? -1 : 0);
-                  return ret;'''.format(l=l, typ=typ, op=op, args0=args0,
-                                        args1=args1)
+        return \
+        '''nsimd_vmx_vl{typ} ret;
+           ret.v0 = (u64)(nsimd_scalar_{op}{suf}({args0}) ? -1 : 0);
+           ret.v1 = (u64)(nsimd_scalar_{op}{suf}({args1}) ? -1 : 0);
+           return ret;'''. \
+           format(suf='' if params == ['l'] * len(params) else '_' + typ,
+                  typ=typ, op=op, args0=args0, args1=args1)
 
 def emulate_f16(op, simd_ext, params):
-    tmpl = ', '.join(['{{in{}}}.v{{{{}}}}'.format(i).format(**fmtspec) \
+    tmpl = ', '.join(['{{in{}}}.v{{{{i}}}}'.format(i).format(**fmtspec) \
                       for i in range(len(params[1:]))])
-    args1 = tmpl.format('0')
-    args2 = tmpl.format('1')
+    args1 = tmpl.format(i=0)
+    args2 = tmpl.format(i=1)
     l = 'l' if params[0] == 'l' else ''
     return '''nsimd_{simd_ext}_v{l}f16 ret;
               ret.v0 = nsimd_{op}_{simd_ext}_f32({args1});
@@ -124,7 +124,7 @@ def emulate_f16(op, simd_ext, params):
 def emulation_code(op, simd_ext, typ, params):
     if typ == 'f16':
         return emulate_f16(op, simd_ext, params)
-    elif simd_ext == 'vmx' and ty in ['f64', 'i64', 'u64']:
+    elif simd_ext == 'vmx' and typ in ['f64', 'i64', 'u64']:
         return emulate_64(op, typ, params)
     else:
         raise ValueError('Automatic emulation for {}/{}/{} is not supported'. \
@@ -147,7 +147,7 @@ def get_type(opts, simd_ext, typ, nsimd_typ):
     if typ == 'f16':
         struct = 'struct {__vector float v0; __vector float v1;}'
     elif simd_ext == 'vmx' and typ in ['i64', 'u64', 'f64']:
-        struct = 'struct {{ {} v0; {} v1 }}'.format(typ, typ)
+        struct = 'struct {{ {} v0; {} v1; }}'.format(typ, typ)
     else:
         struct = native_type(typ)
     return 'typedef {} {};'.format(struct, nsimd_typ)
@@ -158,9 +158,9 @@ def get_logical_type(opts, simd_ext, typ, nsimd_typ):
     if typ not in common.types:
         raise ValueError('Unknown type "{}"'.format(typ))
     if typ == 'f16':
-        struct = 'struct {__vector bool v0; __vector bool v1;}'
+        struct = 'struct {__vector __bool int v0; __vector __bool int v1;}'
     elif simd_ext == 'vmx' and typ in ['i64', 'u64', 'f64']:
-        struct = 'struct { u64 v0; u64 v1 }'
+        struct = 'struct { u64 v0; u64 v1; }'
     else:
         struct = native_typel(typ)
     return 'typedef {} {};'.format(struct, nsimd_typ)
@@ -359,9 +359,10 @@ def printf2(*args0):
 
 # -----------------------------------------------------------------------------
 # Loads of degree 1, 2, 3 and 4
+# About unaligned loads/stores for Altivec:
+# https://developer.ibm.com/technologies/systems/articles/pa-dalign/
 
 def load1234(simd_ext, typ, deg, aligned):
-    # Load n for every 64bits types
     if typ in ['f64', 'i64', 'u64']:
         if deg == 1:
             if simd_ext == 'vmx':
@@ -395,86 +396,88 @@ def load1234(simd_ext, typ, deg, aligned):
                           format(i=i, ipd=i + deg, **fmtspec) \
                           for i in range(0, deg)) + \
                 '\nreturn ret;'
-
-    # Load n for f16
     if typ == 'f16':
         if deg == 1:
-            return '''nsimd_{simd_ext}_vf16 ret;
-                      f32 buf[4];
-                      buf[0] = nsimd_u16_to_f32(*(u16*){in0});
-                      buf[1] = nsimd_u16_to_f32(*((u16*){in0} + 1));
-                      buf[2] = nsimd_u16_to_f32(*((u16*){in0} + 2));
-                      buf[3] = nsimd_u16_to_f32(*((u16*){in0} + 3));
-                      ret.v0 = vec_ld(0, buf);
-                      buf[0] = nsimd_u16_to_f32(*((u16*){in0} + 4));
-                      buf[1] = nsimd_u16_to_f32(*((u16*){in0} + 5));
-                      buf[2] = nsimd_u16_to_f32(*((u16*){in0} + 6));
-                      buf[3] = nsimd_u16_to_f32(*((u16*){in0} + 7));
-                      ret.v1 = vec_ld(0, buf);
-                      return ret;'''.format(**fmtspec)
+            return \
+            '''nsimd_{simd_ext}_vf16 ret;
+               u16 *ptr = (u16 *){in0};
+               ret.v0 = vec_splats(nsimd_u16_to_f32(ptr[0]));
+               ret.v0 = vec_insert(nsimd_u16_to_f32(ptr[1]), ret.v0, 1);
+               ret.v0 = vec_insert(nsimd_u16_to_f32(ptr[2]), ret.v0, 2);
+               ret.v0 = vec_insert(nsimd_u16_to_f32(ptr[3]), ret.v0, 3);
+               ret.v1 = vec_splats(nsimd_u16_to_f32(ptr[4]));
+               ret.v1 = vec_insert(nsimd_u16_to_f32(ptr[5]), ret.v1, 1);
+               ret.v1 = vec_insert(nsimd_u16_to_f32(ptr[6]), ret.v1, 2);
+               ret.v1 = vec_insert(nsimd_u16_to_f32(ptr[7]), ret.v1, 3);
+               return ret;'''.format(**fmtspec)
         else:
             ret = '''nsimd_{simd_ext}_vf16x{deg} ret;
-                     f32 buf[4];
+                     u16 *ptr = (u16 *){in0};
                      '''.format(deg=deg, **fmtspec)
 
             for i in range(0, deg):
                 for k in range(0, 2):
-                    for j in range(0, 4):
-                        ret += '''buf[{j}] = nsimd_u16_to_f32(
-                                                 *((u16*){in0} + {shift}));
-                               '''.format(j=j, shift=i + k * 4 * deg + j * deg,
-                                          **fmtspec)
-                    ret += 'ret.v{i}.v{k} = vec_ld(0, buf);\n\n'. \
-                           format(i=i, k=k, **fmtspec)
-
+                    ret += 'ret.v{}.v{} = vec_splats(' \
+                           'nsimd_u16_to_f32(ptr[{}]));\n'. \
+                           format(i, k, i + k * 4 * deg)
+                    for j in range(1, 4):
+                        ret += 'ret.v{i}.v{k} = vec_insert(nsimd_u16_to_f32(' \
+                               'ptr[{o}]), ret.v{i}.v{k}, {j});\n'. \
+                               format(i=i, k=k, j=j,
+                                      o=i + k * 4 * deg + j * deg)
             ret += 'return ret;'
             return ret
-
-    # Load 1 for every supported types
     if deg == 1:
         if aligned:
             return 'return vec_ld(0, {in0});'.format(**fmtspec)
         else:
-            return 'return *(({ppc_typ}*) {in0});'. \
-                   format(ppc_typ=native_type(typ), **fmtspec)
+            return '''return vec_perm(vec_ld(0, {in0}), vec_ld(16, {in0}),
+                                      vec_lvsl(0, {in0}));'''.format(**fmtspec)
 
-    # Code to load aligned/unaligned vectors
+    # From here deg >= 2
+
     if aligned:
         load = 'nsimd_{simd_ext}_v{typ}x{deg} ret;\n'. \
                format(deg=deg, **fmtspec) + \
-               '\n'.join(['nsimd_{simd_ext}_v{typ} in{i} = ' \
-                          'vec_ld({i} * 16, {in0});'. \
-                          format(i=i, **fmtspec) for i in range(0, deg)])
+               '\n'.join(
+                 'nsimd_{simd_ext}_v{typ} in{i} = vec_ld({o}, {in0});'. \
+                 format(i=i, o=i * 16, **fmtspec) for i in range(deg))
     else:
         load = 'nsimd_{simd_ext}_v{typ}x{deg} ret;\n'. \
                format(deg=deg, **fmtspec) + \
-               '\n'.join(['nsimd_{simd_ext}_v{typ} in{i} = ' \
-                          '*(({ppc_typ}*) ({in0} + {i}*{vec_size}));'. \
-                          format(vec_size=str(128 // int(typ[1:])),
-                                 ppc_typ=native_type(typ), i=i, **fmtspec) \
-                                 for i in range(0, deg)])
-
-    # Load 2 for every supported types
+               '\n'.join(
+                 'nsimd_{simd_ext}_v{typ} in{i} = ' \
+                 'vec_perm(vec_ld({o}, {in0}), vec_ld({op16}, {in0}), ' \
+                 'vec_lvsl({o}, {in0}));'. \
+                 format(i=i, o=i * 16, op16=(i + 1) * 16, **fmtspec) \
+                        for i in range(0, deg))
     if deg == 2:
-        if typ[1:] in ['32', '64']:
+        if typ in ['i32', 'u32', 'f32']:
             return \
             '''{load}
+
                nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in1);
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in1);
+
                ret.v0 = vec_mergeh(tmp0, tmp1);
                ret.v1 = vec_mergel(tmp0, tmp1);
+
                return ret;'''.format(load=load, **fmtspec)
-        elif typ[1:] == '16':
+        elif typ in ['i16', 'u16']:
             return \
             '''{load}
+
                nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in1);
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in1);
+
                in0 = vec_mergeh(tmp0, tmp1);
                in1 = vec_mergel(tmp0, tmp1);
+
                ret.v0 = vec_mergeh(in0, in1);
                ret.v1 = vec_mergel(in0, in1);
+
                return ret;'''.format(load=load, **fmtspec)
-        elif typ[1:] == '8':
+        elif typ in ['i8', 'u8']:
             return \
             '''__vector unsigned char perm1 = NSIMD_PERMUTE_MASK_8(
                  0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
@@ -487,13 +490,11 @@ def load1234(simd_ext, typ, deg, aligned):
                ret.v1 = vec_perm(in0, in1, perm2);
 
                return ret;'''.format(load=load, **fmtspec)
-
-    # Load 3 for every supported types
     elif deg == 3:
-        if typ[1:] in ['32', '64']:
-            # TODO 64 bits handling
+        if typ in ['i32', 'u32', 'f32']:
             return \
             '''__vector char perm1 = NSIMD_PERMUTE_MASK_32(0, 3, 6, 0);
+
                {load}
 
                nsimd_{simd_ext}_v{typ} tmp0 = vec_perm(in0, in1, perm1);
@@ -509,9 +510,10 @@ def load1234(simd_ext, typ, deg, aligned):
                ret.v2 = vec_perm(tmp2, in1, perm4);
 
                return ret;'''.format(load=load, **fmtspec)
-        elif typ[1:] == '16':
+        elif typ in ['i16', 'u16']:
             return \
             '''{load}
+
                __vector char permRAB = NSIMD_PERMUTE_MASK_16(
                                            0, 3, 6, 9, 12, 15, 0, 0);
                __vector char permRDC = NSIMD_PERMUTE_MASK_16(
@@ -537,9 +539,10 @@ def load1234(simd_ext, typ, deg, aligned):
                ret.v2 = vec_perm(tmp2, in2, permBFC);
 
                return ret;'''.format(load=load, **fmtspec)
-        elif typ[1:] == '8':
+        elif typ in ['i8', 'u8']:
             return \
             '''{load}
+
                __vector char permRAB = NSIMD_PERMUTE_MASK_8(
                    0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 0, 0, 0, 0, 0);
                __vector char permRDC = NSIMD_PERMUTE_MASK_8(
@@ -565,24 +568,26 @@ def load1234(simd_ext, typ, deg, aligned):
                ret.v2 = vec_perm(tmp2, in2, permBFC);
 
                return ret;'''.format(load=load, **fmtspec)
-
-    # load 4 for every supported types
     else:
-        if typ[1:] in ['32', '64']:
+        if typ in ['i32', 'u32', 'f32']:
             return \
             '''{load}
+
                nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in2);
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in2);
                nsimd_{simd_ext}_v{typ} tmp2 = vec_mergeh(in1, in3);
                nsimd_{simd_ext}_v{typ} tmp3 = vec_mergel(in1, in3);
+
                ret.v0 = vec_mergeh(tmp0, tmp2);
                ret.v1 = vec_mergel(tmp0, tmp2);
                ret.v2 = vec_mergeh(tmp1, tmp3);
                ret.v3 = vec_mergel(tmp1, tmp3);
+
                return ret;'''.format(load=load, **fmtspec)
-        elif typ[1:] == '16':
+        elif typ in ['i16', 'u16']:
             return \
             '''{load}
+
                ret.v0 = vec_mergeh(in0, in2);
                ret.v1 = vec_mergel(in0, in2);
                ret.v2 = vec_mergeh(in1, in3);
@@ -599,9 +604,10 @@ def load1234(simd_ext, typ, deg, aligned):
                ret.v3 = vec_mergel(tmp1, tmp3);
 
                return ret;'''.format(load=load, **fmtspec)
-        elif typ[1:] == '8':
+        elif typ in ['i8', 'u8']:
             return \
             '''{load}
+
                nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in2);
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in2);
                nsimd_{simd_ext}_v{typ} tmp2 = vec_mergeh(in1, in3);
@@ -628,82 +634,69 @@ def load1234(simd_ext, typ, deg, aligned):
 # Stores of degree 1, 2, 3 and 4
 
 def store1234(simd_ext, typ, deg, aligned):
-    # store n for 64 bits types
     if typ in ['f64', 'i64', 'u64']:
-        suf = get_suf64(typ)
-        return '\n'.join(['*({{in0}} + {}) = {{in{}}}{suf0};'. \
-                          format(i - 1, i, **suf).format(**fmtspec) \
-                          for i in range(1, deg + 1)]) + '\n' + \
-               '\n'.join(['*({{in0}} + {}) = {{in{}}}{suf1};'. \
-                          format(i + deg - 1, i, **suf).format(**fmtspec) \
-                          for i in range(1, deg + 1)])
-
+        if simd_ext == 'vmx':
+            return '\n'.join('{}[{}] = {}.v0;'. \
+                             format(common.in0, i, common.get_arg(i + 1)) \
+                             for i in range(deg)) + '\n' + \
+                   '\n'.join('{}[{}] = {}.v1;'. \
+                             format(common.in0, i + deg,
+                                    common.get_arg(i + 1)) for i in range(deg))
+        else:
+            return '\n'.join('{}[{}] = vec_extract({}, 0);'. \
+                             format(common.in0, i, common.get_arg(i + 1)) \
+                             for i in range(deg)) + '\n' + \
+                   '\n'.join('{}[{}] = vec_extract({}, 1);'. \
+                             format(common.in0, i + deg,
+                                    common.get_arg(i + 1)) for i in range(deg))
     if typ == 'f16':
         if deg == 1:
-            return '''f32 buf[4];
-                      vec_st({in1}.v0, 0, buf);
-                      *((u16*){in0}    ) = nsimd_f32_to_u16(buf[0]);
-                      *((u16*){in0} + 1) = nsimd_f32_to_u16(buf[1]);
-                      *((u16*){in0} + 2) = nsimd_f32_to_u16(buf[2]);
-                      *((u16*){in0} + 3) = nsimd_f32_to_u16(buf[3]);
-                      vec_st({in1}.v1, 0, buf);
-                      *((u16*){in0} + 4) = nsimd_f32_to_u16(buf[0]);
-                      *((u16*){in0} + 5) = nsimd_f32_to_u16(buf[1]);
-                      *((u16*){in0} + 6) = nsimd_f32_to_u16(buf[2]);
-                      *((u16*){in0} + 7) = nsimd_f32_to_u16(buf[3]);'''. \
-                      format(**fmtspec)
+            return \
+            '''u16 *ptr = (u16 *){in0};
+               ptr[0] = nsimd_f32_to_u16(vec_extract({in1}.v0, 0));
+               ptr[1] = nsimd_f32_to_u16(vec_extract({in1}.v0, 1));
+               ptr[2] = nsimd_f32_to_u16(vec_extract({in1}.v0, 2));
+               ptr[3] = nsimd_f32_to_u16(vec_extract({in1}.v0, 3));
+               ptr[4] = nsimd_f32_to_u16(vec_extract({in1}.v1, 0));
+               ptr[5] = nsimd_f32_to_u16(vec_extract({in1}.v1, 1));
+               ptr[6] = nsimd_f32_to_u16(vec_extract({in1}.v1, 2));
+               ptr[7] = nsimd_f32_to_u16(vec_extract({in1}.v1, 3));'''. \
+               format(**fmtspec)
         else:
-            ret = 'f32 buf[4];\n'
-
+            ret = 'u16 *ptr = (u16 *){in0};\n'.format(**fmtspec)
             for i in range(0, deg):
                 for k in range(0, 2):
-                    ret += 'vec_st({{in{i}}}.v{k}, 0, buf);\n'. \
-                           format(i=i + 1, k=k).format(**fmtspec)
                     for j in range(0, 4):
-                        ret += '*((u16*){in0} + {shift}) = ' \
-                               'nsimd_f32_to_u16(buf[{j}]);\n'. \
-                               format(j=j, shift=i + k * 4 * deg + j * deg,
-                                      **fmtspec)
-
+                        ret += 'ptr[{o}] = nsimd_f32_to_u16(' \
+                               'vec_extract({a}.v{k}, {j}));\n'. \
+                               format(a=common.get_arg(i + 1), j=j, k=k,
+                                      o=i + k * 4 * deg + j * deg, **fmtspec)
             return ret
-
-    # store 1 for every supported types
     if deg == 1:
         if aligned:
             return 'vec_st({in1}, 0, {in0});'.format(**fmtspec)
-        elif typ[0] == 'f':
-            return \
-            '''/* We have to loop otherwise the last element is omitted  */
-               int i;
-               for (i = 0; i < {nbits}; i++) {{
-                 *(({typ}*){in0} + i) = {in1}[i];
-               }}'''.format(ppc_typ=native_type(typ),
-                            nbits=get_len(typ), **fmtspec)
         else:
-            return '*(({ppc_typ}*) {in0}) = {in1};'. \
+            return '*({ppc_typ} *){in0} = {in1};'. \
                    format(ppc_typ=native_type(typ), **fmtspec)
 
-    # Code to store aligned/unaligned vectors
-    if aligned:
-        store = '\n'.join(['vec_st(ret{i}, 16*{i}, {in0});'. \
-                           format(i=i, **fmtspec) for i in range(0, deg)])
-    else:
-        store = '\n'.join(['*({ppc_typ}*)({in0} + {i}*{vec_size}) = ret{i};'. \
-                          format(vec_size=get_len(typ),
-                                 ppc_typ=native_type(typ), i=i, **fmtspec) \
-                                 for i in range(0, deg)])
+    # From here deg >= 2
 
-    # store 2 for every supported types
+    if aligned:
+        store = '\n'.join('vec_st(ret{i}, {o}, {in0});'. \
+                          format(i=i, o=i * 16, **fmtspec) \
+                          for i in range(0, deg))
+    else:
+        store = '\n'.join('*({ppc_typ} *)({in0} + {o}) = ret{i};'. \
+                          format(o=i * get_len(typ), ppc_typ=native_type(typ),
+                                 i=i, **fmtspec) for i in range(deg))
     if deg == 2:
         return \
         '''nsimd_{simd_ext}_v{typ} ret0 = vec_mergeh({in1}, {in2});
            nsimd_{simd_ext}_v{typ} ret1 = vec_mergel({in1}, {in2});
 
            {store}'''.format(store=store, **fmtspec)
-
-    # store 3 for every supported types
     elif deg == 3:
-        if typ[1:] == '32':
+        if typ in ['i32', 'u32', 'f32']:
             return \
             '''__vector char perm1 = NSIMD_PERMUTE_MASK_32(0, 2, 4, 6);
                __vector char perm2 = NSIMD_PERMUTE_MASK_32(0, 2, 5, 7);
@@ -718,7 +711,7 @@ def store1234(simd_ext, typ, deg, aligned):
                nsimd_{simd_ext}_v{typ} ret2 = vec_perm(tmp1, tmp2, perm3);
 
                {store}'''.format(store=store, **fmtspec)
-        elif typ[1:] == '16':
+        elif typ in ['i16', 'u16']:
             return \
             '''__vector char permARG = NSIMD_PERMUTE_MASK_16(
                                            0, 8, 0, 1, 9, 0, 2, 10);
@@ -745,7 +738,7 @@ def store1234(simd_ext, typ, deg, aligned):
                nsimd_{simd_ext}_v{typ} ret2 = vec_perm(tmp2, {in3}, permCZB);
 
                {store}'''.format(store=store, **fmtspec)
-        elif typ[1:] == '8':
+        elif typ in ['i8', 'u8']:
             return \
             '''__vector char mARG = NSIMD_PERMUTE_MASK_8(
                    0, 16, 0, 1, 17, 0, 2, 18, 0, 3, 19, 0, 4, 20, 0, 5);
@@ -772,10 +765,8 @@ def store1234(simd_ext, typ, deg, aligned):
                nsimd_{simd_ext}_v{typ} ret2 = vec_perm(tmp2, {in3}, mCZB);
 
                {store}'''.format(store=store, **fmtspec)
-
-    # store 4 for every supported types
     else:
-        if typ[1:] == '32':
+        if typ in ['i32', 'u32', 'f32']:
             return \
             '''nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh({in1}, {in3});
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel({in1}, {in3});
@@ -788,7 +779,7 @@ def store1234(simd_ext, typ, deg, aligned):
                nsimd_{simd_ext}_v{typ} ret3 = vec_mergel(tmp1, tmp3);
 
                {store}'''.format(store=store, **fmtspec)
-        elif typ[1:] == '16':
+        elif typ in ['i16', 'u16']:
             return \
             '''nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh({in1}, {in3});
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel({in1}, {in3});
@@ -801,7 +792,7 @@ def store1234(simd_ext, typ, deg, aligned):
                nsimd_{simd_ext}_v{typ} ret3 = vec_mergel(tmp1, tmp3);
 
                {store}'''.format(store=store, **fmtspec)
-        elif typ[1:] == '8':
+        elif typ in ['i8', 'u8']:
             return \
             '''nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh({in1}, {in3});
                nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel({in1}, {in3});
@@ -865,16 +856,16 @@ def div2(simd_ext, typ):
 
 # -----------------------------------------------------------------------------
 
-def not1(op, simd_ext, typ):
+def not1(simd_ext, typ):
     if has_to_be_emulated(simd_ext, typ):
-        return emulation_code('notb', simd_ext, typ, ['v', 'v', 'v'])
+        return emulation_code('notb', simd_ext, typ, ['v', 'v'])
     return 'return vec_nor({in0}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 
 def lnot1(simd_ext, typ):
     if has_to_be_emulated(simd_ext, typ):
-        return emulation_code('notb', simd_ext, typ, ['l', 'l', 'l'])
+        return emulation_code('notl', simd_ext, typ, ['l', 'l'])
     return 'return vec_nor({in0}, {in0});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -914,7 +905,11 @@ def set1(simd_ext, typ):
 
 def lset1(simd_ext, typ):
     if typ == 'f16':
-        emulate_f16('set1l', simd_ext, ['v', 's'])
+        return \
+        '''nsimd_{simd_ext}_vlf16 ret;
+           ret.v0 = (__vector __bool int)vec_splats((u32)({in0} ? -1 : 0));
+           ret.v1 = ret.v0;
+           return ret;'''.format(**fmtspec)
     elif has_to_be_emulated(simd_ext, typ):
         return '''nsimd_{simd_ext}_vl{typ} ret;
                   ret.v0 = (u64)({in0} ? -1 : 0);
@@ -1102,21 +1097,21 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
         return \
         '''nsimd_{simd_ext}_vlf16 ret;
            ret.v0 = (__vector __bool int)vec_splats(
-                        (u32)((vec_extract({in0}), 0) ? -1 : 0));
+                        (u32)(vec_extract({in0}, 0) ? -1 : 0));
            ret.v0 = vec_insert(
-                        (u32)((vec_extract({in0}), 1) ? -1 : 0), ret.v0, 1);
+                        (u32)(vec_extract({in0}, 1) ? -1 : 0), ret.v0, 1);
            ret.v0 = vec_insert(
-                        (u32)((vec_extract({in0}), 2) ? -1 : 0), ret.v0, 2);
+                        (u32)(vec_extract({in0}, 2) ? -1 : 0), ret.v0, 2);
            ret.v0 = vec_insert(
-                        (u32)((vec_extract({in0}), 3) ? -1 : 0), ret.v0, 3);
+                        (u32)(vec_extract({in0}, 3) ? -1 : 0), ret.v0, 3);
            ret.v1 = (__vector __bool int)vec_splats(
-                        (u32)((vec_extract({in0}), 4) ? -1 : 0));
+                        (u32)(vec_extract({in0}, 4) ? -1 : 0));
            ret.v1 = vec_insert(
-                        (u32)((vec_extract({in0}), 5) ? -1 : 0), ret.v1, 1);
+                        (u32)(vec_extract({in0}, 5) ? -1 : 0), ret.v1, 1);
            ret.v1 = vec_insert(
-                        (u32)((vec_extract({in0}), 6) ? -1 : 0), ret.v1, 2);
+                        (u32)(vec_extract({in0}, 6) ? -1 : 0), ret.v1, 2);
            ret.v1 = vec_insert(
-                        (u32)((vec_extract({in0}), 7) ? -1 : 0), ret.v1, 3);
+                        (u32)(vec_extract({in0}, 7) ? -1 : 0), ret.v1, 3);
            return ret;'''.format(**fmtspec)
     else:
         return 'return ({ppc_to_typ}){in0};'. \
@@ -1141,16 +1136,18 @@ def convert1(simd_ext, from_typ, to_typ):
         return \
         '''nsimd_{simd_ext}_vf16 ret;
            /* Unpack extends the sign, we need to remove the extra 1s */
-           __vector unsigned int mask = vec_splats((int)0xFFFF);
-           ret.v0 = vec_ctf(vec_and(vec_unpackh((__vector short)a0), mask), 0);
-           ret.v1 = vec_ctf(vec_and(vec_unpackl((__vector short)a0), mask), 0);
+           __vector int mask = vec_splats((int)0xFFFF);
+           ret.v0 = vec_ctf(vec_and(vec_unpackh((__vector short){in0}), mask),
+                            0);
+           ret.v1 = vec_ctf(vec_and(vec_unpackl((__vector short){in0}), mask),
+                            0);
            return ret;'''.format(**fmtspec)
     elif from_typ == 'i16' and to_typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
                   ret.v0 = vec_ctf(vec_unpackh({in0}), 0);
                   ret.v1 = vec_ctf(vec_unpackl({in0}), 0);
                   return ret;'''.format(**fmtspec)
-    elif has_to_be_emulated(simd_ext, typ):
+    elif has_to_be_emulated(simd_ext, to_typ):
         return '''nsimd_{simd_ext}_v{to_typ} ret;
                   ret.v0 = nsimd_scalar_cvt_{to_typ}_{from_typ}({in0}.v0);
                   ret.v1 = nsimd_scalar_cvt_{to_typ}_{from_typ}({in0}.v1);
@@ -1201,19 +1198,19 @@ def reinterpret1(simd_ext, from_typ, to_typ):
            ret = vec_splats(nsimd_scalar_reinterpret_i16_u16(
                      nsimd_f32_to_u16(vec_extract({in0}.v0, 0))));
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v0, 1)), ret, 1));
+                     nsimd_f32_to_u16(vec_extract({in0}.v0, 1))), ret, 1);
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v0, 2)), ret, 2));
+                     nsimd_f32_to_u16(vec_extract({in0}.v0, 2))), ret, 2);
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v0, 3)), ret, 3));
+                     nsimd_f32_to_u16(vec_extract({in0}.v0, 3))), ret, 3);
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v1, 0)), ret, 4));
+                     nsimd_f32_to_u16(vec_extract({in0}.v1, 0))), ret, 4);
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v1, 1)), ret, 5));
+                     nsimd_f32_to_u16(vec_extract({in0}.v1, 1))), ret, 5);
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v1, 2)), ret, 6));
+                     nsimd_f32_to_u16(vec_extract({in0}.v1, 2))), ret, 6);
            ret = vec_insert(nsimd_scalar_reinterpret_i16_u16(
-                     nsimd_f32_to_u16(vec_extract({in0}.v1, 3)), ret, 7));
+                     nsimd_f32_to_u16(vec_extract({in0}.v1, 3))), ret, 7);
            return ret;'''.format(**fmtspec)
     elif from_typ == 'u16' and to_typ == 'f16':
         return \
@@ -1236,22 +1233,30 @@ def reinterpret1(simd_ext, from_typ, to_typ):
     elif from_typ == 'i16' and to_typ == 'f16':
         return \
         '''nsimd_{simd_ext}_vf16 ret;
-           ret.v0 = vec_splats(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 0))));
-           ret.v0 = vec_insert(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 1))), ret.v0, 1);
-           ret.v0 = vec_insert(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 2))), ret.v0, 2);
-           ret.v0 = vec_insert(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 3))), ret.v0, 3);
-           ret.v1 = vec_splats(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 4))));
-           ret.v1 = vec_insert(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 5))), ret.v1, 1);
-           ret.v1 = vec_insert(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 6))), ret.v1, 2);
-           ret.v1 = vec_insert(nsimd_scalar_reinterpret_u16_i16(
-                        nsimd_u16_to_f32(vec_extract({in0}, 7))), ret.v1, 3);
+           ret.v0 = vec_splats(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 0))));
+           ret.v0 = vec_insert(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 1))), ret.v0, 1);
+           ret.v0 = vec_insert(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 2))), ret.v0, 2);
+           ret.v0 = vec_insert(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 3))), ret.v0, 3);
+           ret.v1 = vec_splats(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 4))));
+           ret.v1 = vec_insert(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 5))), ret.v1, 1);
+           ret.v1 = vec_insert(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 6))), ret.v1, 2);
+           ret.v1 = vec_insert(nsimd_u16_to_f32(
+                        nsimd_scalar_reinterpret_u16_i16(
+                            vec_extract({in0}, 7))), ret.v1, 3);
            return ret;'''.format(**fmtspec)
     else:
         return 'return ({ppc_typ}){in0};'. \
@@ -1316,7 +1321,7 @@ def add_sub_s(op, simd_ext, typ):
                   ret = vec_insert(nsimd_scalar_{op}_{typ}(
                             vec_extract({in0}, 1), vec_extract({in1}, 1)),
                             ret, 1);
-                  return ret;'''.format(**fmtspec)
+                  return ret;'''.format(op=op, **fmtspec)
     return 'return vec_{op}({in0}, {in1});'.format(op=op, **fmtspec)
 
 # -----------------------------------------------------------------------------
@@ -1341,7 +1346,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
                   ret.v1 = vec_ct{sign}({in0}.v1, 0);
                   return ret;'''.format(sign=sign, **fmtspec)
     elif from_typ == 'f32' and to_typ in ['f64', 'i64', 'u64']:
-        if simd == 'vmx':
+        if simd_ext == 'vmx':
             return '''nsimd_vmx_v{to_typ}x2 ret;
                       ret.v0.v0 = ({to_typ})vec_extract({in0}, 0);
                       ret.v0.v1 = ({to_typ})vec_extract({in0}, 1);
@@ -1365,17 +1370,34 @@ def upcvt1(simd_ext, from_typ, to_typ):
                   ret.v1 = nsimd_cvt_{simd_ext}_{to_typ}_{sto_typ}(tmp.v1);
                   return ret;'''.format(sto_typ=from_typ[0] + to_typ[1:],
                                         **fmtspec)
-    elif from_typ in common.utypes and to_typ in common.iutypes:
-        mask='({})0x{}'.format(to_typ, 'F' * int(from_typ) // 4)
-        return '''nsimd_{simd_ext}_v{typ}x2 ret;
-                  ret.v0 = vec_and(vec_unpackl({in0}), vec_splats({mask}));
-                  ret.v1 = vec_and(vec_unpackh({in0}), vec_splats({mask}));
-                  return ret;'''.format(mask=mask, **fmtspec)
-    elif from_typ in common.itypes and to_typ in common.iutypes:
-        return '''nsimd_{simd_ext}_v{typ}x2 ret;
-                  ret.v0 = vec_unpackl({in0});
-                  ret.v1 = vec_unpackh({in0});
-                  return ret;'''.format(**fmtspec)
+    elif from_typ in ['i8', 'u8', 'i16', 'u16']:
+        if from_typ in common.utypes and to_typ in common.iutypes:
+            mask='({})0x{}'.format(to_typ, 'F' * (int(from_typ[1:]) // 4))
+            return '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+                      ret.v0 = vec_and(vec_unpackl({in0}), vec_splats({mask}));
+                      ret.v1 = vec_and(vec_unpackh({in0}), vec_splats({mask}));
+                      return ret;'''.format(mask=mask, **fmtspec)
+        elif from_typ in common.itypes and to_typ in common.iutypes:
+            return '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+                      ret.v0 = vec_unpackl({in0});
+                      ret.v1 = vec_unpackh({in0});
+                      return ret;'''.format(**fmtspec)
+    elif from_typ in ['i32', 'u32']:
+        if simd_ext == 'vmx':
+            return '''nsimd_vmx_v{to_typ}x2 ret;
+                      ret.v0.v0 = ({to_typ})vec_extract({in0}, 0);
+                      ret.v0.v1 = ({to_typ})vec_extract({in0}, 1);
+                      ret.v1.v0 = ({to_typ})vec_extract({in0}, 2);
+                      ret.v1.v1 = ({to_typ})vec_extract({in0}, 3);
+                      return ret;'''.format(**fmtspec)
+        else:
+            return \
+            '''nsimd_vsx_v{to_typ}x2 ret;
+               ret.v0 = vec_splats(({to_typ})vec_extract({in0}, 0));
+               ret.v0 = vec_insert(({to_typ})vec_extract({in0}, 1), ret.v0, 1);
+               ret.v1 = vec_splats(({to_typ})vec_extract({in0}, 2));
+               ret.v1 = vec_insert(({to_typ})vec_extract({in0}, 3), ret.v1, 1);
+               return ret;'''.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -1484,42 +1506,43 @@ def to_mask(simd_ext, typ):
                   ret.v0 = (__vector float){in0}.v0;
                   ret.v1 = (__vector float){in0}.v1;
                   return ret;'''.format(**fmtspec)
-    if ppc_is_vecl_type(typ):
-        return 'return ({ppc_typ}){in0};'. \
-               format(ppc_typ=native_type(typ), **fmtspec)
-    if typ in ['f64', 'i64']:
+    if simd_ext == 'vmx' and typ in ['f64', 'i64']:
         return '''nsimd_{simd_ext}_v{typ} ret;
                   ret.v0 = nsimd_scalar_reinterpret_{typ}_u64({in0}.v0);
                   ret.v1 = nsimd_scalar_reinterpret_{typ}_u64({in0}.v1);
                   return ret;'''.format(**fmtspec)
-    elif typ == 'u64':
+    elif simd_ext == 'vmx' and typ == 'u64':
         return '''nsimd_{simd_ext}_vu64 ret;
                   ret.v0 = {in0}.v0;
                   ret.v1 = {in0}.v1;
                   return ret;'''.format(**fmtspec)
+    return 'return ({ppc_typ}){in0};'. \
+           format(ppc_typ=native_type(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
 
 def iota(simd_ext, typ):
-    le = 256
     if typ == 'f16':
-        iota = ', '.join(['(f32){}'.format(i) for i in range(8)])
-        return '''nsimd_{simd_ext}_v{typ} ret;
-                  f32 buf[8] = {{ {iota} }};
-                  ret.v0 = vec_ld(0, buf);
-                  ret.v1 = vec_ld(0, buf + 4);
-                  return ret;'''.format(iota=iota, **fmtspec)
-    if ppc_is_vec_type(typ) and typ not in ['i64', 'u64']:
-        iota = ', '.join(['({typ}){i}'.format(typ=typ, i=i) \
-                          for i in range(int(le // int(typ[1:])))])
-        le //= int(typ[1:])
-        return '''{typ} buf[{le}] = {{ {iota} }};
-                  return vec_ld(0, buf);'''.format(iota=iota, le=le, **fmtspec)
-    elif typ in ['f64', 'i64', 'u64']:
-        return '''nsimd_{simd_ext}_v{typ} ret;
-                  ret{suf0} = ({typ})0;
-                  ret{suf1} = ({typ})1;
-                  return ret;'''.format(**get_suf64(typ), **fmtspec)
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  ret.v0 = vec_splats(0.0f);
+                  ret.v0 = vec_insert(1.0f, ret.v0, 1);
+                  ret.v0 = vec_insert(2.0f, ret.v0, 2);
+                  ret.v0 = vec_insert(3.0f, ret.v0, 3);
+                  ret.v1 = vec_splats(4.0f);
+                  ret.v1 = vec_insert(5.0f, ret.v1, 1);
+                  ret.v1 = vec_insert(6.0f, ret.v1, 2);
+                  ret.v1 = vec_insert(7.0f, ret.v1, 3);
+                  return ret;'''.format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
+        return '''nsimd_vmx_v{typ} ret;
+                  ret.v0 = ({typ})0;
+                  ret.v1 = ({typ})1;
+                  return ret;'''.format(**fmtspec)
+    return 'nsimd_{simd_ext}_v{typ} ret;\n' \
+           'ret = vec_splats(({typ})0);\n'.format(**fmtspec) + \
+           '\n'.join('ret = vec_insert(({}){}, ret, {});'.format(typ, i, i) \
+                     for i in range(1, get_len(typ))) + \
+           '\nreturn ret;'
 
 # -----------------------------------------------------------------------------
 
@@ -1546,152 +1569,147 @@ def mask_for_loop_tail(simd_ext, typ):
 def scatter(simd_ext, typ):
     le = get_len(typ)
     if typ == 'f16':
-        return '\n'.join(['{in0}[vec_extract({in1}, {i})] = ' \
-                          'nsimd_f32_to_f16(vec_extract({in2}.v0, {i}));'. \
-                          format(i=i, **fmtspec) for i in range(4)]) + \
-                          '\n' + \
-               '\n'.join(['{in0}[vec_extract({in1}, {ip4})] = ' \
-                          'nsimd_f32_to_f16(vec_extract({in2}.v1, {i}));'. \
-                          format(i=i, ip4=i + 4, **fmtspec) for i in range(4)])
-    if ppc_is_vec_type(typ):
-        return '\n'.join(['{in0}[vec_extract({in1}, {i})] = ' \
-                          'vec_extract({in2}, {i});'. \
-                          format(i=i, **fmtspec) \
-                          for i in range(get_len(typ))])
-    return '''{in0}[{in1}.v0] = {in2}.v0;
-              {in0}[{in1}.v1] = {in2}.v1;'''.format(**fmtspec)  # i64 u64 f64
+        return \
+        '''{in0}[vec_extract({in1}, 0)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v0, 0));
+           {in0}[vec_extract({in1}, 1)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v0, 1));
+           {in0}[vec_extract({in1}, 2)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v0, 2));
+           {in0}[vec_extract({in1}, 3)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v0, 3));
+           {in0}[vec_extract({in1}, 4)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v1, 0));
+           {in0}[vec_extract({in1}, 5)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v1, 1));
+           {in0}[vec_extract({in1}, 6)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v1, 2));
+           {in0}[vec_extract({in1}, 7)] = nsimd_f32_to_f16(
+                                              vec_extract({in2}.v1, 3));'''. \
+                                              format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
+        return '''{in0}[{in1}.v0] = {in2}.v0;
+                  {in0}[{in1}.v1] = {in2}.v1;'''.format(**fmtspec)
+    return '\n'.join(['{in0}[vec_extract({in1}, {i})] = ' \
+                      'vec_extract({in2}, {i});'.format(i=i, **fmtspec) \
+                      for i in range(get_len(typ))])
 
 # -----------------------------------------------------------------------------
 
 def gather(simd_ext, typ):
-    if ppc_is_vec_type(typ) and typ not in ['i64', 'u64']:
-        return \
-        '''nsimd_{simd_ext}_v{typ} ret;
-           ret = vec_splats({in0}[vec_extract({in1}, 0)]);
-           '''.format(**fmtspec) + \
-        '\n'.join('ret = vec_insert({in1}[vec_extract({in1}, {i})], ' \
-                  'ret, {i});'.format(i=i, **fmtspec) \
-                  for i in range(1, get_len(typ))) + '\n' + \
-        'return ret;'
     if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{typ} ret;
-           ret.v0 = vec_splats(nsimd_f16_to_f32(
-                      {in0}[vec_extract({in1}, 0)]));
-                      '''.format(**fmtspec) + '\n' + \
-        '\n'.join('''ret.v0 = vec_insert(nsimd_f16_to_f32(
-                              {in0}[vec_extract(
-                                {in1}, {i})]), ret.v0, {i});'''. \
-                                format(i=i, **fmtspec) \
-                                for i in range(1, 4)) + '\n' + \
-        '''ret.v1 = vec_splats(nsimd_f16_to_f32(
-                      {in0}[vec_extract({in1}, 4)]));
-                      '''.format(**fmtspec) + '\n' + \
-        '\n'.join('''ret.v1 = vec_insert(nsimd_f16_to_f32(
-                              {in0}[vec_extract(
-                                {in1}, {ip4})]), ret.v1, {i});'''. \
-                                format(i=i, ip4=i + 4, **fmtspec) \
-                                for i in range(1, 4)) + '\n' + \
-        'return ret;'
+           ret.v0 = vec_splats(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]));
+           ret.v0 = vec_insert(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]),
+                               ret.v0, 1);
+           ret.v0 = vec_insert(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]),
+                               ret.v0, 2);
+           ret.v0 = vec_insert(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]),
+                               ret.v0, 3);
+           ret.v1 = vec_splats(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]));
+           ret.v1 = vec_insert(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]),
+                               ret.v1, 1);
+           ret.v1 = vec_insert(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]),
+                               ret.v1, 2);
+           ret.v1 = vec_insert(nsimd_f16_to_f32({in0}[vec_extract({in1}, 0)]),
+                               ret.v1, 3);
+           return ret;'''.format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
+        return '''nsimd_{simd_ext}_v{typ} ret;
+                  ret.v0 = {in0}[{in1}.v0];
+                  ret.v0 = {in0}[{in1}.v1];
+                  return ret;'''.format(**fmtspec)
     return '''nsimd_{simd_ext}_v{typ} ret;
-              ret{suf0} = {in0}[{in1}{suf0}];
-              ret{suf1} = {in0}[{in1}{suf1}];
-              return ret;'''.format(**get_suf64(typ), **fmtspec)
+              ret = vec_splats({in0}[vec_extract({in1}, 0)]);
+              '''.format(**fmtspec) + \
+           '\n'.join('ret = vec_insert({in1}[vec_extract({in1}, {i})], ' \
+                     'ret, {i});'.format(i=i, **fmtspec) \
+                     for i in range(1, get_len(typ))) + '\n' + \
+           'return ret;'
 
 # -----------------------------------------------------------------------------
 
 def gather_linear(simd_ext, typ):
-    if ppc_is_vec_type(typ) and typ not in ['i64', 'u64']:
+    if typ == 'f16':
         return \
         '''nsimd_{simd_ext}_v{typ} ret;
+           ret.v0 = vec_splats(nsimd_f16_to_f32({in0}[0]));
+           ret.v0 = vec_insert(nsimd_f16_to_f32({in0}[{in1}]), ret.v0, 1);
+           ret.v0 = vec_insert(nsimd_f16_to_f32({in0}[2 * {in1}]), ret.v0, 2);
+           ret.v0 = vec_insert(nsimd_f16_to_f32({in0}[3 * {in1}]), ret.v0, 3);
+           ret.v1 = vec_splats(nsimd_f16_to_f32({in0}[4 * {in1}]));
+           ret.v1 = vec_insert(nsimd_f16_to_f32({in0}[5 * {in1}]), ret.v1, 1);
+           ret.v1 = vec_insert(nsimd_f16_to_f32({in0}[6 * {in1}]), ret.v1, 2);
+           ret.v1 = vec_insert(nsimd_f16_to_f32({in0}[7 * {in1}]), ret.v1, 3);
+           return ret;'''.format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
+        return '''nsimd_{simd_ext}_v{typ} ret;
+                  ret.v0 = {in0}[0];
+                  ret.v1 = {in0}[{in1}];
+                  return ret;'''.format(**fmtspec)
+    return '''nsimd_{simd_ext}_v{typ} ret;
            ret = vec_splats({in0}[0]);
            '''.format(**fmtspec) + \
         '\n'.join('ret = vec_insert({in0}[{in1} * {i}], ret, {i});'. \
                   format(i=i, **fmtspec) for i in range(1, get_len(typ))) + \
         '\nreturn ret;'
-    if typ == 'f16':
-        return \
-        '''nsimd_{simd_ext}_v{typ} ret;
-           ret.v0 = vec_splats(nsimd_f16_to_f32({in0}[0]));
-           '''.format(**fmtspec) + \
-        '\n'.join(
-        '''ret.v0 = vec_insert(nsimd_f16_to_f32(
-                        {in0}[{in1} * {i}]), ret.v0, {i});'''. \
-                        format(i=i, **fmtspec) for i in range(1, 4)) + \
-        '''
-           ret.v1 = vec_splats(nsimd_f16_to_f32({in0}[{in1} * 4]));
-           '''.format(**fmtspec) + \
-        '\n'.join(
-        '''ret.v1 = vec_insert(nsimd_f16_to_f32(
-                        {in0}[{in1} * {ip4}]), ret.v1, {i});'''. \
-                        format(i=i, ip4=i + 4, **fmtspec) \
-                        for i in range(1, 4)) + \
-        '\nreturn ret;'
-    return '''nsimd_{simd_ext}_v{typ} ret;
-              ret{suf0} = {in0}[0];
-              ret{suf1} = {in0}[{in1}];
-              return ret;'''.format(**get_suf64(typ), **fmtspec)
 
 # -----------------------------------------------------------------------------
 
 def scatter_linear(simd_ext, typ):
-    if ppc_is_vec_type(typ):
-        return '\n'.join(['{in0}[{in1} * {i}] = vec_extract({in2}, {i});'. \
-                          format(i=i, **fmtspec) for i in range(get_len(typ))])
     if typ == 'f16':
-        return '\n'.join(['{in0}[{in1} * {i}] = ' \
-                          'nsimd_f32_to_f16(vec_extract({in2}.v0, {i}));'. \
-                          format(i=i, **fmtspec) for i in range(4)]) + \
-                          '\n' + \
-               '\n'.join(['{in0}[{in1} * {ip4}] = ' \
-                          'nsimd_f32_to_f16(vec_extract({in2}.v1, {i}));'. \
-                          format(i=i, ip4=i + 4, **fmtspec) for i in range(4)])
-    return '''{in0}[0] = {in2}.v0;
-              {in0}[{in1}] = {in2}.v1;'''.format(**fmtspec)
+        return \
+        '''{in0}[0] = nsimd_f32_to_f16(vec_extract({in2}.v0, 0));
+           {in0}[{in1}] = nsimd_f32_to_f16(vec_extract({in2}.v0, 1));
+           {in0}[2 * {in1}] = nsimd_f32_to_f16(vec_extract({in2}.v0, 2));
+           {in0}[3 * {in1}] = nsimd_f32_to_f16(vec_extract({in2}.v0, 3));
+           {in0}[4 * {in1}] = nsimd_f32_to_f16(vec_extract({in2}.v1, 0));
+           {in0}[5 * {in1}] = nsimd_f32_to_f16(vec_extract({in2}.v1, 1));
+           {in0}[6 * {in1}] = nsimd_f32_to_f16(vec_extract({in2}.v1, 2));
+           {in0}[7 * {in1}] = nsimd_f32_to_f16(vec_extract({in2}.v1, 3));'''. \
+           format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
+        return '''{in0}[0] = {in2}.v0;
+                  {in0}[{in1}] = {in2}.v1;'''.format(**fmtspec)
+    return '\n'.join(['{in0}[{in1} * {i}] = vec_extract({in2}, {i});'. \
+                      format(i=i, **fmtspec) for i in range(get_len(typ))])
 
 # -----------------------------------------------------------------------------
 
 def maskoz_load(oz, simd_ext, typ):
     if typ == 'f16':
-        return '''nsimd_{simd_ext}_vf16 ret;
-                  ret.v0 = vec_splats(0.0f);
-                  ret.v1 = ret.v0;
-                  '''.format(**fmtspec) + \
-               '\n'.join(
-               '''if (vec_extract({in0}.v0, {i})) {{
-                    ret.v0 = vec_insert(nsimd_f16_to_f32({in1}[{i}]),
-                                        ret.v0, {i});
-                  }} else {{
-                    ret.v0 = vec_insert({oz}, ret.v0, {i});
-                  }}'''.format(i=i, oz='0.0f' if oz == 'z' \
-                                    else 'vec_extract({in2}.v0, {i})'. \
-                                    format(i=i, **fmtspec), **fmtspec) \
-                                    for i in range(4)) + '\n' + \
-               '\n'.join(
-               '''if (vec_extract({in0}.v1, {i})) {{
-                    ret.v1 = vec_insert(nsimd_f16_to_f32({in1}[{ip4}]),
-                                        ret.v1, {i});
-                  }} else {{
-                    ret.v1 = vec_insert({oz}, ret.v1, {i});
-                  }}'''.format(i=i, oz='0.0f' if oz == 'z' \
-                                    else 'vec_extract({in2}.v0, {i})'. \
-                                    format(i=i, **fmtspec),
-                                    ip4=i + 4, **fmtspec) \
-                                    for i in range(4)) + '\n' + \
-               'return ret;'
-    if ppc_is_vec_type(typ):
-        return 'nsimd_{simd_ext}_v{typ} ret = {zeros};\n'.format(**fmtspec) + \
-               '\n'.join(
-               '''if (vec_extract({in0}, {i})) {{
-                    ret = vec_insert({in1}[{i}], ret, {i});
-                  }} else {{
-                    ret = vec_insert({v}, ret, {i});
-                  }}'''.format(i=i, v='({})0'.format(typ) if oz == 'z' \
-                                    else 'vec_extract({in2}, {i})'. \
-                                         format(i=i, **fmtspec), **fmtspec) \
-                                         for i in range(get_len(typ))) + \
-               '\nreturn ret;'
-    if typ in ['f64', 'i64', 'u64']:
+        return \
+        '''nsimd_{simd_ext}_vf16 ret;
+           ret.v0 = vec_splats(0.0f);
+           ret.v0 = vec_insert(vec_extract({in0}.v0, 0) ?
+                               nsimd_f16_to_f32({in1}[0]) : {oz0}, ret.v0, 0);
+           ret.v0 = vec_insert(vec_extract({in0}.v0, 1) ?
+                               nsimd_f16_to_f32({in1}[1]) : {oz1}, ret.v0, 1);
+           ret.v0 = vec_insert(vec_extract({in0}.v0, 2) ?
+                               nsimd_f16_to_f32({in1}[2]) : {oz2}, ret.v0, 2);
+           ret.v0 = vec_insert(vec_extract({in0}.v0, 3) ?
+                               nsimd_f16_to_f32({in1}[3]) : {oz3}, ret.v0, 3);
+           ret.v1 = ret.v0;
+           ret.v1 = vec_insert(vec_extract({in0}.v0, 4) ?
+                               nsimd_f16_to_f32({in1}[4]) : {oz4}, ret.v1, 0);
+           ret.v1 = vec_insert(vec_extract({in0}.v0, 5) ?
+                               nsimd_f16_to_f32({in1}[5]) : {oz5}, ret.v1, 1);
+           ret.v1 = vec_insert(vec_extract({in0}.v0, 6) ?
+                               nsimd_f16_to_f32({in1}[6]) : {oz6}, ret.v1, 2);
+           ret.v1 = vec_insert(vec_extract({in0}.v0, 7) ?
+                               nsimd_f16_to_f32({in1}[7]) : {oz7}, ret.v1, 3);
+           return ret;'''. \
+           format(oz0='0.0f' if oz == 'z' else 'vec_extract({in2}.v0, 0)',
+                  oz1='0.0f' if oz == 'z' else 'vec_extract({in2}.v0, 1)',
+                  oz2='0.0f' if oz == 'z' else 'vec_extract({in2}.v0, 2)',
+                  oz3='0.0f' if oz == 'z' else 'vec_extract({in2}.v0, 3)',
+                  oz4='0.0f' if oz == 'z' else 'vec_extract({in2}.v1, 0)',
+                  oz5='0.0f' if oz == 'z' else 'vec_extract({in2}.v1, 1)',
+                  oz6='0.0f' if oz == 'z' else 'vec_extract({in2}.v1, 2)',
+                  oz7='0.0f' if oz == 'z' else 'vec_extract({in2}.v1, 3)',
+                  **fmtspec).format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
         if oz == 'z':
             return '''nsimd_{simd_ext}_v{typ} ret;
                       ret.v0 = {in0}.v0 ? {in1}[0] : ({typ})0;
@@ -1702,59 +1720,85 @@ def maskoz_load(oz, simd_ext, typ):
                       ret.v0 = {in0}.v0 ? {in1}[0] : {in2}.v0;
                       ret.v1 = {in0}.v1 ? {in1}[1] : {in2}.v1;
                       return ret;'''.format(**fmtspec)
+    return 'nsimd_{simd_ext}_v{typ} ret = {zeros};\n'.format(**fmtspec) + \
+           '\n'.join(
+           '''if (vec_extract({in0}, {i})) {{
+                ret = vec_insert({in1}[{i}], ret, {i});
+              }} else {{
+                ret = vec_insert({v}, ret, {i});
+              }}'''.format(i=i, v='({})0'.format(typ) if oz == 'z' \
+                                else 'vec_extract({in2}, {i})'. \
+                                     format(i=i, **fmtspec), **fmtspec) \
+                                     for i in range(get_len(typ))) + \
+                                     '\nreturn ret;'
 
 # -----------------------------------------------------------------------------
 
 def mask_store(simd_ext, typ):
     if typ == 'f16':
-        return '\n'.join(
-        '''if (vec_extract({in0}.v0, {i})) {{
-             {in1}[{i}] = nsimd_f32_to_f16(vec_extract({in2}.v0, {i}));
-           }}'''.format(i=i, **fmtspec) for i in range(get_len(typ))) + \
-        '\n' + '\n'.join(
-        '''if (vec_extract({in0}.v1, {i})) {{
-             {in1}[{ip4}] = nsimd_f32_to_f16(vec_extract({in2}.v1, {i}));
-           }}'''.format(i=i, ip4=i + 4, **fmtspec) for i in range(4))
-    if ppc_is_vec_type(typ):
-        return '\n'.join(
-        '''if (vec_extract({in0}, {i})) {{
-             {in1}[{i}] = vec_extract({in2}, {i});
-           }}'''.format(i=i, **fmtspec) for i in range(get_len(typ)))
-    return '''if ({in0}.v0) {{
-                {in1}[0] = {in2}.v0;
-              }}
-              if ({in0}.v1) {{
-                {in1}[1] = {in2}.v1;
-              }}'''.format(**fmtspec)
+        return \
+        '''if (vec_extract({in0}.v0, 0)) {{
+             {in1}[0] = nsimd_f32_to_f16(vec_extract({in2}.v0, 0));
+           }}
+           if (vec_extract({in0}.v0, 1)) {{
+             {in1}[1] = nsimd_f32_to_f16(vec_extract({in2}.v0, 1));
+           }}
+           if (vec_extract({in0}.v0, 2)) {{
+             {in1}[2] = nsimd_f32_to_f16(vec_extract({in2}.v0, 2));
+           }}
+           if (vec_extract({in0}.v0, 3)) {{
+             {in1}[3] = nsimd_f32_to_f16(vec_extract({in2}.v0, 3));
+           }}
+           if (vec_extract({in0}.v1, 0)) {{
+             {in1}[4] = nsimd_f32_to_f16(vec_extract({in2}.v1, 0));
+           }}
+           if (vec_extract({in0}.v1, 1)) {{
+             {in1}[5] = nsimd_f32_to_f16(vec_extract({in2}.v1, 1));
+           }}
+           if (vec_extract({in0}.v1, 2)) {{
+             {in1}[6] = nsimd_f32_to_f16(vec_extract({in2}.v1, 2));
+           }}
+           if (vec_extract({in0}.v1, 3)) {{
+             {in1}[7] = nsimd_f32_to_f16(vec_extract({in2}.v1, 3));
+           }}'''.format(**fmtspec)
+    elif has_to_be_emulated(simd_ext, typ):
+        return '''if ({in0}.v0) {{
+                    {in1}[0] = {in2}.v0;
+                  }}
+                  if ({in0}.v1) {{
+                    {in1}[1] = {in2}.v1;
+                  }}'''.format(**fmtspec)
+    return '\n'.join(
+           '''if (vec_extract({in0}, {i})) {{
+                {in1}[{i}] = vec_extract({in2}, {i});
+              }}'''.format(i=i, **fmtspec) for i in range(get_len(typ)))
 
 # -----------------------------------------------------------------------------
 
 def to_logical(simd_ext, typ):
     if typ == 'f16':
-        return '''nsimd_{simd_ext}_vlf16 ret;
-                  ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
-                  ret.v1 = nsimd_to_logical_{simd_ext}_f32({in0}.v1);
-                  return ret;'''.format(**fmtspec)
-    if typ in common.iutypes and ppc_is_vec_type(typ):
+        return emulate_f16('to_logical', simd_ext, ['v', 'v'])
+    elif has_to_be_emulated(simd_ext, typ):
+        if typ in ['i64', 'u64']:
+            return '''nsimd_{simd_ext}_vl{typ} ret;
+                      ret.v0 = (u64)({in0}.v0 != ({typ})0 ? -1 : 0);
+                      ret.v1 = (u64)({in0}.v1 != ({typ})0 ? -1 : 0);
+                      return ret;'''.format(**fmtspec)
+        elif typ == 'f64':
+            return '''nsimd_{simd_ext}_vl{typ} ret;
+                      ret.v0 = (u64)(nsimd_scalar_reinterpret_u64_f64(
+                                       {in0}.v0) != (u64)0 ? -1 : 0);
+                      ret.v1 = (u64)(nsimd_scalar_reinterpret_u64_f64(
+                                       {in0}.v1) != (u64)0 ? -1 : 0);
+                      return ret;'''.format(**fmtspec)
+    elif typ in common.iutypes:
         return 'return nsimd_ne_{simd_ext}_{typ}({in0}, {zeros});'. \
                format(**fmtspec)
-    if typ in ['f32', 'f64'] and ppc_is_vec_type(typ):
-        return \
-        '''return nsimd_ne_{simd_ext}_u{typnbits}(
-                    nsimd_reinterpret_{simd_ext}_u{typnbits}_{typ}(
-                      {in0}), vec_splats((u{typnbits})0));'''.format(**fmtspec)
-    if typ in ['i64', 'u64']:
-        return '''nsimd_{simd_ext}_vl{typ} ret;
-                  ret.v0 = (u64)({in0}.v0 != ({typ})0 ? -1 : 0);
-                  ret.v1 = (u64)({in0}.v1 != ({typ})0 ? -1 : 0);
-                  return ret;'''.format(**fmtspec)
-    elif typ == 'f64':
-        return '''nsimd_{simd_ext}_vl{typ} ret;
-                  ret.v0 = (u64)(nsimd_scalar_reinterpret_u64_f64(
-                                   {in0}.v0) != (u64)0 ? -1 : 0);
-                  ret.v1 = (u64)(nsimd_scalar_reinterpret_u64_f64(
-                                   {in0}.v1) != (u64)0 ? -1 : 0);
-                  return ret;'''.format(**fmtspec)
+    elif typ in ['f32', 'f64']:
+        return '''return nsimd_ne_{simd_ext}_u{typnbits}(
+                             nsimd_reinterpret_{simd_ext}_u{typnbits}_{typ}(
+                                 {in0}), vec_splats((u{typnbits})0));'''. \
+                                 format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -1803,7 +1847,7 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'andl': 'logical_op2("andl", simd_ext, from_typ)',
         'xorl': 'logical_op2("xorl", simd_ext, from_typ)',
         'orl': 'logical_op2("orl", simd_ext, from_typ)',
-        'notb': 'notb1(simd_ext, from_typ)',
+        'notb': 'not1(simd_ext, from_typ)',
         'notl': 'lnot1(simd_ext, from_typ)',
         'andnotb': 'binary_op2("andnotb", simd_ext, from_typ)',
         'andnotl': 'logical_op2("andnotl", simd_ext, from_typ)',
