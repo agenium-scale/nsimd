@@ -1472,8 +1472,24 @@ def unzip(func, simd_ext, typ):
                   ret.v1 = {in1}.v{i};
                   return ret;'''.format(i=0 if func == 'unziplo' else 1,
                                         **fmtspec)
-    return 'return vec_merge{suf}({in0}, {in1});'. \
-           format(suf='e' if func == 'unziplo' else 'o', **fmtspec)
+    elif typ in ['i32', 'u32']:
+        return 'return vec_merge{suf}({in0}, {in1});'. \
+               format(suf='e' if func == 'unziplo' else 'o', **fmtspec)
+    else:
+        leo2 = get_len(typ) // 2
+        return '''nsimd_{simd_ext}_v{typ} ret;
+                  ret = vec_splats(vec_extract({in0}, {i}));'''. \
+                  format(i=0 if func == 'unziplo' else 1, **fmtspec) + '\n' + \
+               '\n'.join(
+                   'ret = vec_insert(vec_extract({in0}, {ix2}), ret, {i});'. \
+                   format(i=i, ix2=2 * i if func == 'unziplo' else 2 * i + 1,
+                          **fmtspec) for i in range(leo2)) + '\n' + \
+               '\n'.join(
+                   'ret = vec_insert(vec_extract({in1}, {ix2}), ret, {i});'. \
+                   format(i=i + leo2, ix2=2 * i if func == 'unziplo' \
+                          else 2 * i + 1, **fmtspec) \
+                          for i in range(leo2)) + '\n' + \
+               'return ret;'
 
 # -----------------------------------------------------------------------------
 
@@ -1776,7 +1792,7 @@ def mask_store(simd_ext, typ):
 
 def to_logical(simd_ext, typ):
     if typ == 'f16':
-        return emulate_f16('to_logical', simd_ext, ['v', 'v'])
+        return emulate_f16('to_logical', simd_ext, ['l', 'v'])
     elif has_to_be_emulated(simd_ext, typ):
         if typ in ['i64', 'u64']:
             return '''nsimd_{simd_ext}_vl{typ} ret;
