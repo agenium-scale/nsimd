@@ -431,8 +431,8 @@ def load1234(simd_ext, typ, deg, aligned):
         if aligned:
             return 'return vec_ld(0, {in0});'.format(**fmtspec)
         else:
-            return '''return vec_perm(vec_ld(0, {in0}), vec_ld(16, {in0}),
-                                      vec_lvsl(0, {in0}));'''.format(**fmtspec)
+            return 'return *({ppc_typ}*){in0};'. \
+                   format(ppc_typ=native_type(typ), **fmtspec)
 
     # From here deg >= 2
 
@@ -446,10 +446,8 @@ def load1234(simd_ext, typ, deg, aligned):
         load = 'nsimd_{simd_ext}_v{typ}x{deg} ret;\n'. \
                format(deg=deg, **fmtspec) + \
                '\n'.join(
-                 'nsimd_{simd_ext}_v{typ} in{i} = ' \
-                 'vec_perm(vec_ld({o}, {in0}), vec_ld({op16}, {in0}), ' \
-                 'vec_lvsl({o}, {in0}));'. \
-                 format(i=i, o=i * 16, op16=(i + 1) * 16, **fmtspec) \
+                 'nsimd_{simd_ext}_v{typ} in{i} = *({ppc_typ}*){in0};'. \
+                 format(i=i, ppc_typ=native_type(typ), **fmtspec) \
                         for i in range(0, deg))
     if deg == 2:
         if typ in ['i32', 'u32', 'f32']:
@@ -880,7 +878,7 @@ def sqrt1(simd_ext, typ):
 def shift2(op, simd_ext, typ):
     if has_to_be_emulated(simd_ext, typ):
         return emulation_code(op, simd_ext, typ, ['v', 'v', 'p'])
-    return 'vec_{ppcop}({in0}, vec_splats((u{typnbits}){in1}));'. \
+    return 'return vec_{ppcop}({in0}, vec_splats((u{typnbits}){in1}));'. \
            format(ppcop={'shl': 'sl', 'shr': 'sr', 'shra': 'sra'}[op],
                   **fmtspec)
 
@@ -975,17 +973,20 @@ def fma(op, simd_ext, typ):
         return emulation_code(op, simd_ext, typ, ['v', 'v', 'v', 'v'])
     elif typ in common.iutypes:
         if op == 'fma':
-            return 'vec_add(vec_mul({in0}, {in1}), {in2});'.format(**fmtspec)
+            return \
+            'return vec_add(vec_mul({in0}, {in1}), {in2});'.format(**fmtspec)
         elif op == 'fms':
-            return 'vec_sub(vec_mul({in0}, {in1}), {in2});'.format(**fmtspec)
+            return \
+            'return vec_sub(vec_mul({in0}, {in1}), {in2});'.format(**fmtspec)
         elif op == 'fnma':
-            return 'vec_sub({in2}, vec_mul({in0}, {in1}));'.format(**fmtspec)
+            return \
+            'return vec_sub({in2}, vec_mul({in0}, {in1}));'.format(**fmtspec)
         elif op == 'fnms':
-            return '''vec_sub(nsimd_neg_{simd_ext}_{typ}({in2}),
-                          vec_mul({in0}, {in1}));'''.format(**fmtspec)
+            return '''return vec_sub(nsimd_neg_{simd_ext}_{typ}({in2}),
+                                 vec_mul({in0}, {in1}));'''.format(**fmtspec)
     elif typ in common.ftypes:
         ppcop = { 'fma': 'vec_madd', 'fms': 'vec_msub', 'fnms': 'vec_nmadd',
-                   'fnma': 'vec_nmsub' }
+                  'fnma': 'vec_nmsub' }
         return 'return {ppcop}({in0}, {in1}, {in2});'. \
                format(ppcop=ppcop[op], **fmtspec)
 
