@@ -1672,6 +1672,14 @@ T to(S value) {
      so we silence the warning manually for now. */
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wuninitialized"
+#elif defined(NSIMD_IS_GCC) && NSIMD_CXX > 0 && \
+      (defined(NSIMD_VMX) || defined(NSIMD_VSX))
+  /* When compiling POWERPC intrinsics inside C++ code with GCC we get tons of
+     -Wunused-but-set-parameter. This is a GCC bug. For now we slience the
+     warnings here. */
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+  #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
 #include <nsimd/functions.h>
@@ -1681,6 +1689,9 @@ T to(S value) {
 #elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
   #pragma clang diagnostic pop
 #elif defined(NSIMD_IS_GCC) && defined(NSIMD_SVE_FAMILY)
+  #pragma GCC diagnostic pop
+#elif defined(NSIMD_IS_GCC) && NSIMD_CXX > 0 && \
+      (defined(NSIMD_VMX) || defined(NSIMD_VSX))
   #pragma GCC diagnostic pop
 #endif
 

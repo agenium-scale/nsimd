@@ -64,6 +64,9 @@ maintainer will then merge or comment the pull request.
   + `SVE` 512 bits known at compiled time called `SVE512` in source code.
   + `SVE` 1024 bits known at compiled time called `SVE1024` in source code.
   + `SVE` 2048 bits known at compiled time called `SVE2048` in source code.
+- IBM POWERPC
+  + `VMX` 128 bits as found on POWER6 CPUs called `VMX` in source code.
+  + `VSX` 128 bits as found on POWER7/8 CPUs called `VSX` in source code.
 - NVIDIA
   + `CUDA` called `CUDA` in source code
 - AMD
@@ -126,6 +129,9 @@ follows:
     `float16`s, `float`s and `double`s.
   + `SVE2048`: `svfoo_f16`, `svfoo_f32` and `svfoo_f64` for respectively
     `float16`s, `float`s and `double`s.
+- IBM POWERPC
+  + `VMX`: `vec_foo` for `float`s and no intrinsics for `double`s.
+  + `VSX`: `vec_foo` for `float`s and `double`s.
 - NVIDIA
   + `CUDA`: no intrinsics is provided.
 - AMD
@@ -272,6 +278,8 @@ and the following files (among many other) should appear:
 - `include/nsimd/arm/sve512/foo.h`
 - `include/nsimd/arm/sve1024/foo.h`
 - `include/nsimd/arm/sve2048/foo.h`
+- `include/nsimd/ppc/vmx/foo.h`
+- `include/nsimd/ppc/vsx/foo.h`
 
 They each correspond to the implementations of the operator for each supported
 architectures. When openening one of these files the implementations in plain
@@ -287,6 +295,7 @@ files:
 - `egg/platform_cpu.py`
 - `egg/platform_x86.py`
 - `egg/platform_arm.py`
+- `egg/platform_ppc.py`
 - `egg/scalar.py`
 - `egg/cuda.py`
 - `egg/hip.py`
@@ -456,6 +465,28 @@ Here are some notes concerning the ARM implementation:
    will see the `nsimd_FP16` macro used. When defined it indicates that `nsimd`
    is compiled with native `float16` support. This also affect SIMD types (see
    `nsimd/include/arm/*/types.h`.)
+4. Do not forget to add the `foo` entry to the `impls` dictionary in the
+   `get_impl` Python function.
+
+### For IBM POWERPC
+
+```python
+def foo1(simd_ext, typ):
+    if has_to_be_emulated(simd_ext, typ):
+        return emulation_code(op, simd_ext, typ, ['v', 'v'])
+    else:
+        return 'return vec_foo({in0});'.format(**fmtspec)
+```
+
+Here are some notes concerning the PPC implementation:
+
+1. For VMX, intrinsics on `double` almost never exist.
+2. The Python helper function `has_to_be_emulated` returns `True` when the
+   implementation of `foo` concerns float16 or `double`s for `VMX`. When this
+   function returns True you can then use `emulation_code`.
+3. The `emulation_code` function returns a generic implementation of an
+   operator. However this iplementation is not suitable for any operator
+   and the programmer has to take care of that.
 4. Do not forget to add the `foo` entry to the `impls` dictionary in the
    `get_impl` Python function.
 
