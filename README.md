@@ -181,6 +181,8 @@ Supported compiler are:
 - clang
 - icc
 - armclang
+- xlc
+- fcc
 - cl
 - nvcc
 - hipcc
@@ -253,8 +255,16 @@ Configure project for compilation.
                     msvc      Microsoft C and C++ compiler
                     llvm      The LLVM compiler infrastructure
                     armclang  Arm suite of compilers based on LLVM
+                    xlc       IBM suite of compilers
+                    fcc_trad_mode
+                              Fujitsu compiler in traditional mode
+                    fcc_clang_mode
+                              Fujitsu compiler in clang mode
+                    emscripten
+                              Emscripten suite for compiling into JS
                     icc       Intel C amd C++ compiler
                     rocm      Radeon Open Compute compilers
+                    oneapi    Intel oneAPI compilers
                     cuda, cuda+gcc, cuda+clang, cuda+msvc
                               Nvidia CUDA C++ compiler
   -comp=COMMAND,COMPILER[,PATH[,VERSION[,ARCHI]]]
@@ -264,7 +274,7 @@ Configure project for compilation.
                   compiling and/or setting the CUDA host compiler.
                   COMMAND must be in { cc, c++, gcc, g++, cl, icc, nvcc,
                   hipcc, hcc, clang, clang++, armclang, armclang++,
-                  cuda-host-c++ } ;
+                  cuda-host-c++, emcc, em++ } ;
                   VERSION is compiler dependant. Note that VERSION
                   can be set to only major number(s) in which case
                   nsconfig fill missing numbers with zeros.
@@ -274,15 +284,26 @@ Configure project for compilation.
                     armel    ARMv5 and ARMv6 32-bits ISA
                     armhf    ARMv7 32-bits ISA
                     aarch64  ARM 64-bits ISA
+                    ppc64el  PowerPC 64-bits little entian
+                    wasm32   WebAssembly with 32-bits memory indexing
+                    wasm64   WebAssembly with 64-bits memory indexing
                   Supported COMPILER:
                     gcc, g++              GNU Compiler Collection
                     clang, clang++        LLVM Compiler Infrastructure
+                    emcc, em++            Emscripten compilers
                     msvc, cl              Microsoft Visual C++
                     armclang, armclang++  ARM Compiler
+                    xlc, xlc++            IBM Compiler
                     icc                   Intel C/C++ Compiler
                     dpcpp                 Intel DPC++ Compiler
                     nvcc                  Nvidia CUDA compiler
                     hipcc                 ROCm HIP compiler
+                    fcc_trad_mode, FCC_trad_mode
+                                          Fujitsu C and C++ traditionnal
+                                          compiler
+                    fcc_clang_mode, FCC_clang_mode
+                                          Fujitsu C and C++ traditionnal
+                                          compiler
   -prefix=PREFIX  Set path for installation to PREFIX
   -h, --help      Print the current help
 
@@ -293,7 +314,7 @@ NOTE: Nvidia CUDA compiler (nvcc) needs a host compiler. Usually on
       commands with 'cuda-host-c++'. The latter defaults to GCC on Linux
       systems and MSVC on Windows systems. The user can of course choose
       a specific version and path of this host compiler via the
-      '-comp=cuda-hostc++,... parameters. If nvcc is not chosen as the
+      '-comp=cuda-host-c++,... parameters. If nvcc is not chosen as the
       default C++ compiler but is used for compilation then its default
       C++ host compiler is 'c++'. The latter can also be customized via
       the '-comp=c++,...' command line switch.

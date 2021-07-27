@@ -259,7 +259,7 @@ Now that the operator is registered, all signatures will be generated but
 the implemenatations will be missing. Type
 
 ```sh
-python3 egg/hatch.py -Af
+python3 egg/hatch.py -lf
 ```
 
 and the following files (among many other) should appear:
