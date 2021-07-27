@@ -130,6 +130,40 @@ def emulation_code(op, simd_ext, typ, params):
         raise ValueError('Automatic emulation for {}/{}/{} is not supported'. \
                          format(func, simd_ext, typ))
 
+def emulate_with_scalar(op, simd_ext, typ, params):
+    def arg(param, i):
+        if param == 'v':
+            return 'vec_extract({}, {{i}})'.format(common.get_arg(i))
+        elif param == 'l':
+            return '(int)(vec_extract({}, {{i}}) & ((u{})1))'. \
+                   format(common.get_arg(i), typ[1:])
+        else:
+            return common.get_arg(i)
+    args = ', '.join(arg(params[i + 1], i) for i in range(len(params[1:])))
+    if params[0] == 'v':
+        return '''nsimd_{simd_ext}_v{typ} ret;
+                  ret = vec_splats(nsimd_scalar_{op}_{typ}({args0}));
+                  '''.format(typ=typ, op=op, args0=args.format(0),
+                             simd_ext=simd_ext) + '\n' + \
+               '\n'.join('ret = vec_insert('\
+                         'nsimd_scalar_{op}_{typ}({argsi}), ret, {i});'. \
+                         format(op=op, typ=typ, argsi=args.format(i), i=i) \
+                         for i in range(1, get_len(typ))) + '\nreturn ret;'
+    else:
+        utyp = 'u' + typ[1:]
+        return \
+        '''nsimd_{simd_ext}_vl{typ} ret;
+           ret = ({ppc_typl})vec_splats(({utyp})(
+                     nsimd_scalar_{op}_{typ}({args0}) ? -1 : 0));
+           '''.format(typ=typ, op=op, args0=args.format(i=0), utyp=utyp,
+                      ppc_typl=native_typel(typ), simd_ext=simd_ext) + '\n' + \
+           '\n'.join(
+               'ret = ({ppc_typl})vec_insert(({utyp})(' \
+               'nsimd_scalar_{op}_{typ}({argsi}) ? -1 : 0), ret, {i});'. \
+               format(op=op, typ=typ, utyp=utyp, argsi=args.format(i=i),
+                      ppc_typl=native_typel(typ), i=i) \
+               for i in range(1, get_len(typ))) + '\nreturn ret;'
+
 # -----------------------------------------------------------------------------
 # Implementation of mandatory functions for this module
 
@@ -491,7 +525,8 @@ def load1234(simd_ext, typ, deg, aligned):
     elif deg == 3:
         if typ in ['i32', 'u32', 'f32']:
             return \
-            '''__vector char perm1 = NSIMD_PERMUTE_MASK_32(0, 3, 6, 0);
+            '''__vector unsigned char perm1 = NSIMD_PERMUTE_MASK_32(
+                                                  0, 3, 6, 0);
 
                {load}
 
@@ -499,9 +534,12 @@ def load1234(simd_ext, typ, deg, aligned):
                nsimd_{simd_ext}_v{typ} tmp1 = vec_perm(in1, in2, perm1);
                nsimd_{simd_ext}_v{typ} tmp2 = vec_perm(in2, in0, perm1);
 
-               __vector char perm2 = NSIMD_PERMUTE_MASK_32(0, 1, 2, 5);
-               __vector char perm3 = NSIMD_PERMUTE_MASK_32(5, 0, 1, 2);
-               __vector char perm4 = NSIMD_PERMUTE_MASK_32(2, 5, 0, 1);
+               __vector unsigned char perm2 = NSIMD_PERMUTE_MASK_32(
+                                                  0, 1, 2, 5);
+               __vector unsigned char perm3 = NSIMD_PERMUTE_MASK_32(
+                                                  5, 0, 1, 2);
+               __vector unsigned char perm4 = NSIMD_PERMUTE_MASK_32(
+                                                  2, 5, 0, 1);
 
                ret.v0 = vec_perm(tmp0, in2, perm2);
                ret.v1 = vec_perm(tmp1, in0, perm3);
@@ -512,25 +550,25 @@ def load1234(simd_ext, typ, deg, aligned):
             return \
             '''{load}
 
-               __vector char permRAB = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permRAB = NSIMD_PERMUTE_MASK_16(
                                            0, 3, 6, 9, 12, 15, 0, 0);
-               __vector char permRDC = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permRDC = NSIMD_PERMUTE_MASK_16(
                                            0, 1, 2, 3, 4, 5, 10, 13);
 
                nsimd_{simd_ext}_v{typ} tmp0 = vec_perm(in0, in1, permRAB);
                ret.v0 = vec_perm(tmp0, in2, permRDC);
 
-               __vector char permGAB = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permGAB = NSIMD_PERMUTE_MASK_16(
                                            1, 4, 7, 10, 13, 0, 0, 0);
-               __vector char permGEC = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permGEC = NSIMD_PERMUTE_MASK_16(
                                            0, 1, 2, 3, 4, 8, 11, 14);
 
                nsimd_{simd_ext}_v{typ} tmp1 = vec_perm(in0, in1, permGAB);
                ret.v1 = vec_perm(tmp1, in2, permGEC);
 
-               __vector char permBAB = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permBAB = NSIMD_PERMUTE_MASK_16(
                                            2, 5, 8, 11, 14, 0, 0, 0);
-               __vector char permBFC = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permBFC = NSIMD_PERMUTE_MASK_16(
                                            0, 1, 2, 3, 4, 9, 12, 15);
 
                nsimd_{simd_ext}_v{typ} tmp2 = vec_perm(in0, in1, permBAB);
@@ -541,25 +579,25 @@ def load1234(simd_ext, typ, deg, aligned):
             return \
             '''{load}
 
-               __vector char permRAB = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char permRAB = NSIMD_PERMUTE_MASK_8(
                    0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 0, 0, 0, 0, 0);
-               __vector char permRDC = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char permRDC = NSIMD_PERMUTE_MASK_8(
                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 20, 23, 26, 29);
 
                nsimd_{simd_ext}_v{typ} tmp0 = vec_perm(in0, in1, permRAB);
                ret.v0 = vec_perm(tmp0, in2, permRDC);
 
-               __vector char permGAB = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char permGAB = NSIMD_PERMUTE_MASK_8(
                    1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 0, 0, 0, 0, 0);
-               __vector char permGEC = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char permGEC = NSIMD_PERMUTE_MASK_8(
                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 21, 24, 27, 30);
 
                nsimd_{simd_ext}_v{typ} tmp1 = vec_perm(in0, in1, permGAB);
                ret.v1 = vec_perm(tmp1, in2, permGEC);
 
-               __vector char permBAB = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char permBAB = NSIMD_PERMUTE_MASK_8(
                    2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 0, 0, 0, 0, 0, 0);
-               __vector char permBFC = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char permBFC = NSIMD_PERMUTE_MASK_8(
                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 19, 22, 25, 28, 31);
 
                nsimd_{simd_ext}_v{typ} tmp2 = vec_perm(in0, in1, permBAB);
@@ -696,9 +734,12 @@ def store1234(simd_ext, typ, deg, aligned):
     elif deg == 3:
         if typ in ['i32', 'u32', 'f32']:
             return \
-            '''__vector char perm1 = NSIMD_PERMUTE_MASK_32(0, 2, 4, 6);
-               __vector char perm2 = NSIMD_PERMUTE_MASK_32(0, 2, 5, 7);
-               __vector char perm3 = NSIMD_PERMUTE_MASK_32(1, 3, 5, 7);
+            '''__vector unsigned char perm1 = NSIMD_PERMUTE_MASK_32(
+                                                  0, 2, 4, 6);
+               __vector unsigned char perm2 = NSIMD_PERMUTE_MASK_32(
+                                                  0, 2, 5, 7);
+               __vector unsigned char perm3 = NSIMD_PERMUTE_MASK_32(
+                                                  1, 3, 5, 7);
 
                nsimd_{simd_ext}_v{typ} tmp0 = vec_perm({in1}, {in2}, perm1);
                nsimd_{simd_ext}_v{typ} tmp1 = vec_perm({in3}, {in1}, perm2);
@@ -711,25 +752,25 @@ def store1234(simd_ext, typ, deg, aligned):
                {store}'''.format(store=store, **fmtspec)
         elif typ in ['i16', 'u16']:
             return \
-            '''__vector char permARG = NSIMD_PERMUTE_MASK_16(
+            '''__vector unsigned char permARG = NSIMD_PERMUTE_MASK_16(
                                            0, 8, 0, 1, 9, 0, 2, 10);
-               __vector char permAXB = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permAXB = NSIMD_PERMUTE_MASK_16(
                                            0, 1, 8, 3, 4, 9, 6, 7);
 
                nsimd_{simd_ext}_v{typ} tmp0 = vec_perm({in1}, {in2}, permARG);
                nsimd_{simd_ext}_v{typ} ret0 = vec_perm(tmp0, {in3}, permAXB);
 
-               __vector char permBRG = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permBRG = NSIMD_PERMUTE_MASK_16(
                                            0, 3, 11, 0, 4, 12, 0, 5);
-               __vector char permBYB = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permBYB = NSIMD_PERMUTE_MASK_16(
                                            10, 1, 2, 11, 4, 5, 12, 7);
 
                nsimd_{simd_ext}_v{typ} tmp1 = vec_perm({in1}, {in2}, permBRG);
                nsimd_{simd_ext}_v{typ} ret1 = vec_perm(tmp1, {in3}, permBYB);
 
-               __vector char permCRG = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permCRG = NSIMD_PERMUTE_MASK_16(
                                            13, 0, 6, 14, 0, 7, 15, 0);
-               __vector char permCZB = NSIMD_PERMUTE_MASK_16(
+               __vector unsigned char permCZB = NSIMD_PERMUTE_MASK_16(
                                            0, 13, 2, 3, 14, 5, 6, 15);
 
                nsimd_{simd_ext}_v{typ} tmp2 = vec_perm({in1}, {in2}, permCRG);
@@ -738,25 +779,25 @@ def store1234(simd_ext, typ, deg, aligned):
                {store}'''.format(store=store, **fmtspec)
         elif typ in ['i8', 'u8']:
             return \
-            '''__vector char mARG = NSIMD_PERMUTE_MASK_8(
+            '''__vector unsigned char mARG = NSIMD_PERMUTE_MASK_8(
                    0, 16, 0, 1, 17, 0, 2, 18, 0, 3, 19, 0, 4, 20, 0, 5);
-               __vector char mAXB = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char mAXB = NSIMD_PERMUTE_MASK_8(
                    0, 1, 16, 3, 4, 17, 6, 7, 18, 9, 10, 19, 12, 13, 20, 15);
 
                nsimd_{simd_ext}_v{typ} tmp0 = vec_perm({in1}, {in2}, mARG);
                nsimd_{simd_ext}_v{typ} ret0 = vec_perm(tmp0, {in3}, mAXB);
 
-               __vector char mBRG = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char mBRG = NSIMD_PERMUTE_MASK_8(
                    21, 0, 6, 22, 0, 7, 23, 0, 8, 24, 0, 9, 25, 0, 10, 26);
-               __vector char mBYB = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char mBYB = NSIMD_PERMUTE_MASK_8(
                    0, 21, 2, 3, 22, 5, 6, 23, 8, 9, 24, 11, 12, 25, 14, 15);
 
                nsimd_{simd_ext}_v{typ} tmp1 = vec_perm({in1}, {in2}, mBRG);
                nsimd_{simd_ext}_v{typ} ret1 = vec_perm(tmp1, {in3}, mBYB);
 
-               __vector char mCRG = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char mCRG = NSIMD_PERMUTE_MASK_8(
                    0, 11, 27, 0, 12, 28, 0, 13, 29, 0, 14, 30, 0, 15, 31, 0);
-               __vector char mCZB = NSIMD_PERMUTE_MASK_8(
+               __vector unsigned char mCZB = NSIMD_PERMUTE_MASK_8(
                    26, 1, 2, 27, 4, 5, 28, 7, 8, 29, 10, 11, 30, 13, 14, 31);
 
                nsimd_{simd_ext}_v{typ} tmp2 = vec_perm({in1}, {in2}, mCRG);
@@ -925,7 +966,10 @@ def lset1(simd_ext, typ):
 def cmp2(op, simd_ext, typ):
     if has_to_be_emulated(simd_ext, typ):
         return emulation_code(op, simd_ext, typ, ['l', 'v', 'v'])
-    return 'return vec_cmp{op}({in0}, {in1});'.format(op=op, **fmtspec)
+    elif typ in common.iutypes:
+        return 'return vec_cmp{op}({in0}, {in1});'.format(op=op, **fmtspec)
+    else:
+        return emulate_with_scalar(op, simd_ext, typ, ['l', 'v', 'v'])
 
 # -----------------------------------------------------------------------------
 
@@ -1086,32 +1130,39 @@ def reinterpretl1(simd_ext, from_typ, to_typ):
         '''nsimd_{simd_ext}_vl{to_typ} ret =
                (__vector __bool short)vec_splats(
                    (u16)vec_extract({in0}.v0, 0));
-           ret = vec_insert((u16)vec_extract({in0}.v0, 1), ret, 1);
-           ret = vec_insert((u16)vec_extract({in0}.v0, 2), ret, 2);
-           ret = vec_insert((u16)vec_extract({in0}.v0, 3), ret, 3);
-           ret = vec_insert((u16)vec_extract({in0}.v1, 0), ret, 4);
-           ret = vec_insert((u16)vec_extract({in0}.v1, 1), ret, 5);
-           ret = vec_insert((u16)vec_extract({in0}.v1, 2), ret, 6);
-           ret = vec_insert((u16)vec_extract({in0}.v1, 3), ret, 7);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v0, 1), ret, 1);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v0, 2), ret, 2);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v0, 3), ret, 3);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v1, 0), ret, 4);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v1, 1), ret, 5);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v1, 2), ret, 6);
+           ret = (__vector __bool short)vec_insert(
+                     (u16)vec_extract({in0}.v1, 3), ret, 7);
            return ret;'''.format(**fmtspec)
     elif to_typ == 'f16':
         return \
         '''nsimd_{simd_ext}_vlf16 ret;
            ret.v0 = (__vector __bool int)vec_splats(
                         (u32)(vec_extract({in0}, 0) ? -1 : 0));
-           ret.v0 = vec_insert(
+           ret.v0 = (__vector __bool int)vec_insert(
                         (u32)(vec_extract({in0}, 1) ? -1 : 0), ret.v0, 1);
-           ret.v0 = vec_insert(
+           ret.v0 = (__vector __bool int)vec_insert(
                         (u32)(vec_extract({in0}, 2) ? -1 : 0), ret.v0, 2);
-           ret.v0 = vec_insert(
+           ret.v0 = (__vector __bool int)vec_insert(
                         (u32)(vec_extract({in0}, 3) ? -1 : 0), ret.v0, 3);
            ret.v1 = (__vector __bool int)vec_splats(
                         (u32)(vec_extract({in0}, 4) ? -1 : 0));
-           ret.v1 = vec_insert(
+           ret.v1 = (__vector __bool int)vec_insert(
                         (u32)(vec_extract({in0}, 5) ? -1 : 0), ret.v1, 1);
-           ret.v1 = vec_insert(
+           ret.v1 = (__vector __bool int)vec_insert(
                         (u32)(vec_extract({in0}, 6) ? -1 : 0), ret.v1, 2);
-           ret.v1 = vec_insert(
+           ret.v1 = (__vector __bool int)vec_insert(
                         (u32)(vec_extract({in0}, 7) ? -1 : 0), ret.v1, 3);
            return ret;'''.format(**fmtspec)
     else:
@@ -1639,7 +1690,7 @@ def gather(simd_ext, typ):
     return '''nsimd_{simd_ext}_v{typ} ret;
               ret = vec_splats({in0}[vec_extract({in1}, 0)]);
               '''.format(**fmtspec) + \
-           '\n'.join('ret = vec_insert({in1}[vec_extract({in1}, {i})], ' \
+           '\n'.join('ret = vec_insert({in0}[vec_extract({in1}, {i})], ' \
                      'ret, {i});'.format(i=i, **fmtspec) \
                      for i in range(1, get_len(typ))) + '\n' + \
            'return ret;'
