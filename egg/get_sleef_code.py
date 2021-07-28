@@ -68,6 +68,7 @@ def doit(opts):
     copy('src/arch/helperavx512f.h')
     copy('src/arch/helperneon32.h')
     copy('src/arch/helperadvsimd.h')
+    copy('src/arch/helperpower_128.h')
     copy('src/arch/helpersve.h')
 
     # Sleef uses aliases but we don't need those so we comment them
@@ -190,11 +191,12 @@ def doit(opts):
         'avx512f': ['avx512_knl', 'avx512_skylake'],
         'neon32':  ['neon128'],
         'advsimd': ['aarch64'],
-        'sve':     ['sve128', 'sve256', 'sve512', 'sve1024', 'sve2048']
+        'sve':     ['sve128', 'sve256', 'sve512', 'sve1024', 'sve2048'],
+        'vsx':     ['vmx', 'vsx']
     }
 
     for simd_ext in ['', 'sse2', 'sse4', 'avx', 'avx2', 'avx512f', 'neon32',
-                     'advsimd', 'sve']:
+                     'advsimd', 'sve', 'vsx']:
         renameheader = os.path.join(opts.src_dir,
                                     'rename{}.h'.format(simd_ext))
         se = simd_ext if simd_ext != '' else 'scalar'

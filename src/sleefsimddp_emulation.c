@@ -29,6 +29,12 @@ SOFTWARE.
 #define nsimd_vec_f64 nsimd_neon128_vf64
 #endif
 
+#ifdef ENABLE_VSX
+#include "renamevsx.h"
+#define nsimd_vec_f64 nsimd_vmx_vf64
+#endif
+
+
 nsimd_vec_f64 xsin(nsimd_vec_f64 a0_) {
   nsimd_vec_f64 ret_;
   nsimd_cpu_vf64 a0, ret;

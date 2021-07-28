@@ -967,7 +967,12 @@ def cmp2(op, simd_ext, typ):
     if has_to_be_emulated(simd_ext, typ):
         return emulation_code(op, simd_ext, typ, ['l', 'v', 'v'])
     elif typ in common.iutypes:
-        return 'return vec_cmp{op}({in0}, {in1});'.format(op=op, **fmtspec)
+        if op == 'ne':
+            return '''nsimd_{simd_ext}_vl{typ} tmp;
+                      tmp = vec_cmpeq({in0}, {in1});
+                      return vec_nor(tmp, tmp);'''.format(op=op, **fmtspec)
+        else:
+            return 'return vec_cmp{op}({in0}, {in1});'.format(op=op, **fmtspec)
     else:
         return emulate_with_scalar(op, simd_ext, typ, ['l', 'v', 'v'])
 
@@ -1422,22 +1427,28 @@ def upcvt1(simd_ext, from_typ, to_typ):
                   ret.v1 = nsimd_cvt_{simd_ext}_{to_typ}_{sto_typ}(tmp.v1);
                   return ret;'''.format(sto_typ=from_typ[0] + to_typ[1:],
                                         **fmtspec)
-    elif from_typ in ['i8', 'u8', 'i16', 'u16']:
+    elif from_typ in ['u8', 'u16']:
         mask='(i{})0x{}'.format(to_typ[1:], 'F' * (int(from_typ[1:]) // 4))
         ppc_sto_typ = native_type('i' + to_typ[1:])
-        ppc_sfrom_typ = '({})'.format(native_type('i' + from_typ[1:])) \
-                        if from_typ in common.utypes else ''
+        ppc_sfrom_typ = '({})'.format(native_type('i' + from_typ[1:]))
         ppc_to_typ = '({})'.format(native_type(to_typ)) \
                      if to_typ in common.utypes else ''
         return '''nsimd_{simd_ext}_v{to_typ}x2 ret;
                   {ppc_sto_typ} mask = vec_splats({mask});
                   ret.v0 = {ppc_to_typ}vec_and(
-                               vec_unpackl({ppc_sfrom_typ}{in0}), mask);
-                  ret.v1 = {ppc_to_typ}vec_and(
                                vec_unpackh({ppc_sfrom_typ}{in0}), mask);
+                  ret.v1 = {ppc_to_typ}vec_and(
+                               vec_unpackl({ppc_sfrom_typ}{in0}), mask);
                   return ret;'''.format(mask=mask, ppc_sto_typ=ppc_sto_typ,
                                         ppc_sfrom_typ=ppc_sfrom_typ,
                                         ppc_to_typ=ppc_to_typ, **fmtspec)
+    elif from_typ in ['i8', 'i16']:
+        ppc_to_typ = '({})'.format(native_type(to_typ)) \
+                     if to_typ in common.utypes else ''
+        return '''nsimd_{simd_ext}_v{to_typ}x2 ret;
+                  ret.v0 = {ppc_to_typ}vec_unpackh({in0});
+                  ret.v1 = {ppc_to_typ}vec_unpackl({in0});
+                  return ret;'''.format(ppc_to_typ=ppc_to_typ, **fmtspec)
     elif from_typ in ['i32', 'u32']:
         if simd_ext == 'vmx':
             return '''nsimd_vmx_v{to_typ}x2 ret;
@@ -1505,56 +1516,58 @@ def downcvt1(simd_ext, from_typ, to_typ):
 def unzip(func, simd_ext, typ):
     if typ == 'f16':
         return '''nsimd_{simd_ext}_vf16 ret;
-                  ret.v0 = vec_splats(vec_extract({in0}.v0, {i0}));
-                  ret.v0 = vec_insert(vec_extract({in0}.v0, {i1}), ret.v0, 1);
-                  ret.v0 = vec_insert(vec_extract({in0}.v1, {i2}), ret.v0, 2);
-                  ret.v0 = vec_insert(vec_extract({in0}.v1, {i3}), ret.v0, 3);
-                  ret.v1 = vec_splats(vec_extract({in1}.v0, {i0}));
-                  ret.v1 = vec_insert(vec_extract({in1}.v0, {i1}), ret.v1, 1);
-                  ret.v1 = vec_insert(vec_extract({in1}.v1, {i2}), ret.v1, 2);
-                  ret.v1 = vec_insert(vec_extract({in1}.v1, {i3}), ret.v1, 3);
-                  return ret;'''.format(i0=0 if func == 'unziplo' else 1,
-                                        i1=2 if func == 'unziplo' else 3,
-                                        i2=0 if func == 'unziplo' else 1,
-                                        i3=2 if func == 'unziplo' else 3,
-                                        **fmtspec)
-    elif simd_ext == 'vmx' and typ in ['f64', 'i64', 'u64']:
-        return '''nsimd_vmx_v{typ} ret;
-                  ret.v0 = {in0}.v{i};
-                  ret.v1 = {in1}.v{i};
-                  return ret;'''.format(i=0 if func == 'unziplo' else 1,
-                                        **fmtspec)
-    elif typ in ['i32', 'u32']:
-        return 'return vec_merge{suf}({in0}, {in1});'. \
-               format(suf='e' if func == 'unziplo' else 'o', **fmtspec)
-    else:
-        leo2 = get_len(typ) // 2
-        return '''nsimd_{simd_ext}_v{typ} ret;
-                  ret = vec_splats(vec_extract({in0}, {i}));'''. \
-                  format(i=0 if func == 'unziplo' else 1, **fmtspec) + '\n' + \
-               '\n'.join(
-                   'ret = vec_insert(vec_extract({in0}, {ix2}), ret, {i});'. \
-                   format(i=i, ix2=2 * i if func == 'unziplo' else 2 * i + 1,
-                          **fmtspec) for i in range(leo2)) + '\n' + \
-               '\n'.join(
-                   'ret = vec_insert(vec_extract({in1}, {ix2}), ret, {i});'. \
-                   format(i=i + leo2, ix2=2 * i if func == 'unziplo' \
-                          else 2 * i + 1, **fmtspec) \
-                          for i in range(leo2)) + '\n' + \
-               'return ret;'
+                  ret.v0 = nsimd_{func}_{simd_ext}_f32({in0}.v0, {in0}.v1);
+                  ret.v1 = nsimd_{func}_{simd_ext}_f32({in1}.v0, {in1}.v1);
+                  return ret;'''.format(func=func, **fmtspec)
+    elif typ in ['f64', 'i64', 'u64']:
+        if simd_ext == 'vmx':
+            return '''nsimd_vmx_v{typ} ret;
+                      ret.v0 = {in0}.v{i};
+                      ret.v1 = {in1}.v{i};
+                      return ret;'''.format(i=0 if func == 'unziplo' else 1,
+                                            **fmtspec)
+        else:
+            return '''nsimd_vsx_v{typ} ret;
+                      ret = vec_splats(vec_extract({in0}, {i}));
+                      ret = vec_insert(vec_extract({in1}, {i}), ret, 1);
+                      return ret;'''.format(i=0 if func == 'unziplo' else 1,
+                                            **fmtspec)
+    elif typ in ['i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'f32']:
+        perm = []
+        le = get_len(typ)
+        for i in range(le):
+            sz = int(typ[1:]) // 8
+            for j in range(0, sz):
+                perm += ['(unsigned char)' + str(2 * sz * i + \
+                         (0 if func == 'unziplo' else sz) + j)]
+        return \
+        '''__vector unsigned char perm = {{ {perm} }};
+           return vec_perm({in0}, {in1}, perm);'''. \
+           format(perm=', '.join(perm), **fmtspec)
 
 # -----------------------------------------------------------------------------
 
 def zip(op, simd_ext, typ):
-    nbits = get_len(typ)
-    if typ == 'f16' or (simd_ext == 'vmx' and typ in ['f64', 'i64', 'u64']):
+    if typ == 'f16':
+        return '''nsimd_{simd_ext}_vf16 ret;
+                  ret.v0 = vec_splats(vec_extract({in0}.v{i}, 0));
+                  ret.v0 = vec_insert(vec_extract({in0}.v{i}, 1), ret.v0, 2);
+                  ret.v1 = vec_splats(vec_extract({in0}.v{i}, 2));
+                  ret.v1 = vec_insert(vec_extract({in0}.v{i}, 3), ret.v1, 2);
+                  ret.v0 = vec_insert(vec_extract({in1}.v{i}, 0), ret.v0, 1);
+                  ret.v0 = vec_insert(vec_extract({in1}.v{i}, 1), ret.v0, 3);
+                  ret.v1 = vec_insert(vec_extract({in1}.v{i}, 2), ret.v1, 1);
+                  ret.v1 = vec_insert(vec_extract({in1}.v{i}, 3), ret.v1, 3);
+                  return ret;'''.format(i=0 if op == 'ziplo' else 1,
+                                        **fmtspec)
+    elif simd_ext == 'vmx' and typ in ['f64', 'i64', 'u64']:
         return '''nsimd_{simd_ext}_v{typ} ret;
                   ret.v0 = {in0}.v{i};
                   ret.v1 = {in1}.v{i};
                   return ret;'''.format(i='1' if op == 'ziphi' else '0',
                                         **fmtspec)
     return 'return vec_merge{suf}({in0}, {in1});'. \
-           format(suf='h' if op == 'ziphi' else 'l', **fmtspec)
+           format(suf='l' if op == 'ziphi' else 'h', **fmtspec)
 
 # -----------------------------------------------------------------------------
 
@@ -1685,7 +1698,7 @@ def gather(simd_ext, typ):
     elif has_to_be_emulated(simd_ext, typ):
         return '''nsimd_{simd_ext}_v{typ} ret;
                   ret.v0 = {in0}[{in1}.v0];
-                  ret.v0 = {in0}[{in1}.v1];
+                  ret.v1 = {in0}[{in1}.v1];
                   return ret;'''.format(**fmtspec)
     return '''nsimd_{simd_ext}_v{typ} ret;
               ret = vec_splats({in0}[vec_extract({in1}, 0)]);
@@ -1758,13 +1771,13 @@ def maskoz_load(oz, simd_ext, typ):
            ret.v0 = vec_insert(vec_extract({in0}.v0, 3) ?
                                nsimd_f16_to_f32({in1}[3]) : {oz3}, ret.v0, 3);
            ret.v1 = ret.v0;
-           ret.v1 = vec_insert(vec_extract({in0}.v0, 4) ?
+           ret.v1 = vec_insert(vec_extract({in0}.v1, 0) ?
                                nsimd_f16_to_f32({in1}[4]) : {oz4}, ret.v1, 0);
-           ret.v1 = vec_insert(vec_extract({in0}.v0, 5) ?
+           ret.v1 = vec_insert(vec_extract({in0}.v1, 1) ?
                                nsimd_f16_to_f32({in1}[5]) : {oz5}, ret.v1, 1);
-           ret.v1 = vec_insert(vec_extract({in0}.v0, 6) ?
+           ret.v1 = vec_insert(vec_extract({in0}.v1, 2) ?
                                nsimd_f16_to_f32({in1}[6]) : {oz6}, ret.v1, 2);
-           ret.v1 = vec_insert(vec_extract({in0}.v0, 7) ?
+           ret.v1 = vec_insert(vec_extract({in0}.v1, 3) ?
                                nsimd_f16_to_f32({in1}[7]) : {oz7}, ret.v1, 3);
            return ret;'''. \
            format(oz0='0.0f' if oz == 'z' else 'vec_extract({in2}.v0, 0)',
