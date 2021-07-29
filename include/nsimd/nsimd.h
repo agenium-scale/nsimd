@@ -876,7 +876,10 @@ namespace nsimd {
       typedef signed int    i32;
     #endif
   #endif
-  #if NSIMD_WORD_SIZE == 64
+  #if defined(NSIMD_VMX) || defined(NSIMD_VSX)
+    typedef nsimd_ulonglong u64;
+    typedef nsimd_longlong  i64;
+  #elif NSIMD_WORD_SIZE == 64
     #ifdef __UINT64_TYPE__
       typedef nsimd_uint64_type u64;
     #else

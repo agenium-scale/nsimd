@@ -285,43 +285,44 @@ def get_additional_include(func, platform, simd_ext):
 
     elif func[:4] == 'load':
         ret += '''
+        #include <nsimd/ppc/{simd_ext}/unzip.h>
 
         #define NSIMD_PERMUTE_MASK_64(a, b)                        \
-                {(unsigned char)(8 * a), (unsigned char)(8 * a + 1), \
-                (unsigned char)(8 * b), (unsigned char)(8 * b + 1)}
+                {{ (unsigned char)(8 * a), (unsigned char)(8 * a + 1), \
+                   (unsigned char)(8 * b), (unsigned char)(8 * b + 1) }}
 
 
         #define NSIMD_PERMUTE_MASK_32(a, b, c, d)                        \
-                {(unsigned char)(4 * a), (unsigned char)(4 * a + 1),     \
-                (unsigned char)(4 * a + 2), (unsigned char)(4 * a + 3),  \
-                (unsigned char)(4 * b), (unsigned char)(4 * b + 1),      \
-                (unsigned char)(4 * b + 2), (unsigned char)(4 * b + 3),  \
-                (unsigned char)(4 * c), (unsigned char)(4 * c + 1),      \
-                (unsigned char)(4 * c + 2), (unsigned char)(4 * c + 3),  \
-                (unsigned char)(4 * d), (unsigned char)(4 * d + 1),      \
-                (unsigned char)(4 * d + 2), (unsigned char)(4 * d + 3)}
+                {{ (unsigned char)(4 * a), (unsigned char)(4 * a + 1),     \
+                   (unsigned char)(4 * a + 2), (unsigned char)(4 * a + 3),  \
+                   (unsigned char)(4 * b), (unsigned char)(4 * b + 1),      \
+                   (unsigned char)(4 * b + 2), (unsigned char)(4 * b + 3),  \
+                   (unsigned char)(4 * c), (unsigned char)(4 * c + 1),      \
+                   (unsigned char)(4 * c + 2), (unsigned char)(4 * c + 3),  \
+                   (unsigned char)(4 * d), (unsigned char)(4 * d + 1),      \
+                   (unsigned char)(4 * d + 2), (unsigned char)(4 * d + 3) }}
 
          #define NSIMD_PERMUTE_MASK_16(a, b, c, d, e, f, g, h)           \
-               {(unsigned char)(2 * a + 0), (unsigned char)(2 * a + 1),  \
-                (unsigned char)(2 * b + 0), (unsigned char)(2 * b + 1),  \
-                (unsigned char)(2 * c + 0), (unsigned char)(2 * c + 1),  \
-                (unsigned char)(2 * d + 0), (unsigned char)(2 * d + 1),  \
-                (unsigned char)(2 * e + 0), (unsigned char)(2 * e + 1),  \
-                (unsigned char)(2 * f + 0), (unsigned char)(2 * f + 1),  \
-                (unsigned char)(2 * g + 0), (unsigned char)(2 * g + 1),  \
-                (unsigned char)(2 * h + 0), (unsigned char)(2 * h + 1)}
+               {{ (unsigned char)(2 * a + 0), (unsigned char)(2 * a + 1),  \
+                  (unsigned char)(2 * b + 0), (unsigned char)(2 * b + 1),  \
+                  (unsigned char)(2 * c + 0), (unsigned char)(2 * c + 1),  \
+                  (unsigned char)(2 * d + 0), (unsigned char)(2 * d + 1),  \
+                  (unsigned char)(2 * e + 0), (unsigned char)(2 * e + 1),  \
+                  (unsigned char)(2 * f + 0), (unsigned char)(2 * f + 1),  \
+                  (unsigned char)(2 * g + 0), (unsigned char)(2 * g + 1),  \
+                  (unsigned char)(2 * h + 0), (unsigned char)(2 * h + 1) }}
 
          #define NSIMD_PERMUTE_MASK_8(a, b, c, d, e, f, g, h,            \
                                       i, j, k, l, m, n, o, p)            \
-              { (unsigned char)(a), (unsigned char)(b),                  \
-                (unsigned char)(c), (unsigned char)(d),                  \
-                (unsigned char)(e), (unsigned char)(f),                  \
-                (unsigned char)(g), (unsigned char)(h),                  \
-                (unsigned char)(i), (unsigned char)(j),                  \
-                (unsigned char)(k), (unsigned char)(l),                  \
-                (unsigned char)(m), (unsigned char)(n),                  \
-                (unsigned char)(o), (unsigned char)(p) }
-        '''
+              {{ (unsigned char)(a), (unsigned char)(b),                  \
+                 (unsigned char)(c), (unsigned char)(d),                  \
+                 (unsigned char)(e), (unsigned char)(f),                  \
+                 (unsigned char)(g), (unsigned char)(h),                  \
+                 (unsigned char)(i), (unsigned char)(j),                  \
+                 (unsigned char)(k), (unsigned char)(l),                  \
+                 (unsigned char)(m), (unsigned char)(n),                  \
+                 (unsigned char)(o), (unsigned char)(p) }}
+        '''.format(**fmtspec)
 
     return ret
 
@@ -423,12 +424,12 @@ def load1234(simd_ext, typ, deg, aligned):
             else:
                 return \
                 'nsimd_{simd_ext}_v{typ}x{} ret;\n'.format(deg, **fmtspec) + \
-                '\n'.join('ret.v{i} = vec_splats(*({in0} + {i}));'. \
-                          format(i=i, **fmtspec) \
-                          for i in range(0, deg)) + \
-                '\n'.join('ret.v{i} = vec_insert(*({in0} + {ipd}), ret, 1);'. \
-                          format(i=i, ipd=i + deg, **fmtspec) \
-                          for i in range(0, deg)) + \
+                '\n'.join(
+                'ret.v{i} = vec_splats({in0}[{i}]);'.format(i=i, **fmtspec) \
+                for i in range(0, deg)) + \
+                '\n'.join(
+                'ret.v{i} = vec_insert({in0}[{ipd}], ret.v{i}, 1);'. \
+                format(i=i, ipd=i + deg, **fmtspec) for i in range(0, deg)) + \
                 '\nreturn ret;'
     if typ == 'f16':
         if deg == 1:
@@ -477,51 +478,17 @@ def load1234(simd_ext, typ, deg, aligned):
                  'nsimd_{simd_ext}_v{typ} in{i} = vec_ld({o}, {in0});'. \
                  format(i=i, o=i * 16, **fmtspec) for i in range(deg))
     else:
-        load = 'nsimd_{simd_ext}_v{typ}x{deg} ret;\n'. \
-               format(deg=deg, **fmtspec) + \
-               '\n'.join(
-                 'nsimd_{simd_ext}_v{typ} in{i} = *({ppc_typ}*){in0};'. \
-                 format(i=i, ppc_typ=native_type(typ), **fmtspec) \
-                        for i in range(0, deg))
+        load = \
+        'nsimd_{simd_ext}_v{typ}x{deg} ret;\n'. \
+        format(deg=deg, **fmtspec) + \
+        '\n'.join(
+          'nsimd_{simd_ext}_v{typ} in{i} = *(({ppc_typ}*){in0} + {i});'. \
+          format(i=i, ppc_typ=native_type(typ), **fmtspec) \
+                 for i in range(0, deg))
     if deg == 2:
-        if typ in ['i32', 'u32', 'f32']:
-            return \
-            '''{load}
-
-               nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in1);
-               nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in1);
-
-               ret.v0 = vec_mergeh(tmp0, tmp1);
-               ret.v1 = vec_mergel(tmp0, tmp1);
-
-               return ret;'''.format(load=load, **fmtspec)
-        elif typ in ['i16', 'u16']:
-            return \
-            '''{load}
-
-               nsimd_{simd_ext}_v{typ} tmp0 = vec_mergeh(in0, in1);
-               nsimd_{simd_ext}_v{typ} tmp1 = vec_mergel(in0, in1);
-
-               in0 = vec_mergeh(tmp0, tmp1);
-               in1 = vec_mergel(tmp0, tmp1);
-
-               ret.v0 = vec_mergeh(in0, in1);
-               ret.v1 = vec_mergel(in0, in1);
-
-               return ret;'''.format(load=load, **fmtspec)
-        elif typ in ['i8', 'u8']:
-            return \
-            '''__vector unsigned char perm1 = NSIMD_PERMUTE_MASK_8(
-                 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
-               __vector unsigned char perm2 = NSIMD_PERMUTE_MASK_8(
-                 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31);
-
-               {load}
-
-               ret.v0 = vec_perm(in0, in1, perm1);
-               ret.v1 = vec_perm(in0, in1, perm2);
-
-               return ret;'''.format(load=load, **fmtspec)
+        return '''{load}
+                  ret = nsimd_unzip_{simd_ext}_{typ}(in0, in1);
+                  return ret;'''.format(load=load, **fmtspec)
     elif deg == 3:
         if typ in ['i32', 'u32', 'f32']:
             return \
@@ -1240,13 +1207,13 @@ def reinterpret1(simd_ext, from_typ, to_typ):
                             ret, 2);
            ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v0, 3)),
                             ret, 3);
-           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 1)),
+           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 0)),
                             ret, 4);
-           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 2)),
+           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 1)),
                             ret, 5);
-           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 3)),
+           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 2)),
                             ret, 6);
-           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 4)),
+           ret = vec_insert(nsimd_f32_to_u16(vec_extract({in0}.v1, 3)),
                             ret, 7);
            return ret;'''.format(**fmtspec)
     elif from_typ == 'f16' and to_typ == 'i16':
@@ -1416,7 +1383,7 @@ def upcvt1(simd_ext, from_typ, to_typ):
                ret.v0 = vec_splats(({to_typ})vec_extract({in0}, 0));
                ret.v0 = vec_insert(({to_typ})vec_extract({in0}, 1), ret.v0, 1);
                ret.v1 = vec_splats(({to_typ})vec_extract({in0}, 2));
-               ret.v1 = vec_insert(({to_typ})vec_extract({in0}, 3), ret.v0, 1);
+               ret.v1 = vec_insert(({to_typ})vec_extract({in0}, 3), ret.v1, 1);
                return ret;'''.format(**fmtspec)
     elif (from_typ in ['i16', 'u16'] and to_typ == 'f32') or \
          (from_typ in ['i32', 'u32'] and to_typ == 'f64'):
@@ -1479,7 +1446,7 @@ def downcvt1(simd_ext, from_typ, to_typ):
                       return ret;'''.format(**fmtspec)
         else:
             return \
-            '''nsimd_vmx_v{to_typ} ret;
+            '''nsimd_vsx_v{to_typ} ret;
                ret = vec_splats(({to_typ})vec_extract({in0}, 0));
                ret = vec_insert(({to_typ})vec_extract({in0}, 1), ret, 1);
                ret = vec_insert(({to_typ})vec_extract({in1}, 0), ret, 2);

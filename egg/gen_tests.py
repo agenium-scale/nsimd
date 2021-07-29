@@ -36,8 +36,8 @@ def should_i_do_the_test(operator, tt='', t=''):
         # done by going back and forth then both directions get tested in the
         # end
         return False
-    if operator.name == 'reinterpret' and t in common.ftypes and \
-       tt in common.iutypes:
+    if operator.name == 'reinterpret' and t in common.iutypes and \
+       tt in common.ftypes:
         # When reinterpreting from int to float we may get NaN or infinities
         # and no ones knows what this will give when going back to ints
         # especially when float16 are emulated. Again as tests are done by
