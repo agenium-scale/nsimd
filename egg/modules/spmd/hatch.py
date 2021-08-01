@@ -532,7 +532,7 @@ def gen_tests_for_shifts(opts, t, operator):
 
 # -----------------------------------------------------------------------------
 
-def gen_tests_for_cvt_reinterpret(opts, t, tt, operator):
+def gen_tests_for_cvt_reinterpret(opts, tt, t, operator):
     op_name = operator.name
     dirname = os.path.join(opts.tests_dir, 'modules', 'spmd')
     common.mkdir_p(dirname)

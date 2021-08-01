@@ -392,6 +392,8 @@ set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
 set    phony_tests_for_rocm  = tests.cpp11
 set    phony_tests_for_dpcpp = tests.cpp11
 set    phony_tests_for_sve   = tests.c11 tests.cpp11
+set    phony_tests_for_vmx   = tests.c99 tests.c11 tests.cpp98
+set    phony_tests_for_vsx   = tests.c99 tests.c11 tests.cpp98 tests.cpp11
 
 phony tests deps ${phony_tests_for_$simd$}
 

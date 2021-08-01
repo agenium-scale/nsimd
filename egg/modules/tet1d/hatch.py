@@ -368,7 +368,7 @@ def gen_tests_for_shifts(opts, t, operator):
                    cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip')))
     common.clang_format(opts, filename, cuda=True)
 
-def gen_tests_for(opts, t, tt, operator):
+def gen_tests_for(opts, tt, t, operator):
     op_name = operator.name
     dirname = os.path.join(opts.tests_dir, 'modules', 'tet1d')
     common.mkdir_p(dirname)

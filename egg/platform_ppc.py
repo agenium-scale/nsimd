@@ -216,16 +216,9 @@ def has_compatible_SoA_types(simd_ext):
 def get_additional_include(func, platform, simd_ext):
     ret = '''#include <nsimd/cpu/cpu/{}.h>
              '''.format(func)
-
-    DEBUG = False
-    if DEBUG == True:
-        ret += '''#include <nsimd/ppc/{simd_ext}/put.h>
-                  #if NSIMD_CXX > 0
-                  #include <cstdio>
-                  #else
-                  #include <stdio.h>
-                  #endif
-                  '''.format(simd_ext=simd_ext)
+    if simd_ext == 'vsx':
+        ret += '''#include <nsimd/ppc/vmx/{}.h>
+                  '''.format(func)
 
     if func == 'neq':
         ret += '''#include <nsimd/ppc/{simd_ext}/eq.h>
@@ -250,14 +243,6 @@ def get_additional_include(func, platform, simd_ext):
 
     elif func == "shra":
         ret += '''#include <nsimd/scalar_utilities.h>
-                  '''
-
-    elif func[:11] == 'reinterpret' and DEBUG == True:
-        ret += '''#if NSIMD_CXX > 0
-                  #include <cstring>
-                  #else
-                  #include <string.h>
-                  #endif
                   '''
 
     elif func in ['zip', 'unzip']:
@@ -1337,7 +1322,7 @@ def add_sub_s(op, simd_ext, typ):
     if has_to_be_emulated(simd_ext, typ):
         return emulation_code(op, simd_ext, typ, ['v', 'v', 'v'])
     if typ in common.ftypes:
-        return 'return vec_add({in0}, {in1});'.format(**fmtspec)
+        return 'return vec_{op}({in0}, {in1});'.format(op=op[:-1], **fmtspec)
     elif typ in ['i64', 'u64']:
         return '''nsimd_{simd_ext}_v{typ} ret;
                   ret = vec_splats(nsimd_scalar_{op}_{typ}(

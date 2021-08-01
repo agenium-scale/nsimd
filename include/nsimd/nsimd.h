@@ -1402,8 +1402,13 @@ NSIMD_DLLSPEC void nsimd_aligned_free(void *);
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-NSIMD_DLLSPEC void *aligned_alloc(nsimd_nat);
-NSIMD_DLLSPEC void aligned_free(void *);
+NSIMD_INLINE void *aligned_alloc(nsimd_nat n) {
+  return nsimd_aligned_alloc(n);
+}
+
+NSIMD_INLINE void aligned_free(void *ptr) {
+  nsimd_aligned_free(ptr);
+}
 
 template <NSIMD_CONCEPT_VALUE_TYPE T> T *aligned_alloc_for(nsimd_nat n) {
   return (T *)aligned_alloc(n * (nsimd_nat)sizeof(T));

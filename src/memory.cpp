@@ -53,6 +53,8 @@ NSIMD_DLLEXPORT void *nsimd_aligned_alloc(nsimd_nat n) {
 #endif
 }
 
+// ----------------------------------------------------------------------------
+
 NSIMD_DLLEXPORT void nsimd_aligned_free(void *ptr) {
 #ifdef NSIMD_IS_MSVC
   _aligned_free(ptr);
@@ -63,16 +65,3 @@ NSIMD_DLLEXPORT void nsimd_aligned_free(void *ptr) {
 
 } // extern "C"
 
-// ----------------------------------------------------------------------------
-
-namespace nsimd {
-
-NSIMD_DLLEXPORT void *aligned_alloc(nsimd_nat n) {
-  return nsimd_aligned_alloc(n);
-}
-
-NSIMD_DLLEXPORT void aligned_free(void *ptr) {
-  nsimd_aligned_free(ptr);
-}
-
-} // namespace nsimd
