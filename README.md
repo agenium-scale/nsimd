@@ -22,7 +22,8 @@ With two of its modules NSIMD provides three programming paradigms:
 
 | Architecture                          | NSIMD core | TET1D module | SPMD module |
 |:--------------------------------------|:----------:|:------------:|:-----------:|
-| CPU (SIMD emulation)                  |     Y      |      Y       |      Y      |
+| CPU (scalar functions)                |     Y      |      Y       |      Y      |
+| CPU (128-bits SIMD emulation)         |     Y      |      Y       |      Y      |
 | Intel SSE 2                           |     Y      |      Y       |      Y      |
 | Intel SSE 4.2                         |     Y      |      Y       |      Y      |
 | Intel AVX                             |     Y      |      Y       |      Y      |
@@ -69,6 +70,12 @@ NSIMD is tested with GCC, Clang, MSVC, NVCC, HIPCC and ARMClang. As a C89 and a
 C++98 API are provided, other compilers should work fine. Old compiler versions
 should work as long as they support the targeted SIMD extension. For instance,
 NSIMD can compile SSE 4.2 code with MSVC 2010.
+
+# Contributors
+
+We'd like to thank the following people for their participation to NSIMD.
+
+- @alankelly (support of Arm NEON and Aarch64)
 
 # Build the library
 
