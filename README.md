@@ -71,12 +71,6 @@ C++98 API are provided, other compilers should work fine. Old compiler versions
 should work as long as they support the targeted SIMD extension. For instance,
 NSIMD can compile SSE 4.2 code with MSVC 2010.
 
-# Contributors
-
-We'd like to thank the following people for their participation to NSIMD.
-
-- @alankelly (support of Arm NEON and Aarch64)
-
 # Build the library
 
 ## CMake
@@ -94,7 +88,7 @@ make install
 
 where `SIMD_EXT` is one of the following: CPU, SSE2, SSE42, AVX, AVX2,
 AVX512\_KNL, AVX512\_SKYLAKE, NEON128, AARCH64, SVE, SVE128, SVE256, SVE512,
-SVE1024, SVE2048, CUDA, ROCM.
+SVE1024, SVE2048, VMX, VSX, CUDA, ROCM.
 
 Note that when compiling for NEON128 on Linux one has to choose the ABI, either
 armel or armhf. Default is armel. As CMake is unable to autodetect this
