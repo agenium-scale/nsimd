@@ -143,11 +143,11 @@ def emulate_with_scalar(op, simd_ext, typ, params):
     if params[0] == 'v':
         return '''nsimd_{simd_ext}_v{typ} ret;
                   ret = vec_splats(nsimd_scalar_{op}_{typ}({args0}));
-                  '''.format(typ=typ, op=op, args0=args.format(0),
+                  '''.format(typ=typ, op=op, args0=args.format(i=0),
                              simd_ext=simd_ext) + '\n' + \
                '\n'.join('ret = vec_insert('\
                          'nsimd_scalar_{op}_{typ}({argsi}), ret, {i});'. \
-                         format(op=op, typ=typ, argsi=args.format(i), i=i) \
+                         format(op=op, typ=typ, argsi=args.format(i=i), i=i) \
                          for i in range(1, get_len(typ))) + '\nreturn ret;'
     else:
         utyp = 'u' + typ[1:]
@@ -963,8 +963,9 @@ def round1(op, simd_ext, typ):
         return 'return {in0};'.format(**fmtspec)
     elif has_to_be_emulated(simd_ext, typ):
         return emulation_code(op, simd_ext, typ, ['v', 'v'])
-    ppcop = {'trunc': 'trunc', 'ceil': 'ceil', 'floor': 'floor',
-             'round_to_even': 'round'}
+    if op == 'round_to_even':
+        return emulate_with_scalar('round_to_even', simd_ext, typ, ['v', 'v'])
+    ppcop = { 'trunc': 'trunc', 'ceil': 'ceil', 'floor': 'floor' }
     return 'return vec_{op}({in0});'.format(op=ppcop[op], **fmtspec)
 
 # -----------------------------------------------------------------------------
