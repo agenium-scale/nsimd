@@ -33,6 +33,8 @@ SOFTWARE.
 /* Detect host compiler */
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
+#elif defined(__ibmxl_version__)
+  #define NSIMD_IS_XLC
 #elif defined(__FCC_version__)
   #define NSIMD_IS_FCC
 #elif defined(__INTEL_COMPILER)
@@ -358,6 +360,11 @@ namespace nsimd {
 
 #if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
   #define NSIMD_ONEAPI
+  /* undef ONEAPI is needed because ONEAPI is used as a namespace in DPC++:
+     sycl::ONEAPI */
+  #ifdef ONEAPI
+    #undef ONEAPI
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -844,7 +851,16 @@ namespace nsimd {
   #include <limits.h>
 #endif
 
-#ifdef NSIMD_IS_MSVC
+#if defined(NSIMD_ONEAPI)
+  typedef sycl::cl_uchar  u8;
+  typedef sycl::cl_char   i8;
+  typedef sycl::cl_ushort u16;
+  typedef sycl::cl_short  i16;
+  typedef sycl::cl_uint   u32;
+  typedef sycl::cl_int    i32;
+  typedef sycl::cl_ulong  u64;
+  typedef sycl::cl_long   i64;
+#elif defined(NSIMD_IS_MSVC)
   typedef unsigned __int8  u8;
   typedef signed   __int8  i8;
   typedef unsigned __int16 u16;
@@ -948,14 +964,19 @@ namespace nsimd {
   typedef __half f16;
   #define NSIMD_NATIVE_FP16
 #elif defined(NSIMD_ONEAPI)
-  typedef half f16;
+  typedef sycl::half f16;
   #define NSIMD_NATIVE_FP16
 #else
   typedef struct { u16 u; } f16;
 #endif
 
-typedef float  f32;
-typedef double f64;
+#if defined(NSIMD_ONEAPI)
+  typedef sycl::cl_float f32;
+  typedef sycl::cl_double f64;
+#else
+  typedef float  f32;
+  typedef double f64;
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* Native register size (for now only 32 and 64 bits) types */
@@ -1564,7 +1585,7 @@ inline f16 nsimd_f32_to_f16(f32 a) {
 }
 inline f32 nsimd_f16_to_f32(f16 a) { return nsimd_u16_to_f32(*(u16 *)&a); }
 #elif defined(NSIMD_ONEAPI)
-inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
+inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<sycl::half>(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);

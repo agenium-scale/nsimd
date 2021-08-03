@@ -551,7 +551,7 @@ class Operator(object, metaclass=MAddToOperators):
         sig = '__device__ ' if cpu_gpu == 'gpu' else ''
         sig += common.get_one_type_scalar(self.params[0], tt) + ' '
         func_name = 'nsimd_' if lang == 'c' else ''
-        func_name += 'gpu_' if cpu_gpu == 'gpu' else 'scalar_'
+        func_name += 'gpu_' if cpu_gpu in ['gpu', 'oneapi'] else 'scalar_'
         func_name += self.name
         operator_on_logicals = (self.params == ['l'] * len(self.params))
         if lang == 'c' and not operator_on_logicals:

@@ -38,6 +38,7 @@ With two of its modules NSIMD provides three programming paradigms:
 | IBM POWERPC VSX                       |     Y      |      Y       |      Y      |
 | NVIDIA CUDA                           |     N      |      Y       |      Y      |
 | AMD ROCm                              |     N      |      Y       |      Y      |
+| Intel oneAPI                          |     N      |      Y       |      Y      |
 
 ## How it works?
 
