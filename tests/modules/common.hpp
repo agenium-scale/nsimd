@@ -272,7 +272,7 @@ bool cmp(T *const src1, const T *const src2, unsigned int n) {
   const size_t total_num_threads =
       nsimd::compute_total_num_threads(n, THREADS_PER_BLOCK);
 
-  sycl::queue q = nsimd::_get_global_queue();
+  sycl::queue q = nsimd::oneapi::default_queue();
 
   sycl::event e1 = q.submit([=](sycl::handler &h) {
     sycl::accessor<T, 1, sycl::access::mode::read_write,
@@ -314,7 +314,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
 }
 
 template <typename T> void del(T *ptr) {
-  sycl::queue q = nsimd::_get_global_queue();
+  sycl::queue q = nsimd::oneapi::default_queue();
   sycl::free(ptr, q);
 }
 

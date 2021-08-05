@@ -365,6 +365,12 @@ namespace nsimd {
   #ifdef ONEAPI
     #undef ONEAPI
   #endif
+
+  extern "C" NSIMD_DLLSPEC void *nsimd_oneapi_default_queue();
+
+  sycl::queue &default_queue() {
+    return *(sycl::queue *)nsimd_oneapi_default_queue();
+  }
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -2219,6 +2225,19 @@ NSIMD_INLINE int ufp(f16 a, f16 b) { return nsimd_ufp_f16(a, b); }
 NSIMD_INLINE int ufp(f32 a, f32 b) { return nsimd_ufp_f32(a, b); }
 NSIMD_INLINE int ufp(f64 a, f64 b) { return nsimd_ufp_f64(a, b); }
 } // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Get last kernel parameter */
+
+#if NSIMD_CXX > 0
+extern "C" {
+#endif
+
+NSIMD_DLLSPEC nsimd_nat nsimd_kernel_param(nsimd_nat, nsimd_nat);
+
+#if NSIMD_CXX > 0
+} // extern "C"
 #endif
 
 /* ------------------------------------------------------------------------- */

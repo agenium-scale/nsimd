@@ -43,7 +43,7 @@ ifnot_set "Compile the libstdc++ statically" static_libstdcpp = true
 ## Targets for compilation
 
 set o_for_               = fp16$o memory$o ufp$o api_cpu$o rempitab$o \
-                           sleefsp$o sleefdp$o
+                           sleefsp$o sleefdp$o gpu$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_
 set o_for_rocm           = $o_for_
@@ -86,8 +86,8 @@ lambda cflags_for_generic_*    = -DCPU
 set    cflags_for_generic_cuda = -DCUDA
 set    cflags_for_generic_rocm = -DROCM
 
-set cflags_for_               = -DCPU
-set cflags_for_cpu            = ${cflags_for_generic_$simd$}
+set cflags_for_               = ${cflags_for_generic_$simd$}
+set cflags_for_cpu            = $cflags_for_
 set cflags_for_cuda           = -DCUDA
 set cflags_for_rocm           = -DROCM
 set cflags_for_oneapi         = -DONEAPI
@@ -132,11 +132,14 @@ set sleef_cflags = -fPIC -O2 -I$root$/src -DNDEBUG -DDORENAME=1
 phony all deps libnsimd_$simd$$so$
 
 build_file libnsimd_$simd$$so deps ${o_for_$simd$}
-	c++ -shared @in -o @out
+	c++ -fPIC -shared @in -o @out
 
 set ldflags = -fPIC -L. -lnsimd_$simd
 
 ## Generic (emulation) rules for building
+
+build_file gpu$o autodeps $root$/src/gpu.cpp
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
 build_file ufp$o autodeps $root$/src/ufp.cpp
 	c++ $cflags$ $cflags_for_cpu @in -c -o @out
