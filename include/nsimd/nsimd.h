@@ -365,12 +365,6 @@ namespace nsimd {
   #ifdef ONEAPI
     #undef ONEAPI
   #endif
-
-  extern "C" NSIMD_DLLSPEC void *nsimd_oneapi_default_queue();
-
-  sycl::queue &default_queue() {
-    return *(sycl::queue *)nsimd_oneapi_default_queue();
-  }
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -420,7 +414,7 @@ namespace nsimd {
       struct cpu {};
       struct sse2 {};
       struct sse42 {};
-      #if NSIMD_CXX >= 2020
+      #if nsIMD_CXX >= 2020
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
                              std::is_same_v<T, nsimd::sse2> ||
@@ -809,8 +803,18 @@ namespace nsimd {
     #include <hip/hip_runtime.h>
   #endif
 
-  #ifdef NSIMD_ONEAPI
+  #if defined(NSIMD_ONEAPI) && NSIMD_CXX > 0
     #include <CL/sycl.hpp>
+
+    extern "C" {
+
+    NSIMD_DLLSPEC void *nsimd_oneapi_default_queue();
+
+    sycl::queue &default_queue() {
+      return *(sycl::queue *)nsimd_oneapi_default_queue();
+    }
+
+    } // extern "C"
   #endif
 
   #define NSIMD_SIMD cpu
@@ -858,14 +862,14 @@ namespace nsimd {
 #endif
 
 #if defined(NSIMD_ONEAPI)
-  typedef sycl::cl_uchar  u8;
-  typedef sycl::cl_char   i8;
-  typedef sycl::cl_ushort u16;
-  typedef sycl::cl_short  i16;
-  typedef sycl::cl_uint   u32;
-  typedef sycl::cl_int    i32;
-  typedef sycl::cl_ulong  u64;
-  typedef sycl::cl_long   i64;
+  typedef sycl::cl_char    i8;
+  typedef sycl::cl_uchar   u8;
+  typedef sycl::cl_short   i16;
+  typedef sycl::cl_ushort  u16;
+  typedef sycl::cl_int     i32;
+  typedef sycl::cl_uint    u32;
+  typedef sycl::cl_long    i64;
+  typedef sycl::cl_ulong   u64;
 #elif defined(NSIMD_IS_MSVC)
   typedef unsigned __int8  u8;
   typedef signed   __int8  i8;

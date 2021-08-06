@@ -339,10 +339,10 @@ install_dir $root$/doc/html doc
 
 ## Tests
 
-lambda tests_comp_for_*     = c++
-set    tests_comp_for_cuda  = nvcc $cuda_arch_flags
-set    tests_comp_for_rocm  = hipcc $cuda_arch_flags
-set    tests_comp_for_dpcpp = dpcpp
+lambda tests_comp_for_*      = c++
+set    tests_comp_for_cuda   = nvcc $cuda_arch_flags
+set    tests_comp_for_rocm   = hipcc $cuda_arch_flags
+set    tests_comp_for_oneapi = dpcpp
 
 set tests_comp = ${tests_comp_for_$simd$}
 
@@ -389,14 +389,14 @@ phony tests.cpp20 deps $cpp20.files
 
 # Phony target for tests
 
-lambda phony_tests_for_*     = tests.c89 tests.c99 tests.c11 tests.cpp98 \
-                               tests.cpp11
-set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
-set    phony_tests_for_rocm  = tests.cpp11
-set    phony_tests_for_dpcpp = tests.cpp11
-set    phony_tests_for_sve   = tests.c11 tests.cpp11
-set    phony_tests_for_vmx   = tests.c99 tests.c11 tests.cpp98
-set    phony_tests_for_vsx   = tests.c99 tests.c11 tests.cpp98 tests.cpp11
+lambda phony_tests_for_*      = tests.c89 tests.c99 tests.c11 tests.cpp98 \
+                                tests.cpp11
+set    phony_tests_for_cuda   = tests.cpp98 tests.cpp11
+set    phony_tests_for_rocm   = tests.cpp11
+set    phony_tests_for_oneapi = tests.cpp20
+set    phony_tests_for_sve    = tests.c11 tests.cpp11
+set    phony_tests_for_vmx    = tests.c99 tests.c11 tests.cpp98
+set    phony_tests_for_vsx    = tests.c99 tests.c11 tests.cpp98 tests.cpp11
 
 phony tests deps ${phony_tests_for_$simd$}
 
