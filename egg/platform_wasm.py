@@ -32,7 +32,7 @@ DEBUG = True
 
 
 def get_simd_exts():
-    return ['wasm_simd128']
+    return ['wasm']
 
 
 def emulate_fp16(simd_ext):
@@ -42,7 +42,7 @@ def emulate_fp16(simd_ext):
 
 
 def get_native_typ(simd_ext, typ):
-    if simd_ext != 'wasm_simd128':
+    if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     return 'v128_t'
 
@@ -69,7 +69,7 @@ def get_nb_registers(simd_ext):
 
 
 def has_compatible_SoA_types(simd_ext):
-    if simd_ext != 'wasm_simd128':
+    if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
     else:
         return False
