@@ -361,7 +361,7 @@ struct node<mask_out_t, Mask, none_t, Pack> {
                        (unsigned int)(nt), 0, s, data, mask, expr,
                        expr_size);
 #else
-    sycl::queue q = nsimd::default_queue();
+    sycl::queue q = nsimd::oneapi::default_queue();
     q.parallel_for(sycl::nd_range<1>(sycl::range<1>(param),
                                      sycl::range<1>(nt)),
                    [=, *this](sycl::nd_item<1> item) {
@@ -434,7 +434,7 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
         (unsigned int)(param), (unsigned int)(nt), 0, s, data, expr,
         expr.size());
 #else
-    sycl::queue q = nsimd::oneapi::default_queue();
+    sycl::queue q = nsimd::oneapi::oneapi::default_queue();
     q.parallel_for(
          sycl::nd_range<1>(sycl::range<1>(param), sycl::range<1>(nt)),
          [=, *this](sycl::nd_item<1> item) {

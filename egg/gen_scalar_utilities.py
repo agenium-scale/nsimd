@@ -52,9 +52,7 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl, oneapi_sig, oneapi_impl):
                     {cuda_impl}
                   }}
 
-                  #endif
-
-                  #ifdef NSIMD_ROCM
+                  #elif defined(NSIMD_ROCM)
 
                   inline {gpu_sig} {{
                     {rocm_impl}

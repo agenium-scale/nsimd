@@ -73,7 +73,7 @@ namespace spmd {
     int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
     if (spmd_i_ < n) {
 
-#elif defined(NSIMD_ONEAPI)
+#elif defined(NSIMD_ROCM)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
@@ -168,8 +168,9 @@ namespace spmd {
 // launch 1d kernel oneAPI
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
                               ...)                                            \
-  const size_t total_num_threads = nsimd_kernel_param(n, threads_per_block);  \
-  sycl::queue q = nsimd::_get_global_queue();                                 \
+  size_t total_num_threads =                                                  \
+      (size_t)nsimd_kernel_param(n, threads_per_block);                       \
+  sycl::queue q = nsimd::oneapi::default_queue();                             \
   q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),         \
                                    sycl::range<1>(threads_per_block)),        \
                  [=](sycl::nd_item<1> item) {                                 \

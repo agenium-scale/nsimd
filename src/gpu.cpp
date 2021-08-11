@@ -55,7 +55,7 @@ extern "C" {
 // Singleton to get default oneAPI queue
 NSIMD_DLLSPEC void *nsimd_oneapi_default_queue() {
   static sycl::queue ret(sycl::default_selector{},
-                         sycl_async_error_handler<>{});
+                         nsimd::oneapi::sycl_async_error_handler<>{});
   return (void *)&ret;
 }
 

@@ -235,7 +235,8 @@ def reinterpret(totyp, typ):
         '''#if defined(NSIMD_ARM_FP16) && defined(NSIMD_IS_GCC)
              {via_union}
            #elif (defined(NSIMD_ARM_FP16) && !defined(NSIMD_IS_GCC)) || \
-                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || \
+                 defined(NSIMD_ONEAPI)
              {via_memcpy}
            #else
              {emulated}
@@ -254,7 +255,8 @@ def reinterpret(totyp, typ):
         '''#if defined(NSIMD_ARM_FP16) && defined(NSIMD_IS_GCC)
              {via_union}
            #elif (defined(NSIMD_ARM_FP16) && !defined(NSIMD_IS_GCC)) || \
-                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || \
+                 defined(NSIMD_ONEAPI)
              {via_memcpy}
            #else
              {emulated}

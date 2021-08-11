@@ -121,13 +121,14 @@ def cbprng_impl(typ, domain_, for_cpu):
     ret += '}'
     return ret
 
-def cbprng(typ, operator, target):
-    if target not in ['cpu', 'cuda', 'hip']:
-        raise ValueError('Unsupported target, must be cpu, cuda or hip')
+def cbprng(typ, operator, target, gpu_params = None):
+    if target not in ['cpu', 'cuda', 'hip', 'oneapi']:
+        raise ValueError('Unsupported target, must be cpu, cuda, hip or '
+                         'oneapi')
 
     arity = len(operator.params[1:])
     ret = '{}{} random_impl(int i, int j) {{\n'. \
-          format('' if target == 'cpu' else '__device__ ', typ)
+          format('' if target in ['cpu', 'oneapi'] else '__device__ ', typ)
     for_cpu = (target == 'cpu')
 
     if arity == 1:
@@ -148,7 +149,7 @@ def cbprng(typ, operator, target):
                     }}
                   }}'''.format(typ)
     elif target == 'cuda':
-        ret += '''__kernel__ random_kernel({typ} *dst, int n, int j) {{
+        ret += '''__kernel__ void random_kernel({typ} *dst, int n, int j) {{
                     int i = threadIdx.x + blockIdx.x * blockDim.x;
                     if (i < n) {{
                       dst[i] = random_impl((int)i, j);
@@ -156,11 +157,10 @@ def cbprng(typ, operator, target):
                   }}
 
                   void random({typ} *dst, unsigned int n, int j) {{
-                    kernel<<<{{gpu_params}}>>>(dst, (int)n, j);
-                  }}
-                  '''.format(typ=typ)
+                    random_kernel<<<{gpu_params}>>>(dst, (int)n, j);
+                  }}'''.format(typ=typ, gpu_params=gpu_params)
     elif target == 'hip':
-        ret += '''__kernel__ random_kernel({typ} *dst, size_t n, int j) {{
+        ret += '''__kernel__ void random_kernel({typ} *dst, size_t n, int j) {{
                     size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
                     if (i < n) {{
                       dst[i] = random_impl((int)i, j);
@@ -168,10 +168,27 @@ def cbprng(typ, operator, target):
                   }}
 
                   void random({typ} *dst, unsigned int n, int j) {{
-                    hipLaunchKernelGGL(kernel, {{gpu_params}}, 0, 0,
+                    hipLaunchKernelGGL(random_kernel, {gpu_params}, 0, 0,
                                        dst, n, j);
+                  }}'''.format(typ=typ, gpu_params=gpu_params)
+    elif target == 'oneapi':
+        ret += '''inline void random_kernel({typ} *dst, unsigned int n, int j,
+                                            sycl::nd_item<1> item) {{
+                    size_t i = item.get_global_id().get(0);
+                    if (i < n) {{
+                      dst[i] = random_impl((int)i, j);
+                    }}
                   }}
-                  '''.format(typ=typ)
+
+                  void random({typ} *dst, unsigned int n, int j) {{
+                    size_t nt = (size_t)nsimd_kernel_param({n}, {tpb});
+                    sycl::queue q_ = nsimd::oneapi::default_queue();
+                    q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(nt),
+                                    sycl::range<1>({tpb})),
+                                    [=](sycl::nd_item<1> item){{
+                                      random_kernel(dst, n, j, item);
+                                    }}).wait_and_throw();
+                  }}'''.format(typ=typ, n=gpu_params[0], tpb=gpu_params[1])
     return ret
 
 # -----------------------------------------------------------------------------

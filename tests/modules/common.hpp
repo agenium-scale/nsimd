@@ -258,7 +258,7 @@ void device_cmp_array(int *const dst, const T *const src1, const size_t n,
   sycl::nd_range<1> nd_range = item.get_nd_range();
   sycl::range<1> range = nd_range.get_local_range();
   for (size_t i = 0; i < n; i += range.size()) {
-    buf = nsimd::oneapi_mul(buf, src1[i]);
+    buf = nsimd::gpu_mul(buf, src1[i]);
   }
   size_t i = item.get_global_id().get(0);
   if (i == 0) {
@@ -269,18 +269,16 @@ void device_cmp_array(int *const dst, const T *const src1, const size_t n,
 template <typename T>
 bool cmp(T *const src1, const T *const src2, unsigned int n) {
 
-  const size_t total_num_threads =
-      nsimd::compute_total_num_threads(n, THREADS_PER_BLOCK);
-
+  const size_t total_num_threads = (size_t)nsimd_kernel_param(n, 128);
   sycl::queue q = nsimd::oneapi::default_queue();
 
   sycl::event e1 = q.submit([=](sycl::handler &h) {
     sycl::accessor<T, 1, sycl::access::mode::read_write,
                    sycl::access::target::local>
-        local_buffer(THREADS_PER_BLOCK, h);
+        local_buffer(128, h);
 
     h.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
-                                     sycl::range<1>(THREADS_PER_BLOCK)),
+                                     sycl::range<1>(128)),
                    [=](sycl::nd_item<1> item_) {
                      device_cmp_blocks(src1, src2, size_t(n), local_buffer,
                                        item_);
@@ -296,7 +294,7 @@ bool cmp(T *const src1, const T *const src2, unsigned int n) {
   }
   sycl::event e2 =
       q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
-                                       sycl::range<1>(THREADS_PER_BLOCK)),
+                                       sycl::range<1>(128)),
                      [=](sycl::nd_item<1> item_) {
                        device_cmp_array(device_ret, src1, size_t(n), item_);
                      });

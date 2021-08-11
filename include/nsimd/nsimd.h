@@ -810,11 +810,17 @@ namespace nsimd {
 
     NSIMD_DLLSPEC void *nsimd_oneapi_default_queue();
 
-    sycl::queue &default_queue() {
+    } // extern "C"
+
+    namespace nsimd {
+    namespace oneapi {
+
+    NSIMD_INLINE sycl::queue &default_queue() {
       return *(sycl::queue *)nsimd_oneapi_default_queue();
     }
 
-    } // extern "C"
+    } // namespace oneapi
+    } // namespace nsimd
   #endif
 
   #define NSIMD_SIMD cpu
@@ -1332,6 +1338,8 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
 #else
   #define NSIMD_MAX_ALIGNMENT 16
 #endif
+
+/* TODO: provide C++14 alignment constpexxr */
 
 /* clang-format on */
 
