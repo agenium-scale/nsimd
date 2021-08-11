@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -324,6 +324,28 @@ def gen_tests_for_shifts(opts, t, operator):
 
         {cbprng_hip}
 
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({t} *dst, {t} *tab0, const size_t n,
+                           const int s, sycl::nd_item<1> item) {{
+          size_t ii = item.get_global_id().get(0);
+          if (ii < n){{
+            dst[ii] = nsimd::gpu_{op_name}(tab0[ii], s);
+          }}
+        }}
+
+        void compute_result({t} *dst, {t} *tab0, size_t n, int s) {{
+          size_t total_num_threads = (size_t)nsimd_kernel_param((int)n, {tpb});
+          sycl::queue q_ = nsimd::oneapi::default_queue();
+          q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                            sycl::range<1>({tpb})),
+                                            [=](sycl::nd_item<1> item){{
+                                              kernel(dst, tab0, n, s, item);
+                                            }}).wait_and_throw();
+        }}
+
+        {cbprng_oneapi}
+
         #else
 
         void compute_result({t} *dst, {t} *tab0, unsigned int n, int s) {{
@@ -362,10 +384,14 @@ def gen_tests_for_shifts(opts, t, operator):
           return 0;
         }}
         '''.format(gpu_params=gpu_params, op_name=op_name, t=t,
-                   typnbits=t[1:],
+                   typnbits=t[1:], tpb=tpb,
                    cbprng_cpu=nsimd_tests.cbprng(t, operator, 'cpu'),
-                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda'),
-                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip')))
+                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda',
+                                                  gpu_params),
+                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip',
+                                                 gpu_params),
+                   cbprng_oneapi=nsimd_tests.cbprng(t, operator, 'oneapi',
+                                                    ['(int)n', str(tpb)])))
     common.clang_format(opts, filename, cuda=True)
 
 def gen_tests_for(opts, tt, t, operator):
@@ -501,9 +527,12 @@ def gen_tests_for(opts, tt, t, operator):
     cpu_kernel = compute_result_kernel.format(p='scalar',
                                               f32_to_f16='nsimd_f32_to_f16',
                                               f16_to_f32='nsimd_f16_to_f32')
-    gpu_kernel = compute_result_kernel.format(p='gpu',
-                                              f32_to_f16='__float2half',
-                                              f16_to_f32='__half2float')
+    cuda_rocm_kernel = compute_result_kernel.format(p='gpu',
+                                                    f32_to_f16='__float2half',
+                                                    f16_to_f32='__half2float')
+    oneapi_kernel = compute_result_kernel.format(p='gpu',
+                                                 f32_to_f16='(f16)',
+                                                 f16_to_f32='(f32)')
 
     comp = '!cmp(ref, out, n{})'.format('' if t in common.iutypes \
                                         else ', {}'.format(operator.ufp[t]))
@@ -519,7 +548,7 @@ def gen_tests_for(opts, tt, t, operator):
         __global__ void kernel({typ} *dst, {args_tabs}, int n) {{
           int i = threadIdx.x + blockIdx.x * blockDim.x;
           if (i < n) {{
-            {gpu_kernel}
+            {cuda_rocm_kernel}
           }}
         }}
 
@@ -530,7 +559,7 @@ def gen_tests_for(opts, tt, t, operator):
         __global__ void kernel({typ} *dst, {args_tabs}, size_t n) {{
           size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
           if (i < n) {{
-            {gpu_kernel}
+            {cuda_rocm_kernel}
           }}
         }}
 
@@ -540,6 +569,28 @@ def gen_tests_for(opts, tt, t, operator):
         }}
 
         {cbprng_hip}
+
+        #elif defined(NSIMD_ONEAPI)
+
+        inline void kernel({typ} *dst, {args_tabs}, const size_t n,
+                           sycl::nd_item<1> item) {{
+          size_t i = item.get_global_id().get(0);
+          if (i < n) {{
+            {oneapi_kernel}
+          }}
+        }}
+
+        void compute_result({typ} *dst, {args_tabs}, const size_t n) {{
+	  size_t total_num_threads = (size_t)nsimd_kernel_param((int)n, {tpb});
+	  sycl::queue q_ = nsimd::oneapi::default_queue();
+	  q_.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+	                                    sycl::range<1>({tpb})),
+	                                    [=](sycl::nd_item<1> item){{
+            kernel(dst, {args_tabs_call}, n, item);
+          }}).wait_and_throw();
+        }}
+
+        {cbprng_oneapi}
 
         #else
 
@@ -578,10 +629,16 @@ def gen_tests_for(opts, tt, t, operator):
         '''.format(typ=t, args_tabs=args_tabs, fill_tabs=fill_tabs,
                    args_tabs_call=args_tabs_call, gpu_params=gpu_params,
                    free_tabs=free_tabs, tet1d_code=tet1d_code, comp=comp,
-                   cpu_kernel=cpu_kernel, gpu_kernel=gpu_kernel,
+                   cpu_kernel=cpu_kernel, tpb=tpb,
+                   cuda_rocm_kernel=cuda_rocm_kernel,
+                   oneapi_kernel=oneapi_kernel,
                    cbprng_cpu=nsimd_tests.cbprng(t, operator, 'cpu'),
-                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda'),
-                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip')))
+                   cbprng_cuda=nsimd_tests.cbprng(t, operator, 'cuda',
+                                                  gpu_params),
+                   cbprng_hip=nsimd_tests.cbprng(t, operator, 'hip',
+                                                 gpu_params),
+                   cbprng_oneapi=nsimd_tests.cbprng(t, operator, 'oneapi',
+                                                    ['(int)n', str(tpb)])))
 
     common.clang_format(opts, filename, cuda=True)
 
@@ -711,6 +768,10 @@ def gen_functions(opts):
           __device__ {return_type} gpu_get(nsimd::nat i) const {{
             {impl_gpu}
           }}
+        #elif defined(NSIMD_ONEAPI)
+          {return_type} gpu_get(nsimd::nat i) const {{
+            {impl_gpu}
+          }}
         #else
           {return_type} scalar_get(nsimd::nat i) const {{
             {impl_scalar}
@@ -754,7 +815,8 @@ def gen_functions(opts):
             node<{op_name}_t, node<Op, Left, Right, Extra>,
                  node<scalar_t, none_t, none_t,
                       typename node<Op, Left, Right, Extra>::in_type>, none_t>
-            operator{cxx_operator}(node<Op, Left, Right, Extra> const &node, T a) {{
+            operator{cxx_operator}(node<Op, Left, Right, Extra> const &node,
+                                   T a) {{
               typedef typename tet1d::node<Op, Left, Right, Extra>::in_type S;
               return tet1d::{op_name}(node, literal_to<S>::impl(a));
             }}
@@ -764,7 +826,8 @@ def gen_functions(opts):
             node<{op_name}_t, node<scalar_t, none_t, none_t,
                               typename node<Op, Left, Right, Extra>::in_type>,
                  node<Op, Left, Right, Extra>, none_t>
-            operator{cxx_operator}(T a, node<Op, Left, Right, Extra> const &node) {{
+            operator{cxx_operator}(T a,
+                                   node<Op, Left, Right, Extra> const &node) {{
               typedef typename tet1d::node<Op, Left, Right, Extra>::in_type S;
               return tet1d::{op_name}(literal_to<S>::impl(a), node);
             }}
@@ -808,7 +871,7 @@ def name():
 
 def desc():
     return '''This module provide a thin layer of expression templates above
-NSIMD core. It also allows the programmer to target NVIDIA and AMD GPUs.
+NSIMD core. It also allows the programmer to target Intel, NVIDIA and AMD GPUs.
 Expression template are a C++ technique that allows the programmer to write
 code "à la MATLAB" where variables usually represents vectors and operators
 are itemwise.'''

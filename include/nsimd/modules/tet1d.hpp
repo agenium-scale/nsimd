@@ -125,7 +125,7 @@ void oneapi_kernel_component_wise_mask(T *dst, Mask const mask,
                                                nsimd::nat n,
 					       sycl::nd_item<1> item) {
 
-  const int i = static_cast<int>(item.get_global_id().get(0));
+  nsimd::nat i = static_cast<nsimd::nat>(item.get_global_id().get(0));
   if (i < n && mask.gpu_get(i)) {
     dst[i] = expr.gpu_get(i);
   }
@@ -362,8 +362,8 @@ struct node<mask_out_t, Mask, none_t, Pack> {
                        expr_size);
 #else
     sycl::queue q = nsimd::oneapi::default_queue();
-    q.parallel_for(sycl::nd_range<1>(sycl::range<1>(param),
-                                     sycl::range<1>(nt)),
+    q.parallel_for(sycl::nd_range<1>(sycl::range<1>((size_t)param),
+                                     sycl::range<1>((size_t)nt)),
                    [=, *this](sycl::nd_item<1> item) {
                      oneapi_kernel_component_wise_mask(data, mask, expr,
                                                        expr_size, item);
@@ -434,9 +434,10 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
         (unsigned int)(param), (unsigned int)(nt), 0, s, data, expr,
         expr.size());
 #else
-    sycl::queue q = nsimd::oneapi::oneapi::default_queue();
+    sycl::queue q = nsimd::oneapi::default_queue();
     q.parallel_for(
-         sycl::nd_range<1>(sycl::range<1>(param), sycl::range<1>(nt)),
+         sycl::nd_range<1>(sycl::range<1>((size_t)param),
+                                          sycl::range<1>((size_t)nt)),
          [=, *this](sycl::nd_item<1> item) {
            oneapi_kernel_component_wise(data, expr, expr.size(), item);
          })
