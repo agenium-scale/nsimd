@@ -193,7 +193,11 @@ ppc_simds = [
     'vsx',
 ]
 
-simds = ['cpu'] + x86_simds + arm_simds + ppc_simds
+riscv_simds = [
+    'rvv'
+]
+
+simds = ['cpu'] + x86_simds + arm_simds + ppc_simds + riscv_simds
 
 simds_deps = {
     'cpu': ['cpu'],
@@ -213,7 +217,8 @@ simds_deps = {
     'sve1024': ['cpu', 'aarch64', 'sve1024'],
     'sve2048': ['cpu', 'aarch64', 'sve2048'],
     'vmx': ['cpu', 'vmx'],
-    'vsx': ['cpu', 'vmx', 'vsx']
+    'vsx': ['cpu', 'vmx', 'vsx'],
+    'rvv': ['cpu', 'rvv']
 }
 
 ftypes = ['f64', 'f32', 'f16']
