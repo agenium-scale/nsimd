@@ -89,6 +89,10 @@ following defines.
 | `NSIMD_ROCM`           | AMD ROCm architectures                            |
 | `NSIMD_VMX`            | IBM POWERPC VMX (Altivec)                         |
 | `NSIMD_VSX`            | IBM POWERPC VSX (Altivec)                         |
+| `NSIMD_RVV1`           | RISC-V LMUL=1                                     |
+| `NSIMD_RVV2`           | RISC-V LMUL=2                                     |
+| `NSIMD_RVV4`           | RISC-V LMUL=4                                     |
+| `NSIMD_RVV8`           | RISC-V LMUL=8                                     |
 | `NSIMD_FP16`           | Architecture supports natively IEEE float16       |
 | `NSIMD_FMA`            | Architecture supports natively FMAs               |
 

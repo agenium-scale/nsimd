@@ -344,6 +344,24 @@ namespace nsimd {
 #define NSIMD_VSX
 #endif
 
+/* RISC-V */
+
+#if (defined(RVV1) && !defined(NSIMD_RVV1))
+  #define NSIMD_RVV1
+#endif
+
+#if (defined(RVV2) && !defined(NSIMD_RVV2))
+  #define NSIMD_RVV2
+#endif
+
+#if (defined(RVV4) && !defined(NSIMD_RVV4))
+  #define NSIMD_RVV4
+#endif
+
+#if (defined(RVV8) && !defined(NSIMD_RVV8))
+  #define NSIMD_RVV8
+#endif
+
 /* CUDA */
 
 #if defined(CUDA) && !defined(NSIMD_CUDA)
@@ -700,6 +718,82 @@ namespace nsimd {
                              std::is_same_v<T, nsimd::aarch64> ||
                              std::is_same_v<T, nsimd::sve2048>;
         #define NSIMD_LIST_SIMD_EXT cpu, aarch64, sve2048
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_RVV1)
+
+  #define NSIMD_PLATFORM riscv
+  #define NSIMD_SIMD rvv1
+  #include <riscv_vector.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct rvv1 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::rvv1>;
+        #define NSIMD_LIST_SIMD_EXT cpu, rvv1
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_RVV2)
+
+  #define NSIMD_PLATFORM riscv
+  #define NSIMD_SIMD rvv2
+  #include <riscv_vector.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct rvv2 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::rvv2>;
+        #define NSIMD_LIST_SIMD_EXT cpu, rvv2
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_RVV4)
+
+  #define NSIMD_PLATFORM riscv
+  #define NSIMD_SIMD rvv4
+  #include <riscv_vector.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct rvv4 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::rvv4>;
+        #define NSIMD_LIST_SIMD_EXT cpu, rvv4
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_RVV8)
+
+  #define NSIMD_PLATFORM riscv
+  #define NSIMD_SIMD rvv8
+  #include <riscv_vector.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct rvv8 {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::rvv8>;
+        #define NSIMD_LIST_SIMD_EXT cpu, rvv8
       #endif
     } // namespace nsimd
   #endif

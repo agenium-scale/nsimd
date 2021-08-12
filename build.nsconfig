@@ -79,7 +79,10 @@ set o_for_sve2048        = $o_for_aarch64 api_sve2048$o sleef_sve2048_f32$o \
                            sleef_sve2048_f64$o
 set o_for_vmx            = $o_for_cpu api_vmx$o sleef_vmx_f32$o sleef_vmx_f64$o
 set o_for_vsx            = $o_for_vmx api_vsx$o sleef_vsx_f32$o sleef_vsx_f64$o
-set o_for_rrv						 = $o_for_cpu api_rvv$o 
+set o_for_rvv1						 = $o_for_cpu api_rvv1$o 
+set o_for_rvv2						 = $o_for_cpu api_rvv2$o 
+set o_for_rvv4						 = $o_for_cpu api_rvv4$o 
+set o_for_rvv8						 = $o_for_cpu api_rvv8$o 
 
 ## SIMD compiler flags
 
@@ -109,7 +112,10 @@ set cflags_for_sve1024        = -DSVE1024 -msve1024
 set cflags_for_sve2048        = -DSVE2048 -msve2048
 set cflags_for_vmx            = -DVMX -mvmx
 set cflags_for_vsx            = -DVSX -mvsx
-set cflags_for_rvv						= -DRISCVV
+set cflags_for_rvv1						= -DRVV1 -mrvv
+set cflags_for_rvv2						= -DRVV2 -mrvv
+set cflags_for_rvv4						= -DRVV4 -mrvv
+set cflags_for_rvv8						= -DRVV8 -mrvv
 
 ## std default flag
 
@@ -334,8 +340,17 @@ build_file sleef_vsx_f64$o autodeps $root$/src/sleefsimddp.c
 
 ## RISC-V rules for building
 
-build_file api_rvv$o autodeps $root$/src/api_rvv.cpp
-	c++ $flags$ -c $cflags_for_rvv @in -o @out
+build_file api_rvv1$o autodeps $root$/src/api_rvv1.cpp
+	c++ $flags$ -c $cflags_for_rvv1 @in -o @out
+
+build_file api_rvv2$o autodeps $root$/src/api_rvv2.cpp
+	c++ $flags$ -c $cflags_for_rvv2 @in -o @out
+
+build_file api_rvv4$o autodeps $root$/src/api_rvv4.cpp
+	c++ $flags$ -c $cflags_for_rvv4 @in -o @out
+
+build_file api_rvv8$o autodeps $root$/src/api_rvv8.cpp
+	c++ $flags$ -c $cflags_for_rvv8 @in -o @out
 
 ## Installation and packaging
 

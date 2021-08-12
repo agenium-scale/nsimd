@@ -57,7 +57,10 @@ def native_type(typ, simd_ext):
         'f32': 'float32',
         'f64': 'float64'
     }
-    return 'v{}m{}_t'.format(prefix[typ], simd_ext[-1])
+    if typ not in prefix:
+        raise ValueError('Type "{}" not supported'.format(simd_ext))
+    else:
+        return 'v{}m{}_t'.format(prefix[typ], simd_ext[-1])
 
 # Returns the logical rrv type corresponding to the nsimd type
 def native_typel(typ, simd_ext):
@@ -70,11 +73,11 @@ def native_typel(typ, simd_ext):
         nsew = 16
     elif typ in ['i32', 'u32', 'f32']:
         sew = 32
-    elif typ in ['f64', 'i64', 'f64']:
+    elif typ in ['i64', 'u64', 'f64']:
         sew = 64
     else:
         raise ValueError('Type "{}" not supported'.format(typ))
-    n = sew / lmul
+    n = sew // lmul
     return 'vbool{}_t'.format(n)
 
 # -----------------------------------------------------------------------------
@@ -84,7 +87,17 @@ def emulate_fp16(simd_ext):
     return False
 
 def get_simd_exts():
-    return ['rvv1', 'rvv2', 'rvv4' 'rvv8']
+    return ['rvv1', 'rvv2', 'rvv4', 'rvv8']
+
+def get_prev_simd_ext(simd_ext):
+    if simd_ext not in get_simd_exts():
+        raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+    else:
+        'cpu'
+
+def get_native_typ(simd_ext, typ):
+    # TODO
+    pass
 
 def get_type(opts, simd_ext, typ, nsimd_typ):
     if simd_ext not in get_simd_exts():
@@ -116,8 +129,50 @@ def has_compatible_SoA_types(simd_ext):
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
+def get_SoA_type(simd_ext, typ, deg):
+    # TODO
+    pass
+
 def get_additional_include(func, platform, simd_ext):
-    ret = ''
+    ret = '''#include <nsimd/cpu/cpu/{}.h>
+            '''.format(func)
     return ret
 
 # -----------------------------------------------------------------------------
+
+def get_impl(opts, func, simd_ext, from_typ, to_typ):
+    global fmtspec
+
+    fmtspec = {
+        'simd_ext': simd_ext,
+        'typ': from_typ,
+        'styp': get_type(opts, simd_ext, from_typ, to_typ),
+        'from_typ': from_typ,
+        'to_typ': to_typ,
+        'in0': common.in0,
+        'in1': common.in1,
+        'in2': common.in2,
+        'in3': common.in3,
+        'in4': common.in4,
+        'in5': common.in5
+    }
+
+    impls = {
+        #'loada': 'load1234(simd_ext, from_typ, 1, True)'
+    }
+    if simd_ext not in get_simd_exts():
+        raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+    if not from_typ in common.types:
+        raise ValueError('Unknown type "{}"'.format(from_typ))
+    if not func in impls:
+        return common.NOT_IMPLEMENTED
+    else:
+        return eval(impls[func])
+
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Function prefixes
+
+def pre(simd_ext):
+    return 'rvv{}_'.format(simd_ext[-1])
