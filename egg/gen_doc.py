@@ -214,19 +214,10 @@ Here is a list of available FUNCNAME.
                               ' a' + str(count) for count, p in \
                               enumerate(operator.params[1:])])
             fout.write('- `{} {}({});`  \n'.format(return_typ, func, args))
-
-            if operator.domain and len(operator.params[1:]) > 0:
-                params = operator.params[1:]
-                if len(params) == 1:
-                    fout.write('  a0 ∈ {}\n'.format(operator.domain))
-                else:
-                    param = ', '.join(['a' + str(count) for count in \
-                                       range(len(params))])
-                    fout.write('  ({}) ∈ {}\n'.format(param, operator.domain))
-
             if len(operator.types) < len(common.types):
                 typs = ', '.join(['{}'.format(t) for t in operator.types])
                 fout.write('  Only available for {}\n'.format(typs))
+
         fout.write('''
 
 ## C advanced API (only available in C11)

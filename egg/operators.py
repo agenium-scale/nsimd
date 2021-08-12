@@ -1351,7 +1351,7 @@ class Log_u35(SrcOperator):
     signature = 'v log_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_log_u35'
     domain = [[0.5, 20]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the natural logarithm of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1360,7 +1360,7 @@ class Cbrt_u35(SrcOperator):
     full_name = 'cube root'
     signature = 'v cbrt_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_cbrt_u35'
-    categories = [DocTrigo]
+    categories = [DocBasicArithmetic]
     desc = 'Compute the cube root of its argument with a precision of ' \
            '3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1436,7 +1436,7 @@ class Log_u10(SrcOperator):
     signature = 'v log_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log_u10'
     domain = [[0.5, 20]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the natural logarithm of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1445,7 +1445,7 @@ class Cbrt_u10(SrcOperator):
     full_name = 'cube root'
     signature = 'v cbrt_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_cbrt_u10'
-    categories = [DocTrigo]
+    categories = [DocBasicArithmetic]
     desc = 'Compute the cube root of its argument with a precision of ' \
            '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1455,7 +1455,7 @@ class Exp_u10(SrcOperator):
     signature = 'v exp_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp_u10'
     domain = [[-20, 5]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-e exponential of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1465,7 +1465,7 @@ class Pow_u10(SrcOperator):
     signature = 'v pow_u10 v v'
     sleef_symbol_prefix = 'nsimd_sleef_pow_u10'
     domain = [[0, 5], [-5, 5]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the power of its argument with a precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
@@ -1473,7 +1473,7 @@ class Sinh_u10(SrcOperator):
     full_name = 'hyperbolic sine'
     signature = 'v sinh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_sinh_u10'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the hyperbolic sine of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1482,7 +1482,7 @@ class Cosh_u10(SrcOperator):
     full_name = 'hyperbolic cosine'
     signature = 'v cosh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_cosh_u10'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the hyperbolic cosine of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1491,7 +1491,7 @@ class Tanh_u10(SrcOperator):
     full_name = 'hyperbolic tangent'
     signature = 'v tanh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_tanh_u10'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the hyperbolic tangent of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1500,7 +1500,7 @@ class Sinh_u35(SrcOperator):
     full_name = 'hyperbolic sine'
     signature = 'v sinh_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_sinh_u35'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the hyperbolic sine of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1509,7 +1509,7 @@ class Cosh_u35(SrcOperator):
     full_name = 'hyperbolic cosine'
     signature = 'v cosh_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_cosh_u35'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the hyperbolic cosine of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1518,7 +1518,7 @@ class Tanh_u35(SrcOperator):
     full_name = 'hyperbolic tangent'
     signature = 'v tanh_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_tanh_u35'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the hyperbolic tangent of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1527,7 +1527,7 @@ class Asinh_u10(SrcOperator):
     full_name = 'inverse hyperbolic sine'
     signature = 'v asinh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_asinh_u10'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the inverse hyperbolic sine of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1536,7 +1536,7 @@ class Acosh_u10(SrcOperator):
     full_name = 'inverse hyperbolic cosine'
     signature = 'v acosh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_acosh_u10'
-    categories = [DocTrigo]
+    categories = [DocHyper]
     domain = [[1, 20]]
     desc = 'Compute the inverse hyperbolic cosine of its argument with a ' \
            'precision of 1.0 ulps. ' \
@@ -1547,7 +1547,7 @@ class Atanh_u10(SrcOperator):
     signature = 'v atanh_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_atanh_u10'
     domain = [[-0.9, 0.9]]
-    categories = [DocTrigo]
+    categories = [DocHyper]
     desc = 'Compute the inverse hyperbolic tangent of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1557,7 +1557,7 @@ class Exp2_u10(SrcOperator):
     signature = 'v exp2_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp2_u10'
     domain = [[-20, 5]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-2 exponential of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1567,7 +1567,7 @@ class Exp2_u35(SrcOperator):
     signature = 'v exp2_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp2_u35'
     domain = [[-20, 5]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-2 exponential of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1577,7 +1577,7 @@ class Exp10_u10(SrcOperator):
     signature = 'v exp10_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp10_u10'
     domain = [[-5, 3]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-10 exponential of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1587,7 +1587,7 @@ class Exp10_u35(SrcOperator):
     signature = 'v exp10_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_exp10_u35'
     domain = [[-5, 3]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-10 exponential of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1597,7 +1597,7 @@ class Expm1_u10(SrcOperator):
     signature = 'v expm1_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_expm1_u10'
     domain = [[-5, 3]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the exponential minus 1 of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1607,7 +1607,7 @@ class Log10_u10(SrcOperator):
     signature = 'v log10_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log10_u10'
     domain = [[0.5, 20]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-10 logarithm of its argument with a precision ' \
            'of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1617,7 +1617,7 @@ class Log2_u10(SrcOperator):
     signature = 'v log2_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log2_u10'
     domain = [[0.5, 20]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-2 logarithm of its argument with a precision ' \
            'of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1627,7 +1627,7 @@ class Log2_u35(SrcOperator):
     signature = 'v log2_u35 v'
     sleef_symbol_prefix = 'nsimd_sleef_log2_u35'
     domain = [[0.5, 20]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the base-2 logarithm of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1637,7 +1637,7 @@ class Log1p_u10(SrcOperator):
     signature = 'v log1p_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_log1p_u10'
     domain = [[-0.5, 19]]
-    categories = [DocTrigo]
+    categories = [DocExpLog]
     desc = 'Compute the logarithm of 1 plus argument of its argument with ' \
            'a precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1664,7 +1664,7 @@ class Hypot_u05(SrcOperator):
     full_name = 'Euclidean distance'
     signature = 'v hypot_u05 v v'
     sleef_symbol_prefix = 'nsimd_sleef_hypot_u05'
-    categories = [DocTrigo]
+    categories = [DocBasicArithmetic]
     desc = 'Compute the Euclidean distance of its argument with a ' \
            'precision of 0.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1673,7 +1673,7 @@ class Hypot_u35(SrcOperator):
     full_name = 'Euclidean distance'
     signature = 'v hypot_u35 v v'
     sleef_symbol_prefix = 'nsimd_sleef_hypot_u35'
-    categories = [DocTrigo]
+    categories = [DocBasicArithmetic]
     desc = 'Compute the Euclidean distance of its argument with a ' \
            'precision of 3.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1683,7 +1683,7 @@ class Remainder(SrcOperator):
     signature = 'v remainder v v'
     sleef_symbol_prefix = 'nsimd_sleef_remainder'
     domain = [[1, 20], [1, 20]]
-    categories = [DocTrigo]
+    categories = [DocBasicArithmetic]
     desc = 'Compute the floating-point remainder of its arguments. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
@@ -1692,7 +1692,7 @@ class Fmod(SrcOperator):
     signature = 'v fmod v v'
     sleef_symbol_prefix = 'nsimd_sleef_fmod'
     domain = [[1, 20], [1, 20]]
-    categories = [DocTrigo]
+    categories = [DocBasicArithmetic]
     desc = 'Compute the floating-point remainder of its argument. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
 
@@ -1701,7 +1701,7 @@ class Lgamma_u10(SrcOperator):
     signature = 'v lgamma_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_lgamma_u10'
     domain = [[0.5, 20]]
-    categories = [DocTrigo]
+    categories = [DocMisc]
     desc = 'Compute the log gamma of its argument with a precision of ' \
            '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1711,7 +1711,7 @@ class Tgamma_u10(SrcOperator):
     signature = 'v tgamma_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_tgamma_u10'
     domain = [[0.5, 5]]
-    categories = [DocTrigo]
+    categories = [DocMisc]
     desc = 'Compute the true gamma of its argument with a precision of ' \
            '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1720,7 +1720,7 @@ class Erf_u10(SrcOperator):
     full_name = 'complementary error'
     signature = 'v erf_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_erf_u10'
-    categories = [DocTrigo]
+    categories = [DocMisc]
     desc = 'Compute the complementary error of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1729,7 +1729,7 @@ class Erfc_u15(SrcOperator):
     full_name = 'complementary error'
     signature = 'v erfc_u15 v'
     sleef_symbol_prefix = 'nsimd_sleef_erfc_u15'
-    categories = [DocTrigo]
+    categories = [DocMisc]
     desc = 'Compute the complementary error of its argument with a ' \
            'precision of 1.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'

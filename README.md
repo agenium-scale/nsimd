@@ -184,6 +184,7 @@ Supported compiler are:
 - icc
 - armclang
 - xlc
+- dpcpp
 - fcc
 - cl
 - nvcc
@@ -328,11 +329,12 @@ the ninja file of Makefile.
 ```bash
 $ ../nstools/bin/nsconfig .. -list-vars
 Project variables list:
-name               | description
--------------------|---------------------------------------------------------
-simd               | SIMD extension to use
-cuda_arch_flags    | CUDA target arch flag(s) for tests
-static_libstdcpp   | Compile the libstdc++ statically
+name             | description
+-----------------|-----------------------------------
+simd             | SIMD extension to use
+cuda_arch_flags  | CUDA target arch flag(s) for tests
+static_libstdcpp | Compile the libstdc++ statically
+cpp20_tests      | Enable C++20 tests
 ```
 
 Finally one can choose what to do and compile NSIMD and its tests.
