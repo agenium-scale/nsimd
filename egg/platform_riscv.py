@@ -95,10 +95,6 @@ def get_prev_simd_ext(simd_ext):
     else:
         'cpu'
 
-def get_native_typ(simd_ext, typ):
-    # TODO
-    pass
-
 def get_type(opts, simd_ext, typ, nsimd_typ):
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
@@ -129,14 +125,75 @@ def has_compatible_SoA_types(simd_ext):
     else:
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
 
-def get_SoA_type(simd_ext, typ, deg):
-    # TODO
-    pass
-
 def get_additional_include(func, platform, simd_ext):
     ret = '''#include <nsimd/cpu/cpu/{}.h>
             '''.format(func)
     return ret
+
+# -----------------------------------------------------------------------------
+# Generic simple functions used by get_impl
+
+def simple_op1(op, simd_ext, typ, add_suffix = False):
+    suffix = 'u' if typ[0] == 'u' and add_suffix else ''
+    return 'return v{op}({in0}, {vlmax});'.format(op=op, **fmtspec)
+
+def simple_op2(op, simd_ext, typ, add_suffix = False):
+    suffix = 'u' if typ[0] == 'u' and add_suffix else ''
+    return 'return v{op}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+
+def simple_opf3(op, simd_ext, typ, add_suffix = False):
+    suffix = 'u' if typ[0] == 'u' and add_suffix else ''
+    if typ not in ['f16', 'f32', 'f64']:
+        return 'return v{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+    else:
+        return 'return vf{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Compariosn Functions
+
+def cmp2(op, simd_ext, typ):
+    suffix = 'u' if typ[0] == 'u' else ''
+    if typ not in ['f16', 'f32', 'f64']:
+        return 'return vms{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+    else:
+        return 'return vmf{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Abs Functions
+
+def abs1(simd_ext, typ):
+    if typ in ['f16', 'f32', 'f64']:
+        return 'return vfabs({in0}, {vlmax});'.format(**fmtspec)
+    else:
+        pass
+
+# -----------------------------------------------------------------------------
+# Length
+
+def len1(simd_ext):
+        return 'return (int)vsetvl_e{typnbits}_m{lmul}({vlmax});'. \
+               format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# Square-root Functions
+
+def sqrt1(simd_ext, typ):
+    if typ in ['f16', 'f32', 'f64']:
+        return 'return vfsqrt({in0}, {vlmax});'.format(**fmtspec)
+    else:
+        pass
+        #return emulate_op1('abs', simd_ext, typ)
+
+# -----------------------------------------------------------------------------
+# Binary operator
+def binop2(op, simd_ext2, from_typ):
+    pass
+
+# -----------------------------------------------------------------------------
+# Logical operator
+
+def lop2(op, simd_ext2, from_typ):
+    pass
 
 # -----------------------------------------------------------------------------
 
@@ -154,11 +211,39 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'in2': common.in2,
         'in3': common.in3,
         'in4': common.in4,
-        'in5': common.in5
+        'in5': common.in5,
+        'typnbits': from_typ[1:],
+        'lmul': simd_ext[-1],
+        'vlmax': 'vsetvlmax_e{}_m()'.format(from_typ[1:], simd_ext[-1]),
     }
 
     impls = {
-        #'loada': 'load1234(simd_ext, from_typ, 1, True)'
+        #'andnotb': 'binop2("andnotb", simd_ext2, from_typ)',
+        'andb': 'binop2("andb", simd_ext2, from_typ)',
+        'xorb': 'binop2("xorb", simd_ext2, from_typ)',
+        'orb':  'binop2("orb", simd_ext2, from_typ)',
+        'notb': 'binop2("not", simd_ext2, from_typ)',
+        #'andnotl': 'lop2(opts, "andnotl", simd_ext2, from_typ)',
+        'andl': 'lop2(opts, "andl", simd_ext2, from_typ)',
+        'xorl': 'lop2(opts, "xorl", simd_ext2, from_typ)',
+        'orl':  'lop2(opts, "orl", simd_ext2, from_typ)',
+        'notl': 'lop2(opts, "notl", simd_ext2, from_typ)',
+
+        'add': 'simple_op2("add", simd_ext, from_typ)',
+        'sub': 'simple_op2("sub", simd_ext, from_typ)',
+        'mul': 'simple_op2("mul", simd_ext, from_typ, True)',
+        'div': 'simple_opf3("div", simd_ext, from_typ, True)',
+        'sqrt': 'sqrt1(simd_ext, from_typ)',
+        'len': 'len1(simd_ext)',
+        'eq': 'cmp2("eq", simd_ext, from_typ)',
+        'lt': 'cmp2("lt", simd_ext, from_typ)',
+        'le': 'cmp2("le", simd_ext, from_typ)',
+        'gt': 'cmp2("gt", simd_ext, from_typ)',
+        'ge': 'cmp2("ge", simd_ext, from_typ)',
+        'ne': 'cmp2("ne", simd_ext, from_typ)',
+        'min': 'simple_opf3("min", simd_ext, from_typ, True)',
+        'max': 'simple_opf3("max", simd_ext, from_typ, True)',
+        'abs': 'simple_op1("abs", simd_ext, from_typ)',
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
