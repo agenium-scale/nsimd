@@ -62,7 +62,7 @@ def native_type(typ, simd_ext):
     else:
         return 'v{}m{}_t'.format(prefix[typ], simd_ext[-1])
 
-# Returns the logical rrv type corresponding to the nsimd type
+# Returns the logical rvv type corresponding to the nsimd type
 def native_typel(typ, simd_ext):
     # n = SEW / LMUL
     lmul = int(get_lmul(simd_ext))
@@ -70,7 +70,7 @@ def native_typel(typ, simd_ext):
     if typ in ['i8', 'u8']:
         sew = 8
     elif typ in ['i16', 'u16', 'f16']:
-        nsew = 16
+        sew = 16
     elif typ in ['i32', 'u32', 'f32']:
         sew = 32
     elif typ in ['i64', 'u64', 'f64']:
@@ -135,18 +135,25 @@ def get_additional_include(func, platform, simd_ext):
 
 def simple_op1(op, simd_ext, typ, add_suffix = False):
     suffix = 'u' if typ[0] == 'u' and add_suffix else ''
-    return 'return v{op}({in0}, {vlmax});'.format(op=op, **fmtspec)
+    return 'return v{op}{suffix}({in0}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
 
 def simple_op2(op, simd_ext, typ, add_suffix = False):
     suffix = 'u' if typ[0] == 'u' and add_suffix else ''
-    return 'return v{op}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+    return 'return v{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
 
 def simple_opf3(op, simd_ext, typ, add_suffix = False):
     suffix = 'u' if typ[0] == 'u' and add_suffix else ''
     if typ not in ['f16', 'f32', 'f64']:
-        return 'return v{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+        return 'return v{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
     else:
-        return 'return vf{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+        return 'return vf{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Set1
+
+def set1(simd_ext, typ):
+    pass 
+    # TODO
 
 # -----------------------------------------------------------------------------
 # Compariosn Functions
@@ -154,18 +161,30 @@ def simple_opf3(op, simd_ext, typ, add_suffix = False):
 def cmp2(op, simd_ext, typ):
     suffix = 'u' if typ[0] == 'u' else ''
     if typ not in ['f16', 'f32', 'f64']:
-        return 'return vms{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+        return 'return vms{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
     else:
-        return 'return vmf{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+        return 'return vmf{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
 
+# -----------------------------------------------------------------------------
+# Negation
+
+def neg1(simd_ext, typ):
+    if typ in common.ftypes:
+        return 'vneg({in0}, {vlmax});'.format(**fmtspec)
+    return 'vneg({in0}, {vlmax});'.format(**fmtspec)
 # -----------------------------------------------------------------------------
 # Abs Functions
 
 def abs1(simd_ext, typ):
+    if typ in common.utypes:
+        return 'return {in0};'.format(**fmtspec)
     if typ in ['f16', 'f32', 'f64']:
         return 'return vfabs({in0}, {vlmax});'.format(**fmtspec)
-    else:
+    elif typ in ['i8']:
         pass
+        # TODO Emulate operation
+    else:
+        return 'return vfabs(vreinterpret_f{typnbits}m{lmul}({in0}), {vlmax});'.format(**fmtspec)
 
 # -----------------------------------------------------------------------------
 # Length
@@ -182,18 +201,132 @@ def sqrt1(simd_ext, typ):
         return 'return vfsqrt({in0}, {vlmax});'.format(**fmtspec)
     else:
         pass
-        #return emulate_op1('abs', simd_ext, typ)
+        # TODO for itypes and utypes
 
 # -----------------------------------------------------------------------------
 # Binary operator
 def binop2(op, simd_ext2, from_typ):
     pass
+    # TODO
 
 # -----------------------------------------------------------------------------
 # Logical operator
 
 def lop2(op, simd_ext2, from_typ):
+    if from_typ not in ['f16', 'f32', 'f64']:
+        if op == 'not':
+            return '''return vreinterpret_f{typnbits}m{lmul}(vnot(vreinterpret_i{typnbits}({in0}), {vlmax}));''' \
+                .format(**fmtspec)
+        else:
+            return '''return vreinterpret_f{typnbits}m{lmul}(
+                v{op}(vreinterpret_i{typnbits}m{lmul}({in0}), vreinterpret_i{typnbits}m{lmul}({in1}), {vlmax})
+            );
+            '''.format(op=op, **fmtspec)
+    else:
+        if op == 'not':
+            return 'return vnot({in0}, {vlmax});'.format(op=op, **fmtspec)
+        else:
+            return 'return v{op}({in0}, {in1}, {vlmax});'.format(op=op, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Reinterpret
+
+def reinterpret1(simd_ext, from_typ, to_typ):
+    return 'vreinterpret_{to_typ}m{lmul}({in0});'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# Convert
+
+def convert1(simd_ext, from_typ, to_typ):
+    if (from_typ[1:] == to_typ[1:]) and (from_typ in common.ftypes or to_typ in common.ftypes):
+        return 'return vfcvt_x({in0}, {vlmax});'.format(**fmtspec)        
+    return 'return vneg({in0}, {vlmax});'.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+# Vector Single-Width Saturating Add and Subtract Functions
+
+def add_sub_s(op, simd_ext, typ):
+    suffix = 'u' if typ[0] == 'u' else ''
+    if typ in common.ftypes:
+        return 'return nsimd_{op}_{simd_ext}_{typ}({in0}, {in1});'. \
+               format(op=op, **fmtspec)
+    return 'return vs{op}{suffix}({in0}, {in1}, {vlmax});'.format(op=op, suffix=suffix, **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Reciprocal
+
+def rec_8_11(simd_ext, typ):
+    if typ in common.ftypes:
+        func_div = "vfdiv"
+    elif typ in common.utypes:
+        func_div = "vdivu"
+    else:
+        func_div= "vdiv"
+    return 'return {func_div}(nsimd_set1_{simd_ext}_{typ}(({typ})1), {in0}, {vlmax});'.format(func_div=func_div,**fmtspec)
+
+# -----------------------------------------------------------------------------
+# Rsqrt
+
+def rsqrt_8_11(simd_ext, typ):
+    fun_rsqrt = "vfsqrt"
+    if typ in common.ftypes:
+        return 'return vfdiv(nsimd_set1_{simd_ext}_{typ}(({typ})1), {in0}, {vlmax});'.format(**fmtspec)
+    elif typ in common.utypes:
+        func_div = "vdivu"
+    else:
+        func_div= "vdiv"
+    return 'return {func_div}(nsimd_set1_{simd_ext}_{typ}(({typ})1), nsimd_sqrt_{simd_ext}_{typ}({in0}), {vlmax});'.format(func_div=func_div,**fmtspec)
+
+# -----------------------------------------------------------------------------
+# FMA
+
+def fma(op, simd_ext, typ):
+    if typ in common.ftypes:
+        ppcop = { 'fma': 'vfmadd', 'fms': 'vfmsub', 'fnms': 'vfnmsub',
+                  'fnma': 'vfnmadd' }
+    else:
+        ppcop = { 'fma': 'vmadd', 'fms': 'vmsub', 'fnms': 'vnmsub',
+                  'fnma': 'vnmadd' }
+    return 'return {ppcop}({in0}, {in1}, {in2}, {vlmax});'. \
+               format(ppcop=ppcop[op], **fmtspec)
+
+# -----------------------------------------------------------------------------
+# Shift
+
+def shl_shr(op, simd_ext, typ):
     pass
+
+def shra(simd_ext, typ):
+    pass
+
+# -----------------------------------------------------------------------------
+# to_logical
+
+def to_logical1(simd_ext, typ):
+    if typ in common.iutypes:
+        return '''return nsimd_ne_{simd_ext}_{typ}(
+                           {in0}, nsimd_set1_{simd_ext}_{typ}(({typ})0));'''.format(**fmtspec)
+    elif typ in ['f32', 'f64']:
+        pass
+        # TODO
+    else:
+        return '''nsimd_{simd_ext}_vlf16 ret;
+                  ret.v0 = nsimd_to_logical_{simd_ext}_f32({in0}.v0);
+                  ret.v1 = nsimd_to_logical_{simd_ext}_f32({in0}.v1);
+                  return ret;'''.format(**fmtspec)
+
+# -----------------------------------------------------------------------------
+
+def reverse1(simd_ext, typ):
+    pass
+    # TODO
+
+# -----------------------------------------------------------------------------
+
+def gather(simd_ext, typ):
+    pass
+    # TODO
+
 
 # -----------------------------------------------------------------------------
 
@@ -219,22 +352,27 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
 
     impls = {
         #'andnotb': 'binop2("andnotb", simd_ext2, from_typ)',
-        'andb': 'binop2("andb", simd_ext2, from_typ)',
-        'xorb': 'binop2("xorb", simd_ext2, from_typ)',
-        'orb':  'binop2("orb", simd_ext2, from_typ)',
-        'notb': 'binop2("not", simd_ext2, from_typ)',
-        #'andnotl': 'lop2(opts, "andnotl", simd_ext2, from_typ)',
-        'andl': 'lop2(opts, "andl", simd_ext2, from_typ)',
-        'xorl': 'lop2(opts, "xorl", simd_ext2, from_typ)',
-        'orl':  'lop2(opts, "orl", simd_ext2, from_typ)',
-        'notl': 'lop2(opts, "notl", simd_ext2, from_typ)',
+        #'andb': 'binop2("andb", simd_ext2, from_typ)',
+        #'xorb': 'binop2("xorb", simd_ext2, from_typ)',
+        #'orb':  'binop2("orb", simd_ext2, from_typ)',
+        #'notb': 'binop2("not", simd_ext2, from_typ)',
+        #'andnotl': 'lop2("andnotl", simd_ext2, from_typ)',
+        'andl': 'lop2("and", simd_ext, from_typ)',
+        'xorl': 'lop2("xor", simd_ext, from_typ)',
+        'orl':  'lop2("or",  simd_ext, from_typ)',
+        'notl': 'lop2("not", simd_ext, from_typ)',
 
         'add': 'simple_op2("add", simd_ext, from_typ)',
         'sub': 'simple_op2("sub", simd_ext, from_typ)',
         'mul': 'simple_op2("mul", simd_ext, from_typ, True)',
         'div': 'simple_opf3("div", simd_ext, from_typ, True)',
+        'adds': 'add_sub_s("add", simd_ext, from_typ)',
+        'subs': 'add_sub_s("sub", simd_ext, from_typ)',
         'sqrt': 'sqrt1(simd_ext, from_typ)',
         'len': 'len1(simd_ext)',
+        #'shl': 'shl_shr("shl", simd_ext, from_typ)',
+        #'shr': 'shl_shr("shr", simd_ext, from_typ)',
+        #'shra': 'shra(simd_ext, from_typ)',
         'eq': 'cmp2("eq", simd_ext, from_typ)',
         'lt': 'cmp2("lt", simd_ext, from_typ)',
         'le': 'cmp2("le", simd_ext, from_typ)',
@@ -244,6 +382,43 @@ def get_impl(opts, func, simd_ext, from_typ, to_typ):
         'min': 'simple_opf3("min", simd_ext, from_typ, True)',
         'max': 'simple_opf3("max", simd_ext, from_typ, True)',
         'abs': 'simple_op1("abs", simd_ext, from_typ)',
+        'reinterpret': 'reinterpret1(simd_ext, from_typ, to_typ)',
+        'neg': 'neg1(simd_ext, from_typ)',
+        'rec': 'rec_8_11(simd_ext, from_typ)',
+        'rec8': 'rec_8_11(simd_ext, from_typ)',
+        'rec11': 'rec_8_11(simd_ext, from_typ)',
+        'rsqrt8': 'rsqrt_8_11(simd_ext, from_typ)',
+        'rsqrt11': 'rsqrt_8_11(simd_ext, from_typ)',
+        'fma': 'fma("fma", simd_ext, from_typ)',
+        'fnma': 'fma("fnma", simd_ext, from_typ)',
+        'fms': 'fma("fms", simd_ext, from_typ)',
+        'fnms': 'fma("fnms", simd_ext, from_typ)',
+        #'ceil': round1("cei", simd_ext, from_typ),
+        #'floor': round1("floor", simd_ext, from_typ),'nbtrue': 'nbtrue1(simd_ext, from_typ)',
+        #'reverse': 'reverse1(simd_ext, from_typ)',
+        #'addv': 'addv(simd_ext, from_typ)',
+        #'upcvt': 'upcvt1(simd_ext, from_typ, to_typ)',
+        #'downcvt': 'downcvt1(simd_ext, from_typ, to_typ)',
+        #'iota': 'iota(simd_ext, from_typ)',
+        #'to_logical': 'to_logical(simd_ext, from_typ)',
+        #'mask_for_loop_tail': 'mask_for_loop_tail(simd_ext, from_typ)',
+        #'masko_loadu1': 'maskoz_load("o", simd_ext, from_typ)',
+        #'maskz_loadu1': 'maskoz_load("z", simd_ext, from_typ)',
+        #'masko_loada1': 'maskoz_load("o", simd_ext, from_typ)',
+        #'maskz_loada1': 'maskoz_load("z", simd_ext, from_typ)',
+        #'mask_storea1': 'mask_store(simd_ext, from_typ)',
+        #'mask_storeu1': 'mask_store(simd_ext, from_typ)',
+        #'gather': 'gather(simd_ext, from_typ)',
+        #'scatter': 'scatter(simd_ext, from_typ)',
+        #'gather_linear': 'gather_linear(simd_ext, from_typ)',
+        #'scatter_linear': 'scatter_linear(simd_ext, from_typ)',
+        #'to_mask': 'to_mask(simd_ext, from_typ)',
+        #'ziplo': 'zip("ziplo", simd_ext, from_typ)',
+        #'ziphi': 'zip("ziphi", simd_ext, from_typ)',
+        #'zip': 'zip_unzip_basic("zip", simd_ext, from_typ)',
+        #'unzip': 'zip_unzip_basic("unzip", simd_ext, from_typ)',
+        #'unziplo': 'unzip("unziplo", simd_ext, from_typ)',
+        #'unziphi': 'unzip("unziphi", simd_ext, from_typ)'
     }
     if simd_ext not in get_simd_exts():
         raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
