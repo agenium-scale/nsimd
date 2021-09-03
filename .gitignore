@@ -20,14 +20,17 @@ src/api_*
 ## Plateform specific code
 include/nsimd/arm
 include/nsimd/cpu
+include/nsimd/c_adv_api_functions.h
 include/nsimd/cxx_adv_api_functions.hpp
 include/nsimd/friendly_but_not_optimized.hpp
 include/nsimd/functions.h
 include/nsimd/ppc
 include/nsimd/x86
+include/nsimd/wasm
 
 ## Tests
 tests/c_base
+tests/c_adv
 tests/cxx_base
 tests/cxx_adv
 tests/modules/tet1d/
@@ -40,6 +43,7 @@ tests/modules/random/
 benches/cxx_adv
 
 ## Modules
+include/nsimd/modules/random/
 include/nsimd/modules/tet1d/
 include/nsimd/modules/spmd/
 include/nsimd/modules/fixed_point/
