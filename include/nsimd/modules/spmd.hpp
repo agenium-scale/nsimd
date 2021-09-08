@@ -151,7 +151,7 @@ namespace spmd {
                               ...)                                            \
   name<spmd_scalar_bits_>                                                     \
       <<<(unsigned int)nsimd_kernel_param(n, threads_per_block),              \
-         (unsigned int)(threads_per_block)> > >(__VA_ARGS__, (int)n)
+         (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
 
 #elif defined(NSIMD_ROCM)
 

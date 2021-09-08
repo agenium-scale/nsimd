@@ -1701,7 +1701,7 @@ class Lgamma_u10(SrcOperator):
     signature = 'v lgamma_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_lgamma_u10'
     domain = [[0.5, 20]]
-    categories = [DocMisc]
+    categories = [DocExpLog]
     desc = 'Compute the log gamma of its argument with a precision of ' \
            '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1711,7 +1711,7 @@ class Tgamma_u10(SrcOperator):
     signature = 'v tgamma_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_tgamma_u10'
     domain = [[0.5, 5]]
-    categories = [DocMisc]
+    categories = [DocExpLog]
     desc = 'Compute the true gamma of its argument with a precision of ' \
            '1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1720,7 +1720,7 @@ class Erf_u10(SrcOperator):
     full_name = 'complementary error'
     signature = 'v erf_u10 v'
     sleef_symbol_prefix = 'nsimd_sleef_erf_u10'
-    categories = [DocMisc]
+    categories = [DocExpLog]
     desc = 'Compute the complementary error of its argument with a ' \
            'precision of 1.0 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'
@@ -1729,7 +1729,7 @@ class Erfc_u15(SrcOperator):
     full_name = 'complementary error'
     signature = 'v erfc_u15 v'
     sleef_symbol_prefix = 'nsimd_sleef_erfc_u15'
-    categories = [DocMisc]
+    categories = [DocExpLog]
     desc = 'Compute the complementary error of its argument with a ' \
            'precision of 1.5 ulps. ' \
            'For more informations visit <https://sleef.org/purec.xhtml>.'

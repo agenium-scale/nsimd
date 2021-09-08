@@ -1644,14 +1644,12 @@ def gt2(simd_ext, typ):
             #                   _mm_sub_epi64({in1}, {in0}), 63));'''. \
             #                   format(**fmtspec)
             return '''{typ} buf0[2], buf1[2];
-
                       _mm_storeu_si128((__m128i*)buf0, {in0});
                       _mm_storeu_si128((__m128i*)buf1, {in1});
-
                       buf0[0] = -(buf0[0] > buf1[0]);
                       buf0[1] = -(buf0[1] > buf1[1]);
-
-                      return _mm_loadu_si128((__m128i*)buf0);'''.format(**fmtspec)
+                      return _mm_loadu_si128((__m128i*)buf0);'''. \
+                      format(**fmtspec)
         return cmp2_with_add('gt', simd_ext, typ)
     if simd_ext in avx:
         if typ in ['f32', 'f64']:

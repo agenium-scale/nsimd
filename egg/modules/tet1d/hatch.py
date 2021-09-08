@@ -552,6 +552,10 @@ def gen_tests_for(opts, tt, t, operator):
           }}
         }}
 
+        void compute_result({typ} *dst, {args_tabs}, unsigned int n) {{
+          kernel<<<{gpu_params}>>>(dst, {args_tabs_call}, int(n));
+        }}
+
         {cbprng_cuda}
 
         #elif defined(NSIMD_ROCM)

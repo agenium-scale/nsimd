@@ -138,9 +138,6 @@ def get_impl(operator, totyp, typ):
           'sinh_u35': 'sinh',
           'cosh_u35': 'cosh',
           'tanh_u35': 'tanh',
-          'fastsin_u3500': 'sin',
-          'fastcos_u3500': 'cos',
-          'fastpow_u3500': 'pow',
           'asinh_u10': 'asinh',
           'acosh_u10': 'acosh',
           'atanh_u10': 'atanh',
@@ -170,11 +167,16 @@ def get_impl(operator, totyp, typ):
             # For f16 CUDA offers only a few operator
             if cuda_op in ['cos', 'exp', 'exp10', 'exp2', 'log', 'log10',
                            'log2', 'sin']:
-                return 'return h{}({});'.format(cuda_op, args)
+                return '''#if __CUDA_ARCH__ >= 530
+                            return h{}({});
+                          #else
+                            return __float2half(gpu_{}(__half2float({})));
+                          #endif'''.format(cuda_op, args, operator.name, args)
             else:
-                args = ', '.join(['(f32){}'.format(common.get_arg(i)) \
-                                  for i in range(len(operator.params[1:]))])
-                return 'return (f16){}f({});'.format(cuda_op, args)
+                args = ', '.join('__half2float({})'.format(common.get_arg(i)) \
+                                 for i in range(len(operator.params[1:])))
+                return 'return __float2half(gpu_{}({}));'. \
+                       format(operator.name, args)
         elif typ == 'f32':
             return 'return {}f({});'.format(cuda_op, args)
         else:

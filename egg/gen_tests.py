@@ -138,7 +138,7 @@ def cbprng(typ, operator, target, gpu_params = None):
             ret += 'if (j == {}) {{\n  {}\n}} else '. \
                    format(i, cbprng_impl(typ, operator.domain[i], for_cpu))
         ret += '{{\n{}\n}} '.format(cbprng_impl(typ, operator.domain[-1],
-                                                True))
+                                                for_cpu))
     ret += '\n}\n\n'
 
     if target == 'cpu':
@@ -149,7 +149,7 @@ def cbprng(typ, operator, target, gpu_params = None):
                     }}
                   }}'''.format(typ)
     elif target == 'cuda':
-        ret += '''__kernel__ void random_kernel({typ} *dst, int n, int j) {{
+        ret += '''__global__ void random_kernel({typ} *dst, int n, int j) {{
                     int i = threadIdx.x + blockIdx.x * blockDim.x;
                     if (i < n) {{
                       dst[i] = random_impl((int)i, j);
@@ -160,7 +160,7 @@ def cbprng(typ, operator, target, gpu_params = None):
                     random_kernel<<<{gpu_params}>>>(dst, (int)n, j);
                   }}'''.format(typ=typ, gpu_params=gpu_params)
     elif target == 'hip':
-        ret += '''__kernel__ void random_kernel({typ} *dst, size_t n, int j) {{
+        ret += '''__global__ void random_kernel({typ} *dst, size_t n, int j) {{
                     size_t i = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;
                     if (i < n) {{
                       dst[i] = random_impl((int)i, j);

@@ -366,12 +366,14 @@ lambda tests_*_*_* = ok
 set    tests_clang_c89_vmx = ""
 set    tests_clang_c89_vsx = ""
 set    tests_clang_c89_sve = ""
-lambda tests_nvcc_c89_*    = ""
-lambda tests_nvcc_c99_*    = ""
-lambda tests_nvcc_c11_*    = ""
-lambda tests_hipcc_c89_*   = ""
-lambda tests_hipcc_c99_*   = ""
-lambda tests_hipcc_c11_*   = ""
+lambda tests_*_c89_cuda    = ""
+lambda tests_*_c99_cuda    = ""
+lambda tests_*_c11_cuda    = ""
+lambda tests_*_cpp17_cuda  = ""
+lambda tests_*_c89_rocm    = ""
+lambda tests_*_c99_rocm    = ""
+lambda tests_*_c11_rocm    = ""
+lambda tests_*_cpp17_rocm  = ""
 lambda tests_*_c89_oneapi  = ""
 lambda tests_*_c99_oneapi  = ""
 lambda tests_*_c11_oneapi  = ""
@@ -391,14 +393,6 @@ set cpp11.files   = ""
 set cpp17_enabled = ${tests_$cppcomp$_cpp17_$simd$}
 set cpp17.files   = ""
 set cpp20.files   = ""
-
-echo c89_enabled   = ${tests_$ccomp$_c89_$simd$}
-echo c99_enabled   = ${tests_$ccomp$_c99_$simd$}
-echo c11_enabled   = ${tests_$ccomp$_c11_$simd$}
-echo cpp98_enabled = ${tests_$cppcomp$_cpp98_$simd$}
-echo cpp11_enabled = ${tests_$cppcomp$_cpp11_$simd$}
-echo cpp17_enabled = ${tests_$cppcomp$_cpp17_$simd$}
-
 
 set tests_flags = $cuda_arch_flags $flags ${cflags_for_$simd$} -lm $ldflags
 echo Test compilation flags: $tests_flags$
