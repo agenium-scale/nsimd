@@ -40,6 +40,22 @@ With two of its modules NSIMD provides three programming paradigms:
 | AMD ROCm                              |     N      |      Y       |      Y      |
 | Intel oneAPI                          |     N      |      Y       |      Y      |
 
+## Contributions
+
+| Contributor          | Contribution(s)                                   |
+|:---------------------|:--------------------------------------------------|
+| Guillaume Quintin    | Maintainer + main contributor                     |
+| Alan Kelly           | Arm NEON + mathematical functions                 |
+| Kenny Péou           | Fixed point module                                |
+| Xavier Berault       | PowerPC VMX and VSX                               |
+| Vianney Stricher     | oneAPI in SPMD + TET1D modules                    |
+| Quentin Khan         | Soa/AoS loads and stores                          |
+| Paul Gannay          | PowerPC VMX, VSX + testing system                 |
+| Charly Chevalier     | Benchmarking system + Python internals            |
+| Erik Schnetter       | Fixes + code generation                           |
+| Lénaïc Bagnères      | Fixes                                             |
+| Jean-Didier Pailleux | Shuffles operators                                |
+
 ## How it works?
 
 To achieve maximum performance, NSIMD mainly relies on the inline optimization
