@@ -1,4 +1,4 @@
-camelot.numscale.com <sse2-sse42-gcc> {/home/gquintin}
+camelot.hpc.scale <sse2-sse42-gcc> {/home/gquintin}
 - mkdir cmake-build-sse2
 - cd cmake-build-sse2
 - cmake .. -Dsimd=sse2
@@ -15,7 +15,7 @@ camelot.numscale.com <sse2-sse42-gcc> {/home/gquintin}
 - cd ../build-sse42-gcc
 - ../nstools/bin/nstest -j80
 
-glastonbury.numscale.com <avx512_skylake-gcc> {/home/gquintin}
+glastonbury.hpc.scale <avx512_skylake-gcc> {/home/gquintin}
 - source /etc/profile.d/modules.sh
 - module load cmake/3.1.0
 - mkdir cmake-build-avx512_skylake
@@ -27,7 +27,7 @@ glastonbury.numscale.com <avx512_skylake-gcc> {/home/gquintin}
 - cd build-avx512_skylake-gcc
 - ../nstools/bin/nstest -j40
 
-carduel.numscale.com <avx512_knl-gcc> {/home/gquintin}
+carduel.hpc.scale <avx512_knl-gcc> {/home/gquintin}
 - source /etc/profile.d/profile.sh
 - module load cmake/3.1.0
 - mkdir cmake-build-avx512_knl
@@ -39,7 +39,7 @@ carduel.numscale.com <avx512_knl-gcc> {/home/gquintin}
 - cd build-avx512_knl-gcc
 - ../nstools/bin/nstest -j80
 
-gaunes.numscale.com <avx-avx2-armel-gcc> {/home/gquintin}
+gaunes.hpc.scale <avx-avx2-armel-gcc> {/home/gquintin}
 - mkdir cmake-build-avx
 - cd cmake-build-avx
 - cmake .. -Dsimd=avx
@@ -67,7 +67,7 @@ gaunes.numscale.com <avx-avx2-armel-gcc> {/home/gquintin}
 - ninja tests
 - ../nstools/bin/nstest -j80 --prefix="qemu-arm"
 
-logres.numscale.com <cpu-gcc-cuda-nvcc> {/home/gquintin}
+logres.hpc.scale <cpu-gcc-cuda-nvcc> {/home/gquintin}
 - mkdir cmake-build-cpu
 - cd cmake-build-cpu
 - cmake .. -Dsimd=cpu
@@ -84,7 +84,7 @@ logres.numscale.com <cpu-gcc-cuda-nvcc> {/home/gquintin}
 - ninja tests
 - ../nstools/bin/nstest -j20
 
-bowden.numscale.com <rocm-cpp20-cmakefind> {/home/gquintin}
+bowden.hpc.scale <rocm-cpp20-cmakefind> {/home/gquintin}
 - bash scripts/build-tests.sh for rocm with rocm
 - cd build-rocm-rocm
 - ../nstools/bin/nstest -j80
@@ -99,7 +99,7 @@ bowden.numscale.com <rocm-cpp20-cmakefind> {/home/gquintin}
 - cd ..
 - bash tests/FindNSIMD.cmake.sh
 
-caradigan.numscale.com <armhf-aarch64-gcc> {/home/gquintin}
+caradigan.hpc.scale <armhf-aarch64-gcc> {/home/gquintin}
 - mkdir cmake-build-aarch64
 - cd cmake-build-aarch64
 - cmake .. -Dsimd=aarch64
@@ -120,7 +120,7 @@ caradigan.numscale.com <armhf-aarch64-gcc> {/home/gquintin}
 - ninja tests
 - ../nstools/bin/nstest -j80
 
-carahes.numscale.com <sve128-gcc> {/home/gquintin}
+carahes.hpc.scale <sve128-gcc> {/home/gquintin}
 - source /etc/profile.d/profile.sh
 - module load gcc/10.2.0
 - mkdir cmake-build-sve128

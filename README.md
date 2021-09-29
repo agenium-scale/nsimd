@@ -48,12 +48,12 @@ With two of its modules NSIMD provides three programming paradigms:
 | Alan Kelly           | Arm NEON + mathematical functions                 |
 | Kenny Péou           | Fixed point module                                |
 | Xavier Berault       | PowerPC VMX and VSX                               |
-| Vianney Stricher     | oneAPI in SPMD + TET1D modules                    |
+| Vianney Stricher     | NSIMD core + oneAPI in SPMD and TET1D modules     |
 | Quentin Khan         | Soa/AoS loads and stores                          |
 | Paul Gannay          | PowerPC VMX, VSX + testing system                 |
 | Charly Chevalier     | Benchmarking system + Python internals            |
 | Erik Schnetter       | Fixes + code generation                           |
-| Lénaïc Bagnères      | Fixes                                             |
+| Lénaïc Bagnères      | Fixes + TET1D module                              |
 | Jean-Didier Pailleux | Shuffles operators                                |
 
 ## How it works?
