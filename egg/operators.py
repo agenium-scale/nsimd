@@ -157,6 +157,12 @@ class MAddToOperators(type):
             else:
                 dct['autogen_cxx_adv'] = True
 
+        # By default tests are done on random numbers depending on the type
+        # but sometimes one needs to produce only integers even if the
+        # type is a floating point type.
+        if 'tests_on_integers_only' not in dct:
+            dct['tests_on_integers_only'] = False;
+
         # Fill domain, default is [-20 ; +20]
         if 'domain' not in dct:
             dct['domain'] = [[-20, 20], [-20, 20], [-20, 20]]
@@ -1042,6 +1048,7 @@ class Fma(Operator):
     categories = [DocBasicArithmetic]
     desc = 'Multiply the first and second inputs and then adds the third ' + \
            'input.'
+    tests_on_integers_only = True
 
 class Fnma(Operator):
     full_name = 'fused negate-multiply-add'
@@ -1049,6 +1056,7 @@ class Fnma(Operator):
     categories = [DocBasicArithmetic]
     desc = 'Multiply the first and second inputs, negate the intermediate ' + \
            'result and then adds the third input.'
+    tests_on_integers_only = True
 
 class Fms(Operator):
     full_name = 'fused multiply-substract'
@@ -1056,6 +1064,7 @@ class Fms(Operator):
     categories = [DocBasicArithmetic]
     desc = 'Substracts the third input to multiplication the first and ' + \
            'second inputs.'
+    tests_on_integers_only = True
 
 class Fnms(Operator):
     full_name = 'fused negate-multiply-substract'
@@ -1064,6 +1073,7 @@ class Fnms(Operator):
     desc = 'Multiply the first and second inputs, negate the intermediate ' + \
            'result and then substracts the third input to the ' + \
            'intermediate result.'
+    tests_on_integers_only = True
 
 class Ceil(Operator):
     full_name = 'rounding up to integer value'

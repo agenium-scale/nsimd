@@ -69,7 +69,7 @@ def should_i_do_the_test(operator, tt='', t=''):
 # -----------------------------------------------------------------------------
 # CBPRNG
 
-def cbprng_impl(typ, domain_, for_cpu):
+def cbprng_impl(typ, domain_, for_cpu, only_int = False):
     code = '((((unsigned int)(1 + i) * 69342380u + 414585u) ' \
            '^ ((unsigned int)(1 + j) * 89375027u + 952905u))' \
            '% 1000000u)'
@@ -91,12 +91,15 @@ def cbprng_impl(typ, domain_, for_cpu):
             return 'return ({})({} + (f32)((i32){} % {}));'. \
                    format(typ, a0, code, a1 - a0 + 1)
         elif typ == 'f16':
-            return 'return {}((f32){} + (f32){} * (f32)({}) / 1000000.0f);'. \
-                   format('(f16)' if not for_cpu else 'nsimd_f32_to_f16',
-                          a0, a1 - a0, code)
+            return \
+            'return {}({}(((f32){} + (f32){} * (f32)({}) / 1000000.0f)));'. \
+            format('(f16)' if not for_cpu else 'nsimd_f32_to_f16',
+                   '(f32)(i32)' if only_int else '', a0, a1 - a0, code)
         elif typ in ['f32', 'f64']:
-            return 'return ({}){} + ({}){} * ({}){} / ({})1000000;'. \
-                   format(typ, a0, typ, a1 - a0, typ, code, typ)
+            return \
+            'return {}(({}){} + ({}){} * ({}){} / ({})1000000);'. \
+            format('({})({})'.format(typ, 'i' + typ[1:]) if only_int else '',
+                   typ, a0, typ, a1 - a0, typ, code, typ)
 
     if typ not in common.utypes:
         domain = domain_
@@ -132,13 +135,16 @@ def cbprng(typ, operator, target, gpu_params = None):
     for_cpu = (target == 'cpu')
 
     if arity == 1:
-        ret += cbprng_impl(typ, operator.domain[0], for_cpu)
+        ret += cbprng_impl(typ, operator.domain[0], for_cpu,
+                           operator.tests_on_integers_only)
     else:
         for i in range(arity - 1):
             ret += 'if (j == {}) {{\n  {}\n}} else '. \
-                   format(i, cbprng_impl(typ, operator.domain[i], for_cpu))
-        ret += '{{\n{}\n}} '.format(cbprng_impl(typ, operator.domain[-1],
-                                                for_cpu))
+                   format(i, cbprng_impl(typ, operator.domain[i], for_cpu,
+                                         operator.tests_on_integers_only))
+        ret += '{{\n{}\n}} '. \
+               format(cbprng_impl(typ, operator.domain[-1],
+                                  for_cpu, operator.tests_on_integers_only))
     ret += '\n}\n\n'
 
     if target == 'cpu':

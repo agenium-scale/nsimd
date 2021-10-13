@@ -31,21 +31,6 @@ SOFTWARE.
 
 /* ------------------------------------------------------------------------- */
 
-#ifndef NSIMD_NO_IEEE754
-
-int is_nan(float a) {
-  union {
-    u32 u;
-    f32 f;
-  } buf;
-  buf.f = a;
-  return ((buf.u & 0x7FFFFF) != 0u) && ((buf.u & 0x7F800000) == 0x7F800000);
-}
-
-#endif
-
-/* ------------------------------------------------------------------------- */
-
 float via_fp16(float a) { return nsimd_f16_to_f32(nsimd_f32_to_f16(a)); }
 
 /* ------------------------------------------------------------------------- */
@@ -56,26 +41,12 @@ float mk_fp32(int mantissa, int exponent) {
 
 /* ------------------------------------------------------------------------- */
 
-#ifndef NSIMD_NO_IEEE754
-
-float mk_fp32_bin(u32 a) {
-  union {
-    u32 u;
-    f32 f;
-  } buf;
-  buf.u = a;
-  return buf.f;
-}
-
-#endif
-
-/* ------------------------------------------------------------------------- */
-
 int test_f16_to_f32(u16 val, u32 expected) {
   f32 fexpected = nsimd_scalar_reinterpret_f32_u32(expected);
   f32 res = nsimd_u16_to_f32(val);
   u32 ures = nsimd_scalar_reinterpret_u32_f32(res);
-  if (ures != expected) {
+  if ((nsimd_isnan_f32(fexpected) && !nsimd_isnan_f32(res)) ||
+      (!nsimd_isnan_f32(fexpected) && ures != expected)) {
     fprintf(stdout,
             "Error, nsimd_f16_to_f32: expected %e(0x%x) but got %e(0x%x) \n",
             (f64)fexpected, expected, (f64)res, ures);
@@ -92,7 +63,7 @@ int test_f32_to_f16(u32 val, u16 expected) {
   f16 fres = nsimd_f32_to_f16(nsimd_scalar_reinterpret_f32_u32(val));
   u16 ures = nsimd_scalar_reinterpret_u16_f16(fres);
   if (ures != expected) {
-    fprintf(stdout, "Error, nsimd_f16_to_f32: expected 0x%x but got 0x%x \n",
+    fprintf(stdout, "Error, nsimd_f32_to_f16: expected 0x%x but got 0x%x \n",
             expected, ures);
     fflush(stdout);
     return 1;
@@ -105,9 +76,9 @@ int test_f32_to_f16(u32 val, u16 expected) {
 
 int main(void) {
 #ifndef NSIMD_NO_IEEE754
-  const float infty = mk_fp32_bin(0x7F800000);
-  const float m_infty = mk_fp32_bin(0xFF800000);
-  const float nan = mk_fp32_bin(0x7FC00000);
+  const float infty = nsimd_scalar_reinterpret_f32_u32(0x7F800000);
+  const float m_infty = nsimd_scalar_reinterpret_f32_u32(0xFF800000);
+  const float nan = nsimd_scalar_reinterpret_f32_u32(0x7FC00000);
 #endif
   int i;
 
@@ -198,7 +169,7 @@ int main(void) {
     fflush(stdout);
     return EXIT_FAILURE;
   }
-  if (!is_nan(via_fp16(nan))) {
+  if (!nsimd_isnan_f32(via_fp16(nan))) {
     fprintf(stdout, "... Error, %i \n", __LINE__);
     fflush(stdout);
     return EXIT_FAILURE;
