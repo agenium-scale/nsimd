@@ -101,114 +101,6 @@ SOFTWARE.
 template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt; packx3&lt;T, N, SimdExt&gt; load3a(packx3&lt;T, N, SimdExt&gt; const&amp;, T const* a0);
 template &lt;NSIMD_CONCEPT_PACKX3 SimdVector, NSIMD_CONCEPT_VALUE_TYPE T&gt;NSIMD_REQUIRES((std::is_same_v&lt;typename SimdVector::value_type, T&gt;)) SimdVector load3a(T const* a0);</code></pre>
 <h2>C base API (architecture specifics)</h2>
-<h3>SSE2</h3>
-<pre class="c"><code>nsimd_sse2_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sse2_f64(f64 const* a0);
-nsimd_sse2_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sse2_f32(f32 const* a0);
-nsimd_sse2_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sse2_f16(f16 const* a0);
-nsimd_sse2_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i64(i64 const* a0);
-nsimd_sse2_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i32(i32 const* a0);
-nsimd_sse2_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i16(i16 const* a0);
-nsimd_sse2_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i8(i8 const* a0);
-nsimd_sse2_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u64(u64 const* a0);
-nsimd_sse2_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u32(u32 const* a0);
-nsimd_sse2_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u16(u16 const* a0);
-nsimd_sse2_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u8(u8 const* a0);</code></pre>
-<h3>AVX512_SKYLAKE</h3>
-<pre class="c"><code>nsimd_avx512_skylake_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_f64(f64 const* a0);
-nsimd_avx512_skylake_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_f32(f32 const* a0);
-nsimd_avx512_skylake_vf16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_f16(f16 const* a0);
-nsimd_avx512_skylake_vi64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i64(i64 const* a0);
-nsimd_avx512_skylake_vi32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i32(i32 const* a0);
-nsimd_avx512_skylake_vi16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i16(i16 const* a0);
-nsimd_avx512_skylake_vi8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i8(i8 const* a0);
-nsimd_avx512_skylake_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u64(u64 const* a0);
-nsimd_avx512_skylake_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u32(u32 const* a0);
-nsimd_avx512_skylake_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u16(u16 const* a0);
-nsimd_avx512_skylake_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u8(u8 const* a0);</code></pre>
-<h3>VSX</h3>
-<pre class="c"><code>nsimd_vsx_vf64x3 NSIMD_VECTORCALL nsimd_load3a_vsx_f64(f64 const* a0);
-nsimd_vsx_vf32x3 NSIMD_VECTORCALL nsimd_load3a_vsx_f32(f32 const* a0);
-nsimd_vsx_vf16x3 NSIMD_VECTORCALL nsimd_load3a_vsx_f16(f16 const* a0);
-nsimd_vsx_vi64x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i64(i64 const* a0);
-nsimd_vsx_vi32x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i32(i32 const* a0);
-nsimd_vsx_vi16x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i16(i16 const* a0);
-nsimd_vsx_vi8x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i8(i8 const* a0);
-nsimd_vsx_vu64x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u64(u64 const* a0);
-nsimd_vsx_vu32x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u32(u32 const* a0);
-nsimd_vsx_vu16x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u16(u16 const* a0);
-nsimd_vsx_vu8x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u8(u8 const* a0);</code></pre>
-<h3>SVE512</h3>
-<pre class="c"><code>nsimd_sve512_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve512_f64(f64 const* a0);
-nsimd_sve512_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve512_f32(f32 const* a0);
-nsimd_sve512_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve512_f16(f16 const* a0);
-nsimd_sve512_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i64(i64 const* a0);
-nsimd_sve512_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i32(i32 const* a0);
-nsimd_sve512_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i16(i16 const* a0);
-nsimd_sve512_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i8(i8 const* a0);
-nsimd_sve512_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u64(u64 const* a0);
-nsimd_sve512_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u32(u32 const* a0);
-nsimd_sve512_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u16(u16 const* a0);
-nsimd_sve512_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u8(u8 const* a0);</code></pre>
-<h3>AVX512_KNL</h3>
-<pre class="c"><code>nsimd_avx512_knl_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_f64(f64 const* a0);
-nsimd_avx512_knl_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_f32(f32 const* a0);
-nsimd_avx512_knl_vf16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_f16(f16 const* a0);
-nsimd_avx512_knl_vi64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i64(i64 const* a0);
-nsimd_avx512_knl_vi32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i32(i32 const* a0);
-nsimd_avx512_knl_vi16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i16(i16 const* a0);
-nsimd_avx512_knl_vi8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i8(i8 const* a0);
-nsimd_avx512_knl_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u64(u64 const* a0);
-nsimd_avx512_knl_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u32(u32 const* a0);
-nsimd_avx512_knl_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u16(u16 const* a0);
-nsimd_avx512_knl_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u8(u8 const* a0);</code></pre>
-<h3>VMX</h3>
-<pre class="c"><code>nsimd_vmx_vf64x3 NSIMD_VECTORCALL nsimd_load3a_vmx_f64(f64 const* a0);
-nsimd_vmx_vf32x3 NSIMD_VECTORCALL nsimd_load3a_vmx_f32(f32 const* a0);
-nsimd_vmx_vf16x3 NSIMD_VECTORCALL nsimd_load3a_vmx_f16(f16 const* a0);
-nsimd_vmx_vi64x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i64(i64 const* a0);
-nsimd_vmx_vi32x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i32(i32 const* a0);
-nsimd_vmx_vi16x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i16(i16 const* a0);
-nsimd_vmx_vi8x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i8(i8 const* a0);
-nsimd_vmx_vu64x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u64(u64 const* a0);
-nsimd_vmx_vu32x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u32(u32 const* a0);
-nsimd_vmx_vu16x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u16(u16 const* a0);
-nsimd_vmx_vu8x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u8(u8 const* a0);</code></pre>
-<h3>NEON128</h3>
-<pre class="c"><code>nsimd_neon128_vf64x3 NSIMD_VECTORCALL nsimd_load3a_neon128_f64(f64 const* a0);
-nsimd_neon128_vf32x3 NSIMD_VECTORCALL nsimd_load3a_neon128_f32(f32 const* a0);
-nsimd_neon128_vf16x3 NSIMD_VECTORCALL nsimd_load3a_neon128_f16(f16 const* a0);
-nsimd_neon128_vi64x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i64(i64 const* a0);
-nsimd_neon128_vi32x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i32(i32 const* a0);
-nsimd_neon128_vi16x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i16(i16 const* a0);
-nsimd_neon128_vi8x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i8(i8 const* a0);
-nsimd_neon128_vu64x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u64(u64 const* a0);
-nsimd_neon128_vu32x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u32(u32 const* a0);
-nsimd_neon128_vu16x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u16(u16 const* a0);
-nsimd_neon128_vu8x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u8(u8 const* a0);</code></pre>
-<h3>SVE256</h3>
-<pre class="c"><code>nsimd_sve256_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve256_f64(f64 const* a0);
-nsimd_sve256_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve256_f32(f32 const* a0);
-nsimd_sve256_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve256_f16(f16 const* a0);
-nsimd_sve256_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i64(i64 const* a0);
-nsimd_sve256_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i32(i32 const* a0);
-nsimd_sve256_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i16(i16 const* a0);
-nsimd_sve256_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i8(i8 const* a0);
-nsimd_sve256_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u64(u64 const* a0);
-nsimd_sve256_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u32(u32 const* a0);
-nsimd_sve256_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u16(u16 const* a0);
-nsimd_sve256_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u8(u8 const* a0);</code></pre>
-<h3>SVE2048</h3>
-<pre class="c"><code>nsimd_sve2048_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_f64(f64 const* a0);
-nsimd_sve2048_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_f32(f32 const* a0);
-nsimd_sve2048_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_f16(f16 const* a0);
-nsimd_sve2048_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i64(i64 const* a0);
-nsimd_sve2048_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i32(i32 const* a0);
-nsimd_sve2048_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i16(i16 const* a0);
-nsimd_sve2048_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i8(i8 const* a0);
-nsimd_sve2048_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u64(u64 const* a0);
-nsimd_sve2048_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u32(u32 const* a0);
-nsimd_sve2048_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u16(u16 const* a0);
-nsimd_sve2048_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u8(u8 const* a0);</code></pre>
 <h3>AVX2</h3>
 <pre class="c"><code>nsimd_avx2_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx2_f64(f64 const* a0);
 nsimd_avx2_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx2_f32(f32 const* a0);
@@ -221,30 +113,18 @@ nsimd_avx2_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx2_u64(u64 const* a0);
 nsimd_avx2_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx2_u32(u32 const* a0);
 nsimd_avx2_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx2_u16(u16 const* a0);
 nsimd_avx2_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx2_u8(u8 const* a0);</code></pre>
-<h3>AVX</h3>
-<pre class="c"><code>nsimd_avx_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx_f64(f64 const* a0);
-nsimd_avx_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx_f32(f32 const* a0);
-nsimd_avx_vf16x3 NSIMD_VECTORCALL nsimd_load3a_avx_f16(f16 const* a0);
-nsimd_avx_vi64x3 NSIMD_VECTORCALL nsimd_load3a_avx_i64(i64 const* a0);
-nsimd_avx_vi32x3 NSIMD_VECTORCALL nsimd_load3a_avx_i32(i32 const* a0);
-nsimd_avx_vi16x3 NSIMD_VECTORCALL nsimd_load3a_avx_i16(i16 const* a0);
-nsimd_avx_vi8x3 NSIMD_VECTORCALL nsimd_load3a_avx_i8(i8 const* a0);
-nsimd_avx_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx_u64(u64 const* a0);
-nsimd_avx_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx_u32(u32 const* a0);
-nsimd_avx_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx_u16(u16 const* a0);
-nsimd_avx_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx_u8(u8 const* a0);</code></pre>
-<h3>SVE1024</h3>
-<pre class="c"><code>nsimd_sve1024_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_f64(f64 const* a0);
-nsimd_sve1024_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_f32(f32 const* a0);
-nsimd_sve1024_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_f16(f16 const* a0);
-nsimd_sve1024_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i64(i64 const* a0);
-nsimd_sve1024_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i32(i32 const* a0);
-nsimd_sve1024_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i16(i16 const* a0);
-nsimd_sve1024_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i8(i8 const* a0);
-nsimd_sve1024_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u64(u64 const* a0);
-nsimd_sve1024_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u32(u32 const* a0);
-nsimd_sve1024_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u16(u16 const* a0);
-nsimd_sve1024_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u8(u8 const* a0);</code></pre>
+<h3>SVE512</h3>
+<pre class="c"><code>nsimd_sve512_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve512_f64(f64 const* a0);
+nsimd_sve512_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve512_f32(f32 const* a0);
+nsimd_sve512_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve512_f16(f16 const* a0);
+nsimd_sve512_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i64(i64 const* a0);
+nsimd_sve512_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i32(i32 const* a0);
+nsimd_sve512_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i16(i16 const* a0);
+nsimd_sve512_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve512_i8(i8 const* a0);
+nsimd_sve512_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u64(u64 const* a0);
+nsimd_sve512_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u32(u32 const* a0);
+nsimd_sve512_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u16(u16 const* a0);
+nsimd_sve512_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve512_u8(u8 const* a0);</code></pre>
 <h3>SVE</h3>
 <pre class="c"><code>nsimd_sve_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve_f64(f64 const* a0);
 nsimd_sve_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve_f32(f32 const* a0);
@@ -257,18 +137,6 @@ nsimd_sve_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve_u64(u64 const* a0);
 nsimd_sve_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve_u32(u32 const* a0);
 nsimd_sve_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve_u16(u16 const* a0);
 nsimd_sve_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve_u8(u8 const* a0);</code></pre>
-<h3>AARCH64</h3>
-<pre class="c"><code>nsimd_aarch64_vf64x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_f64(f64 const* a0);
-nsimd_aarch64_vf32x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_f32(f32 const* a0);
-nsimd_aarch64_vf16x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_f16(f16 const* a0);
-nsimd_aarch64_vi64x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i64(i64 const* a0);
-nsimd_aarch64_vi32x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i32(i32 const* a0);
-nsimd_aarch64_vi16x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i16(i16 const* a0);
-nsimd_aarch64_vi8x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i8(i8 const* a0);
-nsimd_aarch64_vu64x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u64(u64 const* a0);
-nsimd_aarch64_vu32x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u32(u32 const* a0);
-nsimd_aarch64_vu16x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u16(u16 const* a0);
-nsimd_aarch64_vu8x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u8(u8 const* a0);</code></pre>
 <h3>CPU</h3>
 <pre class="c"><code>nsimd_cpu_vf64x3 NSIMD_VECTORCALL nsimd_load3a_cpu_f64(f64 const* a0);
 nsimd_cpu_vf32x3 NSIMD_VECTORCALL nsimd_load3a_cpu_f32(f32 const* a0);
@@ -281,18 +149,78 @@ nsimd_cpu_vu64x3 NSIMD_VECTORCALL nsimd_load3a_cpu_u64(u64 const* a0);
 nsimd_cpu_vu32x3 NSIMD_VECTORCALL nsimd_load3a_cpu_u32(u32 const* a0);
 nsimd_cpu_vu16x3 NSIMD_VECTORCALL nsimd_load3a_cpu_u16(u16 const* a0);
 nsimd_cpu_vu8x3 NSIMD_VECTORCALL nsimd_load3a_cpu_u8(u8 const* a0);</code></pre>
-<h3>SVE128</h3>
-<pre class="c"><code>nsimd_sve128_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve128_f64(f64 const* a0);
-nsimd_sve128_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve128_f32(f32 const* a0);
-nsimd_sve128_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve128_f16(f16 const* a0);
-nsimd_sve128_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i64(i64 const* a0);
-nsimd_sve128_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i32(i32 const* a0);
-nsimd_sve128_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i16(i16 const* a0);
-nsimd_sve128_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i8(i8 const* a0);
-nsimd_sve128_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u64(u64 const* a0);
-nsimd_sve128_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u32(u32 const* a0);
-nsimd_sve128_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u16(u16 const* a0);
-nsimd_sve128_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u8(u8 const* a0);</code></pre>
+<h3>SVE2048</h3>
+<pre class="c"><code>nsimd_sve2048_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_f64(f64 const* a0);
+nsimd_sve2048_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_f32(f32 const* a0);
+nsimd_sve2048_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_f16(f16 const* a0);
+nsimd_sve2048_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i64(i64 const* a0);
+nsimd_sve2048_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i32(i32 const* a0);
+nsimd_sve2048_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i16(i16 const* a0);
+nsimd_sve2048_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_i8(i8 const* a0);
+nsimd_sve2048_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u64(u64 const* a0);
+nsimd_sve2048_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u32(u32 const* a0);
+nsimd_sve2048_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u16(u16 const* a0);
+nsimd_sve2048_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve2048_u8(u8 const* a0);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vf64x3 NSIMD_VECTORCALL nsimd_load3a_neon128_f64(f64 const* a0);
+nsimd_neon128_vf32x3 NSIMD_VECTORCALL nsimd_load3a_neon128_f32(f32 const* a0);
+nsimd_neon128_vf16x3 NSIMD_VECTORCALL nsimd_load3a_neon128_f16(f16 const* a0);
+nsimd_neon128_vi64x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i64(i64 const* a0);
+nsimd_neon128_vi32x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i32(i32 const* a0);
+nsimd_neon128_vi16x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i16(i16 const* a0);
+nsimd_neon128_vi8x3 NSIMD_VECTORCALL nsimd_load3a_neon128_i8(i8 const* a0);
+nsimd_neon128_vu64x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u64(u64 const* a0);
+nsimd_neon128_vu32x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u32(u32 const* a0);
+nsimd_neon128_vu16x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u16(u16 const* a0);
+nsimd_neon128_vu8x3 NSIMD_VECTORCALL nsimd_load3a_neon128_u8(u8 const* a0);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_f64(f64 const* a0);
+nsimd_avx512_skylake_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_f32(f32 const* a0);
+nsimd_avx512_skylake_vf16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_f16(f16 const* a0);
+nsimd_avx512_skylake_vi64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i64(i64 const* a0);
+nsimd_avx512_skylake_vi32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i32(i32 const* a0);
+nsimd_avx512_skylake_vi16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i16(i16 const* a0);
+nsimd_avx512_skylake_vi8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_i8(i8 const* a0);
+nsimd_avx512_skylake_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u64(u64 const* a0);
+nsimd_avx512_skylake_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u32(u32 const* a0);
+nsimd_avx512_skylake_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u16(u16 const* a0);
+nsimd_avx512_skylake_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_skylake_u8(u8 const* a0);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vf64x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_f64(f64 const* a0);
+nsimd_aarch64_vf32x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_f32(f32 const* a0);
+nsimd_aarch64_vf16x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_f16(f16 const* a0);
+nsimd_aarch64_vi64x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i64(i64 const* a0);
+nsimd_aarch64_vi32x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i32(i32 const* a0);
+nsimd_aarch64_vi16x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i16(i16 const* a0);
+nsimd_aarch64_vi8x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_i8(i8 const* a0);
+nsimd_aarch64_vu64x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u64(u64 const* a0);
+nsimd_aarch64_vu32x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u32(u32 const* a0);
+nsimd_aarch64_vu16x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u16(u16 const* a0);
+nsimd_aarch64_vu8x3 NSIMD_VECTORCALL nsimd_load3a_aarch64_u8(u8 const* a0);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_f64(f64 const* a0);
+nsimd_avx512_knl_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_f32(f32 const* a0);
+nsimd_avx512_knl_vf16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_f16(f16 const* a0);
+nsimd_avx512_knl_vi64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i64(i64 const* a0);
+nsimd_avx512_knl_vi32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i32(i32 const* a0);
+nsimd_avx512_knl_vi16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i16(i16 const* a0);
+nsimd_avx512_knl_vi8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_i8(i8 const* a0);
+nsimd_avx512_knl_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u64(u64 const* a0);
+nsimd_avx512_knl_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u32(u32 const* a0);
+nsimd_avx512_knl_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u16(u16 const* a0);
+nsimd_avx512_knl_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx512_knl_u8(u8 const* a0);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sse2_f64(f64 const* a0);
+nsimd_sse2_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sse2_f32(f32 const* a0);
+nsimd_sse2_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sse2_f16(f16 const* a0);
+nsimd_sse2_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i64(i64 const* a0);
+nsimd_sse2_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i32(i32 const* a0);
+nsimd_sse2_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i16(i16 const* a0);
+nsimd_sse2_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sse2_i8(i8 const* a0);
+nsimd_sse2_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u64(u64 const* a0);
+nsimd_sse2_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u32(u32 const* a0);
+nsimd_sse2_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u16(u16 const* a0);
+nsimd_sse2_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sse2_u8(u8 const* a0);</code></pre>
 <h3>SSE42</h3>
 <pre class="c"><code>nsimd_sse42_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sse42_f64(f64 const* a0);
 nsimd_sse42_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sse42_f32(f32 const* a0);
@@ -305,115 +233,79 @@ nsimd_sse42_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sse42_u64(u64 const* a0);
 nsimd_sse42_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sse42_u32(u32 const* a0);
 nsimd_sse42_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sse42_u16(u16 const* a0);
 nsimd_sse42_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sse42_u8(u8 const* a0);</code></pre>
-<h2>C++ base API (architecture specifics)</h2>
-<h3>SSE2</h3>
-<pre class="c"><code>nsimd_sse2_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sse2);
-nsimd_sse2_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sse2);
-nsimd_sse2_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sse2);
-nsimd_sse2_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sse2);
-nsimd_sse2_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sse2);
-nsimd_sse2_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sse2);
-nsimd_sse2_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sse2);
-nsimd_sse2_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sse2);
-nsimd_sse2_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sse2);
-nsimd_sse2_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sse2);
-nsimd_sse2_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sse2);</code></pre>
-<h3>AVX512_SKYLAKE</h3>
-<pre class="c"><code>nsimd_avx512_skylake_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx512_skylake);
-nsimd_avx512_skylake_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx512_skylake);
-nsimd_avx512_skylake_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, avx512_skylake);
-nsimd_avx512_skylake_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, avx512_skylake);
-nsimd_avx512_skylake_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, avx512_skylake);
-nsimd_avx512_skylake_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, avx512_skylake);
-nsimd_avx512_skylake_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, avx512_skylake);
-nsimd_avx512_skylake_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx512_skylake);
-nsimd_avx512_skylake_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx512_skylake);
-nsimd_avx512_skylake_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx512_skylake);
-nsimd_avx512_skylake_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx512_skylake);</code></pre>
-<h3>VSX</h3>
-<pre class="c"><code>nsimd_vsx_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, vsx);
-nsimd_vsx_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, vsx);
-nsimd_vsx_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, vsx);
-nsimd_vsx_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, vsx);
-nsimd_vsx_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, vsx);
-nsimd_vsx_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, vsx);
-nsimd_vsx_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, vsx);
-nsimd_vsx_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, vsx);
-nsimd_vsx_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, vsx);
-nsimd_vsx_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, vsx);
-nsimd_vsx_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, vsx);</code></pre>
-<h3>SVE512</h3>
-<pre class="c"><code>nsimd_sve512_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve512);
-nsimd_sve512_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve512);
-nsimd_sve512_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve512);
-nsimd_sve512_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve512);
-nsimd_sve512_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve512);
-nsimd_sve512_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve512);
-nsimd_sve512_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve512);
-nsimd_sve512_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve512);
-nsimd_sve512_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve512);
-nsimd_sve512_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve512);
-nsimd_sve512_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve512);</code></pre>
-<h3>AVX512_KNL</h3>
-<pre class="c"><code>nsimd_avx512_knl_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx512_knl);
-nsimd_avx512_knl_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx512_knl);
-nsimd_avx512_knl_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, avx512_knl);
-nsimd_avx512_knl_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, avx512_knl);
-nsimd_avx512_knl_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, avx512_knl);
-nsimd_avx512_knl_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, avx512_knl);
-nsimd_avx512_knl_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, avx512_knl);
-nsimd_avx512_knl_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx512_knl);
-nsimd_avx512_knl_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx512_knl);
-nsimd_avx512_knl_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx512_knl);
-nsimd_avx512_knl_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx512_knl);</code></pre>
-<h3>VMX</h3>
-<pre class="c"><code>nsimd_vmx_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, vmx);
-nsimd_vmx_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, vmx);
-nsimd_vmx_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, vmx);
-nsimd_vmx_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, vmx);
-nsimd_vmx_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, vmx);
-nsimd_vmx_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, vmx);
-nsimd_vmx_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, vmx);
-nsimd_vmx_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, vmx);
-nsimd_vmx_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, vmx);
-nsimd_vmx_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, vmx);
-nsimd_vmx_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, vmx);</code></pre>
-<h3>NEON128</h3>
-<pre class="c"><code>nsimd_neon128_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, neon128);
-nsimd_neon128_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, neon128);
-nsimd_neon128_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, neon128);
-nsimd_neon128_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, neon128);
-nsimd_neon128_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, neon128);
-nsimd_neon128_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, neon128);
-nsimd_neon128_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, neon128);
-nsimd_neon128_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, neon128);
-nsimd_neon128_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, neon128);
-nsimd_neon128_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, neon128);
-nsimd_neon128_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, neon128);</code></pre>
 <h3>SVE256</h3>
-<pre class="c"><code>nsimd_sve256_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve256);
-nsimd_sve256_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve256);
-nsimd_sve256_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve256);
-nsimd_sve256_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve256);
-nsimd_sve256_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve256);
-nsimd_sve256_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve256);
-nsimd_sve256_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve256);
-nsimd_sve256_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve256);
-nsimd_sve256_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve256);
-nsimd_sve256_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve256);
-nsimd_sve256_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve256);</code></pre>
-<h3>SVE2048</h3>
-<pre class="c"><code>nsimd_sve2048_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve2048);
-nsimd_sve2048_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve2048);
-nsimd_sve2048_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve2048);
-nsimd_sve2048_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve2048);
-nsimd_sve2048_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve2048);
-nsimd_sve2048_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve2048);
-nsimd_sve2048_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve2048);
-nsimd_sve2048_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve2048);
-nsimd_sve2048_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve2048);
-nsimd_sve2048_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve2048);
-nsimd_sve2048_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve2048);</code></pre>
+<pre class="c"><code>nsimd_sve256_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve256_f64(f64 const* a0);
+nsimd_sve256_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve256_f32(f32 const* a0);
+nsimd_sve256_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve256_f16(f16 const* a0);
+nsimd_sve256_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i64(i64 const* a0);
+nsimd_sve256_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i32(i32 const* a0);
+nsimd_sve256_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i16(i16 const* a0);
+nsimd_sve256_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve256_i8(i8 const* a0);
+nsimd_sve256_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u64(u64 const* a0);
+nsimd_sve256_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u32(u32 const* a0);
+nsimd_sve256_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u16(u16 const* a0);
+nsimd_sve256_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve256_u8(u8 const* a0);</code></pre>
+<h3>SVE1024</h3>
+<pre class="c"><code>nsimd_sve1024_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_f64(f64 const* a0);
+nsimd_sve1024_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_f32(f32 const* a0);
+nsimd_sve1024_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_f16(f16 const* a0);
+nsimd_sve1024_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i64(i64 const* a0);
+nsimd_sve1024_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i32(i32 const* a0);
+nsimd_sve1024_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i16(i16 const* a0);
+nsimd_sve1024_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_i8(i8 const* a0);
+nsimd_sve1024_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u64(u64 const* a0);
+nsimd_sve1024_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u32(u32 const* a0);
+nsimd_sve1024_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u16(u16 const* a0);
+nsimd_sve1024_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve1024_u8(u8 const* a0);</code></pre>
+<h3>VSX</h3>
+<pre class="c"><code>nsimd_vsx_vf64x3 NSIMD_VECTORCALL nsimd_load3a_vsx_f64(f64 const* a0);
+nsimd_vsx_vf32x3 NSIMD_VECTORCALL nsimd_load3a_vsx_f32(f32 const* a0);
+nsimd_vsx_vf16x3 NSIMD_VECTORCALL nsimd_load3a_vsx_f16(f16 const* a0);
+nsimd_vsx_vi64x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i64(i64 const* a0);
+nsimd_vsx_vi32x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i32(i32 const* a0);
+nsimd_vsx_vi16x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i16(i16 const* a0);
+nsimd_vsx_vi8x3 NSIMD_VECTORCALL nsimd_load3a_vsx_i8(i8 const* a0);
+nsimd_vsx_vu64x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u64(u64 const* a0);
+nsimd_vsx_vu32x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u32(u32 const* a0);
+nsimd_vsx_vu16x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u16(u16 const* a0);
+nsimd_vsx_vu8x3 NSIMD_VECTORCALL nsimd_load3a_vsx_u8(u8 const* a0);</code></pre>
+<h3>SVE128</h3>
+<pre class="c"><code>nsimd_sve128_vf64x3 NSIMD_VECTORCALL nsimd_load3a_sve128_f64(f64 const* a0);
+nsimd_sve128_vf32x3 NSIMD_VECTORCALL nsimd_load3a_sve128_f32(f32 const* a0);
+nsimd_sve128_vf16x3 NSIMD_VECTORCALL nsimd_load3a_sve128_f16(f16 const* a0);
+nsimd_sve128_vi64x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i64(i64 const* a0);
+nsimd_sve128_vi32x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i32(i32 const* a0);
+nsimd_sve128_vi16x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i16(i16 const* a0);
+nsimd_sve128_vi8x3 NSIMD_VECTORCALL nsimd_load3a_sve128_i8(i8 const* a0);
+nsimd_sve128_vu64x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u64(u64 const* a0);
+nsimd_sve128_vu32x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u32(u32 const* a0);
+nsimd_sve128_vu16x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u16(u16 const* a0);
+nsimd_sve128_vu8x3 NSIMD_VECTORCALL nsimd_load3a_sve128_u8(u8 const* a0);</code></pre>
+<h3>VMX</h3>
+<pre class="c"><code>nsimd_vmx_vf64x3 NSIMD_VECTORCALL nsimd_load3a_vmx_f64(f64 const* a0);
+nsimd_vmx_vf32x3 NSIMD_VECTORCALL nsimd_load3a_vmx_f32(f32 const* a0);
+nsimd_vmx_vf16x3 NSIMD_VECTORCALL nsimd_load3a_vmx_f16(f16 const* a0);
+nsimd_vmx_vi64x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i64(i64 const* a0);
+nsimd_vmx_vi32x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i32(i32 const* a0);
+nsimd_vmx_vi16x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i16(i16 const* a0);
+nsimd_vmx_vi8x3 NSIMD_VECTORCALL nsimd_load3a_vmx_i8(i8 const* a0);
+nsimd_vmx_vu64x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u64(u64 const* a0);
+nsimd_vmx_vu32x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u32(u32 const* a0);
+nsimd_vmx_vu16x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u16(u16 const* a0);
+nsimd_vmx_vu8x3 NSIMD_VECTORCALL nsimd_load3a_vmx_u8(u8 const* a0);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vf64x3 NSIMD_VECTORCALL nsimd_load3a_avx_f64(f64 const* a0);
+nsimd_avx_vf32x3 NSIMD_VECTORCALL nsimd_load3a_avx_f32(f32 const* a0);
+nsimd_avx_vf16x3 NSIMD_VECTORCALL nsimd_load3a_avx_f16(f16 const* a0);
+nsimd_avx_vi64x3 NSIMD_VECTORCALL nsimd_load3a_avx_i64(i64 const* a0);
+nsimd_avx_vi32x3 NSIMD_VECTORCALL nsimd_load3a_avx_i32(i32 const* a0);
+nsimd_avx_vi16x3 NSIMD_VECTORCALL nsimd_load3a_avx_i16(i16 const* a0);
+nsimd_avx_vi8x3 NSIMD_VECTORCALL nsimd_load3a_avx_i8(i8 const* a0);
+nsimd_avx_vu64x3 NSIMD_VECTORCALL nsimd_load3a_avx_u64(u64 const* a0);
+nsimd_avx_vu32x3 NSIMD_VECTORCALL nsimd_load3a_avx_u32(u32 const* a0);
+nsimd_avx_vu16x3 NSIMD_VECTORCALL nsimd_load3a_avx_u16(u16 const* a0);
+nsimd_avx_vu8x3 NSIMD_VECTORCALL nsimd_load3a_avx_u8(u8 const* a0);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
 <h3>AVX2</h3>
 <pre class="c"><code>nsimd_avx2_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx2);
 nsimd_avx2_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx2);
@@ -426,30 +318,18 @@ nsimd_avx2_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx2);
 nsimd_avx2_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx2);
 nsimd_avx2_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx2);
 nsimd_avx2_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx2);</code></pre>
-<h3>AVX</h3>
-<pre class="c"><code>nsimd_avx_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx);
-nsimd_avx_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx);
-nsimd_avx_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, avx);
-nsimd_avx_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, avx);
-nsimd_avx_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, avx);
-nsimd_avx_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, avx);
-nsimd_avx_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, avx);
-nsimd_avx_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx);
-nsimd_avx_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx);
-nsimd_avx_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx);
-nsimd_avx_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx);</code></pre>
-<h3>SVE1024</h3>
-<pre class="c"><code>nsimd_sve1024_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve1024);
-nsimd_sve1024_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve1024);
-nsimd_sve1024_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve1024);
-nsimd_sve1024_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve1024);
-nsimd_sve1024_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve1024);
-nsimd_sve1024_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve1024);
-nsimd_sve1024_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve1024);
-nsimd_sve1024_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve1024);
-nsimd_sve1024_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve1024);
-nsimd_sve1024_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve1024);
-nsimd_sve1024_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve1024);</code></pre>
+<h3>SVE512</h3>
+<pre class="c"><code>nsimd_sve512_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve512);
+nsimd_sve512_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve512);
+nsimd_sve512_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve512);
+nsimd_sve512_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve512);
+nsimd_sve512_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve512);
+nsimd_sve512_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve512);
+nsimd_sve512_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve512);
+nsimd_sve512_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve512);
+nsimd_sve512_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve512);
+nsimd_sve512_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve512);
+nsimd_sve512_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve512);</code></pre>
 <h3>SVE</h3>
 <pre class="c"><code>nsimd_sve_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve);
 nsimd_sve_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve);
@@ -462,18 +342,6 @@ nsimd_sve_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve);
 nsimd_sve_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve);
 nsimd_sve_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve);
 nsimd_sve_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve);</code></pre>
-<h3>AARCH64</h3>
-<pre class="c"><code>nsimd_aarch64_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, aarch64);
-nsimd_aarch64_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, aarch64);
-nsimd_aarch64_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, aarch64);
-nsimd_aarch64_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, aarch64);
-nsimd_aarch64_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, aarch64);
-nsimd_aarch64_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, aarch64);
-nsimd_aarch64_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, aarch64);
-nsimd_aarch64_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, aarch64);
-nsimd_aarch64_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, aarch64);
-nsimd_aarch64_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, aarch64);
-nsimd_aarch64_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, aarch64);</code></pre>
 <h3>CPU</h3>
 <pre class="c"><code>nsimd_cpu_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, cpu);
 nsimd_cpu_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, cpu);
@@ -486,18 +354,78 @@ nsimd_cpu_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, cpu);
 nsimd_cpu_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, cpu);
 nsimd_cpu_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, cpu);
 nsimd_cpu_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, cpu);</code></pre>
-<h3>SVE128</h3>
-<pre class="c"><code>nsimd_sve128_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve128);
-nsimd_sve128_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve128);
-nsimd_sve128_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve128);
-nsimd_sve128_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve128);
-nsimd_sve128_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve128);
-nsimd_sve128_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve128);
-nsimd_sve128_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve128);
-nsimd_sve128_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve128);
-nsimd_sve128_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve128);
-nsimd_sve128_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve128);
-nsimd_sve128_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve128);</code></pre>
+<h3>SVE2048</h3>
+<pre class="c"><code>nsimd_sve2048_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve2048);
+nsimd_sve2048_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve2048);
+nsimd_sve2048_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve2048);
+nsimd_sve2048_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve2048);
+nsimd_sve2048_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve2048);
+nsimd_sve2048_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve2048);
+nsimd_sve2048_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve2048);
+nsimd_sve2048_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve2048);
+nsimd_sve2048_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve2048);
+nsimd_sve2048_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve2048);
+nsimd_sve2048_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve2048);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, neon128);
+nsimd_neon128_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, neon128);
+nsimd_neon128_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, neon128);
+nsimd_neon128_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, neon128);
+nsimd_neon128_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, neon128);
+nsimd_neon128_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, neon128);
+nsimd_neon128_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, neon128);
+nsimd_neon128_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, neon128);
+nsimd_neon128_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, neon128);
+nsimd_neon128_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, neon128);
+nsimd_neon128_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, neon128);</code></pre>
+<h3>AVX512_SKYLAKE</h3>
+<pre class="c"><code>nsimd_avx512_skylake_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx512_skylake);
+nsimd_avx512_skylake_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx512_skylake);
+nsimd_avx512_skylake_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, avx512_skylake);
+nsimd_avx512_skylake_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, avx512_skylake);
+nsimd_avx512_skylake_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, avx512_skylake);
+nsimd_avx512_skylake_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, avx512_skylake);
+nsimd_avx512_skylake_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, avx512_skylake);
+nsimd_avx512_skylake_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx512_skylake);
+nsimd_avx512_skylake_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx512_skylake);
+nsimd_avx512_skylake_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx512_skylake);
+nsimd_avx512_skylake_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx512_skylake);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, aarch64);
+nsimd_aarch64_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, aarch64);
+nsimd_aarch64_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, aarch64);
+nsimd_aarch64_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, aarch64);
+nsimd_aarch64_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, aarch64);
+nsimd_aarch64_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, aarch64);
+nsimd_aarch64_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, aarch64);
+nsimd_aarch64_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, aarch64);
+nsimd_aarch64_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, aarch64);
+nsimd_aarch64_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, aarch64);
+nsimd_aarch64_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, aarch64);</code></pre>
+<h3>AVX512_KNL</h3>
+<pre class="c"><code>nsimd_avx512_knl_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx512_knl);
+nsimd_avx512_knl_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx512_knl);
+nsimd_avx512_knl_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, avx512_knl);
+nsimd_avx512_knl_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, avx512_knl);
+nsimd_avx512_knl_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, avx512_knl);
+nsimd_avx512_knl_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, avx512_knl);
+nsimd_avx512_knl_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, avx512_knl);
+nsimd_avx512_knl_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx512_knl);
+nsimd_avx512_knl_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx512_knl);
+nsimd_avx512_knl_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx512_knl);
+nsimd_avx512_knl_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx512_knl);</code></pre>
+<h3>SSE2</h3>
+<pre class="c"><code>nsimd_sse2_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sse2);
+nsimd_sse2_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sse2);
+nsimd_sse2_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sse2);
+nsimd_sse2_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sse2);
+nsimd_sse2_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sse2);
+nsimd_sse2_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sse2);
+nsimd_sse2_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sse2);
+nsimd_sse2_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sse2);
+nsimd_sse2_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sse2);
+nsimd_sse2_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sse2);
+nsimd_sse2_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sse2);</code></pre>
 <h3>SSE42</h3>
 <pre class="c"><code>nsimd_sse42_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sse42);
 nsimd_sse42_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sse42);
@@ -510,5 +438,77 @@ nsimd_sse42_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sse42);
 nsimd_sse42_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sse42);
 nsimd_sse42_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sse42);
 nsimd_sse42_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sse42);</code></pre>
+<h3>SVE256</h3>
+<pre class="c"><code>nsimd_sve256_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve256);
+nsimd_sve256_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve256);
+nsimd_sve256_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve256);
+nsimd_sve256_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve256);
+nsimd_sve256_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve256);
+nsimd_sve256_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve256);
+nsimd_sve256_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve256);
+nsimd_sve256_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve256);
+nsimd_sve256_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve256);
+nsimd_sve256_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve256);
+nsimd_sve256_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve256);</code></pre>
+<h3>SVE1024</h3>
+<pre class="c"><code>nsimd_sve1024_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve1024);
+nsimd_sve1024_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve1024);
+nsimd_sve1024_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve1024);
+nsimd_sve1024_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve1024);
+nsimd_sve1024_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve1024);
+nsimd_sve1024_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve1024);
+nsimd_sve1024_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve1024);
+nsimd_sve1024_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve1024);
+nsimd_sve1024_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve1024);
+nsimd_sve1024_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve1024);
+nsimd_sve1024_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve1024);</code></pre>
+<h3>VSX</h3>
+<pre class="c"><code>nsimd_vsx_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, vsx);
+nsimd_vsx_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, vsx);
+nsimd_vsx_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, vsx);
+nsimd_vsx_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, vsx);
+nsimd_vsx_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, vsx);
+nsimd_vsx_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, vsx);
+nsimd_vsx_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, vsx);
+nsimd_vsx_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, vsx);
+nsimd_vsx_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, vsx);
+nsimd_vsx_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, vsx);
+nsimd_vsx_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, vsx);</code></pre>
+<h3>SVE128</h3>
+<pre class="c"><code>nsimd_sve128_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, sve128);
+nsimd_sve128_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, sve128);
+nsimd_sve128_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, sve128);
+nsimd_sve128_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, sve128);
+nsimd_sve128_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, sve128);
+nsimd_sve128_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, sve128);
+nsimd_sve128_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, sve128);
+nsimd_sve128_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, sve128);
+nsimd_sve128_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, sve128);
+nsimd_sve128_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, sve128);
+nsimd_sve128_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, sve128);</code></pre>
+<h3>VMX</h3>
+<pre class="c"><code>nsimd_vmx_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, vmx);
+nsimd_vmx_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, vmx);
+nsimd_vmx_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, vmx);
+nsimd_vmx_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, vmx);
+nsimd_vmx_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, vmx);
+nsimd_vmx_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, vmx);
+nsimd_vmx_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, vmx);
+nsimd_vmx_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, vmx);
+nsimd_vmx_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, vmx);
+nsimd_vmx_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, vmx);
+nsimd_vmx_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, vmx);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vf64x3 NSIMD_VECTORCALL load3a(f64 const* a0, f64, avx);
+nsimd_avx_vf32x3 NSIMD_VECTORCALL load3a(f32 const* a0, f32, avx);
+nsimd_avx_vf16x3 NSIMD_VECTORCALL load3a(f16 const* a0, f16, avx);
+nsimd_avx_vi64x3 NSIMD_VECTORCALL load3a(i64 const* a0, i64, avx);
+nsimd_avx_vi32x3 NSIMD_VECTORCALL load3a(i32 const* a0, i32, avx);
+nsimd_avx_vi16x3 NSIMD_VECTORCALL load3a(i16 const* a0, i16, avx);
+nsimd_avx_vi8x3 NSIMD_VECTORCALL load3a(i8 const* a0, i8, avx);
+nsimd_avx_vu64x3 NSIMD_VECTORCALL load3a(u64 const* a0, u64, avx);
+nsimd_avx_vu32x3 NSIMD_VECTORCALL load3a(u32 const* a0, u32, avx);
+nsimd_avx_vu16x3 NSIMD_VECTORCALL load3a(u16 const* a0, u16, avx);
+nsimd_avx_vu8x3 NSIMD_VECTORCALL load3a(u8 const* a0, u8, avx);</code></pre>
   </body>
 </html>
