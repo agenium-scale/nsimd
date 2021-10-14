@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,8 @@ SOFTWARE.
 /* Detect host compiler */
 #if defined(_MSC_VER)
   #define NSIMD_IS_MSVC
+#elif defined(__ibmxl_version__)
+  #define NSIMD_IS_XLC
 #elif defined(__FCC_version__)
   #define NSIMD_IS_FCC
 #elif defined(__INTEL_COMPILER)
@@ -104,6 +106,7 @@ SOFTWARE.
 
 #if NSIMD_CXX >= 2020
   #include <concepts>
+  #include <cstddef>
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -333,12 +336,12 @@ namespace nsimd {
 
 /* PPC */
 
-#if (defined(POWER8) || defined(ALTIVEC)) && !defined(NSIMD_POWER8)
-#define NSIMD_POWER8
+#if (defined(VMX) || defined(ALTIVEC)) && !defined(NSIMD_VMX)
+#define NSIMD_VMX
 #endif
 
-#if defined(POWER7) && !defined(NSIMD_POWER7)
-#define NSIMD_POWER7
+#if defined(VSX) && !defined(NSIMD_VSX)
+#define NSIMD_VSX
 #endif
 
 /* CUDA */
@@ -357,6 +360,11 @@ namespace nsimd {
 
 #if defined(ONEAPI) && !defined(NSIMD_ONEAPI)
   #define NSIMD_ONEAPI
+  /* undef ONEAPI is needed because ONEAPI is used as a namespace in DPC++:
+     sycl::ONEAPI */
+  #ifdef ONEAPI
+    #undef ONEAPI
+  #endif
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -406,7 +414,7 @@ namespace nsimd {
       struct cpu {};
       struct sse2 {};
       struct sse42 {};
-      #if NSIMD_CXX >= 2020
+      #if nsIMD_CXX >= 2020
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
                              std::is_same_v<T, nsimd::sse2> ||
@@ -696,14 +704,14 @@ namespace nsimd {
     } // namespace nsimd
   #endif
 
-#elif defined(NSIMD_POWER7)
+#elif defined(NSIMD_VMX)
 
   #define NSIMD_PLATFORM ppc
-  #define NSIMD_SIMD power7
+  #define NSIMD_SIMD vmx
 
   #ifdef NSIMD_IS_CLANG
-  // New version of clang are spamming useless warning comming from their
-  // altivec.h file
+    /* New version of clang are spamming useless warning comming from their */
+    /* altivec.h file */
     #pragma clang diagnostic ignored "-Wc11-extensions"
     #pragma clang diagnostic ignored "-Wc++11-long-long"
   #endif
@@ -723,12 +731,51 @@ namespace nsimd {
   #if NSIMD_CXX > 0
     namespace nsimd {
       struct cpu {};
-      struct power7 {};
+      struct vmx {};
       #if NSIMD_CXX >= 2020
         template <typename T>
         concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
-                             std::is_same_v<T, nsimd::power7>;
-        #define NSIMD_LIST_SIMD_EXT cpu, power7
+                             std::is_same_v<T, nsimd::vmx>;
+        #define NSIMD_LIST_SIMD_EXT cpu, vmx
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_VSX)
+
+  #define NSIMD_PLATFORM ppc
+  #define NSIMD_SIMD vsx
+
+  #ifdef NSIMD_IS_CLANG
+    /* New version of clang are spamming useless warning comming from their */
+    /* altivec.h file */
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wc++11-long-long"
+  #endif
+
+  #include <altivec.h>
+
+  #ifdef bool
+    #undef bool
+  #endif
+  #ifdef pixel
+    #undef pixel
+  #endif
+  #ifdef vector
+    #undef vector
+  #endif
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct vmx {};
+      struct vsx {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::vmx> ||
+                             std::is_same_v<T, nsimd::vsx>;
+        #define NSIMD_LIST_SIMD_EXT cpu, vsx
       #endif
     } // namespace nsimd
   #endif
@@ -756,8 +803,24 @@ namespace nsimd {
     #include <hip/hip_runtime.h>
   #endif
 
-  #ifdef NSIMD_ONEAPI
+  #if defined(NSIMD_ONEAPI) && NSIMD_CXX > 0
     #include <CL/sycl.hpp>
+
+    extern "C" {
+
+    NSIMD_DLLSPEC void *nsimd_oneapi_default_queue();
+
+    } // extern "C"
+
+    namespace nsimd {
+    namespace oneapi {
+
+    NSIMD_INLINE sycl::queue &default_queue() {
+      return *(sycl::queue *)nsimd_oneapi_default_queue();
+    }
+
+    } // namespace oneapi
+    } // namespace nsimd
   #endif
 
   #define NSIMD_SIMD cpu
@@ -804,7 +867,16 @@ namespace nsimd {
   #include <limits.h>
 #endif
 
-#ifdef NSIMD_IS_MSVC
+#if defined(NSIMD_ONEAPI)
+  typedef sycl::cl_char    i8;
+  typedef sycl::cl_uchar   u8;
+  typedef sycl::cl_short   i16;
+  typedef sycl::cl_ushort  u16;
+  typedef sycl::cl_int     i32;
+  typedef sycl::cl_uint    u32;
+  typedef sycl::cl_long    i64;
+  typedef sycl::cl_ulong   u64;
+#elif defined(NSIMD_IS_MSVC)
   typedef unsigned __int8  u8;
   typedef signed   __int8  i8;
   typedef unsigned __int16 u16;
@@ -836,7 +908,10 @@ namespace nsimd {
       typedef signed int    i32;
     #endif
   #endif
-  #if NSIMD_WORD_SIZE == 64
+  #if defined(NSIMD_VMX) || defined(NSIMD_VSX)
+    typedef nsimd_ulonglong u64;
+    typedef nsimd_longlong  i64;
+  #elif NSIMD_WORD_SIZE == 64
     #ifdef __UINT64_TYPE__
       typedef nsimd_uint64_type u64;
     #else
@@ -905,14 +980,19 @@ namespace nsimd {
   typedef __half f16;
   #define NSIMD_NATIVE_FP16
 #elif defined(NSIMD_ONEAPI)
-  typedef half f16;
+  typedef sycl::half f16;
   #define NSIMD_NATIVE_FP16
 #else
   typedef struct { u16 u; } f16;
 #endif
 
-typedef float  f32;
-typedef double f64;
+#if defined(NSIMD_ONEAPI)
+  typedef sycl::cl_float f32;
+  typedef sycl::cl_double f64;
+#else
+  typedef float  f32;
+  typedef double f64;
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* Native register size (for now only 32 and 64 bits) types */
@@ -1259,6 +1339,8 @@ using simd_vectorl = typename simd_traits<T, NSIMD_SIMD>::simd_vectorl;
   #define NSIMD_MAX_ALIGNMENT 16
 #endif
 
+/* TODO: provide C++14 alignment constpexxr */
+
 /* clang-format on */
 
 #define NSIMD_NB_REGISTERS NSIMD_PP_CAT_3(NSIMD_, NSIMD_SIMD, _NB_REGISTERS)
@@ -1359,8 +1441,13 @@ NSIMD_DLLSPEC void nsimd_aligned_free(void *);
 #if NSIMD_CXX > 0
 namespace nsimd {
 
-NSIMD_DLLSPEC void *aligned_alloc(nsimd_nat);
-NSIMD_DLLSPEC void aligned_free(void *);
+NSIMD_INLINE void *aligned_alloc(nsimd_nat n) {
+  return nsimd_aligned_alloc(n);
+}
+
+NSIMD_INLINE void aligned_free(void *ptr) {
+  nsimd_aligned_free(ptr);
+}
 
 template <NSIMD_CONCEPT_VALUE_TYPE T> T *aligned_alloc_for(nsimd_nat n) {
   return (T *)aligned_alloc(n * (nsimd_nat)sizeof(T));
@@ -1516,7 +1603,7 @@ inline f16 nsimd_f32_to_f16(f32 a) {
 }
 inline f32 nsimd_f16_to_f32(f16 a) { return nsimd_u16_to_f32(*(u16 *)&a); }
 #elif defined(NSIMD_ONEAPI)
-inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<half>(a); }
+inline f16 nsimd_f32_to_f16(f32 a) { return static_cast<sycl::half>(a); }
 inline f32 nsimd_f16_to_f32(f16 a) { return static_cast<float>(a); }
 #else
 NSIMD_DLLSPEC f16 nsimd_f32_to_f16(f32);
@@ -1541,6 +1628,39 @@ NSIMD_INLINE f32 f16_to_f32(f16 a) { return (f32)a; }
 NSIMD_DLLSPEC f16 f32_to_f16(f32);
 NSIMD_DLLSPEC f32 f16_to_f32(f16);
 #endif
+} // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Helper to print scalar values, converts to bigger type */
+
+NSIMD_INLINE u64 nsimd_to_biggest_u8(u8 a) { return (u64)a; }
+NSIMD_INLINE u64 nsimd_to_biggest_u16(u16 a) { return (u64)a; }
+NSIMD_INLINE u64 nsimd_to_biggest_u32(u32 a) { return (u64)a; }
+NSIMD_INLINE u64 nsimd_to_biggest_u64(u64 a) { return a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i8(i8 a) { return (i64)a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i16(i16 a) { return (i64)a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i32(i32 a) { return (i64)a; }
+NSIMD_INLINE i64 nsimd_to_biggest_i64(i64 a) { return a; }
+NSIMD_INLINE f64 nsimd_to_biggest_f16(f16 a) {
+  return (f64)nsimd_f16_to_f32(a);
+}
+NSIMD_INLINE f64 nsimd_to_biggest_f32(f32 a) { return (f64)a; }
+NSIMD_INLINE f64 nsimd_to_biggest_f64(f64 a) { return a; }
+
+#if NSIMD_CXX > 0
+namespace nsimd {
+NSIMD_INLINE u64 to_biggest(u8 a) { return nsimd_to_biggest_u8(a); }
+NSIMD_INLINE u64 to_biggest(u16 a) { return nsimd_to_biggest_u16(a); }
+NSIMD_INLINE u64 to_biggest(u32 a) { return nsimd_to_biggest_u32(a); }
+NSIMD_INLINE u64 to_biggest(u64 a) { return nsimd_to_biggest_u64(a); }
+NSIMD_INLINE i64 to_biggest(i8 a) { return nsimd_to_biggest_i8(a); }
+NSIMD_INLINE i64 to_biggest(i16 a) { return nsimd_to_biggest_i16(a); }
+NSIMD_INLINE i64 to_biggest(i32 a) { return nsimd_to_biggest_i32(a); }
+NSIMD_INLINE i64 to_biggest(i64 a) { return nsimd_to_biggest_i64(a); }
+NSIMD_INLINE f64 to_biggest(f16 a) { return nsimd_to_biggest_f16(a); }
+NSIMD_INLINE f64 to_biggest(f32 a) { return nsimd_to_biggest_f32(a); }
+NSIMD_INLINE f64 to_biggest(f64 a) { return nsimd_to_biggest_f64(a); }
 } // namespace nsimd
 #endif
 
@@ -1599,6 +1719,14 @@ T to(S value) {
      so we silence the warning manually for now. */
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wuninitialized"
+#elif defined(NSIMD_IS_GCC) && NSIMD_CXX > 0 && \
+      (defined(NSIMD_VMX) || defined(NSIMD_VSX))
+  /* When compiling POWERPC intrinsics inside C++ code with GCC we get tons of
+     -Wunused-but-set-parameter. This is a GCC bug. For now we slience the
+     warnings here. */
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+  #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
 #include <nsimd/functions.h>
@@ -1608,6 +1736,9 @@ T to(S value) {
 #elif defined(NSIMD_IS_CLANG) && NSIMD_CXX < 2011
   #pragma clang diagnostic pop
 #elif defined(NSIMD_IS_GCC) && defined(NSIMD_SVE_FAMILY)
+  #pragma GCC diagnostic pop
+#elif defined(NSIMD_IS_GCC) && NSIMD_CXX > 0 && \
+      (defined(NSIMD_VMX) || defined(NSIMD_VSX))
   #pragma GCC diagnostic pop
 #endif
 
@@ -2086,15 +2217,15 @@ NSIMD_INLINE int isnormal(f64 a) { return nsimd_isnormal_f64(a); }
 #endif
 
 /* ------------------------------------------------------------------------- */
-/* Difference in log ulps, returns an int. */
+/* Difference in log UFP, returns an nat, see documentation for more infos   */
 
 #if NSIMD_CXX > 0
 extern "C" {
 #endif
 
-NSIMD_DLLSPEC int nsimd_diff_in_logulps_f16(f16, f16);
-NSIMD_DLLSPEC int nsimd_diff_in_logulps_f32(f32, f32);
-NSIMD_DLLSPEC int nsimd_diff_in_logulps_f64(f64, f64);
+NSIMD_DLLSPEC int nsimd_ufp_f16(f16, f16);
+NSIMD_DLLSPEC int nsimd_ufp_f32(f32, f32);
+NSIMD_DLLSPEC int nsimd_ufp_f64(f64, f64);
 
 #if NSIMD_CXX > 0
 } // extern "C"
@@ -2102,18 +2233,23 @@ NSIMD_DLLSPEC int nsimd_diff_in_logulps_f64(f64, f64);
 
 #if NSIMD_CXX > 0
 namespace nsimd {
-NSIMD_INLINE int diff_in_logulps(f16 a, f16 b) {
-  return nsimd_diff_in_logulps_f16(a, b);
-}
-
-NSIMD_INLINE int diff_in_logulps(f32 a, f32 b) {
-  return nsimd_diff_in_logulps_f32(a, b);
-}
-
-NSIMD_INLINE int diff_in_logulps(f64 a, f64 b) {
-  return nsimd_diff_in_logulps_f64(a, b);
-}
+NSIMD_INLINE int ufp(f16 a, f16 b) { return nsimd_ufp_f16(a, b); }
+NSIMD_INLINE int ufp(f32 a, f32 b) { return nsimd_ufp_f32(a, b); }
+NSIMD_INLINE int ufp(f64 a, f64 b) { return nsimd_ufp_f64(a, b); }
 } // namespace nsimd
+#endif
+
+/* ------------------------------------------------------------------------- */
+/* Get last kernel parameter */
+
+#if NSIMD_CXX > 0
+extern "C" {
+#endif
+
+NSIMD_DLLSPEC nsimd_nat nsimd_kernel_param(nsimd_nat, nsimd_nat);
+
+#if NSIMD_CXX > 0
+} // extern "C"
 #endif
 
 /* ------------------------------------------------------------------------- */

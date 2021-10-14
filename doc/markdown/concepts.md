@@ -39,10 +39,10 @@ Table for advanced C++ API:
 |:---------------|:-------------------------|:----------------------|
 | `is_pack_c`    | `NSIMD_CONCEPT_PACK`     | Valid NSIMD pack      |
 | `is_packl_c`   | `NSIMD_CONCEPT_PACKL`    | Valid NSIMD packl     |
-| `is_pack_c`    | `NSIMD_CONCEPT_PACKX1`   | Valid NSIMD packx1    |
-| `is_pack_c`    | `NSIMD_CONCEPT_PACKX2`   | Valid NSIMD packx2    |
-| `is_pack_c`    | `NSIMD_CONCEPT_PACKX3`   | Valid NSIMD packx3    |
-| `is_pack_c`    | `NSIMD_CONCEPT_PACKX4`   | Valid NSIMD packx4    |
+| `is_packx1_c`  | `NSIMD_CONCEPT_PACKX1`   | Valid NSIMD packx1    |
+| `is_packx2_c`  | `NSIMD_CONCEPT_PACKX2`   | Valid NSIMD packx2    |
+| `is_packx3_c`  | `NSIMD_CONCEPT_PACKX3`   | Valid NSIMD packx3    |
+| `is_packx4_c`  | `NSIMD_CONCEPT_PACKX4`   | Valid NSIMD packx4    |
 | `any_pack_c`   | `NSIMD_CONCEPT_ANY_PACK` | Any of the above pack |
 
 ## Expressing C++20 constraints

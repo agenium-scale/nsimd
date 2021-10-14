@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -69,13 +69,25 @@ NSIMD_STRUCT pack<T, 1, SimdExt> {
   // Underlying native SIMD vector getter
   simd_vector native_register() const { return car; }
 
+  // Arithmetic and assignment operators
+  pack &operator+=(pack const &other);
+  pack &operator-=(pack const &other);
+  pack &operator*=(pack const &other);
+  pack &operator/=(pack const &other);
+  pack &operator|=(pack const &other);
+  pack &operator&=(pack const &other);
+  pack &operator^=(pack const &other);
+  pack &operator<<=(int);
+  pack &operator>>=(int);
+
+  // For std::cout'ing a pack
   friend std::ostream &operator<<(std::ostream &os, pack const &a0) {
     T buf[max_len_t<T>::value];
     storeu(buf, a0.car, T(), SimdExt());
     os << "{ ";
     int n = len(a0);
     for (int i = 0; i < n; i++) {
-      os << buf[i];
+      os << to_biggest(buf[i]);
       if (i < n - 1) {
         os << ", ";
       }
@@ -104,6 +116,18 @@ NSIMD_STRUCT pack {
     car = set1(T(s), T(), SimdExt());
   }
 
+  // Arithmetic and assignment operators
+  pack &operator+=(pack const &other);
+  pack &operator-=(pack const &other);
+  pack &operator*=(pack const &other);
+  pack &operator/=(pack const &other);
+  pack &operator|=(pack const &other);
+  pack &operator&=(pack const &other);
+  pack &operator^=(pack const &other);
+  pack &operator<<=(int);
+  pack &operator>>=(int);
+
+  // For std::cout'ing a pack
   friend std::ostream &operator<<(std::ostream &os, pack const &a0) {
     os << pack<T, 1, SimdExt>(a0.car) << ", " << a0.cdr;
     return os;
@@ -151,6 +175,7 @@ NSIMD_STRUCT packl<T, 1, SimdExt> {
   // Underlying native SIMD vector getter
   simd_vectorl native_register() const { return car; }
 
+  // For std::cout'ing a packl
   friend std::ostream &operator<<(std::ostream &os, packl const &a0) {
     T buf[max_len_t<T>::value];
     storelu(buf, a0.car, T(), SimdExt());
@@ -184,6 +209,7 @@ NSIMD_STRUCT packl {
     car = set1l(int(s), T(), SimdExt());
   }
 
+  // For std::cout'ing a packl
   friend std::ostream &operator<<(std::ostream &os, packl const &a0) {
     os << packl<T, 1, SimdExt>(a0.car) << ", " << a0.cdr;
     return os;
@@ -558,6 +584,149 @@ int nbtrue(packl<T, N, SimdExt> const &a0) {
 #include <nsimd/cxx_adv_api_functions.hpp>
 
 namespace nsimd {
+
+// ----------------------------------------------------------------------------
+// Arithmetic and assignment operators
+
+// add
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator+=(pack<T, 1, SimdExt> const &other) {
+  this->car = add(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator+=(pack<T, N, SimdExt> const &other) {
+  this->car = add(this->car, other.car, T());
+  this->cdr += other.cdr;
+  return *this;
+}
+
+// sub
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator-=(pack<T, 1, SimdExt> const &other) {
+  this->car = sub(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator-=(pack<T, N, SimdExt> const &other) {
+  this->car = sub(this->car, other.car, T());
+  this->cdr -= other.cdr;
+  return *this;
+}
+
+// mul
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator*=(pack<T, 1, SimdExt> const &other) {
+  this->car = mul(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator*=(pack<T, N, SimdExt> const &other) {
+  this->car = mul(this->car, other.car, T());
+  this->cdr *= other.cdr;
+  return *this;
+}
+
+// div
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator/=(pack<T, 1, SimdExt> const &other) {
+  this->car = div(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator/=(pack<T, N, SimdExt> const &other) {
+  this->car = div(this->car, other.car, T());
+  this->cdr /= other.cdr;
+  return *this;
+}
+
+// orb
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator|=(pack<T, 1, SimdExt> const &other) {
+  this->car = orb(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator|=(pack<T, N, SimdExt> const &other) {
+  this->car = orb(this->car, other.car, T());
+  this->cdr |= other.cdr;
+  return *this;
+}
+
+// andb
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator&=(pack<T, 1, SimdExt> const &other) {
+  this->car = andb(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator&=(pack<T, N, SimdExt> const &other) {
+  this->car = andb(this->car, other.car, T());
+  this->cdr &= other.cdr;
+  return *this;
+}
+
+// xorb
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::
+operator^=(pack<T, 1, SimdExt> const &other) {
+  this->car = xorb(this->car, other.car, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::
+operator^=(pack<T, N, SimdExt> const &other) {
+  this->car = xorb(this->car, other.car, T());
+  this->cdr ^= other.cdr;
+  return *this;
+}
+
+// left shift
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::operator<<=(int s) {
+  this->car = shl(this->car, s, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::operator<<=(int s) {
+  this->car = shl(this->car, s, T());
+  this->cdr <<= s;
+  return *this;
+}
+
+// right shift
+template <NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, 1, SimdExt> &pack<T, 1, SimdExt>::operator>>=(int s) {
+  this->car = shr(this->car, s, T());
+  return *this;
+}
+
+template <NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt>
+pack<T, N, SimdExt> &pack<T, N, SimdExt>::operator>>=(int s) {
+  this->car = shr(this->car, s, T());
+  this->cdr >>= s;
+  return *this;
+}
 
 // ----------------------------------------------------------------------------
 // The if_else function cannot be auto-generated

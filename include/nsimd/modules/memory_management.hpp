@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -139,6 +139,67 @@ template <typename T> void copy_to_host(T *host_ptr, T *device_ptr, size_t sz) {
   }
 
 // ----------------------------------------------------------------------------
+// oneAPI
+
+#elif defined(NSIMD_ONEAPI)
+
+template <typename T> T *device_malloc(const size_t sz) {
+  return sycl::malloc_device<T>(sz, nsimd::oneapi::default_queue());
+}
+
+template <typename T> T *device_calloc(const size_t sz) {
+  sycl::queue q = nsimd::oneapi::default_queue();
+  T *const ret = sycl::malloc_device<T>(sz, q);
+  if (ret == NULL) {
+    return NULL;
+  }
+  q.memset((void *)ret, 0, sz * sizeof(T)).wait_and_throw();
+  return ret;
+}
+
+template <typename T> void device_free(T *const ptr) {
+  sycl::queue q = nsimd::oneapi::default_queue();
+  sycl::free(ptr, q);
+}
+
+template <typename T>
+void copy_to_device(T *const device_ptr, const T *const host_ptr,
+                    const size_t sz) {
+  sycl::queue q = nsimd::oneapi::default_queue();
+  q.memcpy((void *)device_ptr, (const void *)host_ptr, sz * sizeof(T))
+      .wait_and_throw();
+}
+
+template <typename T>
+void copy_to_host(T *const host_ptr, const T *const device_ptr, size_t sz) {
+  sycl::queue q = nsimd::oneapi::default_queue();
+  q.memcpy((void *)host_ptr, (const void *)device_ptr, sz * sizeof(T))
+      .wait_and_throw();
+}
+
+#define nsimd_fill_dev_mem_func(func_name, expr)                              \
+  template <typename T>                                                       \
+  void kernel_##func_name##_(T *const ptr, const size_t sz,                   \
+                             sycl::nd_item<1> item) {                         \
+    const size_t i = item.get_global_id().get(0);                             \
+    if (i < sz) {                                                             \
+      ptr[i] = nsimd::to<T>(expr);                                            \
+    }                                                                         \
+  }                                                                           \
+                                                                              \
+  template <typename T> void func_name(T *const ptr, const size_t sz) {       \
+    const size_t total_num_threads =                                          \
+        nsimd::compute_total_num_threads(sz, THREADS_PER_BLOCK);              \
+    sycl::queue q = nsimd::oneapi::default_queue();                           \
+    q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),       \
+                                     sycl::range<1>(THREADS_PER_BLOCK)),      \
+                   [=](sycl::nd_item<1> item) {                               \
+                     kernel_##func_name##_(ptr, sz, item);                    \
+                   })                                                         \
+        .wait_and_throw();                                                    \
+  }
+
+// ----------------------------------------------------------------------------
 // CPU
 
 #else
@@ -184,7 +245,7 @@ struct paired_pointers_t {
 template <typename T> paired_pointers_t<T> pair_malloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   ret.device_ptr = device_malloc<T>(sz);
   if (ret.device_ptr == NULL) {
     ret.host_ptr = NULL;
@@ -217,7 +278,7 @@ template <typename T> paired_pointers_t<T> pair_malloc_or_exit(size_t sz) {
 template <typename T> paired_pointers_t<T> pair_calloc(size_t sz) {
   paired_pointers_t<T> ret;
   ret.sz = 0;
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   ret.device_ptr = device_calloc<T>(sz);
   if (ret.device_ptr == NULL) {
     ret.host_ptr = NULL;
@@ -248,7 +309,7 @@ template <typename T> paired_pointers_t<T> pair_calloc_or_exit(size_t sz) {
 }
 
 template <typename T> void pair_free(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   device_free(p.device_free);
   free((void *)p.host_ptr);
 #else
@@ -257,7 +318,7 @@ template <typename T> void pair_free(paired_pointers_t<T> p) {
 }
 
 template <typename T> void copy_to_device(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   copy_to_device(p.device_ptr, p.host_ptr, p.sz);
 #else
   (void)p;
@@ -265,7 +326,7 @@ template <typename T> void copy_to_device(paired_pointers_t<T> p) {
 }
 
 template <typename T> void copy_to_host(paired_pointers_t<T> p) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
   copy_to_host(p.host_ptr, p.device_ptr, p.sz);
 #else
   (void)p;

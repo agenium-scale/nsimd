@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -106,6 +106,31 @@ __global__ void gpu_kernel_component_wise_mask(T *dst, Mask const mask,
   }
 }
 
+#elif defined(NSIMD_ONEAPI)
+
+// oneAPI component wise kernel
+template <typename T, typename Expr>
+void oneapi_kernel_component_wise(T *dst, Expr const expr,
+                                  nsimd::nat n, sycl::nd_item<1> item) {
+  const int i = static_cast<int>(item.get_global_id().get(0));
+  if (i < n) {
+    dst[i] = expr.gpu_get(i);
+  }
+}
+
+// oneAPI component wise kernel with masked output
+template <typename T, typename Mask, typename Expr>
+void oneapi_kernel_component_wise_mask(T *dst, Mask const mask,
+                                               Expr const expr,
+                                               nsimd::nat n,
+					       sycl::nd_item<1> item) {
+
+  nsimd::nat i = static_cast<nsimd::nat>(item.get_global_id().get(0));
+  if (i < n && mask.gpu_get(i)) {
+    dst[i] = expr.gpu_get(i);
+  }
+}
+
 #else
 
 // CPU component wise kernel
@@ -199,6 +224,8 @@ template <typename T> struct node<scalar_t, none_t, none_t, T> {
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   __device__ T gpu_get(nsimd::nat) const { return value; }
+#elif defined(NSIMD_ONEAPI)
+  T gpu_get(nsimd::nat) const { return value; }
 #else
   T scalar_get(nsimd::nat) const { return value; }
   template <typename Pack>
@@ -227,7 +254,6 @@ template <typename T> struct to_node_t {
 template <typename Op, typename Left, typename Right, typename Extra>
 struct to_node_t<node<Op, Left, Right, Extra> > {
   typedef node<Op, Left, Right, Extra> type;
-
   static type impl(type node) { return node; }
 };
 
@@ -263,6 +289,8 @@ template <typename T> struct node<in_t, none_t, none_t, T> {
 
 #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
   __device__ T gpu_get(nsimd::nat i) const { return data[i]; }
+#elif defined(NSIMD_ONEAPI)
+  T gpu_get(nsimd::nat i) const { return data[i]; }
 #else
   T scalar_get(nsimd::nat i) const { return data[i]; }
   template <typename Pack>
@@ -313,25 +341,35 @@ struct node<mask_out_t, Mask, none_t, Pack> {
   template <typename Op, typename Left, typename Right, typename Extra>
   node<mask_out_t, Mask, none_t, Pack>
   operator=(node<Op, Left, Right, Extra> const &expr) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
     nsimd::nat expr_size = compute_size(mask.size(), expr.size());
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
-    nsimd::nat nb = (expr_size + nt - 1) / nt; // div rounded up
+    nsimd::nat param = nsimd_kernel_param(expr_size, nt);
     assert(nt > 0 && nt <= UINT_MAX);
-    assert(nb > 0 && nb <= UINT_MAX);
+    assert(param > 0 && param <= UINT_MAX);
 #if defined(NSIMD_CUDA)
     cudaStream_t s = (stream == NULL ? NULL : *(cudaStream_t *)stream);
 
     // clang-format off
-    gpu_kernel_component_wise_mask<<<(unsigned int)(nb), (unsigned int)(nt),
+    gpu_kernel_component_wise_mask<<<(unsigned int)(param), (unsigned int)(nt),
                                      0, s>>>
                                      (data, mask, expr, expr_size);
     // clang-format on
 #elif defined(NSIMD_ROCM)
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
-    hipLaunchKernelGGL(gpu_kernel_component_wise_mask, (unsigned int)(nb),
+    hipLaunchKernelGGL(gpu_kernel_component_wise_mask, (unsigned int)(param),
                        (unsigned int)(nt), 0, s, data, mask, expr,
                        expr_size);
+#else
+    sycl::queue q = nsimd::oneapi::default_queue();
+    q.parallel_for(sycl::nd_range<1>(sycl::range<1>((size_t)param),
+                                     sycl::range<1>((size_t)nt)),
+                   [=, *this](sycl::nd_item<1> item) {
+                     oneapi_kernel_component_wise_mask(data, mask, expr,
+                                                       expr_size, item);
+                   })
+        .wait_and_throw();
+
 #endif
 #else
     cpu_kernel_component_wise_mask<Pack>(
@@ -376,16 +414,16 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
   template <typename Op, typename Left, typename Right, typename Extra>
   node<out_t, none_t, none_t, Pack>
   operator=(node<Op, Left, Right, Extra> const &expr) {
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
     nsimd::nat nt = threads_per_block < 0 ? 128 : threads_per_block;
-    nsimd::nat nb = (expr.size() + nt - 1) / nt; // div rounded up
+    nsimd::nat param = nsimd_kernel_param(expr.size(), nt);
     assert(nt > 0 && nt <= UINT_MAX);
-    assert(nb > 0 && nb <= UINT_MAX);
+    assert(param > 0 && param <= UINT_MAX);
 #if defined(NSIMD_CUDA)
     cudaStream_t s = stream == NULL ? NULL : *(cudaStream_t *)stream;
 
     // clang-format off
-    gpu_kernel_component_wise<<<(unsigned int)(nb), (unsigned int)(nt),
+    gpu_kernel_component_wise<<<(unsigned int)(param), (unsigned int)(nt),
                                 0, s>>>(data, expr, expr.size());
     // clang-format on
 
@@ -393,7 +431,17 @@ template <typename Pack> struct node<out_t, none_t, none_t, Pack> {
     hipStream_t s = stream == NULL ? NULL : *(hipStream_t *)stream;
     hipLaunchKernelGGL(
         (gpu_kernel_component_wise<T, node<Op, Left, Right, Extra> >),
-        (unsigned int)(nb), (unsigned int)(nt), 0, s, data, expr, expr.size());
+        (unsigned int)(param), (unsigned int)(nt), 0, s, data, expr,
+        expr.size());
+#else
+    sycl::queue q = nsimd::oneapi::default_queue();
+    q.parallel_for(
+         sycl::nd_range<1>(sycl::range<1>((size_t)param),
+                                          sycl::range<1>((size_t)nt)),
+         [=, *this](sycl::nd_item<1> item) {
+           oneapi_kernel_component_wise(data, expr, expr.size(), item);
+         })
+        .wait_and_throw();
 #endif
 #else
     cpu_kernel_component_wise<Pack>(data, expr, expr.size());

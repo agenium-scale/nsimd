@@ -42,6 +42,7 @@ import collections
 import platform
 import string
 import shutil
+import math
 
 # -----------------------------------------------------------------------------
 # print
@@ -92,7 +93,7 @@ def open_utf8(opts, filename):
             if opts.simple_license:
                 fout.write('''{}
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 {}
 
@@ -100,7 +101,7 @@ Copyright (c) 2020 Agenium Scale
             else:
                 fout.write('''{}
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -188,8 +189,8 @@ arm_simds = [
 ]
 
 ppc_simds = [
-    'power7',
-    'power8',
+    'vmx',
+    'vsx',
 ]
 
 simds = ['cpu'] + x86_simds + arm_simds + ppc_simds
@@ -211,8 +212,8 @@ simds_deps = {
     'sve512': ['cpu', 'aarch64', 'sve512'],
     'sve1024': ['cpu', 'aarch64', 'sve1024'],
     'sve2048': ['cpu', 'aarch64', 'sve2048'],
-    'power7': ['cpu', 'power7'],
-    'power8': ['cpu', 'power8']
+    'vmx': ['cpu', 'vmx'],
+    'vsx': ['cpu', 'vmx', 'vsx']
 }
 
 ftypes = ['f64', 'f32', 'f16']
@@ -264,6 +265,11 @@ CPU_NBITS = 128
 
 if CPU_NBITS != 128:
     raise ValueError('CPU_NBITS must be 128')
+
+def get_arg(i):
+    fmtspec = { 'in0': in0, 'in1': in1, 'in2': in2, 'in3': in3, 'in4': in4,
+                'in5': in5 }
+    return '{{in{}}}'.format(i).format(**fmtspec)
 
 def get_args(n):
     fmtspec = { 'in0': in0, 'in1': in1, 'in2': in2, 'in3': in3, 'in4': in4,
@@ -485,6 +491,12 @@ def get_one_type_scalar(param, t):
     else:
         raise ValueError('Unknown param: "{}"'.format(param))
 
+def get_first_discriminating_type(params):
+    for i in range(len(params)):
+        if params[i] in ['v', 'l', 'vx2', 'vx3', 'vx4']:
+            return i
+    return -1
+
 # -----------------------------------------------------------------------------
 # Formats
 
@@ -547,600 +559,6 @@ def get_modules(opts):
         ret[module_dir] = mod
     opts.modules_list = ret
     return ret
-
-# -----------------------------------------------------------------------------
-# Ulps
-
-import json
-
-def load_ulps_informations(opts):
-    path = opts.script_dir
-    filename = os.path.join(path, "ulp.json")
-    with open(filename) as data_file:
-        data = json.load(data_file)
-
-    ulps = dict()
-    for info in data["ulps"]:
-        type = info["type"]
-        func = info["func"]
-        if not func in ulps:
-            ulps[func] = dict()
-        ulps[func][type] = info
-
-    return ulps
-
-def ulps_from_relative_distance_power(p):
-    return {
-      'f16': max(11 - p, 1),
-      'f32': max(24 - p, 1),
-      'f64': max(53 - p, 1)
-    }
-
-# -----------------------------------------------------------------------------
-# Domain stuff
-
-class MathSet(object):
-    @property
-    def mul(self):
-        return self.mul_
-
-    @property
-    def add(self):
-        return self.add_
-
-    @property
-    def variable(self):
-        return self.variable_
-
-    @property
-    def natural(self):
-        return self.natural_
-
-    def parse_sum(self, fstring):
-        npos = fstring.find('n')
-        zpos = fstring.find('z')
-        if npos>=0 or zpos >=0:
-            if npos>=0:
-                self.natural_ = True
-            else:
-                self.natural_ = False
-
-            if fstring.find('-')>=0:
-                self.mul_ = -self.mul_
-        else:
-            self.add_ = float(fstring)
-
-    def __init__(self, fstring):
-        npos = fstring.find('n')
-        zpos = fstring.find('z')
-        if npos < 0 and zpos < 0:
-            self.mul_ = 1.
-            self.add_ = float(fstring)
-            self.variable_ = False
-            self.natural_ = False
-        else:
-            self.variable_ = True
-            self.mul_ = 1.
-            self.add_ = 0.
-            self.natural_ = False
-
-            product = fstring.split('*')
-
-            for part in product:
-                npos = part.find('n')
-                zpos = part.find('z')
-                if npos >= 0 or zpos >= 0:
-                    sumstring = part.split('+')
-                    if len(sumstring) > 1:
-                        self.parse_sum(sumstring[0][1:])
-                        self.parse_sum(sumstring[1][:-1])
-                    else:
-                        self.parse_sum(sumstring[0])
-                else:
-                    if part == 'pi':
-                        self.mul_ = math.pi * self.mul_
-                    else:
-                        self.mul_ = float(part) * self.mul_
-
-    def __str__ (self):
-        if self.variable:
-            if self.natural_:
-                var = 'n'
-                set_ = 'ℕ'
-            else:
-                var = 'z'
-                set_ = 'ℤ'
-
-            if self.add_ != 0:
-                add='({}+{:g})'.format(var,self.add_)
-            else:
-                add='{}'.format(var)
-
-            if self.mul_ == math.pi:
-                mul = 'π⋅'
-            elif abs(self.mul_) == 1:
-                mul = ''
-            else:
-                mul = '{:g}⋅'.format(abs(self.mul_))
-
-            sign = ''
-            if self.mul_ < 0:
-                sign = '-'
-
-            return '{var}∈{set_}:{sign}{mul}{add}'.format(var=var, set_=set_,
-                    sign=sign, add=add, mul=mul)
-        else:
-            return '{:g}'.format(self.add)
-
-# -----------------------------------------------------------------------------
-# Class representing an interval, used to define function domains
-
-class Interval(object):
-
-    @property
-    def left(self):
-        return self.left_
-
-    @property
-    def right(self):
-        return self.right_
-
-    @property
-    def open_left(self):
-        return self.open_left_
-
-    @property
-    def open_right(self):
-        return self.open_right_
-
-    @property
-    def removed(self):
-        return self.removed_
-
-    def code_for(self, value, typ):
-        is_fp = typ == 'f32' or typ == 'f64'
-        if value == float('-Inf'):
-            if is_fp:
-                return '-std::numeric_limits<{}>::infinity()'.format(typ)
-            else:
-                return 'std::numeric_limits<{}>::min()'.format(typ)
-        elif value == float('Inf'):
-            if is_fp:
-                return 'std::numeric_limits<{}>::infinity()'.format(typ)
-            else:
-                return 'std::numeric_limits<{}>::max()'.format(typ)
-        else:
-            return value
-
-    def code_left(self, typ):
-        return self.code_for(self.left_, typ)
-
-    def code_right(self, typ):
-        return self.code_for(self.right_, typ)
-
-    # Parse the part before the '-' in the interval
-    # For instance, '(0,1)' in '(0,1)-{0.5}'
-    def parse_first_part(self,fstring):
-        real_ = True
-        fstring = fstring
-        if fstring[0] == 'R':
-            self.open_left_ = True
-            self.open_right_ = True
-            self.left_ = float('-Inf')
-            self.right_ = float('Inf')
-            self.real_ = True
-            return
-        if fstring[0] == 'B':
-            self.open_left_ = False
-            self.open_right_ = False
-            self.left_ = 0
-            self.right_ = 1
-            self.logical_ = True
-            return
-        if fstring[0] == 'N':
-            self.open_left_ = True
-            self.open_right_ = True
-            self.left_ = float('0')
-            self.right_ = float('Inf')
-            self.natural_ = True
-            return
-        if fstring[0] == 'Z':
-            self.open_left_ = True
-            self.open_right_ = True
-            self.left_ = float('-Inf')
-            self.right_ = float('Inf')
-            self.natural_ = True
-            return
-        elif fstring[0] == '(':
-            self.open_left_ = True
-        elif fstring[0] == '[':
-            self.open_left_ = False
-        else:
-            raise ValueError('Error in format string : "{}"'.format(fstring))
-
-        self.real_ = True
-
-        length = len(fstring)
-
-        if fstring[length-1] == ')':
-            self.open_right_ = True
-        elif fstring[length-1] == ']':
-            self.open_right_ = False
-        else:
-            raise ValueError('Error in format string : "{}"'.format(fstring))
-
-        numbers = fstring[1:length-1].split(',')
-
-        if len(numbers) != 2:
-            raise ValueError('Error in format string : "{}"'.format(fstring))
-
-        self.left_ = float(numbers[0])
-        self.right_ = float(numbers[1])
-
-    def parse_second_part(self, fstring):
-        for removed in fstring.split(','):
-            self.removed.append(MathSet(removed))
-
-
-    def __init__(self, fstring):
-        self.left_ = -float('Inf')
-        self.right_ = float('Inf')
-        self.open_left_ = True
-        self.open_right_ = True
-
-        self.real_ = False
-        self.natural_ = False
-        self.logical_ = False
-
-        self.removed_ = []
-
-        split = fstring.find('\{')
-
-        if split < 0:
-            self.parse_first_part(fstring);
-        else:
-            first_part = fstring[0:split]
-            scd_part = fstring[split+2:-1]
-
-            self.parse_first_part(first_part);
-            if split > 0:
-                self.parse_second_part(scd_part)
-
-    def __str__(self):
-        ret = ''
-        if self.real_:
-            if self.open_left:
-                open_left = '('
-            else:
-                open_left = '['
-
-            if self.open_right:
-                open_right = ')'
-            else:
-                open_right = ']'
-
-            all_r = True
-            if self.left == -float('inf'):
-                left = '-∞'
-            else:
-                left = '{:g}'.format(self.left)
-                all_r = False
-
-            if self.right == float('inf'):
-                right = '+∞'
-            else:
-                right = '{:g}'.format(self.right)
-                all_r = False
-
-            if all_r:
-                ret = 'ℝ'
-            else:
-                ret = '{}{}, {}{}'.format(open_left, left, right, open_right)
-        elif self.natural_:
-            if self.left == -float('inf'):
-                ret = 'ℤ'
-            else:
-                ret = 'ℕ'
-        elif self.logical_:
-            ret = '𝔹'
-        else:
-            raise ValueError ('Trying to print invalid interval')
-
-        if self.removed_:
-            ret += '∖\\{'
-            comma = ''
-            for removed in self.removed_:
-                ret+=comma+str(removed)
-                comma = ', '
-            ret += '\\}'
-
-        return ret
-
-    def code(self, typ):
-        left = self.code_left(typ)
-        right = self.code_right(typ)
-        if len(self.removed):
-            excluded = []
-            for r in self.removed:
-                if r.variable:
-                    ## TODO:
-                    pass
-                else:
-                    excluded.append(r.add)
-            if len(excluded):
-                exclude = ' || '.join('r == {}({})'. \
-                                      format(typ, e) for e in excluded)
-            else:
-                exclude = 'false'
-            return '''
-            while (true) {{
-                {type} r = nsimd::benches::rand<{type}>({min}, {max});
-                if ({exclude}) {{
-                    continue;
-                }} else {{
-                    return r;
-                }}
-            }}
-            '''.format(type=typ, exclude=exclude, min=left, max=right)
-        else:
-            return 'return nsimd::benches::rand<{type}>({min}, {max});'. \
-                   format(type=typ, min=left, max=right)
-
-# -----------------------------------------------------------------------------
-# Class representing a function domain
-
-class Domain(object):
-
-    def __init__(self, str_list):
-        self.intervals_ = []
-
-        # Remove spaces in str_list
-        str_list = str_list.replace(' ','')
-
-        # 0 dimension
-        if not str_list:
-            return
-
-        dimensions_string = str_list.split('x')
-
-        for union_string in dimensions_string:
-            interval_string = union_string.split('U')
-
-            current = []
-            for interval in interval_string:
-                try:
-                    current.append(Interval(interval))
-                except ValueError as v:
-                    raise ValueError( \
-                          '{}\nEncountered while parsing domain {}'. \
-                          format(v, str_list))
-
-            self.intervals_.append(current)
-
-    def __str__(self):
-        ret = ''
-
-        product = ''
-        for union in self.intervals_:
-            u = ''
-            ret += product
-            if len(union) > 1 and len(self.intervals_) > 1:
-                ret += '('
-            for interval in union:
-                ret += '{}{}'.format(u, interval)
-                u = ' ⋃ '
-            if len(union) > 1 and len(self.intervals_) > 1:
-                ret += ')'
-
-            product = ' × '
-
-        return '$' + ret + '$'
-
-    @property
-    def intervals(self):
-        return self.intervals_
-
-    @property
-    def ndims(self):
-        return len(self.intervals_)
-
-    def code(self, prefix_fun_name, typ):
-        code = ''
-        for i, unions in enumerate(self.intervals):
-            nunions = len(unions)
-            if nunions == 1:
-                nested_code = unions[0].code(typ)
-            else:
-                cases = []
-                for j, union in enumerate(unions):
-                    cases.append('case {n}: {{ {code} }};'. \
-                                 format(n=j, code=union.code(typ)))
-                nested_code = '''
-                /* Branch to one of the nested interval (union) */
-                switch (rand() % {nunions}) {{
-                  {cases}
-                  default:
-                    /* SHOULD NEVER HAPPEN! This removes compiler warning! */
-                    return {type}();
-                }}
-                '''.format(cases='\n'.join(cases), nunions=nunions, type=typ)
-            code += '''
-            {type} {prefix}{n}() {{
-                {code}
-            }}
-
-            '''.format(type=typ, prefix=prefix_fun_name, n=i, code=nested_code)
-        return code
-
-    def gen_rand(self, typ):
-        typlen = typ[1:]
-        ret = ''
-
-        if typ[0] in ('i', 'u'):
-            #TODO: check that random number is in the function domain
-            for u, union in enumerate(self.intervals):
-                ret += \
-                    '''{typ} rand{u}() {{
-                            nsimd_nat i, r;
-                            u8 *alias;
-                            {typ} ret;
-                            (void)i;
-                            (void)alias;
-                            (void)r;
-                            '''.format(u=u+1, typ=typ)
-
-                for i, interval in enumerate(union):
-                    if interval.logical_:
-                        ret += 'ret = (u8)(rand()) % 2;'
-                    else:
-                        if not interval.removed:
-                            test='0'
-                        else:
-                            test = '||\n'. \
-                                join(['ret == {}'.format(removed) \
-                                for removed in interval.removed])
-
-                        ret += \
-                         '''do {{
-                                alias = (u8*)(&ret);
-                                for(i=0, r=rand(); i<(r%{it})+1; ++i) {{
-                                    alias[i] = (u8)(rand() & 0xFF);
-                                }}
-                                for(;i<{it}; ++i) {{
-                                    alias[i] = 0u;
-                                }}
-                            }} while ({test});
-                            '''.format(test=test, it=int(typlen) // 8)
-
-                ret += 'return ret;}'
-        elif typ in ftypes:
-            #TODO: check that random number is in the function domain
-            for u, union in enumerate(self.intervals):
-                ret += \
-                    '''{typ} rand{u}() {{
-                            nsimd_nat i;
-                            u8 *alias;
-                            {typ} ret;
-                            (void)i;
-                            (void)alias;
-                            '''.format(u=u+1, typ=typ)
-
-                for i, interval in enumerate(union):
-                    if interval.logical_:
-                        if typ == 'f16':
-                            ret += 'ret = nsimd_scalar_reinterpret_f16_u16(' \
-                                   '(u16)(rand() % 2));'
-                        else:
-                            ret += 'ret = ({})(rand()%2);'.format(typ)
-                    else:
-                        ret += \
-                         '''alias = (u8*)(&ret);
-                            for(i=0; i<{it}; ++i) {{
-                                alias[i] = (u8)(rand() & 0xFF);
-                            }}
-                            '''.format(it=int(typlen) // 8)
-
-                ret += 'return ret;}'
-
-        return ret
-
-
-# -----------------------------------------------------------------------------
-# Sleef
-
-sleef_types = [
-        'f32',
-        'f64',
-        ]
-
-sleef_simds = [
-        'sse2',
-        'sse42',
-        'avx',
-        'fma4',
-        'avx2',
-        ]
-
-def sleef_support_type(simd, typ):
-    ## NEON128 only supports 32bit floating points
-    if simd == 'neon128' and typ == 'f64':
-        return False
-    ## No f16 support + No integer supports
-    return not (typ == 'f16' or typ in itypes or typ in utypes)
-
-def sleef_name(name, simd, typ, ulp=None):
-    ## Sleef mangling:
-    '''
-    1. Function name in math.h
-    2. Data type of vector element
-    3. Number of elements in a vector
-    4. [Accuracy for typical input domain]
-    5. Vector extension
-    '''
-    ## Filter
-    if not sleef_support_type(simd, typ):
-        return None
-    ## Craft it
-    ## 1.
-    name = 'Sleef_' + name
-    ## 2. + 3.
-    types_cpu = {
-            'f32': 'f',
-            'f64': '',
-            }
-    types_128 = {
-            'f32': 'f4',
-            'f64': 'd2',
-            }
-    types_256 = {
-            'f32': 'f8',
-            'f64': 'd4',
-            }
-    types_512 = {
-            'f32': 'f16',
-            'f64': 'd8',
-            }
-    types_unknown = {
-            'f32': 'fx',
-            'f64': 'dx',
-            }
-    name += ({
-        'cpu': types_cpu,
-        'sse2': types_128,
-        'sse42': types_128,
-        'avx': types_256,
-        'fma4': types_256,
-        'avx2': types_256,
-        'avx512_knl': types_512,
-        'avx512_skylake': types_512,
-        'neon128': types_128,
-        'aarch64': types_128,
-        'sve': types_unknown,
-        'sve128': types_unknown,
-        'sve256': types_unknown,
-        'sve512': types_unknown,
-        'sve1024': types_unknown,
-        'sve2048': types_unknown,
-        'power7': types_128,
-        'power8': types_128
-    })[simd][typ]
-    ## 4. (We cannot really guess that...
-    ##     Instead you have to add bench manually)
-    if ulp is not None:
-        name += '_u{}'.format(ulp)
-    ## 5. (Translate or use `simd` directly)
-    if simd != 'cpu':
-        ## Careful of the extra _
-        if ulp is None:
-            name += '_'
-        name += ({
-            'sse42': 'sse4',
-            'avx512_knl': 'avx512f',
-            'avx512_skylake': 'avx512f',
-            'neon128': '',
-            'aarch64': 'advsimd',
-        }).get(simd, simd)
-    return name
 
 # -----------------------------------------------------------------------------
 # Integer limits per type using macros defined in <limits.h> or <climits>

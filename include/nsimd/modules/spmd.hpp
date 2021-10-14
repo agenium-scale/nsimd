@@ -54,9 +54,9 @@ namespace spmd {
 #endif
 
 // ----------------------------------------------------------------------------
-// CUDA and ROCm
+// GPUs: CUDA, ROCm or oneAPI
 
-#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || defined(NSIMD_ONEAPI)
 
 #if defined(NSIMD_CUDA)
 
@@ -73,7 +73,7 @@ namespace spmd {
     int spmd_i_ = threadIdx.x + blockIdx.x * blockDim.x;                      \
     if (spmd_i_ < n) {
 
-#else
+#elif defined(NSIMD_ROCM)
 
 // 1d kernel definition
 #define spmd_kernel_1d(name, ...)                                             \
@@ -89,11 +89,29 @@ namespace spmd {
     size_t spmd_i_ = hipThreadIdx_x + hipBlockIdx_x * hipBlockDim_x;          \
     if (spmd_i_ < n) {
 
+#else
+
+// 1d kernel definition
+#define spmd_kernel_1d(name, ...)                                             \
+  template <int spmd_ScalarBits_>                                             \
+  inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
+    size_t spmd_i_ = item.get_global_id().get(0);                             \
+    if (spmd_i_ < n) {
+
+// templated kernel definition
+#define spmd_tmpl_kernel_1d(name, template_argument, ...)                     \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  inline void name(__VA_ARGS__, const size_t n, sycl::nd_item<1> item) {      \
+    size_t spmd_i_ = item.get_global_id().get(0);                             \
+    if (spmd_i_ < n) {
+
 #endif
 
 #define spmd_kernel_end                                                       \
   }                                                                           \
   }
+
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
 // device function
 #define spmd_dev_func(type_name, ...)                                         \
@@ -103,6 +121,19 @@ namespace spmd {
 #define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
   template <typename template_argument, int spmd_ScalarBits_>                 \
   __device__ type_name(__VA_ARGS__) {
+
+#else
+
+// device function
+#define spmd_dev_func(type_name, ...)                                         \
+  template <int spmd_ScalarBits_> type_name(__VA_ARGS__) {
+
+// templated device function
+#define spmd_tmpl_dev_func(type_name, template_argument, ...)                 \
+  template <typename template_argument, int spmd_ScalarBits_>                 \
+  type_name(__VA_ARGS__) {
+
+#endif
 
 #define spmd_dev_func_end }
 
@@ -119,18 +150,33 @@ namespace spmd {
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
                               ...)                                            \
   name<spmd_scalar_bits_>                                                     \
-      <<<(unsigned int)((n + threads_per_block - 1) / threads_per_block),     \
+      <<<(unsigned int)nsimd_kernel_param(n, threads_per_block),              \
          (unsigned int)(threads_per_block)>>>(__VA_ARGS__, (int)n)
 
-#else
+#elif defined(NSIMD_ROCM)
 
 // launch 1d kernel ROCm
 #define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
                               ...)                                            \
-  hipLaunchKernelGGL(                                                         \
-      (name<spmd_scalar_bits_>),                                              \
-      (size_t)((n + threads_per_block - 1) / threads_per_block),              \
-      (size_t)(threads_per_block), 0, NULL, __VA_ARGS__, (size_t)n)
+  hipLaunchKernelGGL((name<spmd_scalar_bits_>),                               \
+                     (size_t)nsimd_kernel_param(n, threads_per_block),        \
+                     (size_t)(threads_per_block), 0, NULL, __VA_ARGS__,       \
+                     (size_t)n)
+
+#else
+
+// launch 1d kernel oneAPI
+#define spmd_launch_kernel_1d(name, spmd_scalar_bits_, threads_per_block, n,  \
+                              ...)                                            \
+  size_t total_num_threads =                                                  \
+      (size_t)nsimd_kernel_param(n, threads_per_block);                       \
+  sycl::queue q = nsimd::oneapi::default_queue();                             \
+  q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),         \
+                                   sycl::range<1>(threads_per_block)),        \
+                 [=](sycl::nd_item<1> item) {                                 \
+                   name<spmd_scalar_bits_>(__VA_ARGS__, (size_t)n, item);     \
+                 })                                                           \
+      .wait_and_throw();
 
 #endif
 
@@ -182,8 +228,13 @@ template <> struct type_t<64> {
 #define k_unmasked_load(base_addr) k_load(base_addr)
 
 // f32 <--> f16 conversions
+#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 #define k_f32_to_f16(a) __float2half(a)
 #define k_f16_to_f32(a) __half2float(a)
+#else
+#define k_f32_to_f16(a) f16(a)
+#define k_f16_to_f32(a) static_cast<f32>(a)
+#endif
 
 // assignment statement
 #define k_set(var, value)                                                     \

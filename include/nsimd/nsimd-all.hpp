@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <nsimd/nsimd.h>
 #include <nsimd/cxx_adv_api.hpp>
+#include <nsimd/cxx_adv_api_aliases.hpp>
 #include <nsimd/friendly_but_not_optimized.hpp>
 
 #endif

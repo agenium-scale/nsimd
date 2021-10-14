@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,54 +26,6 @@
 # `gen_*.py` file. This script simply calls the `doit` function of each
 # `gen_*.py` module. Names are self-explanatory.
 #
-# The list of supported architectures is determined by looking at the `egg`
-# directory and listing all `platform_*.py` files. Each file must contain all
-# SIMD extensions for a given architecture. For example the default (no SIMD) is
-# given by `platform_cpu.py`. All the Intel SIMD extensions are given by
-# `platform_x86.py`.
-#
-# Each module that implements a platform:
-#   - must be named 'platform_[name for platform].py
-#   - must export at least the following functions
-#
-#     * def get_type(simd_ext, typ)
-#       Returns the "intrinsic" SIMD type corresponding to the given
-#       arithmetic type. If typ or simd_ext is not known then a ValueError
-#       exception must be raised.
-#
-#     * def get_additional_include(func, simd_ext, typ)
-#       Returns additional include if need be for the implementation of func for
-#       the given simd_ext and typ.
-#
-#     * def get_logical_type(simd_ext, typ)
-#       Returns the "intrinsic" logical SIMD type corresponding to the given
-#       arithmetic type. If typ or simd_ext is not known then a ValueError
-#       exception must be raised.
-#
-#     * def get_nb_registers(simd_ext)
-#       Returns the number of registers for this SIMD extension.
-#
-#     * def get_impl(func, simd_ext, from_typ, to_typ)
-#       Returns the implementation (C code) for func on type typ for simd_ext.
-#       If typ or simd_ext is not known then a ValueError exception must be
-#       raised. Any func given satisfies `S func(T a0, T a1, ... T an)`.
-#
-#     * def has_compatible_SoA_types(simd_ext)
-#       Returns True iff the given simd_ext has structure of arrays types
-#       compatible with NSIMD i.e. whose members are v1, v2, ... Returns False
-#       otherwise. If simd_ext is not known then a ValueError exception must be
-#       raised.
-#
-#     * def get_SoA_type(simd_ext, typ, deg)
-#       Returns the structure of arrays types for the given typ, simd_ext and
-#       deg. If simd_ext is not known or does not name a type whose
-#       corresponding SoA types are compatible with NSIMD then a ValueError
-#       exception must be raised.
-#
-#     * def emulate_fp16(simd_ext)
-#       Returns True iff the given SIMD extension has to emulate FP16's with
-#       two FP32's.
-
 # -----------------------------------------------------------------------------
 # First thing we do is check whether python3 is used
 
@@ -91,15 +43,15 @@ import re
 import common
 import gen_archis
 import gen_base_apis
-import gen_advanced_api
+import gen_adv_cxx_api
+import gen_adv_c_api
 import gen_tests
-import gen_benches
 import gen_src
 import gen_doc
 import gen_friendly_but_not_optimized
-import gen_ulps
 import gen_modules
 import gen_scalar_utilities
+import get_sleef_code
 
 # Dir of this script
 script_dir = os.path.dirname(__file__)
@@ -131,7 +83,7 @@ def parse_args(args):
             return None
         else:
             return re.compile(value)
-    # In pratice, we either generate all or all except benches and we never
+    # In pratice, we either generate all or all except tests and we never
     # change default directories for code generation. So we remove unused
     # options and regroup some into --library.
     parser = argparse.ArgumentParser(
@@ -142,15 +94,13 @@ def parse_args(args):
         default=False,
         help='List files that will be created by hatch.py')
     parser.add_argument('--all', '-A', action='store_true',
-        help='Generate code for the library and its benches')
+        help='Generate code for the library and its tests')
     parser.add_argument('--library', '-l', action='store_true',
         help='Generate code of the library (C and C++ APIs)')
-    parser.add_argument('--ulps', '-u', action='store_true',
-        help='Generate code to compute precision on big functions')
+    parser.add_argument('--sleef', '-s', action='store_true', default=False,
+        help='Compile Sleef')
     parser.add_argument('--tests', '-t', action='store_true',
         help='Generate tests in C and C++')
-    parser.add_argument('--benches', '-b', action='store_true',
-        help='Generate benches in C and C++')
     parser.add_argument('--doc', '-d', action='store_true',
         help='Generate all documentation')
     parser.add_argument('--enable-clang-format', '-F', action='store_false',
@@ -173,20 +123,19 @@ def parse_args(args):
     if opts.list_files:
         opts.library = True
         opts.tests = True
-        opts.benches = True
         opts.force = True
         opts.doc = True
     # We set variables here because all the code depends on them + we do want
     # to keep the possibility to change them in the future
     opts.archis = opts.library
     opts.base_apis = opts.library
-    opts.cxx_api = opts.library
+    opts.adv_cxx_api = opts.library
+    opts.adv_c_api = opts.library
     opts.friendly_but_not_optimized = opts.library
     opts.src = opts.library
     opts.scalar_utilities = opts.library
-    opts.ulps_dir = os.path.join(script_dir, '..', 'ulps')
+    opts.sleef_version = '3.5.1'
     opts.include_dir = os.path.join(script_dir, '..', 'include', 'nsimd')
-    opts.benches_dir = os.path.join(script_dir, '..', 'benches')
     opts.tests_dir = os.path.join(script_dir, '..', 'tests')
     opts.src_dir = os.path.join(script_dir, '..', 'src')
     return opts
@@ -207,16 +156,16 @@ def main():
         gen_archis.doit(opts)
     if opts.base_apis == True or opts.all == True:
         gen_base_apis.doit(opts)
-    if opts.cxx_api == True or opts.all == True:
-        gen_advanced_api.doit(opts)
-    if opts.ulps == True or opts.all == True:
-        gen_ulps.doit(opts)
+    if opts.adv_cxx_api == True or opts.all == True:
+        gen_adv_cxx_api.doit(opts)
+    if opts.adv_c_api == True or opts.all == True:
+        gen_adv_c_api.doit(opts)
     if opts.tests == True or opts.all == True:
         gen_tests.doit(opts)
-    if opts.benches == True or opts.all == True:
-        gen_benches.doit(opts)
     if opts.src == True or opts.all == True:
         gen_src.doit(opts)
+    if opts.sleef == True or opts.all == True:
+        get_sleef_code.doit(opts)
     if opts.scalar_utilities == True or opts.all == True:
         gen_scalar_utilities.doit(opts)
     if opts.friendly_but_not_optimized == True or opts.all == True:

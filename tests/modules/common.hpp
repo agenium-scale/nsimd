@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2019 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,25 @@ __device__ bool cmp_Ts(float a, float b) {
 
 __device__ bool cmp_Ts(double a, double b) {
   return __double_as_longlong(a) == __double_as_longlong(b);
+}
+
+#elif defined(NSIMD_ONEAPI)
+
+template <typename T> bool cmp_Ts(const T a, const T b) { return a == b; }
+
+bool cmp_Ts(sycl::half a, const sycl::half b) {
+  return nsimd::gpu_reinterpret(u16(), a) ==
+         nsimd::gpu_reinterpret(u16(), b);
+}
+
+bool cmp_Ts(sycl::cl_float a, sycl::cl_float b) {
+  return nsimd::gpu_reinterpret(u32(), a) ==
+         nsimd::gpu_reinterpret(u32(), b);
+}
+
+bool cmp_Ts(sycl::cl_double a, sycl::cl_double b) {
+  return nsimd::gpu_reinterpret(u64(), a) ==
+         nsimd::gpu_reinterpret(u64(), b);
 }
 
 #endif
@@ -121,7 +140,7 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   return bool(host_ret);
 }
 
-template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n, int) {
   return cmp(src1, src2, n);
 }
 
@@ -195,11 +214,107 @@ template <typename T> bool cmp(T *src1, T *src2, size_t n) {
   return bool(host_ret);
 }
 
-template <typename T> bool cmp(T *src1, T *src2, size_t n, double) {
+template <typename T> bool cmp(T *src1, T *src2, size_t n, int) {
   return cmp(src1, src2, n);
 }
 
 template <typename T> void del(T *ptr) { hipFree(ptr); }
+
+#elif defined(NSIMD_ONEAPI)
+
+// ----------------------------------------------------------------------------
+// oneAPI
+
+// perform reduction on blocks first, note that this could be optimized
+// but to check correctness we don't need it now
+template <typename T>
+void device_cmp_blocks(T *const src1, const T *const src2, const size_t n,
+                       sycl::accessor<T, 1, sycl::access::mode::read_write,
+                                      sycl::access::target::local>
+                           local_buffer,
+                       sycl::nd_item<1> item) {
+  size_t tid = item.get_local_id().get(0);
+  size_t i = item.get_global_id().get(0);
+
+  if (i < n) {
+    local_buffer[tid] = T(cmp_Ts(src1[i], src2[i]) ? 1 : 0);
+  }
+
+  item.barrier(sycl::access::fence_space::local_space);
+
+  // other approach: see book p 345
+  if (tid == 0) {
+    sycl::ONEAPI::sub_group sg = item.get_sub_group();
+    src1[i] = sycl::ONEAPI::reduce(sg, local_buffer[0],
+                                   sycl::ONEAPI::multiplies<T>());
+  }
+}
+
+template <typename T>
+void device_cmp_array(int *const dst, const T *const src1, const size_t n,
+                      sycl::nd_item<1> item) {
+  // reduction mul on the whole vector
+  T buf = T(1);
+  sycl::nd_range<1> nd_range = item.get_nd_range();
+  sycl::range<1> range = nd_range.get_local_range();
+  for (size_t i = 0; i < n; i += range.size()) {
+    buf = nsimd::gpu_mul(buf, src1[i]);
+  }
+  size_t i = item.get_global_id().get(0);
+  if (i == 0) {
+    dst[0] = int(buf);
+  }
+}
+
+template <typename T>
+bool cmp(T *const src1, const T *const src2, unsigned int n) {
+
+  const size_t total_num_threads = (size_t)nsimd_kernel_param(n, 128);
+  sycl::queue q = nsimd::oneapi::default_queue();
+
+  sycl::event e1 = q.submit([=](sycl::handler &h) {
+    sycl::accessor<T, 1, sycl::access::mode::read_write,
+                   sycl::access::target::local>
+        local_buffer(128, h);
+
+    h.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                     sycl::range<1>(128)),
+                   [=](sycl::nd_item<1> item_) {
+                     device_cmp_blocks(src1, src2, size_t(n), local_buffer,
+                                       item_);
+                   });
+  });
+  e1.wait_and_throw();
+
+  int *device_ret = nsimd::device_calloc<int>(n);
+  if (device_ret == NULL) {
+    std::cerr << "ERROR: cannot sycl::malloc_device " << sizeof(int)
+              << " bytes\n";
+    exit(EXIT_FAILURE);
+  }
+  sycl::event e2 =
+      q.parallel_for(sycl::nd_range<1>(sycl::range<1>(total_num_threads),
+                                       sycl::range<1>(128)),
+                     [=](sycl::nd_item<1> item_) {
+                       device_cmp_array(device_ret, src1, size_t(n), item_);
+                     });
+  e2.wait_and_throw();
+
+  int host_ret;
+  q.memcpy((void *)&host_ret, (void *)device_ret, sizeof(int)).wait();
+  nsimd::device_free(device_ret);
+
+  return bool(host_ret);
+}
+
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n, double) {
+  return cmp(src1, src2, n);
+}
+
+template <typename T> void del(T *ptr) {
+  sycl::queue q = nsimd::oneapi::default_queue();
+  sycl::free(ptr, q);
+}
 
 #else
 
@@ -210,48 +325,12 @@ template <typename T> bool cmp(T *src1, T *src2, unsigned int n) {
   return memcmp(src1, src2, n * sizeof(T)) == 0;
 }
 
-inline double to_double(f64 a) { return a; }
-inline double to_double(f32 a) { return (double)a; }
-inline double to_double(f16 a) { return (double)nsimd_f16_to_f32(a); }
-
-template <typename T>
-bool cmp(T *src1, T *src2, unsigned int n, double epsilon) {
+template <typename T> bool cmp(T *src1, T *src2, unsigned int n, int ufp) {
   for (unsigned int i = 0; i < n; i++) {
-    double a = to_double(src1[i]);
-    double b = to_double(src2[i]);
-    double ma, mi;
-
-    if (std::isnan(a) && std::isnan(b)) {
-      continue;
-    }
-
-    if (std::isnan(a) || std::isnan(b)) {
-      return false;
-    }
-
-    if (std::isinf(a) && std::isinf(b) &&
-        ((a > 0 && b > 0) || (a < 0 && b < 0))) {
-      continue;
-    }
-
-    if (std::isinf(a) || std::isinf(b)) {
-      return false;
-    }
-
-    a = (a > 0.0 ? a : -a);
-    b = (b > 0.0 ? b : -b);
-    ma = (a > b ? a : b);
-    mi = (a < b ? a : b);
-
-    if (ma == 0.0) {
-      continue;
-    }
-
-    if ( (ma - mi) / ma > epsilon) {
+    if (nsimd::ufp(src1[i], src2[i]) < ufp) {
       return false;
     }
   }
-
   return true;
 }
 

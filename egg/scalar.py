@@ -235,7 +235,8 @@ def reinterpret(totyp, typ):
         '''#if defined(NSIMD_ARM_FP16) && defined(NSIMD_IS_GCC)
              {via_union}
            #elif (defined(NSIMD_ARM_FP16) && !defined(NSIMD_IS_GCC)) || \
-                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || \
+                 defined(NSIMD_ONEAPI)
              {via_memcpy}
            #else
              {emulated}
@@ -254,7 +255,8 @@ def reinterpret(totyp, typ):
         '''#if defined(NSIMD_ARM_FP16) && defined(NSIMD_IS_GCC)
              {via_union}
            #elif (defined(NSIMD_ARM_FP16) && !defined(NSIMD_IS_GCC)) || \
-                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+                 defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || \
+                 defined(NSIMD_ONEAPI)
              {via_memcpy}
            #else
              {emulated}
@@ -429,6 +431,21 @@ def get_impl(operator, totyp, typ):
             format(typ2=typ2, neg=neg, op=op, **fmtspec), typ)
     f = 'f' if typ in ['f16', 'f32'] else ''
     typ2 = 'f32' if typ == 'f16' else typ
+    if operator.src:
+        if typ == 'f16':
+            return \
+            '''return nsimd_f32_to_f16(
+                        nsimd_sleef_{op_name}_scalar_f32({vas}));'''. \
+                        format(op_name=operator.name,
+                               vas=', '.join(['nsimd_f16_to_f32({})'. \
+                               format(common.get_arg(i)) \
+                               for i in range(len(operator.params[1:]))]),
+                               **fmtspec)
+        else:
+            return 'return nsimd_sleef_{op_name}_scalar_{typ}({vas});'. \
+                   format(op_name=operator.name,
+                          vas=common.get_args(len(operator.params[1:])),
+                          **fmtspec)
     func = {
         'orb': lambda: opbit('{in0} | {in1}', typ),
         'andb': lambda: opbit('{in0} & {in1}', typ),

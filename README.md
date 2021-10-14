@@ -1,4 +1,5 @@
-Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
+Documentation can be found [here](https://agenium-scale.github.io/nsimd/).  
+We put a lot of effort into [testing](how_tests_are_done.md).
 
 # What is NSIMD?
 
@@ -21,7 +22,8 @@ With two of its modules NSIMD provides three programming paradigms:
 
 | Architecture                          | NSIMD core | TET1D module | SPMD module |
 |:--------------------------------------|:----------:|:------------:|:-----------:|
-| CPU (SIMD emulation)                  |     Y      |      Y       |      Y      |
+| CPU (scalar functions)                |     Y      |      Y       |      Y      |
+| CPU (128-bits SIMD emulation)         |     Y      |      Y       |      Y      |
 | Intel SSE 2                           |     Y      |      Y       |      Y      |
 | Intel SSE 4.2                         |     Y      |      Y       |      Y      |
 | Intel AVX                             |     Y      |      Y       |      Y      |
@@ -32,8 +34,27 @@ With two of its modules NSIMD provides three programming paradigms:
 | Arm NEON 128 bits (ARMv8 and later)   |     Y      |      Y       |      Y      |
 | Arm SVE (original sizeless SVE)       |     Y      |      Y       |      Y      |
 | Arm fixed sized SVE                   |     Y      |      Y       |      Y      |
+| IBM POWERPC VMX                       |     Y      |      Y       |      Y      |
+| IBM POWERPC VSX                       |     Y      |      Y       |      Y      |
 | NVIDIA CUDA                           |     N      |      Y       |      Y      |
 | AMD ROCm                              |     N      |      Y       |      Y      |
+| Intel oneAPI                          |     N      |      Y       |      Y      |
+
+## Contributions
+
+| Contributor          | Contribution(s)                                   |
+|:---------------------|:--------------------------------------------------|
+| Guillaume Quintin    | Maintainer + main contributor                     |
+| Alan Kelly           | Arm NEON + mathematical functions                 |
+| Kenny Péou           | Fixed point module                                |
+| Xavier Berault       | PowerPC VMX and VSX                               |
+| Vianney Stricher     | NSIMD core + oneAPI in SPMD and TET1D modules     |
+| Quentin Khan         | Soa/AoS loads and stores                          |
+| Paul Gannay          | PowerPC VMX, VSX + testing system                 |
+| Charly Chevalier     | Benchmarking system + Python internals            |
+| Erik Schnetter       | Fixes + code generation                           |
+| Lénaïc Bagnères      | Fixes + TET1D module                              |
+| Jean-Didier Pailleux | Shuffles operators                                |
 
 ## How it works?
 
@@ -47,14 +68,15 @@ such as addition, multiplication, square root, etc, are all present in header
 files whereas big functions such as I/O are put in source files that are
 compiled as a `.so`/`.dll` library.
 
-NSIMD provides C89, C++98, C++11, C++14 and C++20 APIs. All APIs allow writing
-generic code. For the C API this is achieved through a thin layer of macros;
-for the C++ APIs it is achieved using templates and function overloading. The
-C++ APIs are split into two. The first part is a C-like API with only function
-calls and direct type definitions for SIMD types while the second one provides
-operator overloading, higher level type definitions that allows unrolling.
-C++11, C++14 APIs add for instance templated type definitions and templated
-constants while the C++20 API uses concepts for better error reporting.
+NSIMD provides C89, C11, C++98, C++11, C++14 and C++20 APIs. All APIs allow
+writing generic code. For the C API this is achieved through a thin layer of
+macros and with the `_Generic` keyword for the C advanced API; for the C++ APIs
+it is achieved using templates and function overloading. The C++ APIs are split
+into two. The first part is a C-like API with only function calls and direct
+type definitions for SIMD types while the second one provides operator
+overloading, higher level type definitions that allows unrolling.  C++11, C++14
+APIs add for instance templated type definitions and templated constants while
+the C++20 API uses concepts for better error reporting.
 
 Binary compatibility is guaranteed by the fact that only a C ABI is exposed.
 The C++ API only wraps the C calls.
@@ -83,7 +105,7 @@ make install
 
 where `SIMD_EXT` is one of the following: CPU, SSE2, SSE42, AVX, AVX2,
 AVX512\_KNL, AVX512\_SKYLAKE, NEON128, AARCH64, SVE, SVE128, SVE256, SVE512,
-SVE1024, SVE2048, CUDA, ROCM.
+SVE1024, SVE2048, VMX, VSX, CUDA, ROCM.
 
 Note that when compiling for NEON128 on Linux one has to choose the ABI, either
 armel or armhf. Default is armel. As CMake is unable to autodetect this
@@ -137,15 +159,6 @@ The Python code can call `clang-format` to properly format all generated C/C++
 source. On Linux you can install it via your package manager. On Windows you
 can use the official binary at <https://llvm.org/builds/>.
 
-Testing the library requires the MPFR library that can be found at
-<https://www.mpfr.org/>.
-
-Benchmarking the library requires Google Benchmark version 1.3 that can be
-found at <https://github.com/google/benchmark> plus all the other SIMD
-libraries used for comparison:
-- MIPP (<https://github.com/aff3ct/MIPP>)
-- Sleef (<https://sleef.org/>)
-
 Compiling the library requires a C++98 compiler. Any version of GCC, Clang or
 MSVC will do. Note that the produced library and header files for the end-user
 are C89, C++98, C++11 compatible. Note that C/C++ files are generated by a
@@ -175,6 +188,8 @@ will contain the library. Supported SIMD extension are:
 - sve512
 - sve1024
 - sve2048
+- vmx
+- vsx
 - cuda
 - rocm
 
@@ -184,6 +199,9 @@ Supported compiler are:
 - clang
 - icc
 - armclang
+- xlc
+- dpcpp
+- fcc
 - cl
 - nvcc
 - hipcc
@@ -256,8 +274,16 @@ Configure project for compilation.
                     msvc      Microsoft C and C++ compiler
                     llvm      The LLVM compiler infrastructure
                     armclang  Arm suite of compilers based on LLVM
+                    xlc       IBM suite of compilers
+                    fcc_trad_mode
+                              Fujitsu compiler in traditional mode
+                    fcc_clang_mode
+                              Fujitsu compiler in clang mode
+                    emscripten
+                              Emscripten suite for compiling into JS
                     icc       Intel C amd C++ compiler
                     rocm      Radeon Open Compute compilers
+                    oneapi    Intel oneAPI compilers
                     cuda, cuda+gcc, cuda+clang, cuda+msvc
                               Nvidia CUDA C++ compiler
   -comp=COMMAND,COMPILER[,PATH[,VERSION[,ARCHI]]]
@@ -267,7 +293,7 @@ Configure project for compilation.
                   compiling and/or setting the CUDA host compiler.
                   COMMAND must be in { cc, c++, gcc, g++, cl, icc, nvcc,
                   hipcc, hcc, clang, clang++, armclang, armclang++,
-                  cuda-host-c++ } ;
+                  cuda-host-c++, emcc, em++ } ;
                   VERSION is compiler dependant. Note that VERSION
                   can be set to only major number(s) in which case
                   nsconfig fill missing numbers with zeros.
@@ -277,15 +303,26 @@ Configure project for compilation.
                     armel    ARMv5 and ARMv6 32-bits ISA
                     armhf    ARMv7 32-bits ISA
                     aarch64  ARM 64-bits ISA
+                    ppc64el  PowerPC 64-bits little entian
+                    wasm32   WebAssembly with 32-bits memory indexing
+                    wasm64   WebAssembly with 64-bits memory indexing
                   Supported COMPILER:
                     gcc, g++              GNU Compiler Collection
                     clang, clang++        LLVM Compiler Infrastructure
+                    emcc, em++            Emscripten compilers
                     msvc, cl              Microsoft Visual C++
                     armclang, armclang++  ARM Compiler
+                    xlc, xlc++            IBM Compiler
                     icc                   Intel C/C++ Compiler
                     dpcpp                 Intel DPC++ Compiler
                     nvcc                  Nvidia CUDA compiler
                     hipcc                 ROCm HIP compiler
+                    fcc_trad_mode, FCC_trad_mode
+                                          Fujitsu C and C++ traditionnal
+                                          compiler
+                    fcc_clang_mode, FCC_clang_mode
+                                          Fujitsu C and C++ traditionnal
+                                          compiler
   -prefix=PREFIX  Set path for installation to PREFIX
   -h, --help      Print the current help
 
@@ -296,7 +333,7 @@ NOTE: Nvidia CUDA compiler (nvcc) needs a host compiler. Usually on
       commands with 'cuda-host-c++'. The latter defaults to GCC on Linux
       systems and MSVC on Windows systems. The user can of course choose
       a specific version and path of this host compiler via the
-      '-comp=cuda-hostc++,... parameters. If nvcc is not chosen as the
+      '-comp=cuda-host-c++,... parameters. If nvcc is not chosen as the
       default C++ compiler but is used for compilation then its default
       C++ host compiler is 'c++'. The latter can also be customized via
       the '-comp=c++,...' command line switch.
@@ -308,32 +345,18 @@ the ninja file of Makefile.
 ```bash
 $ ../nstools/bin/nsconfig .. -list-vars
 Project variables list:
-name               | description
--------------------|---------------------------------------------------------
-simd               | SIMD extension to use
-cuda_arch_flags    | CUDA target arch flag(s) for tests
-mpfr               | MPFR compilation flags (for tests only)
-sleef              | Sleef compilation flags (for benchmarks only)
-benchmark          | Google benchmark compilation flags (for benchmarks only)
-build_library_only | Turn off tests/bench/ulps
-static_libstdcpp   | Compile the libstdc++ statically
+name             | description
+-----------------|-----------------------------------
+simd             | SIMD extension to use
+cuda_arch_flags  | CUDA target arch flag(s) for tests
+static_libstdcpp | Compile the libstdc++ statically
+cpp20_tests      | Enable C++20 tests
 ```
 
 Finally one can choose what to do and compile NSIMD and its tests.
 
 ```bash
 $ ../nstools/bin/nsconfig .. -Dsimd=avx2
-$ ninja
-$ ninja tests
-```
-
-Note that MPFR (<https://www.mpfr.org/>) is needed to compile the tests. If you
-do not have the MPFR header installed on your system or if you want to use a
-custom version of MPFR you can tell nsconfig how where to find it.
-
-```bash
-$ ../nstools/bin/nsconfig .. -Dsimd=avx2 \
-      -Dmpfr="-Iwhere/is/mpfr/include -Lwhere/is/mpfr/lib -lmpfr"
 $ ninja
 $ ninja tests
 ```
@@ -401,11 +424,19 @@ but from a library point of view.
 
 NSIMD was designed following as closely as possible the following guidelines:
 
-- Correctness primes over speed.
+- Correctness primes over speed except for corner cases which may include the
+  following:
+  + Buggy intrinsics on rare input values (denormal numbers, infinities,
+    NaNs) in which case a slower but correct alternative may be
+    proposed to bypass the buggy intrinsics.
+  + A buggy intrinsics but for a specific version of a family of chips. It
+    would be unreasonable to penalize the majority of users vs. a few (or
+    even no) users.
 - Emulate with tricks and intrinsic integer arithmetic when not available.
 - Use common names as found in common computation libraries.
 - Do not hide SIMD registers, one variable (of a type such as `nsimd::pack`)
-  matches one register.
+  matches one register. When possible force the user to think different between
+  SIMD code and scalar code.
 - Make the life of the compiler as easy as possible: keep the code simple to
   allow the compiler to perform as many optimizations as possible.
 - Favor the advanced C++ API.
@@ -448,9 +479,15 @@ found in `egg`.
 
 Please see <doc/markdown/CONTRIBUTE.md> for more details.
 
-# LICENSE
+# LICENSES
 
-Copyright (c) 2020 Agenium Scale
+NSIMD contains files from the excellent [Sleef library](https://sleef.org/)
+whose license is stated below. The corresponding files are all located
+in the `src` folder and have retained their original license notices.
+
+## NSIMD license
+
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -469,3 +506,30 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Sleef license ([Boost Software License v1.0](https://www.boost.org/LICENSE_1_0.txt))
+
+Boost Software License - Version 1.0 - August 17th, 2003
+
+Permission is hereby granted, free of charge, to any person or organization
+obtaining a copy of the software and accompanying documentation covered by
+this license (the "Software") to use, reproduce, display, distribute,
+execute, and transmit the Software, and to prepare derivative works of the
+Software, and to permit third-parties to whom the Software is furnished to
+do so, all subject to the following:
+
+The copyright notices in the Software and this entire statement, including
+the above license grant, this restriction and the following disclaimer,
+must be included in all copies of the Software, in whole or in part, and
+all derivative works of the Software, unless such copies or derivative
+works are solely in the form of machine-executable object code generated by
+a source language processor.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+

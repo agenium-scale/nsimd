@@ -24,10 +24,11 @@ import operators
 import scalar
 import cuda
 import rocm
+import oneapi
 
 # -----------------------------------------------------------------------------
 
-def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
+def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl, oneapi_sig, oneapi_impl):
     if cuda_impl == rocm_impl:
         return '''#if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
 
@@ -35,7 +36,15 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
                     {cuda_impl}
                   }}
 
-                  #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl)
+                  #elif defined(NSIMD_ONEAPI)
+
+                  inline {oneapi_sig} {{
+                    {oneapi_impl}
+                  }}
+
+                  #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl,
+                                   oneapi_sig=oneapi_sig,
+                                   oneapi_impl=oneapi_impl)
     else:
         return '''#if defined(NSIMD_CUDA)
 
@@ -43,16 +52,21 @@ def get_gpu_impl(gpu_sig, cuda_impl, rocm_impl):
                     {cuda_impl}
                   }}
 
-                  #endif
-
-                  #ifdef NSIMD_ROCM
+                  #elif defined(NSIMD_ROCM)
 
                   inline {gpu_sig} {{
                     {rocm_impl}
                   }}
 
+                  #elif defined(NSIMD_ONEAPI)
+
+                  inline {oneapi_sig} {{
+                    {oneapi_impl}
+                  }}
+
                   #endif'''.format(gpu_sig=gpu_sig, cuda_impl=cuda_impl,
-                                   rocm_impl=rocm_impl)
+                                   rocm_impl=rocm_impl, oneapi_sig=oneapi_sig,
+                                   oneapi_impl=oneapi_impl)
 
 # -----------------------------------------------------------------------------
 
@@ -65,6 +79,7 @@ def doit(opts):
         # we declare reinterprets now as we need them
         scalar_tmp = []
         gpu_tmp = []
+        oneapi_tmp = []
         for t in operators.Reinterpret.types:
             for tt in common.get_output_types(
                           t, operators.Reinterpret.output_to):
@@ -72,10 +87,23 @@ def doit(opts):
                                get_scalar_signature('cpu', t, tt, 'c')]
                 gpu_tmp += [operators.Reinterpret(). \
                             get_scalar_signature('gpu', t, tt, 'cxx')]
+                oneapi_tmp += [operators.Reinterpret(). \
+                               get_scalar_signature('oneapi', t, tt, 'cxx')]
         scalar_reinterpret_decls = '\n'.join(['NSIMD_INLINE ' + sig + ';' \
                                               for sig in scalar_tmp])
         gpu_reinterpret_decls = '\n'.join(['inline ' + sig + ';' \
                                            for sig in gpu_tmp])
+        oneapi_reinterpret_decls = '\n'.join(['inline ' + sig + ';' \
+                                              for sig in oneapi_tmp])
+        sleef_decls = ''
+        for op in operators.operators.values():
+            if 'sleef_symbol_prefix' in op.__class__.__dict__:
+                sleef_decls += 'f32 {}_scalar_f32({});\n'. \
+                               format(op.sleef_symbol_prefix,
+                                      ', '.join(['f32'] * len(op.params[1:])))
+                sleef_decls += 'f64 {}_scalar_f64({});\n'. \
+                               format(op.sleef_symbol_prefix,
+                                      ', '.join(['f64'] * len(op.params[1:])))
         out.write(
         '''#ifndef NSIMD_SCALAR_UTILITIES_H
            #define NSIMD_SCALAR_UTILITIES_H
@@ -98,26 +126,51 @@ def doit(opts):
              #endif
            #endif
 
+           {hbar}
+
+           #if NSIMD_CXX > 0
+           extern "C" {{
+           #endif
+
+           {sleef_decls}
+
+           #if NSIMD_CXX > 0
+           }} // extern "C"
+           #endif
+
+           {hbar}
+
            {scalar_reinterpret_decls}
 
-           #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+           #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM) || \
+               defined(NSIMD_ONEAPI)
 
            namespace nsimd {{
 
+           #if defined(NSIMD_CUDA) || defined(NSIMD_ROCM)
+
            {gpu_reinterpret_decls}
+
+           #elif defined(NSIMD_ONEAPI)
+
+           {oneapi_reinterpret_decls}
+
+           #endif
 
            }} // namespace nsimd
 
            #endif
            '''. \
-           format(scalar_reinterpret_decls=scalar_reinterpret_decls,
-                  gpu_reinterpret_decls=gpu_reinterpret_decls))
+           format(hbar=common.hbar, sleef_decls=sleef_decls,
+                  scalar_reinterpret_decls=scalar_reinterpret_decls,
+                  gpu_reinterpret_decls=gpu_reinterpret_decls,
+                  oneapi_reinterpret_decls=oneapi_reinterpret_decls))
         for op_name, operator in operators.operators.items():
             if not operator.has_scalar_impl:
                 continue
             if operator.params == ['l'] * len(operator.params):
                 out.write('\n\n' + common.hbar + '\n\n')
-                out.write(\
+                out.write(
                 '''NSIMD_INLINE {c_sig} {{
                   {scalar_impl}
                 }}
@@ -144,13 +197,15 @@ def doit(opts):
                 gpu_impl=get_gpu_impl(
                     operator.get_scalar_signature('gpu', t, tt, 'cxx'),
                     cuda.get_impl(operator, tt, t),
-                    rocm_impl=rocm.get_impl(operator, tt, t))))
+                    rocm.get_impl(operator, tt, t),
+                    operator.get_scalar_signature('oneapi', t, tt, 'cxx'),
+                    oneapi.get_impl(operator, tt, t))))
                 continue
             for t in operator.types:
                 tts = common.get_output_types(t, operator.output_to)
                 for tt in tts:
                     out.write('\n\n' + common.hbar + '\n\n')
-                    out.write(\
+                    out.write(
                     '''NSIMD_INLINE {c_sig} {{
                       {scalar_impl}
                     }}
@@ -178,7 +233,9 @@ def doit(opts):
                     gpu_impl=get_gpu_impl(
                         operator.get_scalar_signature('gpu', t, tt, 'cxx'),
                         cuda.get_impl(operator, tt, t),
-                        rocm_impl=rocm.get_impl(operator, tt, t))))
+                        rocm.get_impl(operator, tt, t),
+                        operator.get_scalar_signature('oneapi', t, tt, 'cxx'),
+                        oneapi.get_impl(operator, tt, t))))
 
         out.write('''
 

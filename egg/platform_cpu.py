@@ -46,6 +46,11 @@ def get_nb_el(typ):
 def get_simd_exts():
     return ['cpu']
 
+def get_prev_simd_ext(simd_ext):
+    if simd_ext != 'cpu':
+        raise ValueError('Unknown SIMD extension "{}"'.format(simd_ext))
+    return ''
+
 def get_simd_strings(simd_ext):
     if simd_ext == 'cpu':
         return ['cpu']
@@ -90,7 +95,8 @@ def get_additional_include(func, platform, simd_ext):
     if func in ['adds', 'subs', 'orb', 'andb', 'andnotb', 'xorb', 'min', 'max'
                 'notb', 'sqrt', 'shr', 'shl', 'shra', 'abs', 'fma', 'fnma',
                 'fms', 'fnms', 'ceil', 'floor', 'trunc', 'round_to_even',
-                'rec11', 'rec8', 'rsqrt11', 'rsqrt8', 'rec', 'neg']:
+                'rec11', 'rec8', 'rsqrt11', 'rsqrt8', 'rec', 'neg',
+                'lgamma_u10', 'tgamma_u10', 'erf_u10', 'erfc_u15']:
         return '''#include <nsimd/scalar_utilities.h>
                   '''
     elif func == 'zip':

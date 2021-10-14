@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020 Agenium Scale
+# Copyright (c) 2021 Agenium Scale
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,62 +20,82 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-package_name nsimd-2.2
+package_name nsimd-3.0
 
+## ----------------------------------------------------------------------------
 ## Get OS/Compiler specific file extensions
 
-set o     = @obj_ext
-set exe   = @exe_ext
-set s     = @asm_ext
-set so    = @shared_lib_ext
-set lib   = @shared_link_ext
-set root  = @source_dir
-set make  = @make_command
-set build = @build_dir
-set root  = @source_dir
+set o       = @obj_ext
+set exe     = @exe_ext
+set s       = @asm_ext
+set so      = @shared_lib_ext
+set lib     = @shared_link_ext
+set root    = @source_dir
+set make    = @make_command
+set build   = @build_dir
+set root    = @source_dir
+set ccomp   = @ccomp_name
+set cppcomp = @cppcomp_name
 
+## ----------------------------------------------------------------------------
 ## Some defaults
 
 ifnot_set "SIMD extension to use" simd = cpu
 ifnot_set "CUDA target arch flag(s) for tests" cuda_arch_flags = ""
-[L] ifnot_set "MPFR compilation flags (for tests only)" mpfr = -lmpfr
-[W] ifnot_set "MPFR compilation flags (for tests only)" mpfr = ""
-ifnot_set "Sleef compilation flags (for benchmarks only)" sleef = -lsleef
-ifnot_set "Google benchmark compilation flags (for benchmarks only)" \
-          benchmark = -lbenchmark
-ifnot_set "Turn off tests/bench/ulps" build_library_only = false
-ifnot_set "Compile the libstdc++ statically" static_libstdcpp = false
+ifnot_set "Compile the libstdc++ statically" static_libstdcpp = true
+ifnot_set "Enable C++20 tests" cpp20_tests = ""
 
+## ----------------------------------------------------------------------------
 ## Targets for compilation
 
-set o_for_               = fp16$o memory$o ulps$o api_cpu$o
+set o_for_               = fp16$o memory$o ufp$o api_cpu$o rempitab$o \
+                           sleefsp$o sleefdp$o gpu$o
 set o_for_cpu            = $o_for_
 set o_for_cuda           = $o_for_
 set o_for_rocm           = $o_for_
 set o_for_oneapi         = $o_for_
-set o_for_sse2           = $o_for_cpu api_sse2$o
-set o_for_sse42          = $o_for_sse2 api_sse42$o
-set o_for_avx            = $o_for_sse42 api_avx$o
-set o_for_avx2           = $o_for_avx api_avx2$o
-set o_for_avx512_knl     = $o_for_avx2 api_avx512_knl$o
-set o_for_avx512_skylake = $o_for_avx2 api_avx512_skylake$o
-set o_for_neon128        = $o_for_cpu api_neon128$o
-set o_for_aarch64        = $o_for_cpu api_aarch64$o
-set o_for_sve            = $o_for_aarch64 api_sve$o
-set o_for_sve128         = $o_for_aarch64 api_sve128$o
-set o_for_sve256         = $o_for_aarch64 api_sve256$o
-set o_for_sve512         = $o_for_aarch64 api_sve512$o
-set o_for_sve1024        = $o_for_aarch64 api_sve1024$o
-set o_for_sve2048        = $o_for_aarch64 api_sve2048$o
+set o_for_sse2           = $o_for_cpu api_sse2$o sleef_sse2_f32$o \
+                           sleef_sse2_f64$o
+set o_for_sse42          = $o_for_sse2 api_sse42$o sleef_sse42_f32$o \
+                           sleef_sse42_f64$o
+set o_for_avx            = $o_for_sse42 api_avx$o sleef_avx_f32$o \
+                           sleef_avx_f64$o
+set o_for_avx2           = $o_for_avx api_avx2$o sleef_avx2_f32$o \
+                           sleef_avx2_f64$o
+set o_for_avx512_knl     = $o_for_avx2 api_avx512_knl$o \
+                           sleef_avx512_knl_f32$o sleef_avx512_knl_f64$o
+set o_for_avx512_skylake = $o_for_avx2 api_avx512_skylake$o \
+                           sleef_avx512_skylake_f32$o \
+                           sleef_avx512_skylake_f64$o
+set o_for_neon128        = $o_for_cpu api_neon128$o sleef_neon128_f32$o \
+                           sleef_neon128_f64$o
+set o_for_aarch64        = $o_for_cpu api_aarch64$o sleef_aarch64_f32$o \
+                           sleef_aarch64_f64$o
+set o_for_sve            = $o_for_aarch64 api_sve$o sleef_sve_f32$o \
+                           sleef_sve_f64$o
+set o_for_sve128         = $o_for_aarch64 api_sve128$o sleef_sve128_f32$o \
+                           sleef_sve128_f64$o
+set o_for_sve256         = $o_for_aarch64 api_sve256$o sleef_sve256_f32$o \
+                           sleef_sve256_f64$o
+set o_for_sve512         = $o_for_aarch64 api_sve512$o sleef_sve512_f32$o \
+                           sleef_sve512_f64$o
+set o_for_sve1024        = $o_for_aarch64 api_sve1024$o sleef_sve1024_f32$o \
+                           sleef_sve1024_f64$o
+set o_for_sve2048        = $o_for_aarch64 api_sve2048$o sleef_sve2048_f32$o \
+                           sleef_sve2048_f64$o
+set o_for_vmx            = $o_for_cpu api_vmx$o sleef_vmx_f32$o sleef_vmx_f64$o
+set o_for_vsx            = $o_for_vmx api_vsx$o sleef_vsx_f32$o sleef_vsx_f64$o
 
+## ----------------------------------------------------------------------------
 ## SIMD compiler flags
 
-lambda cflags_for_generic_*    = -DCPU
-set    cflags_for_generic_cuda = -DCUDA
-set    cflags_for_generic_rocm = -DROCM
+lambda cflags_for_generic_*      = -DCPU
+set    cflags_for_generic_cuda   = -DCUDA
+set    cflags_for_generic_rocm   = -DROCM
+set    cflags_for_generic_oneapi = -DONEAPI
 
-set cflags_for_               = -DCPU
-set cflags_for_cpu            = ${cflags_for_generic_$simd$}
+set cflags_for_               = ${cflags_for_generic_$simd$}
+set cflags_for_cpu            = $cflags_for_
 set cflags_for_cuda           = -DCUDA
 set cflags_for_rocm           = -DROCM
 set cflags_for_oneapi         = -DONEAPI
@@ -94,34 +114,48 @@ set cflags_for_sve256         = -DSVE256 -msve256
 set cflags_for_sve512         = -DSVE512 -msve512
 set cflags_for_sve1024        = -DSVE1024 -msve1024
 set cflags_for_sve2048        = -DSVE2048 -msve2048
+set cflags_for_vmx            = -DVMX -mvmx
+set cflags_for_vsx            = -DVSX -mvsx
 
+## ----------------------------------------------------------------------------
 ## std default flag
 
 lambda std_flag_for_*      = -std=c++98
 set    std_flag_for_rocm   = -std=c++11
 set    std_flag_for_oneapi = -std=c++17
 
+## ----------------------------------------------------------------------------
 ## libstdc++ linking mode
 
 set libstdcpp_static_link_true  = -static-libstdc++
 set libstdcpp_static_link_false = 
 
+## ----------------------------------------------------------------------------
 ## Some defaults
 
-set flags  = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
-set cflags = ${std_flag_for_$simd$} $flags \
-             ${libstdcpp_static_link_$static_libstdcpp$}
+set flags        = -Wall -fPIC -O2 -I$root$/include -DNDEBUG
+set cflags       = ${std_flag_for_$simd$} $flags \
+                   ${libstdcpp_static_link_$static_libstdcpp$}
+set sleef_cflags = -fPIC -O2 -I$root$/src -DNDEBUG -DDORENAME=1
 
+## ----------------------------------------------------------------------------
 ## Default building rules
 
 phony all deps libnsimd_$simd$$so$
 
 build_file libnsimd_$simd$$so deps ${o_for_$simd$}
-	c++ -shared @in -o @out
+	c++ -fPIC -shared @in -o @out
 
 set ldflags = -fPIC -L. -lnsimd_$simd
 
+## ----------------------------------------------------------------------------
 ## Generic (emulation) rules for building
+
+build_file gpu$o autodeps $root$/src/gpu.cpp
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
+
+build_file ufp$o autodeps $root$/src/ufp.cpp
+	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
 build_file fp16$o autodeps $root$/src/fp16.cpp
 	c++ $cflags$ $cflags_for_cpu @in -c -o @out
@@ -129,60 +163,191 @@ build_file fp16$o autodeps $root$/src/fp16.cpp
 build_file memory$o autodeps $root$/src/memory.cpp
 	c++ $cflags$ $cflags_for_cpu @in -c -o @out
 
-build_file ulps$o autodeps $root$/src/ulps.cpp
-	c++ $cflags$ $cflags_for_cpu @in -c -o @out
+build_file rempitab$o autodeps $root$/src/rempitab.c
+	cc $sleef_cflags$ -c @in -o @out
+
+build_file sleefsp$o autodeps $root$/src/sleefsp.c
+	cc $sleef_cflags$ -c @in -o @out
+
+build_file sleefdp$o autodeps $root$/src/sleefdp.c
+	cc $sleef_cflags$ -c @in -o @out
 
 build_file api_cpu$o autodeps $root$/src/api_cpu.cpp
 	c++ $cflags$ $cflags_for_cpu -c @in -o @out
 
+## ----------------------------------------------------------------------------
 ## Intel rules for building
 
 build_file api_sse2$o autodeps $root$/src/api_sse2.cpp
 	c++ $cflags$ -c $cflags_for_sse2 @in -o @out
 
+build_file sleef_sse2_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msse2 -DNSIMD_SSE2 -DENABLE_SSE2=1 @in -o @out
+
+build_file sleef_sse2_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msse2 -DNSIMD_SSE2 -DENABLE_SSE2=1 @in -o @out
+
 build_file api_sse42$o autodeps $root$/src/api_sse42.cpp
 	c++ $cflags$ -c $cflags_for_sse42 @in -o @out
+
+build_file sleef_sse42_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msse42 -DNSIMD_SSE42 -DENABLE_SSE4=1 @in -o @out
+
+build_file sleef_sse42_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msse42 -DNSIMD_SSE42 -DENABLE_SSE4=1 @in -o @out
 
 build_file api_avx$o autodeps $root$/src/api_avx.cpp
 	c++ $cflags$ -c $cflags_for_avx @in -o @out
 
+build_file sleef_avx_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -mavx -DNSIMD_AVX -DENABLE_AVX=1 @in -o @out
+
+build_file sleef_avx_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -mavx -DNSIMD_AVX -DENABLE_AVX=1 @in -o @out
+
 build_file api_avx2$o autodeps $root$/src/api_avx2.cpp
 	c++ $cflags$ -c $cflags_for_avx2 @in -o @out
+
+build_file sleef_avx2_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -mavx2 -mfma -DNSIMD_AVX2 -DENABLE_AVX2=1 \
+	   @in -o @out
+
+build_file sleef_avx2_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -mavx2 -mfma -DNSIMD_AVX2 -DENABLE_AVX2=1 \
+	   @in -o @out
 
 build_file api_avx512_knl$o autodeps $root$/src/api_avx512_knl.cpp
 	c++ $cflags$ -c $cflags_for_avx512_knl @in -o @out
 
+build_file sleef_avx512_knl_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_KNL \
+	   -DENABLE_AVX512F=1 @in -o @out
+
+build_file sleef_avx512_knl_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_KNL \
+	   -DENABLE_AVX512F=1 @in -o @out
+
 build_file api_avx512_skylake$o autodeps $root$/src/api_avx512_skylake.cpp
 	c++ $cflags$ -c $cflags_for_avx512_skylake @in -o @out
 
+build_file sleef_avx512_skylake_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_SKYLAKE \
+	   -DENABLE_AVX512F=1 @in -o @out
+
+build_file sleef_avx512_skylake_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -mavx512_knl -DNSIMD_AVX512_SKYLAKE \
+	   -DENABLE_AVX512F=1 @in -o @out
+
+## ----------------------------------------------------------------------------
 ## ARM 32 bits rules for building
 
 build_file api_neon128$o autodeps $root$/src/api_neon128.cpp
 	c++ $cflags$ -c $cflags_for_neon128 @in -o @out
 
+build_file sleef_neon128_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -mneon128 -DNSIMD_NEON128 \
+	   -DENABLE_NEON32=1 @in -o @out
+
+build_file sleef_neon128_f64$o autodeps $root$/src/sleefsimddp_emulation.c
+	cc $sleef_cflags$ -c -mneon128 -DNSIMD_NEON128 -DENABLE_NEON32=1 \
+	   -I$root$/include @in -o @out
+
+## ----------------------------------------------------------------------------
 ## ARM 64 bits rules for building
 
 build_file api_aarch64$o autodeps $root$/src/api_aarch64.cpp
 	c++ $cflags$ -c $cflags_for_aarch64 @in -o @out
 
+build_file sleef_aarch64_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -maarch64 -DNSIMD_AARCH64 \
+	   -DENABLE_ADVSIMD=1 @in -o @out
+
+build_file sleef_aarch64_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -maarch64 -DNSIMD_AARCH64 \
+	   -DENABLE_ADVSIMD=1 @in -o @out
+
 build_file api_sve$o autodeps $root$/src/api_sve.cpp
 	c++ $cflags$ -c $cflags_for_sve @in -o @out
+
+build_file sleef_sve_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msve -DNSIMD_SVE -DENABLE_SVE=1 @in -o @out
+
+build_file sleef_sve_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msve -DNSIMD_SVE -DENABLE_SVE=1 @in -o @out
 
 build_file api_sve128$o autodeps $root$/src/api_sve128.cpp
 	c++ $cflags$ -c $cflags_for_sve128 @in -o @out
 
+build_file sleef_sve128_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msve128 -DNSIMD_SVE128 -DENABLE_SVE=1 @in -o @out
+
+build_file sleef_sve128_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msve128 -DNSIMD_SVE128 -DENABLE_SVE=1 @in -o @out
+
 build_file api_sve256$o autodeps $root$/src/api_sve256.cpp
 	c++ $cflags$ -c $cflags_for_sve256 @in -o @out
+
+build_file sleef_sve256_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msve256 -DNSIMD_SVE256 -DENABLE_SVE=1 @in -o @out
+
+build_file sleef_sve256_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msve256 -DNSIMD_SVE256 -DENABLE_SVE=1 @in -o @out
 
 build_file api_sve512$o autodeps $root$/src/api_sve512.cpp
 	c++ $cflags$ -c $cflags_for_sve512 @in -o @out
 
+build_file sleef_sve512_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msve512 -DNSIMD_SVE512 -DENABLE_SVE=1 @in -o @out
+
+build_file sleef_sve512_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msve512 -DNSIMD_SVE512 -DENABLE_SVE=1 @in -o @out
+
 build_file api_sve1024$o autodeps $root$/src/api_sve1024.cpp
 	c++ $cflags$ -c $cflags_for_sve1024 @in -o @out
+
+build_file sleef_sve1024_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msve1024 -DNSIMD_SVE1024 -DENABLE_SVE=1 \
+	   @in -o @out
+
+build_file sleef_sve1024_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msve1024 -DNSIMD_SVE1024 -DENABLE_SVE=1 \
+	   @in -o @out
 
 build_file api_sve2048$o autodeps $root$/src/api_sve2048.cpp
 	c++ $cflags$ -c $cflags_for_sve2048 @in -o @out
 
+build_file sleef_sve2048_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -msve2048 -DNSIMD_SVE2048 -DENABLE_SVE=1 \
+	   @in -o @out
+
+build_file sleef_sve2048_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -msve2048 -DNSIMD_SVE2048 -DENABLE_SVE=1 \
+	   @in -o @out
+
+## ----------------------------------------------------------------------------
+## POWERPC rules for building
+
+build_file api_vmx$o autodeps $root$/src/api_vmx.cpp
+	c++ $cflags$ -c $cflags_for_vmx @in -o @out
+
+build_file sleef_vmx_f32$o autodeps $root$/src/sleefsimdsp_emulation.c
+	cc $sleef_cflags$ -c -mvmx -DNSIMD_VMX -DENABLE_VSX=1 \
+	   -I$root$/include @in -o @out
+
+build_file sleef_vmx_f64$o autodeps $root$/src/sleefsimddp_emulation.c
+	cc $sleef_cflags$ -c -mvmx -DNSIMD_VMX -DENABLE_VSX=1 \
+	   -I$root$/include @in -o @out
+
+build_file api_vsx$o autodeps $root$/src/api_vsx.cpp
+	c++ $cflags$ -c $cflags_for_vsx @in -o @out
+
+build_file sleef_vsx_f32$o autodeps $root$/src/sleefsimdsp.c
+	cc $sleef_cflags$ -c -mvsx -DNSIMD_VSX -DENABLE_VSX=1 @in -o @out
+
+build_file sleef_vsx_f64$o autodeps $root$/src/sleefsimddp.c
+	cc $sleef_cflags$ -c -mvsx -DNSIMD_VSX -DENABLE_VSX=1 @in -o @out
+
+## ----------------------------------------------------------------------------
 ## Installation and packaging
 
 install_file libnsimd_${simd}$so lib
@@ -190,68 +355,110 @@ install_file libnsimd_${simd}$so lib
 install_dir $root$/include/nsimd include
 install_dir $root$/doc/html doc
 
-begin_translate_if $build_library_only == false
-
+## ----------------------------------------------------------------------------
 ## Tests
 
-lambda tests_comp_for_*     = c++
-set    tests_comp_for_cuda  = nvcc $cuda_arch_flags
-set    tests_comp_for_rocm  = hipcc $cuda_arch_flags
-set    tests_comp_for_dpcpp = dpcpp
+# Lambda arguments: suite, compiler, std, simd_ext
+# By default all tests will be considered
+lambda tests_*_*_* = ok
 
-set tests_comp = ${tests_comp_for_$simd$}
+# Now disable some possibilities on certain compilers
+set    tests_clang_c89_vmx = ""
+set    tests_clang_c89_vsx = ""
+set    tests_clang_c89_sve = ""
+lambda tests_*_c89_cuda    = ""
+lambda tests_*_c99_cuda    = ""
+lambda tests_*_c11_cuda    = ""
+lambda tests_*_cpp17_cuda  = ""
+lambda tests_*_c89_rocm    = ""
+lambda tests_*_c99_rocm    = ""
+lambda tests_*_c11_rocm    = ""
+lambda tests_*_cpp98_rocm  = ""
+lambda tests_*_cpp17_rocm  = ""
+lambda tests_*_c89_oneapi  = ""
+lambda tests_*_c99_oneapi  = ""
+lambda tests_*_c11_oneapi  = ""
+lambda tests_dpcpp_cpp98_* = ""
+lambda tests_dpcpp_cpp11_* = ""
 
-set tests_flags = $flags$ $mpfr ${cflags_for_$simd$} -lm $ldflags
+set c89_enabled   = ${tests_$ccomp$_c89_$simd$}
+set c89.files     = ""
+set c99_enabled   = ${tests_$ccomp$_c99_$simd$}
+set c99.files     = ""
+set c11_enabled   = ${tests_$ccomp$_c11_$simd$}
+set c11.files     = ""
+set cpp98_enabled = ${tests_$cppcomp$_cpp98_$simd$}
+set cpp98.files   = ""
+set cpp11_enabled = ${tests_$cppcomp$_cpp11_$simd$}
+set cpp11.files   = ""
+set cpp17_enabled = ${tests_$cppcomp$_cpp17_$simd$}
+set cpp17.files   = ""
+set cpp20.files   = ""
 
+set tests_flags = $cuda_arch_flags $flags ${cflags_for_$simd$} -lm $ldflags
 echo Test compilation flags: $tests_flags$
 
-build_files c89 foreach glob:$root$/tests/*.c \
+[$c89_enabled$] build_files c89 foreach glob:$root$/tests/*.prec11.c \
                 as tests.%r.c89$exe \
                 autodeps @item libnsimd_$simd$$so$
-	cc -std=c89 @item $tests_flags -o @out
+	[$c89_enabled$] cc -std=c89 @item $tests_flags -o @out
 
-build_files c99 foreach glob:$root$/tests/*.c \
+[$c89_enabled$] phony tests.c89 deps $c89.files
+
+
+[$c99_enabled$] build_files c99 foreach glob:$root$/tests/*.prec11.c \
                 as tests.%r.c99$exe \
                 autodeps @item libnsimd_$simd$$so$
-	cc -std=c99 @item $tests_flags -o @out
+	[$c99_enabled$] cc -std=c99 @item $tests_flags -o @out
 
-build_files c11 foreach glob:$root$/tests/*.c \
+[$c99_enabled$] phony tests.c99 deps $c99.files
+
+
+[$c11_enabled$] build_files c11 foreach glob:$root$/tests/*.c \
                 as tests.%r.c11$exe \
                 autodeps @item libnsimd_$simd$$so$
-	cc -std=c11 @item $tests_flags -o @out
+	[$c11_enabled$] cc -std=c11 @item $tests_flags -o @out
 
-build_files cpp98 foreach glob:$root$/tests/*.cpp \
+[$c11_enabled$] phony tests.c11 deps $c11.files
+
+
+[$cpp98_enabled$] build_files cpp98 foreach glob:$root$/tests/*.cpp \
                   as tests.%r.cpp98$exe \
                   autodeps @item libnsimd_$simd$$so$
-	$tests_comp -std=c++98 @item $tests_flags -o @out
+	[$cpp98_enabled$] c++ -std=c++98 @item $tests_flags -o @out
 
-build_files cpp11 foreach glob:$root$/tests/*.cpp \
+[$cpp98_enabled$] phony tests.cpp98 deps $cpp98.files
+
+
+[$cpp11_enabled$] build_files cpp11 foreach glob:$root$/tests/*.cpp \
                   as tests.%r.cpp11$exe \
                   autodeps @item libnsimd_$simd$$so$
-	$tests_comp -std=c++11 @item $tests_flags -o @out
+	[$cpp11_enabled$] c++ -std=c++11 @item $tests_flags -o @out
 
-build_files cpp20 foreach glob:$root$/tests/*.cpp \
+[$cpp11_enabled$] phony tests.cpp11 deps $cpp11.files
+
+
+[$cpp17_enabled$] build_files cpp17 foreach glob:$root$/tests/*.cpp \
+                  as tests.%r.cpp17$exe \
+                  autodeps @item libnsimd_$simd$$so$
+	[$cpp17_enabled$] c++ -std=c++17 @item $tests_flags -o @out
+
+[$cpp17_enabled$] phony tests.cpp17 deps $cpp17.files
+
+
+[$cpp20_tests$] build_files cpp20 foreach glob:$root$/tests/*.cpp \
                   as tests.%r.cpp20$exe \
                   autodeps @item libnsimd_$simd$$so$
-	$tests_comp -std=c++20 @item $tests_flags -o @out
+	[$cpp20_tests$] c++ -std=c++20 @item $tests_flags -o @out
 
-phony tests.c89 deps $c89.files
-phony tests.c99 deps $c99.files
-phony tests.c11 deps $c11.files
-phony tests.cpp98 deps $cpp98.files
-phony tests.cpp11 deps $cpp11.files
-phony tests.cpp20 deps $cpp20.files
+[$cpp20_tests$] phony tests.cpp20 deps $cpp20.files
+
 
 # Phony target for tests
+phony tests deps $c89.files $c99.files $c11.files $cpp98.files $cpp11.files \
+                 $cpp17.files $cpp20.files
 
-lambda phony_tests_for_*     = tests.c89 tests.c99 tests.cpp98 tests.cpp11
-set    phony_tests_for_cuda  = tests.cpp98 tests.cpp11
-set    phony_tests_for_rocm  = tests.cpp11
-set    phony_tests_for_dpcpp = tests.cpp11
-set    phony_tests_for_sve   = tests.c11 tests.cpp11
-
-phony tests deps ${phony_tests_for_$simd$}
-
+## ----------------------------------------------------------------------------
 ## Examples
 
 build_files examples_cpp98 foreach glob:$root$/examples/*.cpp \
@@ -260,29 +467,3 @@ build_files examples_cpp98 foreach glob:$root$/examples/*.cpp \
 	c++ -std=c++98 @item $tests_flags -o @out
 
 phony examples.cpp98 deps $examples_cpp98.files
-
-## Ulps
-
-build_files optional ulps foreach glob:$root$/ulps/*.cpp \
-                          as ulp.%b.${simd}$exe \
-                          autodeps @item libnsimd_$simd$$so$
-	c++ $flags$ $mpfr -std=c++11 @item ${cflags_for_$simd$} \
-	    $ldflags -o @out
-
-phony ulps deps $ulps.files
-
-## Benches
-
-set benches_flags  = -std=c++11 ${cflags_for_$simd$} $flags $sleef $benchmark
-
-echo Benches compilation flags: $benches_flags
-
-build_files optional benches \
-            foreach glob:$root$/benches/*.$simd$.*.cpp \
-            as benches.%b.cpp11$exe \
-            autodeps @item libnsimd_$simd$$so$
-	c++ benches_flags @item -o @out
-
-phony benches deps $benches.files$
-
-end_translate
