@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -179,12 +178,18 @@ SOFTWARE.
 <li><p><a href="api_fnms.html">Fused negate-multiply-substract (fnms)</a></p></li>
 <li><p><a href="api_rec.html">Reciprocal (rec)</a></p></li>
 <li><p><a href="api_rec11.html">Reciprocal with relative error at most \(2^{-11}\) (rec11)</a></p></li>
-<li><p><a href="api_rec8.html">Reciprocal with relative error at most 2^{-8} (rec8)</a></p></li>
+<li><p><a href="api_rec8.html">Reciprocal with relative error at most \(2^{-8}\) (rec8)</a></p></li>
 <li><p><a href="api_sqrt.html">Square root (sqrt)</a></p></li>
 <li><p><a href="api_rsqrt11.html">Square root with relative error at most \(2^{-11}\) (rsqrt11)</a></p></li>
 <li><p><a href="api_rsqrt8.html">Square root with relative error at most \(2^{-8}\) (rsqrt8)</a></p></li>
 <li><p><a href="api_adds.html">Addition using saturation (adds)</a></p></li>
 <li><p><a href="api_subs.html">Subtraction using saturation (subs)</a></p></li>
+<li><p><a href="api_cbrt-u35.html">Cube root (cbrt_u35)</a></p></li>
+<li><p><a href="api_cbrt-u10.html">Cube root (cbrt_u10)</a></p></li>
+<li><p><a href="api_hypot-u05.html">Euclidean distance (hypot_u05)</a></p></li>
+<li><p><a href="api_hypot-u35.html">Euclidean distance (hypot_u35)</a></p></li>
+<li><p><a href="api_remainder.html">Floating-point remainder (remainder)</a></p></li>
+<li><p><a href="api_fmod.html">Floating-point remainder (fmod)</a></p></li>
 </ul>
 <h2>Comparison operators</h2>
 <ul>
@@ -218,6 +223,57 @@ SOFTWARE.
 <li><p><a href="api_unziphi.html">Unziphi (unziphi)</a></p></li>
 <li><p><a href="api_zip.html">Zip (zip)</a></p></li>
 <li><p><a href="api_unzip.html">Unzip (unzip)</a></p></li>
+</ul>
+<h2>Trigonometric functions</h2>
+<ul>
+<li><p><a href="api_sin-u35.html">Sine (sin_u35)</a></p></li>
+<li><p><a href="api_cos-u35.html">Cosine (cos_u35)</a></p></li>
+<li><p><a href="api_tan-u35.html">Tangent (tan_u35)</a></p></li>
+<li><p><a href="api_asin-u35.html">Arcsine (asin_u35)</a></p></li>
+<li><p><a href="api_acos-u35.html">Arccosine (acos_u35)</a></p></li>
+<li><p><a href="api_atan-u35.html">Arctangent (atan_u35)</a></p></li>
+<li><p><a href="api_atan2-u35.html">Arctangent (atan2_u35)</a></p></li>
+<li><p><a href="api_sin-u10.html">Sine (sin_u10)</a></p></li>
+<li><p><a href="api_cos-u10.html">Cosine (cos_u10)</a></p></li>
+<li><p><a href="api_tan-u10.html">Tangent (tan_u10)</a></p></li>
+<li><p><a href="api_asin-u10.html">Arcsine (asin_u10)</a></p></li>
+<li><p><a href="api_acos-u10.html">Arccosine (acos_u10)</a></p></li>
+<li><p><a href="api_atan-u10.html">Arctangent (atan_u10)</a></p></li>
+<li><p><a href="api_atan2-u10.html">Arctangent (atan2_u10)</a></p></li>
+<li><p><a href="api_sinpi-u05.html">Sine of pi times argument (sinpi_u05)</a></p></li>
+<li><p><a href="api_cospi-u05.html">Cosine of pi times argument (cospi_u05)</a></p></li>
+</ul>
+<h2>Exponential and logarithmic functions</h2>
+<ul>
+<li><p><a href="api_log-u35.html">Natural logarithm (log_u35)</a></p></li>
+<li><p><a href="api_log-u10.html">Natural logarithm (log_u10)</a></p></li>
+<li><p><a href="api_exp-u10.html">Base-e exponential (exp_u10)</a></p></li>
+<li><p><a href="api_pow-u10.html">Power (pow_u10)</a></p></li>
+<li><p><a href="api_exp2-u10.html">Base-2 exponential (exp2_u10)</a></p></li>
+<li><p><a href="api_exp2-u35.html">Base-2 exponential (exp2_u35)</a></p></li>
+<li><p><a href="api_exp10-u10.html">Base-10 exponential (exp10_u10)</a></p></li>
+<li><p><a href="api_exp10-u35.html">Base-10 exponential (exp10_u35)</a></p></li>
+<li><p><a href="api_expm1-u10.html">Exponential minus 1 (expm1_u10)</a></p></li>
+<li><p><a href="api_log10-u10.html">Base-10 logarithm (log10_u10)</a></p></li>
+<li><p><a href="api_log2-u10.html">Base-2 logarithm (log2_u10)</a></p></li>
+<li><p><a href="api_log2-u35.html">Base-2 logarithm (log2_u35)</a></p></li>
+<li><p><a href="api_log1p-u10.html">Logarithm of 1 plus argument (log1p_u10)</a></p></li>
+<li><p><a href="api_lgamma-u10.html">Log gamma (lgamma_u10)</a></p></li>
+<li><p><a href="api_tgamma-u10.html">True gamma (tgamma_u10)</a></p></li>
+<li><p><a href="api_erf-u10.html">Complementary error (erf_u10)</a></p></li>
+<li><p><a href="api_erfc-u15.html">Complementary error (erfc_u15)</a></p></li>
+</ul>
+<h2>Hyperbolic functions</h2>
+<ul>
+<li><p><a href="api_sinh-u10.html">Hyperbolic sine (sinh_u10)</a></p></li>
+<li><p><a href="api_cosh-u10.html">Hyperbolic cosine (cosh_u10)</a></p></li>
+<li><p><a href="api_tanh-u10.html">Hyperbolic tangent (tanh_u10)</a></p></li>
+<li><p><a href="api_sinh-u35.html">Hyperbolic sine (sinh_u35)</a></p></li>
+<li><p><a href="api_cosh-u35.html">Hyperbolic cosine (cosh_u35)</a></p></li>
+<li><p><a href="api_tanh-u35.html">Hyperbolic tangent (tanh_u35)</a></p></li>
+<li><p><a href="api_asinh-u10.html">Inverse hyperbolic sine (asinh_u10)</a></p></li>
+<li><p><a href="api_acosh-u10.html">Inverse hyperbolic cosine (acosh_u10)</a></p></li>
+<li><p><a href="api_atanh-u10.html">Inverse hyperbolic tangent (atanh_u10)</a></p></li>
 </ul>
   </body>
 </html>

@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -108,7 +107,7 @@ also provided.</p></li>
 This module define functions that generate pseudorandom numbers usingalgorithms described in Parallel Random Numbers: As Easy as 1,2,3, byJohn K. Salmon, Mark A. Moraes, Ron O. Dror and David E.Shaw.</p></li>
 <li><p><a href="module_tet1d_overview.html">Tiny expression templates 1D</a><br>
 This module provide a thin layer of expression templates above
-NSIMD core. It also allows the programmer to target NVIDIA and AMD GPUs.
+NSIMD core. It also allows the programmer to target Intel, NVIDIA and AMD GPUs.
 Expression template are a C++ technique that allows the programmer to write
 code &quot;à la MATLAB&quot; where variables usually represents vectors and operators
 are itemwise.</p></li>
@@ -116,7 +115,7 @@ are itemwise.</p></li>
 SPMD programming allows the programmer to focus on kernels and
 the compiler to vectorize kernel code more effectively. Basically this
 module provides a &quot;à la CUDA&quot; programming C++ DSL to targets CPU SIMD as well
-as NVIDIA and AMD GPUs.</p></li>
+as Intel, NVIDIA and AMD GPUs.</p></li>
 </ul>
   </body>
 </html>

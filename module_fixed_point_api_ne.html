@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -94,9 +93,8 @@ SOFTWARE.
 <hr>
 </div>
 
-<h1>Compare for inequality</h1>
-<p>Performs an inequality test between two fixed-point registers, and returns
-the results on the test in a logical register.</p>
+<h1>compare for inequality</h1>
+<p>Compare the inputs for inequality.</p>
 <h2>Template parameter type for T:</h2>
 <p>When using the following typedef :</p>
 <pre class="c++"><code>typedef nsimd::fixed_point::fp_t&lt;lf, rt&gt; fp_t</code></pre>
@@ -116,11 +114,10 @@ the results on the test in a logical register.</p>
 <h2>C++ API</h2>
 <pre class="c++"><code>namespace nsimd {
 namespace fixed_point {
-template &lt;typename T&gt;
-packl&lt;T&gt; ne(const pack&lt;T&gt; &amp;a0, const pack&lt;T&gt; &amp;a1);
 
-template &lt;typename T&gt;
-packl&lt;T&gt; operator!=(const pack&lt;T&gt; &amp;a0, const pack&lt;T&gt; &amp;a1);
+packl&lt;T&gt; ne(const pack&lt;T&gt; &amp; a0, const pack&lt;T&gt; &amp; a1);
+
+packl&lt;T&gt; operator!=(const pack&lt;T&gt; &amp; a0, const pack&lt;T&gt; &amp; a1);
 
 } // namespace fixed_point
 } // namespace nsimd</code></pre>

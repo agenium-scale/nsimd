@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -94,8 +93,8 @@ SOFTWARE.
 <hr>
 </div>
 
-<h1>Bitwise xor</h1>
-<p>Bitwise xor between two fixed-point SIMD registers.</p>
+<h1>bitwise xor</h1>
+<p>Returns the bitwise xor of the arguments.</p>
 <h2>Template parameter type for T:</h2>
 <p>When using the following typedef :</p>
 <pre class="c++"><code>typedef nsimd::fixed_point::fp_t&lt;lf, rt&gt; fp_t</code></pre>
@@ -115,8 +114,10 @@ SOFTWARE.
 <h2>C++ API</h2>
 <pre class="c++"><code>namespace nsimd {
 namespace fixed_point {
-template &lt;typename T&gt;
-pack&lt;T&gt; xorb(const pack&lt;T&gt; &amp;a0, const pack&lt;T&gt; &amp;a1);
+
+pack&lt;T&gt; xorb(const pack&lt;T&gt; &amp; a0, const pack&lt;T&gt; &amp; a1);
+
+pack&lt;T&gt; operator^(const pack&lt;T&gt; &amp; a0, const pack&lt;T&gt; &amp; a1);
 
 } // namespace fixed_point
 } // namespace nsimd</code></pre>

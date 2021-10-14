@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -111,24 +110,24 @@ same type as the other operands.</p>
 <ul>
 <li><p><code>#define k_orb(a0, a1)</code><br>
 Infix operator: <code>|</code> (<em>for certain types only</em>)<br>
-Returns the bitwise or of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the bitwise or of the arguments.</p></li>
 <li><p><code>#define k_andb(a0, a1)</code><br>
 Infix operator: <code>&amp;</code> (<em>for certain types only</em>)<br>
-Returns the bitwise and of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the bitwise and of the arguments.</p></li>
 <li><p><code>#define k_andnotb(a0, a1)</code><br>
-Returns the bitwise andnot of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the bitwise andnot of its arguments, more precisely &quot;arg1 and (not arg2)&quot;</p></li>
 <li><p><code>#define k_notb(a0)</code><br>
 Infix operator: <code>~</code> (<em>for certain types only</em>)<br>
-Returns the bitwise not of the argument. Defined over \(ℝ\).</p></li>
+Returns the bitwise not of the argument.</p></li>
 <li><p><code>#define k_xorb(a0, a1)</code><br>
 Infix operator: <code>^</code> (<em>for certain types only</em>)<br>
-Returns the bitwise xor of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the bitwise xor of the arguments.</p></li>
 <li><p><code>#define k_shr(a0, a1)</code><br>
 Infix operator: <code>&gt;&gt;</code> (<em>for certain types only</em>)<br>
-Returns the right shift in zeros of the arguments. Defined over \(ℝ × ℕ\).</p></li>
+Returns the right shift in zeros of the arguments.</p></li>
 <li><p><code>#define k_shl(a0, a1)</code><br>
 Infix operator: <code>&lt;&lt;</code> (<em>for certain types only</em>)<br>
-Returns the left shift of the arguments. Defined over \(ℝ × ℕ\).</p></li>
+Returns the left shift of the arguments.</p></li>
 <li><p><code>#define k_shra(a0, a1)</code><br>
 Performs a right shift operation with sign extension.</p></li>
 </ul>
@@ -136,17 +135,17 @@ Performs a right shift operation with sign extension.</p></li>
 <ul>
 <li><p><code>#define k_orl(a0, a1)</code><br>
 Infix operator: <code>||</code> (<em>for certain types only</em>)<br>
-Returns the logical or of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+Returns the logical or of the arguments.</p></li>
 <li><p><code>#define k_andl(a0, a1)</code><br>
 Infix operator: <code>&amp;&amp;</code> (<em>for certain types only</em>)<br>
-Returns the logical and of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+Returns the logical and of the arguments.</p></li>
 <li><p><code>#define k_andnotl(a0, a1)</code><br>
-Returns the logical andnot of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+Returns the logical andnot of its arguments, more precisely &quot;arg1 and (not arg2)&quot;</p></li>
 <li><p><code>#define k_xorl(a0, a1)</code><br>
-Returns the logical xor of the arguments. Defined over \(𝔹 × 𝔹\).</p></li>
+Returns the logical xor of the arguments.</p></li>
 <li><p><code>#define k_notl(a0)</code><br>
 Infix operator: <code>!</code> (<em>for certain types only</em>)<br>
-Returns the logical not of the argument. Defined over \(𝔹\).</p></li>
+Returns the logical not of the argument.</p></li>
 <li><p><code>#define k_to_mask(to_type, a0)</code><br>
 Returns a mask consisting of all ones for true elements and all zeros for false elements.</p></li>
 <li><p><code>#define k_to_logical(a0)</code><br>
@@ -156,25 +155,25 @@ Returns a vector of logicals. Set true when the corresponding elements are non z
 <ul>
 <li><p><code>#define k_add(a0, a1)</code><br>
 Infix operator: <code>+</code> (<em>for certain types only</em>)<br>
-Returns the addition of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the addition of the arguments.</p></li>
 <li><p><code>#define k_sub(a0, a1)</code><br>
 Infix operator: <code>-</code> (<em>for certain types only</em>)<br>
-Returns the subtraction of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the subtraction of the arguments.</p></li>
 <li><p><code>#define k_mul(a0, a1)</code><br>
 Infix operator: <code>*</code> (<em>for certain types only</em>)<br>
-Returns the multiplication of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the multiplication of the arguments.</p></li>
 <li><p><code>#define k_div(a0, a1)</code><br>
 Infix operator: <code>/</code> (<em>for certain types only</em>)<br>
-Returns the division of the arguments. Defined over \(ℝ × ℝ∖\{0\}\).</p></li>
+Returns the division of the arguments.</p></li>
 <li><p><code>#define k_neg(a0)</code><br>
 Infix operator: <code>-</code> (<em>for certain types only</em>)<br>
-Returns the opposite of the argument. Defined over \(ℝ\).</p></li>
+Returns the opposite of the argument.</p></li>
 <li><p><code>#define k_min(a0, a1)</code><br>
-Returns the minimum of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the minimum of the arguments.</p></li>
 <li><p><code>#define k_max(a0, a1)</code><br>
-Returns the maximum of the arguments. Defined over \(ℝ × ℝ\).</p></li>
+Returns the maximum of the arguments.</p></li>
 <li><p><code>#define k_abs(a0)</code><br>
-Returns the absolute value of the argument. Defined over \(ℝ\).</p></li>
+Returns the absolute value of the argument.</p></li>
 <li><p><code>#define k_fma(a0, a1, a2)</code><br>
 Multiply the first and second inputs and then adds the third input.</p></li>
 <li><p><code>#define k_fnma(a0, a1, a2)</code><br>
@@ -184,27 +183,39 @@ Substracts the third input to multiplication the first and second inputs.</p></l
 <li><p><code>#define k_fnms(a0, a1, a2)</code><br>
 Multiply the first and second inputs, negate the intermediate result and then substracts the third input to the intermediate result.</p></li>
 <li><p><code>#define k_rec(a0)</code><br>
-Returns the reciprocal of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+Returns the reciprocal of the argument.</p></li>
 <li><p><code>#define k_rec11(a0)</code><br>
-Returns the reciprocal with relative error at most \(2^{-11}\) of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+Returns the reciprocal with relative error at most \(2^{-11}\) of the argument.</p></li>
 <li><p><code>#define k_rec8(a0)</code><br>
-Returns the reciprocal with relative error at most 2^{-8} of the argument. Defined over \(ℝ∖\{0\}\).</p></li>
+Returns the reciprocal with relative error at most \(2^{-8}\) of the argument.</p></li>
 <li><p><code>#define k_sqrt(a0)</code><br>
-Returns the square root of the argument. Defined over \([0, +∞)\).</p></li>
+Returns the square root of the argument.</p></li>
 <li><p><code>#define k_rsqrt11(a0)</code><br>
-Returns the square root with relative error at most \(2^{-11}\) of the argument. Defined over \([0, +∞)\).</p></li>
+Returns the square root with relative error at most \(2^{-11}\) of the argument.</p></li>
 <li><p><code>#define k_rsqrt8(a0)</code><br>
-Returns the square root with relative error at most \(2^{-8}\) of the argument. Defined over \([0, +∞)\).</p></li>
+Returns the square root with relative error at most \(2^{-8}\) of the argument.</p></li>
 <li><p><code>#define k_adds(a0, a1)</code><br>
 Returns the saturated sum of the two vectors given as arguments</p></li>
 <li><p><code>#define k_subs(a0, a1)</code><br>
 Returns the saturated subtraction of the two vectors given as arguments</p></li>
+<li><p><code>#define k_cbrt_u35(a0)</code><br>
+Compute the cube root of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_cbrt_u10(a0)</code><br>
+Compute the cube root of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_hypot_u05(a0, a1)</code><br>
+Compute the Euclidean distance of its argument with a precision of 0.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_hypot_u35(a0, a1)</code><br>
+Compute the Euclidean distance of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_remainder(a0, a1)</code><br>
+Compute the floating-point remainder of its arguments. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_fmod(a0, a1)</code><br>
+Compute the floating-point remainder of its argument. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
 </ul>
 <h2>Comparison operators</h2>
 <ul>
 <li><p><code>#define k_eq(a0, a1)</code><br>
 Infix operator: <code>==</code> (<em>for certain types only</em>)<br>
-Compare the inputs for equality.</p></li>
+Returns the compare for equality of the arguments.</p></li>
 <li><p><code>#define k_ne(a0, a1)</code><br>
 Infix operator: <code>!=</code> (<em>for certain types only</em>)<br>
 Compare the inputs for inequality.</p></li>
@@ -224,13 +235,13 @@ Compare the inputs for lesser-or-equal-than.</p></li>
 <h2>Rounding functions</h2>
 <ul>
 <li><p><code>#define k_ceil(a0)</code><br>
-Returns the rounding up to integer value of the argument. Defined over \(ℝ\).</p></li>
+Returns the rounding up to integer value of the argument.</p></li>
 <li><p><code>#define k_floor(a0)</code><br>
-Returns the rounding down to integer value of the argument. Defined over \(ℝ\).</p></li>
+Returns the rounding down to integer value of the argument.</p></li>
 <li><p><code>#define k_trunc(a0)</code><br>
-Returns the rounding towards zero to integer value of the argument. Defined over \(ℝ\).</p></li>
+Returns the rounding towards zero to integer value of the argument.</p></li>
 <li><p><code>#define k_round_to_even(a0)</code><br>
-Returns the rounding to nearest integer value, tie to even of the argument. Defined over \(ℝ\).</p></li>
+Returns the rounding to nearest integer value, tie to even of the argument.</p></li>
 </ul>
 <h2>Conversion operators</h2>
 <ul>
@@ -238,6 +249,99 @@ Returns the rounding to nearest integer value, tie to even of the argument. Defi
 Reinterpret input vector into a different vector type preserving all bits.</p></li>
 <li><p><code>#define k_cvt(to_type, a0)</code><br>
 Convert input vector into a different vector type. The output type must have same length as input type.</p></li>
+</ul>
+<h2>Trigonometric functions</h2>
+<ul>
+<li><p><code>#define k_sin_u35(a0)</code><br>
+Compute the sine of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_cos_u35(a0)</code><br>
+Compute the cosine of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_tan_u35(a0)</code><br>
+Compute the tangent of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_asin_u35(a0)</code><br>
+Compute the arcsine of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_acos_u35(a0)</code><br>
+Compute the arccosine of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_atan_u35(a0)</code><br>
+Compute the arctangent of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_atan2_u35(a0, a1)</code><br>
+Compute the arctangent of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_sin_u10(a0)</code><br>
+Compute the sine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_cos_u10(a0)</code><br>
+Compute the cosine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_tan_u10(a0)</code><br>
+Compute the tangent of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_asin_u10(a0)</code><br>
+Compute the arcsine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_acos_u10(a0)</code><br>
+Compute the arccosine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_atan_u10(a0)</code><br>
+Compute the arctangent of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_atan2_u10(a0, a1)</code><br>
+Compute the arctangent of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_sinpi_u05(a0)</code><br>
+Compute the sine of pi times argument of its argument with a precision of 0.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_cospi_u05(a0)</code><br>
+Compute the cosine of pi times argument of its argument with a precision of 0.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+</ul>
+<h2>Exponential and logarithmic functions</h2>
+<ul>
+<li><p><code>#define k_log_u35(a0)</code><br>
+Compute the natural logarithm of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_log_u10(a0)</code><br>
+Compute the natural logarithm of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_exp_u10(a0)</code><br>
+Compute the base-e exponential of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_pow_u10(a0, a1)</code><br>
+Compute the power of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_exp2_u10(a0)</code><br>
+Compute the base-2 exponential of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_exp2_u35(a0)</code><br>
+Compute the base-2 exponential of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_exp10_u10(a0)</code><br>
+Compute the base-10 exponential of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_exp10_u35(a0)</code><br>
+Compute the base-10 exponential of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_expm1_u10(a0)</code><br>
+Compute the exponential minus 1 of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_log10_u10(a0)</code><br>
+Compute the base-10 logarithm of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_log2_u10(a0)</code><br>
+Compute the base-2 logarithm of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_log2_u35(a0)</code><br>
+Compute the base-2 logarithm of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_log1p_u10(a0)</code><br>
+Compute the logarithm of 1 plus argument of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_lgamma_u10(a0)</code><br>
+Compute the log gamma of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_tgamma_u10(a0)</code><br>
+Compute the true gamma of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_erf_u10(a0)</code><br>
+Compute the complementary error of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_erfc_u15(a0)</code><br>
+Compute the complementary error of its argument with a precision of 1.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+</ul>
+<h2>Hyperbolic functions</h2>
+<ul>
+<li><p><code>#define k_sinh_u10(a0)</code><br>
+Compute the hyperbolic sine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_cosh_u10(a0)</code><br>
+Compute the hyperbolic cosine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_tanh_u10(a0)</code><br>
+Compute the hyperbolic tangent of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_sinh_u35(a0)</code><br>
+Compute the hyperbolic sine of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_cosh_u35(a0)</code><br>
+Compute the hyperbolic cosine of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_tanh_u35(a0)</code><br>
+Compute the hyperbolic tangent of its argument with a precision of 3.5 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_asinh_u10(a0)</code><br>
+Compute the inverse hyperbolic sine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_acosh_u10(a0)</code><br>
+Compute the inverse hyperbolic cosine of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
+<li><p><code>#define k_atanh_u10(a0)</code><br>
+Compute the inverse hyperbolic tangent of its argument with a precision of 1.0 ulps. For more informations visit <a href="https://sleef.org/purec.xhtml">https://sleef.org/purec.xhtml</a>.</p></li>
 </ul>
   </body>
 </html>

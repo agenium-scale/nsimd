@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -252,14 +251,14 @@ SOFTWARE.
 </ul>
 <h2>div</h2>
 <ul>
-<li><p> div on <b>i8</b>: T</p></li>
-<li><p> div on <b>u8</b>: T</p></li>
-<li><p> div on <b>i16</b>: T</p></li>
-<li><p> div on <b>u16</b>: T</p></li>
-<li><p> div on <b>i32</b>: T</p></li>
-<li><p> div on <b>u32</b>: T</p></li>
-<li><p> div on <b>i64</b>: T</p></li>
-<li><p> div on <b>u64</b>: T</p></li>
+<li><p> div on <b>i8</b>: E</p></li>
+<li><p> div on <b>u8</b>: E</p></li>
+<li><p> div on <b>i16</b>: E</p></li>
+<li><p> div on <b>u16</b>: E</p></li>
+<li><p> div on <b>i32</b>: E</p></li>
+<li><p> div on <b>u32</b>: E</p></li>
+<li><p> div on <b>i64</b>: E</p></li>
+<li><p> div on <b>u64</b>: E</p></li>
 <li><p> div on <b>f16</b>: T</p></li>
 <li><p> div on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_div_ps"><code>_mm256_div_ps</code></a></p></li>
 <li><p> div on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_div_pd"><code>_mm256_div_pd</code></a></p></li>
@@ -275,8 +274,8 @@ SOFTWARE.
 <li><p> eq on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmpeq_epi64"><code>_mm256_cmpeq_epi64</code></a></p></li>
 <li><p> eq on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmpeq_epi64"><code>_mm256_cmpeq_epi64</code></a></p></li>
 <li><p> eq on <b>f16</b>: T</p></li>
-<li><p> eq on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_ps"><code>_mm256_cmp_ps</code></a></p></li>
-<li><p> eq on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_pd"><code>_mm256_cmp_pd</code></a></p></li>
+<li><p> eq on <b>f32</b>: T</p></li>
+<li><p> eq on <b>f64</b>: T</p></li>
 </ul>
 <h2>floor</h2>
 <ul>
@@ -352,29 +351,29 @@ SOFTWARE.
 <ul>
 <li><p> gather on <b>i8</b>: NA</p></li>
 <li><p> gather on <b>u8</b>: NA</p></li>
-<li><p> gather on <b>i16</b>: T</p></li>
-<li><p> gather on <b>u16</b>: T</p></li>
+<li><p> gather on <b>i16</b>: E</p></li>
+<li><p> gather on <b>u16</b>: E</p></li>
 <li><p> gather on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_i32gather_epi32"><code>_mm256_i32gather_epi32</code></a></p></li>
 <li><p> gather on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_i32gather_epi32"><code>_mm256_i32gather_epi32</code></a></p></li>
-<li><p> gather on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_i64gather_epi64"><code>_mm256_i64gather_epi64</code></a></p></li>
-<li><p> gather on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_i64gather_epi64"><code>_mm256_i64gather_epi64</code></a></p></li>
-<li><p> gather on <b>f16</b>: T</p></li>
+<li><p> gather on <b>i64</b>: T</p></li>
+<li><p> gather on <b>u64</b>: T</p></li>
+<li><p> gather on <b>f16</b>: E</p></li>
 <li><p> gather on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_i32gather_ps"><code>_mm256_i32gather_ps</code></a></p></li>
 <li><p> gather on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_i64gather_pd"><code>_mm256_i64gather_pd</code></a></p></li>
 </ul>
 <h2>gather_linear</h2>
 <ul>
-<li><p> gather_linear on <b>i8</b>: T</p></li>
-<li><p> gather_linear on <b>u8</b>: T</p></li>
-<li><p> gather_linear on <b>i16</b>: T</p></li>
-<li><p> gather_linear on <b>u16</b>: T</p></li>
-<li><p> gather_linear on <b>i32</b>: T</p></li>
-<li><p> gather_linear on <b>u32</b>: T</p></li>
-<li><p> gather_linear on <b>i64</b>: T</p></li>
-<li><p> gather_linear on <b>u64</b>: T</p></li>
-<li><p> gather_linear on <b>f16</b>: T</p></li>
-<li><p> gather_linear on <b>f32</b>: T</p></li>
-<li><p> gather_linear on <b>f64</b>: T</p></li>
+<li><p> gather_linear on <b>i8</b>: E</p></li>
+<li><p> gather_linear on <b>u8</b>: E</p></li>
+<li><p> gather_linear on <b>i16</b>: E</p></li>
+<li><p> gather_linear on <b>u16</b>: E</p></li>
+<li><p> gather_linear on <b>i32</b>: E</p></li>
+<li><p> gather_linear on <b>u32</b>: E</p></li>
+<li><p> gather_linear on <b>i64</b>: E</p></li>
+<li><p> gather_linear on <b>u64</b>: E</p></li>
+<li><p> gather_linear on <b>f16</b>: E</p></li>
+<li><p> gather_linear on <b>f32</b>: E</p></li>
+<li><p> gather_linear on <b>f64</b>: E</p></li>
 </ul>
 <h2>ge</h2>
 <ul>
@@ -387,8 +386,8 @@ SOFTWARE.
 <li><p> ge on <b>i64</b>: T</p></li>
 <li><p> ge on <b>u64</b>: T</p></li>
 <li><p> ge on <b>f16</b>: T</p></li>
-<li><p> ge on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_ps"><code>_mm256_cmp_ps</code></a></p></li>
-<li><p> ge on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_pd"><code>_mm256_cmp_pd</code></a></p></li>
+<li><p> ge on <b>f32</b>: T</p></li>
+<li><p> ge on <b>f64</b>: T</p></li>
 </ul>
 <h2>gt</h2>
 <ul>
@@ -401,8 +400,8 @@ SOFTWARE.
 <li><p> gt on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmpgt_epi64"><code>_mm256_cmpgt_epi64</code></a></p></li>
 <li><p> gt on <b>u64</b>: T</p></li>
 <li><p> gt on <b>f16</b>: T</p></li>
-<li><p> gt on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_ps"><code>_mm256_cmp_ps</code></a></p></li>
-<li><p> gt on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_pd"><code>_mm256_cmp_pd</code></a></p></li>
+<li><p> gt on <b>f32</b>: T</p></li>
+<li><p> gt on <b>f64</b>: T</p></li>
 </ul>
 <h2>if_else1</h2>
 <ul>
@@ -443,8 +442,8 @@ SOFTWARE.
 <li><p> le on <b>i64</b>: T</p></li>
 <li><p> le on <b>u64</b>: T</p></li>
 <li><p> le on <b>f16</b>: T</p></li>
-<li><p> le on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_ps"><code>_mm256_cmp_ps</code></a></p></li>
-<li><p> le on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_pd"><code>_mm256_cmp_pd</code></a></p></li>
+<li><p> le on <b>f32</b>: T</p></li>
+<li><p> le on <b>f64</b>: T</p></li>
 </ul>
 <h2>len</h2>
 <ul>
@@ -554,7 +553,7 @@ SOFTWARE.
 <li><p> loada on <b>u32</b>: T</p></li>
 <li><p> loada on <b>i64</b>: T</p></li>
 <li><p> loada on <b>u64</b>: T</p></li>
-<li><p> loada on <b>f16</b>: T</p></li>
+<li><p> loada on <b>f16</b>: E</p></li>
 <li><p> loada on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_load_ps"><code>_mm256_load_ps</code></a></p></li>
 <li><p> loada on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_load_pd"><code>_mm256_load_pd</code></a></p></li>
 </ul>
@@ -596,7 +595,7 @@ SOFTWARE.
 <li><p> loadu on <b>u32</b>: T</p></li>
 <li><p> loadu on <b>i64</b>: T</p></li>
 <li><p> loadu on <b>u64</b>: T</p></li>
-<li><p> loadu on <b>f16</b>: T</p></li>
+<li><p> loadu on <b>f16</b>: E</p></li>
 <li><p> loadu on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_loadu_ps"><code>_mm256_loadu_ps</code></a></p></li>
 <li><p> loadu on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_loadu_pd"><code>_mm256_loadu_pd</code></a></p></li>
 </ul>
@@ -636,9 +635,9 @@ SOFTWARE.
 <li><p> mask_storea1 on <b>u16</b>: T</p></li>
 <li><p> mask_storea1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi32"><code>_mm256_maskstore_epi32</code></a></p></li>
 <li><p> mask_storea1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi32"><code>_mm256_maskstore_epi32</code></a></p></li>
-<li><p> mask_storea1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi64"><code>_mm256_maskstore_epi64</code></a></p></li>
-<li><p> mask_storea1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi64"><code>_mm256_maskstore_epi64</code></a></p></li>
-<li><p> mask_storea1 on <b>f16</b>: T</p></li>
+<li><p> mask_storea1 on <b>i64</b>: T</p></li>
+<li><p> mask_storea1 on <b>u64</b>: T</p></li>
+<li><p> mask_storea1 on <b>f16</b>: E</p></li>
 <li><p> mask_storea1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_ps"><code>_mm256_maskstore_ps</code></a></p></li>
 <li><p> mask_storea1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_pd"><code>_mm256_maskstore_pd</code></a></p></li>
 </ul>
@@ -650,65 +649,65 @@ SOFTWARE.
 <li><p> mask_storeu1 on <b>u16</b>: T</p></li>
 <li><p> mask_storeu1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi32"><code>_mm256_maskstore_epi32</code></a></p></li>
 <li><p> mask_storeu1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi32"><code>_mm256_maskstore_epi32</code></a></p></li>
-<li><p> mask_storeu1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi64"><code>_mm256_maskstore_epi64</code></a></p></li>
-<li><p> mask_storeu1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_epi64"><code>_mm256_maskstore_epi64</code></a></p></li>
-<li><p> mask_storeu1 on <b>f16</b>: T</p></li>
+<li><p> mask_storeu1 on <b>i64</b>: T</p></li>
+<li><p> mask_storeu1 on <b>u64</b>: T</p></li>
+<li><p> mask_storeu1 on <b>f16</b>: E</p></li>
 <li><p> mask_storeu1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_ps"><code>_mm256_maskstore_ps</code></a></p></li>
 <li><p> mask_storeu1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskstore_pd"><code>_mm256_maskstore_pd</code></a></p></li>
 </ul>
 <h2>masko_loada1</h2>
 <ul>
-<li><p> masko_loada1 on <b>i8</b>: T</p></li>
-<li><p> masko_loada1 on <b>u8</b>: T</p></li>
-<li><p> masko_loada1 on <b>i16</b>: T</p></li>
-<li><p> masko_loada1 on <b>u16</b>: T</p></li>
+<li><p> masko_loada1 on <b>i8</b>: E</p></li>
+<li><p> masko_loada1 on <b>u8</b>: E</p></li>
+<li><p> masko_loada1 on <b>i16</b>: E</p></li>
+<li><p> masko_loada1 on <b>u16</b>: E</p></li>
 <li><p> masko_loada1 on <b>i32</b>: T</p></li>
 <li><p> masko_loada1 on <b>u32</b>: T</p></li>
 <li><p> masko_loada1 on <b>i64</b>: T</p></li>
 <li><p> masko_loada1 on <b>u64</b>: T</p></li>
-<li><p> masko_loada1 on <b>f16</b>: T</p></li>
+<li><p> masko_loada1 on <b>f16</b>: E</p></li>
 <li><p> masko_loada1 on <b>f32</b>: T</p></li>
 <li><p> masko_loada1 on <b>f64</b>: T</p></li>
 </ul>
 <h2>masko_loadu1</h2>
 <ul>
-<li><p> masko_loadu1 on <b>i8</b>: T</p></li>
-<li><p> masko_loadu1 on <b>u8</b>: T</p></li>
-<li><p> masko_loadu1 on <b>i16</b>: T</p></li>
-<li><p> masko_loadu1 on <b>u16</b>: T</p></li>
+<li><p> masko_loadu1 on <b>i8</b>: E</p></li>
+<li><p> masko_loadu1 on <b>u8</b>: E</p></li>
+<li><p> masko_loadu1 on <b>i16</b>: E</p></li>
+<li><p> masko_loadu1 on <b>u16</b>: E</p></li>
 <li><p> masko_loadu1 on <b>i32</b>: T</p></li>
 <li><p> masko_loadu1 on <b>u32</b>: T</p></li>
 <li><p> masko_loadu1 on <b>i64</b>: T</p></li>
 <li><p> masko_loadu1 on <b>u64</b>: T</p></li>
-<li><p> masko_loadu1 on <b>f16</b>: T</p></li>
+<li><p> masko_loadu1 on <b>f16</b>: E</p></li>
 <li><p> masko_loadu1 on <b>f32</b>: T</p></li>
 <li><p> masko_loadu1 on <b>f64</b>: T</p></li>
 </ul>
 <h2>maskz_loada1</h2>
 <ul>
-<li><p> maskz_loada1 on <b>i8</b>: T</p></li>
-<li><p> maskz_loada1 on <b>u8</b>: T</p></li>
-<li><p> maskz_loada1 on <b>i16</b>: T</p></li>
-<li><p> maskz_loada1 on <b>u16</b>: T</p></li>
+<li><p> maskz_loada1 on <b>i8</b>: E</p></li>
+<li><p> maskz_loada1 on <b>u8</b>: E</p></li>
+<li><p> maskz_loada1 on <b>i16</b>: E</p></li>
+<li><p> maskz_loada1 on <b>u16</b>: E</p></li>
 <li><p> maskz_loada1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi32"><code>_mm256_maskload_epi32</code></a></p></li>
 <li><p> maskz_loada1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi32"><code>_mm256_maskload_epi32</code></a></p></li>
-<li><p> maskz_loada1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi64"><code>_mm256_maskload_epi64</code></a></p></li>
-<li><p> maskz_loada1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi64"><code>_mm256_maskload_epi64</code></a></p></li>
-<li><p> maskz_loada1 on <b>f16</b>: T</p></li>
+<li><p> maskz_loada1 on <b>i64</b>: T</p></li>
+<li><p> maskz_loada1 on <b>u64</b>: T</p></li>
+<li><p> maskz_loada1 on <b>f16</b>: E</p></li>
 <li><p> maskz_loada1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_ps"><code>_mm256_maskload_ps</code></a></p></li>
 <li><p> maskz_loada1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_pd"><code>_mm256_maskload_pd</code></a></p></li>
 </ul>
 <h2>maskz_loadu1</h2>
 <ul>
-<li><p> maskz_loadu1 on <b>i8</b>: T</p></li>
-<li><p> maskz_loadu1 on <b>u8</b>: T</p></li>
-<li><p> maskz_loadu1 on <b>i16</b>: T</p></li>
-<li><p> maskz_loadu1 on <b>u16</b>: T</p></li>
+<li><p> maskz_loadu1 on <b>i8</b>: E</p></li>
+<li><p> maskz_loadu1 on <b>u8</b>: E</p></li>
+<li><p> maskz_loadu1 on <b>i16</b>: E</p></li>
+<li><p> maskz_loadu1 on <b>u16</b>: E</p></li>
 <li><p> maskz_loadu1 on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi32"><code>_mm256_maskload_epi32</code></a></p></li>
 <li><p> maskz_loadu1 on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi32"><code>_mm256_maskload_epi32</code></a></p></li>
-<li><p> maskz_loadu1 on <b>i64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi64"><code>_mm256_maskload_epi64</code></a></p></li>
-<li><p> maskz_loadu1 on <b>u64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_epi64"><code>_mm256_maskload_epi64</code></a></p></li>
-<li><p> maskz_loadu1 on <b>f16</b>: T</p></li>
+<li><p> maskz_loadu1 on <b>i64</b>: T</p></li>
+<li><p> maskz_loadu1 on <b>u64</b>: T</p></li>
+<li><p> maskz_loadu1 on <b>f16</b>: E</p></li>
 <li><p> maskz_loadu1 on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_ps"><code>_mm256_maskload_ps</code></a></p></li>
 <li><p> maskz_loadu1 on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_maskload_pd"><code>_mm256_maskload_pd</code></a></p></li>
 </ul>
@@ -748,8 +747,8 @@ SOFTWARE.
 <li><p> mul on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_mullo_epi16"><code>_mm256_mullo_epi16</code></a></p></li>
 <li><p> mul on <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_mullo_epi32"><code>_mm256_mullo_epi32</code></a></p></li>
 <li><p> mul on <b>u32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_mullo_epi32"><code>_mm256_mullo_epi32</code></a></p></li>
-<li><p> mul on <b>i64</b>: T</p></li>
-<li><p> mul on <b>u64</b>: T</p></li>
+<li><p> mul on <b>i64</b>: E</p></li>
+<li><p> mul on <b>u64</b>: E</p></li>
 <li><p> mul on <b>f16</b>: T</p></li>
 <li><p> mul on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_mul_ps"><code>_mm256_mul_ps</code></a></p></li>
 <li><p> mul on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_mul_pd"><code>_mm256_mul_pd</code></a></p></li>
@@ -779,8 +778,8 @@ SOFTWARE.
 <li><p> ne on <b>i64</b>: T</p></li>
 <li><p> ne on <b>u64</b>: T</p></li>
 <li><p> ne on <b>f16</b>: T</p></li>
-<li><p> ne on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_ps"><code>_mm256_cmp_ps</code></a></p></li>
-<li><p> ne on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_pd"><code>_mm256_cmp_pd</code></a></p></li>
+<li><p> ne on <b>f32</b>: T</p></li>
+<li><p> ne on <b>f64</b>: T</p></li>
 </ul>
 <h2>neg</h2>
 <ul>
@@ -905,8 +904,8 @@ SOFTWARE.
 <li><p> round_to_even on <b>i64</b>: NOOP</p></li>
 <li><p> round_to_even on <b>u64</b>: NOOP</p></li>
 <li><p> round_to_even on <b>f16</b>: T</p></li>
-<li><p> round_to_even on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_round_ps"><code>_mm256_round_ps</code></a></p></li>
-<li><p> round_to_even on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_round_pd"><code>_mm256_round_pd</code></a></p></li>
+<li><p> round_to_even on <b>f32</b>: T</p></li>
+<li><p> round_to_even on <b>f64</b>: T</p></li>
 </ul>
 <h2>rsqrt11</h2>
 <ul>
@@ -940,29 +939,29 @@ SOFTWARE.
 <ul>
 <li><p> scatter on <b>i8</b>: NA</p></li>
 <li><p> scatter on <b>u8</b>: NA</p></li>
-<li><p> scatter on <b>i16</b>: T</p></li>
-<li><p> scatter on <b>u16</b>: T</p></li>
-<li><p> scatter on <b>i32</b>: T</p></li>
-<li><p> scatter on <b>u32</b>: T</p></li>
-<li><p> scatter on <b>i64</b>: T</p></li>
-<li><p> scatter on <b>u64</b>: T</p></li>
-<li><p> scatter on <b>f16</b>: T</p></li>
-<li><p> scatter on <b>f32</b>: T</p></li>
-<li><p> scatter on <b>f64</b>: T</p></li>
+<li><p> scatter on <b>i16</b>: E</p></li>
+<li><p> scatter on <b>u16</b>: E</p></li>
+<li><p> scatter on <b>i32</b>: E</p></li>
+<li><p> scatter on <b>u32</b>: E</p></li>
+<li><p> scatter on <b>i64</b>: E</p></li>
+<li><p> scatter on <b>u64</b>: E</p></li>
+<li><p> scatter on <b>f16</b>: E</p></li>
+<li><p> scatter on <b>f32</b>: E</p></li>
+<li><p> scatter on <b>f64</b>: E</p></li>
 </ul>
 <h2>scatter_linear</h2>
 <ul>
-<li><p> scatter_linear on <b>i8</b>: T</p></li>
-<li><p> scatter_linear on <b>u8</b>: T</p></li>
-<li><p> scatter_linear on <b>i16</b>: T</p></li>
-<li><p> scatter_linear on <b>u16</b>: T</p></li>
-<li><p> scatter_linear on <b>i32</b>: T</p></li>
-<li><p> scatter_linear on <b>u32</b>: T</p></li>
-<li><p> scatter_linear on <b>i64</b>: T</p></li>
-<li><p> scatter_linear on <b>u64</b>: T</p></li>
-<li><p> scatter_linear on <b>f16</b>: T</p></li>
-<li><p> scatter_linear on <b>f32</b>: T</p></li>
-<li><p> scatter_linear on <b>f64</b>: T</p></li>
+<li><p> scatter_linear on <b>i8</b>: E</p></li>
+<li><p> scatter_linear on <b>u8</b>: E</p></li>
+<li><p> scatter_linear on <b>i16</b>: E</p></li>
+<li><p> scatter_linear on <b>u16</b>: E</p></li>
+<li><p> scatter_linear on <b>i32</b>: E</p></li>
+<li><p> scatter_linear on <b>u32</b>: E</p></li>
+<li><p> scatter_linear on <b>i64</b>: E</p></li>
+<li><p> scatter_linear on <b>u64</b>: E</p></li>
+<li><p> scatter_linear on <b>f16</b>: E</p></li>
+<li><p> scatter_linear on <b>f32</b>: E</p></li>
+<li><p> scatter_linear on <b>f64</b>: E</p></li>
 </ul>
 <h2>set1</h2>
 <ul>
@@ -1028,7 +1027,7 @@ SOFTWARE.
 <li><p> shra on <b>u16</b>: T</p></li>
 <li><p> shra on <b>i32</b>: T</p></li>
 <li><p> shra on <b>u32</b>: T</p></li>
-<li><p> shra on <b>i64</b>: T</p></li>
+<li><p> shra on <b>i64</b>: E</p></li>
 <li><p> shra on <b>u64</b>: T</p></li>
 <li><p> shra on <b>f16</b>: NA</p></li>
 <li><p> shra on <b>f32</b>: NA</p></li>
@@ -1142,7 +1141,7 @@ SOFTWARE.
 <li><p> storea on <b>u32</b>: T</p></li>
 <li><p> storea on <b>i64</b>: T</p></li>
 <li><p> storea on <b>u64</b>: T</p></li>
-<li><p> storea on <b>f16</b>: T</p></li>
+<li><p> storea on <b>f16</b>: E</p></li>
 <li><p> storea on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_store_ps"><code>_mm256_store_ps</code></a></p></li>
 <li><p> storea on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_store_pd"><code>_mm256_store_pd</code></a></p></li>
 </ul>
@@ -1184,7 +1183,7 @@ SOFTWARE.
 <li><p> storeu on <b>u32</b>: T</p></li>
 <li><p> storeu on <b>i64</b>: T</p></li>
 <li><p> storeu on <b>u64</b>: T</p></li>
-<li><p> storeu on <b>f16</b>: T</p></li>
+<li><p> storeu on <b>f16</b>: E</p></li>
 <li><p> storeu on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_storeu_ps"><code>_mm256_storeu_ps</code></a></p></li>
 <li><p> storeu on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_storeu_pd"><code>_mm256_storeu_pd</code></a></p></li>
 </ul>
@@ -1209,9 +1208,9 @@ SOFTWARE.
 <li><p> subs on <b>i16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_subs_epi16"><code>_mm256_subs_epi16</code></a></p></li>
 <li><p> subs on <b>u16</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_subs_epu16"><code>_mm256_subs_epu16</code></a></p></li>
 <li><p> subs on <b>i32</b>: T</p></li>
-<li><p> subs on <b>u32</b>: T</p></li>
+<li><p> subs on <b>u32</b>: E</p></li>
 <li><p> subs on <b>i64</b>: T</p></li>
-<li><p> subs on <b>u64</b>: T</p></li>
+<li><p> subs on <b>u64</b>: E</p></li>
 <li><p> subs on <b>f16</b>: T</p></li>
 <li><p> subs on <b>f32</b>: T</p></li>
 <li><p> subs on <b>f64</b>: T</p></li>
@@ -1255,8 +1254,8 @@ SOFTWARE.
 <li><p> trunc on <b>i64</b>: NOOP</p></li>
 <li><p> trunc on <b>u64</b>: NOOP</p></li>
 <li><p> trunc on <b>f16</b>: T</p></li>
-<li><p> trunc on <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_round_ps"><code>_mm256_round_ps</code></a></p></li>
-<li><p> trunc on <b>f64</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_round_pd"><code>_mm256_round_pd</code></a></p></li>
+<li><p> trunc on <b>f32</b>: T</p></li>
+<li><p> trunc on <b>f64</b>: T</p></li>
 </ul>
 <h2>unzip</h2>
 <ul>
@@ -1274,8 +1273,8 @@ SOFTWARE.
 </ul>
 <h2>unziphi</h2>
 <ul>
-<li><p> unziphi on <b>i8</b>: T</p></li>
-<li><p> unziphi on <b>u8</b>: T</p></li>
+<li><p> unziphi on <b>i8</b>: E</p></li>
+<li><p> unziphi on <b>u8</b>: E</p></li>
 <li><p> unziphi on <b>i16</b>: T</p></li>
 <li><p> unziphi on <b>u16</b>: T</p></li>
 <li><p> unziphi on <b>i32</b>: T</p></li>
@@ -1288,8 +1287,8 @@ SOFTWARE.
 </ul>
 <h2>unziplo</h2>
 <ul>
-<li><p> unziplo on <b>i8</b>: T</p></li>
-<li><p> unziplo on <b>u8</b>: T</p></li>
+<li><p> unziplo on <b>i8</b>: E</p></li>
+<li><p> unziplo on <b>u8</b>: E</p></li>
 <li><p> unziplo on <b>i16</b>: T</p></li>
 <li><p> unziplo on <b>u16</b>: T</p></li>
 <li><p> unziplo on <b>i32</b>: T</p></li>
@@ -1387,21 +1386,21 @@ SOFTWARE.
 <li><p> cvt from <b>i32</b> to <b>f32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cvtepi32_ps"><code>_mm256_cvtepi32_ps</code></a></p></li>
 <li><p> cvt from <b>u32</b> to <b>i32</b>: NOOP</p></li>
 <li><p> cvt from <b>u32</b> to <b>u32</b>: NOOP</p></li>
-<li><p> cvt from <b>u32</b> to <b>f32</b>: T</p></li>
+<li><p> cvt from <b>u32</b> to <b>f32</b>: E</p></li>
 <li><p> cvt from <b>i64</b> to <b>i64</b>: NOOP</p></li>
 <li><p> cvt from <b>i64</b> to <b>u64</b>: NOOP</p></li>
-<li><p> cvt from <b>i64</b> to <b>f64</b>: T</p></li>
+<li><p> cvt from <b>i64</b> to <b>f64</b>: E</p></li>
 <li><p> cvt from <b>u64</b> to <b>i64</b>: NOOP</p></li>
 <li><p> cvt from <b>u64</b> to <b>u64</b>: NOOP</p></li>
-<li><p> cvt from <b>u64</b> to <b>f64</b>: T</p></li>
-<li><p> cvt from <b>f16</b> to <b>i16</b>: T</p></li>
-<li><p> cvt from <b>f16</b> to <b>u16</b>: T</p></li>
+<li><p> cvt from <b>u64</b> to <b>f64</b>: E</p></li>
+<li><p> cvt from <b>f16</b> to <b>i16</b>: E</p></li>
+<li><p> cvt from <b>f16</b> to <b>u16</b>: E</p></li>
 <li><p> cvt from <b>f16</b> to <b>f16</b>: NOOP</p></li>
 <li><p> cvt from <b>f32</b> to <b>i32</b>: <a href="https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cvtps_epi32"><code>_mm256_cvtps_epi32</code></a></p></li>
-<li><p> cvt from <b>f32</b> to <b>u32</b>: T</p></li>
+<li><p> cvt from <b>f32</b> to <b>u32</b>: E</p></li>
 <li><p> cvt from <b>f32</b> to <b>f32</b>: NOOP</p></li>
-<li><p> cvt from <b>f64</b> to <b>i64</b>: T</p></li>
-<li><p> cvt from <b>f64</b> to <b>u64</b>: T</p></li>
+<li><p> cvt from <b>f64</b> to <b>i64</b>: E</p></li>
+<li><p> cvt from <b>f64</b> to <b>u64</b>: E</p></li>
 <li><p> cvt from <b>f64</b> to <b>f64</b>: NOOP</p></li>
 </ul>
 <h2>reinterpret</h2>
@@ -1462,8 +1461,8 @@ SOFTWARE.
 <li><p> reinterpretl from <b>u64</b> to <b>i64</b>: NOOP</p></li>
 <li><p> reinterpretl from <b>u64</b> to <b>u64</b>: NOOP</p></li>
 <li><p> reinterpretl from <b>u64</b> to <b>f64</b>: NOOP</p></li>
-<li><p> reinterpretl from <b>f16</b> to <b>i16</b>: T</p></li>
-<li><p> reinterpretl from <b>f16</b> to <b>u16</b>: T</p></li>
+<li><p> reinterpretl from <b>f16</b> to <b>i16</b>: E</p></li>
+<li><p> reinterpretl from <b>f16</b> to <b>u16</b>: E</p></li>
 <li><p> reinterpretl from <b>f16</b> to <b>f16</b>: NOOP</p></li>
 <li><p> reinterpretl from <b>f32</b> to <b>i32</b>: NOOP</p></li>
 <li><p> reinterpretl from <b>f32</b> to <b>u32</b>: NOOP</p></li>
@@ -1501,29 +1500,29 @@ SOFTWARE.
 </ul>
 <h2>downcvt</h2>
 <ul>
-<li><p> downcvt from <b>i16</b> to <b>i8</b>: T</p></li>
-<li><p> downcvt from <b>i16</b> to <b>u8</b>: T</p></li>
-<li><p> downcvt from <b>u16</b> to <b>i8</b>: T</p></li>
-<li><p> downcvt from <b>u16</b> to <b>u8</b>: T</p></li>
-<li><p> downcvt from <b>i32</b> to <b>i16</b>: T</p></li>
-<li><p> downcvt from <b>i32</b> to <b>u16</b>: T</p></li>
+<li><p> downcvt from <b>i16</b> to <b>i8</b>: E</p></li>
+<li><p> downcvt from <b>i16</b> to <b>u8</b>: E</p></li>
+<li><p> downcvt from <b>u16</b> to <b>i8</b>: E</p></li>
+<li><p> downcvt from <b>u16</b> to <b>u8</b>: E</p></li>
+<li><p> downcvt from <b>i32</b> to <b>i16</b>: E</p></li>
+<li><p> downcvt from <b>i32</b> to <b>u16</b>: E</p></li>
 <li><p> downcvt from <b>i32</b> to <b>f16</b>: T</p></li>
-<li><p> downcvt from <b>u32</b> to <b>i16</b>: T</p></li>
-<li><p> downcvt from <b>u32</b> to <b>u16</b>: T</p></li>
+<li><p> downcvt from <b>u32</b> to <b>i16</b>: E</p></li>
+<li><p> downcvt from <b>u32</b> to <b>u16</b>: E</p></li>
 <li><p> downcvt from <b>u32</b> to <b>f16</b>: T</p></li>
-<li><p> downcvt from <b>i64</b> to <b>i32</b>: T</p></li>
-<li><p> downcvt from <b>i64</b> to <b>u32</b>: T</p></li>
-<li><p> downcvt from <b>i64</b> to <b>f32</b>: T</p></li>
-<li><p> downcvt from <b>u64</b> to <b>i32</b>: T</p></li>
-<li><p> downcvt from <b>u64</b> to <b>u32</b>: T</p></li>
-<li><p> downcvt from <b>u64</b> to <b>f32</b>: T</p></li>
-<li><p> downcvt from <b>f16</b> to <b>i8</b>: T</p></li>
-<li><p> downcvt from <b>f16</b> to <b>u8</b>: T</p></li>
-<li><p> downcvt from <b>f32</b> to <b>i16</b>: T</p></li>
-<li><p> downcvt from <b>f32</b> to <b>u16</b>: T</p></li>
+<li><p> downcvt from <b>i64</b> to <b>i32</b>: E</p></li>
+<li><p> downcvt from <b>i64</b> to <b>u32</b>: E</p></li>
+<li><p> downcvt from <b>i64</b> to <b>f32</b>: E</p></li>
+<li><p> downcvt from <b>u64</b> to <b>i32</b>: E</p></li>
+<li><p> downcvt from <b>u64</b> to <b>u32</b>: E</p></li>
+<li><p> downcvt from <b>u64</b> to <b>f32</b>: E</p></li>
+<li><p> downcvt from <b>f16</b> to <b>i8</b>: E</p></li>
+<li><p> downcvt from <b>f16</b> to <b>u8</b>: E</p></li>
+<li><p> downcvt from <b>f32</b> to <b>i16</b>: E</p></li>
+<li><p> downcvt from <b>f32</b> to <b>u16</b>: E</p></li>
 <li><p> downcvt from <b>f32</b> to <b>f16</b>: T</p></li>
-<li><p> downcvt from <b>f64</b> to <b>i32</b>: T</p></li>
-<li><p> downcvt from <b>f64</b> to <b>u32</b>: T</p></li>
+<li><p> downcvt from <b>f64</b> to <b>i32</b>: E</p></li>
+<li><p> downcvt from <b>f64</b> to <b>u32</b>: E</p></li>
 <li><p> downcvt from <b>f64</b> to <b>f32</b>: T</p></li>
 </ul>
   </body>

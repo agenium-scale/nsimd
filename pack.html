@@ -1,0 +1,333 @@
+<!--
+
+Copyright (c) 2021 Agenium Scale
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-->
+
+<!-- This file has been auto-generated -->
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NSIMD documentation</title>
+    <style type="text/css">
+      body {
+        /*margin:40px auto;*/
+        margin:10px auto;
+        /*max-width:650px;*/
+        max-width:800px;
+        /*line-height:1.6;*/
+        line-height:1.4;
+        /*font-size:18px;*/
+        color:#444;
+        padding: 0 10px;
+      }
+      h1,h2,h3 {
+        line-height: 1.2;
+      }
+      table {
+        border-collapse: collapse;
+        border: 0px solid gray;
+        width: 100%;
+      }
+      th, td {
+        border: 2px solid gray;
+        padding: 0px 1em 0px 1em;
+      }
+    </style>
+    <!-- https://www.mathjax.org/#gettingstarted -->
+    <script src="assets/polyfill.min.js"></script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
+    <!-- Highlight.js -->
+    <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
+    <script src="assets/highlight.min.js"></script>
+    <script src="assets/cpp.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+<body>
+
+<div style="text-align: center; margin-bottom: 1em;">
+  <img src="img/logo.svg">
+  <hr>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <b>NSIMD documentation</b>
+</div>
+<div style="text-align: center; margin-bottom: 1em;">
+  <a href="index.html">Index</a> |
+  <a href="tutorial.html">Tutorial</a> |
+  <a href="faq.html">FAQ</a> |
+  <a href="contribute.html">Contribute</a> |
+  <a href="overview.html">API overview</a> |
+  <a href="api.html">API reference</a> |
+  <a href="wrapped_intrinsics.html">Wrapped intrinsics</a> |
+  <a href="modules.html">Modules</a>
+  <hr>
+</div>
+
+<h1>NSIMD pack and related functions</h1>
+<p>The advanced C++ API provides types that represents SIMD registers. These
+types are struct that allows NSIMD to define infix operators. In this page
+NSIMD concepts are reported in the documentation but you can think of them
+as usual <code>typename</code>s.</p>
+<h2>The Pack type</h2>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+struct pack {
+  // Typedef to retrieve the native SIMD type
+  typedef typename simd_traits&lt;T, SimdExt&gt;::simd_vector simd_vector;
+
+  // Typedef to retrieve T
+  typedef T value_type;
+
+  // Typedef to retrieve SimdExt
+  typedef SimdExt simd_ext;
+
+  // Static member to retrive N
+  static const int unroll = N;
+
+  // Ctor that splats `s`, the resulting vector will be [s, s, s, ...]
+  template &lt;NSIMD_CONCEPT_VALUE_TYPE S&gt; pack(S const &amp;s);
+
+  // Ctor that takes a SIMD vector of native type
+  // ONLY AVAILABLE when N == 1
+  pack(simd_vector v);
+  
+  // Retrieve the underlying native SIMD vector
+  // ONLY AVAILABLE when N == 1
+  simd_vector native_register() const;
+
+};</code></pre>
+<p>Example:</p>
+<pre class="c++"><code>#include &lt;nsimd/nsimd-all.hpp&gt;
+#include &lt;iostream&gt;
+
+int main() {
+  nsimd::pack&lt;float&gt; v(2.0f);
+  std::cout &lt;&lt; v &lt;&lt; &apos;\n&apos;;
+
+  vf32 nv = v.native_register();
+  nv = nsimd::add(nv, nv, f32());
+  std::cout &lt;&lt; nsimd::pack&lt;f32&gt;(nv) &lt;&lt; &apos;\n&apos;;
+
+  return 0;
+}</code></pre>
+<h3>Infix operators available for packs</h3>
+<ul>
+<li><p><code>pack operator+(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator*(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator-(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator/(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator-(pack const &amp;);</code></p></li>
+<li><p><code>pack operator|(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator^(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator&amp;(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack operator~(pack const &amp;);</code></p></li>
+<li><p><code>pack operator&lt;&lt;(pack const &amp;, int);</code> (only available for integers)</p></li>
+<li><p><code>pack operator&gt;&gt;(pack const &amp;, int);</code> (only available for integers)</p></li>
+</ul>
+<h3>Assignment operators available for packs</h3>
+<ul>
+<li><p><code>pack operator+=(pack const &amp;);</code></p></li>
+<li><p><code>pack operator-=(pack const &amp;);</code></p></li>
+<li><p><code>pack operator*=(pack const &amp;);</code></p></li>
+<li><p><code>pack operator/=(pack const &amp;);</code></p></li>
+<li><p><code>pack &amp;operator|=(pack const &amp;other);</code></p></li>
+<li><p><code>pack &amp;operator&amp;=(pack const &amp;other);</code></p></li>
+<li><p><code>pack &amp;operator^=(pack const &amp;other);</code></p></li>
+<li><p><code>pack &amp;operator&lt;&lt;=(int);</code></p></li>
+<li><p><code>pack &amp;operator&gt;&gt;=(int);</code></p></li>
+</ul>
+<h3>Function aliases</h3>
+<p>The C++ standard provides functions with different names that does exactly
+the same thing. This is due to the retro compatibility with C. Take the
+<code>fmin</code> C function as an example. In C this function give the minimum between
+doubles only. The C++ standard provides overloads to this function so that it
+can work on floats and long doubles. The aliases provided by NSIMD have the
+same purpose but they are not provided as operator on their own because their
+real purpose is to write generic code that can work on scalar and SIMD vector
+types. As such they are only relevant for the advanced C++ API.</p>
+<ul>
+<li><p><code>pack fmin(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack fmax(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>pack fabs(pack const &amp;);</code></p></li>
+</ul>
+<p>They are contained in the <code>nsimd/cxx_adv_api_aliases.hpp</code> header and not
+provided by default to respect the philosophy of NSIMD which is force the
+use to think different between SIMD code and scalar code. They are provided
+automatically when including <code>nsimd/nsimd-all.hpp</code>.</p>
+<h2>The Packl type</h2>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+struct packl {
+  // Typedef to retrieve the native SIMD type
+  typedef typename simd_traits&lt;T, SimdExt&gt;::simd_vectorl simd_vectorl;
+
+  // Typedef to retrieve T
+  typedef T value_type;
+
+  // Typedef to retrieve SimdExt
+  typedef SimdExt simd_ext;
+
+  // Static member to retrive N
+  static const int unroll = N;
+
+  // Ctor that splats `s`, the resulting vector will be [s, s, s, ...]
+  template &lt;NSIMD_CONCEPT_VALUE_TYPE S&gt; packl(S const &amp;s);
+
+  // Ctor that takes a SIMD vector of native type
+  // ONLY AVAILABLE when N == 1
+  packl(simd_vectorl v);
+  
+  // Retrieve the underlying native SIMD vector
+  // ONLY AVAILABLE when N == 1
+  simd_vector native_register() const;
+
+};</code></pre>
+<p>Example:</p>
+<pre class="c++"><code>#include &lt;nsimd/nsimd-all.hpp&gt;
+#include &lt;iostream&gt;
+
+int main() {
+  nsimd::pack&lt;float&gt; v(2.0f);
+  nsimd::packl&lt;float&gt; mask;
+
+  mask = nsimd::eq(v, v);
+  std::cout &lt;&lt; v &lt;&lt; &apos;\n&apos;;
+
+  mask = nsimd::neq(v, v);
+  std::cout &lt;&lt; v &lt;&lt; &apos;\n&apos;;
+
+  return 0;
+}</code></pre>
+<h3>Infix operators involving packls</h3>
+<ul>
+<li><p><code>packl operator&amp;&amp;(packl const &amp;, packl const &amp;);</code></p></li>
+<li><p><code>packl operator||(packl const &amp;, packl const &amp;);</code></p></li>
+<li><p><code>packl operator!(packl const &amp;, packl const &amp;);</code></p></li>
+<li><p><code>packl operator==(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>packl operator!=(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>packl operator&lt;(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>packl operator&lt;=(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>packl operator&gt;(pack const &amp;, pack const &amp;);</code></p></li>
+<li><p><code>packl operator&gt;=(pack const &amp;, pack const &amp;);</code></p></li>
+</ul>
+<h2>Packs for SoA/AoS</h2>
+<p>Types containing several SIMD vectors are also provided to help the user
+manipulate arrays of structures. When working, let&apos;s say, on complex numbers,
+loading them from memory with layout <code>RIRIRIRIRIRI...</code> can be done with the
+<code>load2*</code> operators that will returns 2 SIMD vectors <code>RRRR</code> and <code>IIII</code> where
+<code>R</code> stands for real part and <code>I</code> for imaginary part.</p>
+<p>Similarily loading an RGB image from memory stored following the layout
+<code>RGBRGBRGBRGB...</code> can be done with <code>load3*</code> to get 3 SIMD vectors <code>RRRR</code>,
+<code>GGGG</code> and <code>BBBB</code>.</p>
+<h3>Packx1</h3>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+NSIMD_STRUCT packx1 {
+
+  // Usual typedefs and static members
+  typedef typename simd_traits&lt;T, SimdExt&gt;::simd_vector simd_vector;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = N;
+  static const int soa_num_packs = 1;
+
+  // Member v0 for reading and writing
+  pack&lt;T, N, SimdExt&gt; v0;
+};</code></pre>
+<h3>Packx2</h3>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+NSIMD_STRUCT packx2 {
+
+  // Usual typedefs and static members
+  typedef typename simd_traits&lt;T, SimdExt&gt;::simd_vector simd_vector;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = N;
+  static const int soa_num_packs = 2;
+
+  // Members for reading and writing
+  pack&lt;T, N, SimdExt&gt; v0;
+  pack&lt;T, N, SimdExt&gt; v1;
+};</code></pre>
+<h3>Packx3</h3>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+NSIMD_STRUCT packx3 {
+
+  // Usual typedefs and static members
+  typedef typename simd_traits&lt;T, SimdExt&gt;::simd_vector simd_vector;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = N;
+  static const int soa_num_packs = 3;
+
+  // Members for reading and writing
+  pack&lt;T, N, SimdExt&gt; v0;
+  pack&lt;T, N, SimdExt&gt; v1;
+  pack&lt;T, N, SimdExt&gt; v2;
+};</code></pre>
+<h3>Packx4</h3>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+NSIMD_STRUCT packx4 {
+
+  // Usual typedefs and static members
+  typedef typename simd_traits&lt;T, SimdExt&gt;::simd_vector simd_vector;
+  typedef T value_type;
+  typedef SimdExt simd_ext;
+  static const int unroll = N;
+  static const int soa_num_packs = 4;
+
+  // Members for reading and writing
+  pack&lt;T, N, SimdExt&gt; v0;
+  pack&lt;T, N, SimdExt&gt; v1;
+  pack&lt;T, N, SimdExt&gt; v2;
+  pack&lt;T, N, SimdExt&gt; v3;
+};</code></pre>
+<h3>Functions involving packx2, packx3 and packx4</h3>
+<p>The following functions converts packxs into unrolled packs. The difference
+between the <code>to_pack</code> and <code>to_pack_interleave</code> families of functions is in
+the way they flatten (or deinterleave) the structure of SIMD vectors.</p>
+<pre class="c++"><code>template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+pack&lt;T, 2 * N, SimdExt&gt; to_pack(const packx2&lt;T, N, SimdExt&gt; &amp;);
+
+template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+pack&lt;T, 3 * N, SimdExt&gt; to_pack(const packx3&lt;T, N, SimdExt&gt; &amp;);
+
+template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+pack&lt;T, 4 * N, SimdExt&gt; to_pack(const packx4&lt;T, N, SimdExt&gt; &amp;);
+
+template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+pack&lt;T, 2 * N, SimdExt&gt; to_pack_interleave(const packx2&lt;T, N, SimdExt&gt; &amp;);
+
+template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+pack&lt;T, 3 * N, SimdExt&gt; to_pack_interleave(const packx3&lt;T, N, SimdExt&gt; &amp;);
+
+template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt;
+pack&lt;T, 4 * N, SimdExt&gt; to_pack_interleave(const packx4&lt;T, N, SimdExt&gt; &amp;);</code></pre>
+<p>The <code>to_pack</code> family of functions performs the following operations:</p>
+<pre class="nohighlight"><code>packx2&lt;T, 3&gt; = | v0 = [u0 u1 u2] | ---&gt; [u0 u1 u2 w0 w1 w2] = pack&lt;T, 6&gt;
+               | v1 = [w0 w1 w2] |</code></pre>
+<p>while the <code>to_pack_interleave</code> family of functions does the following:</p>
+<pre class="nohighlight"><code>packx2&lt;T, 3&gt; = | v0 = [u0 u1 u2] | ---&gt; [u0 w0 v1 w1 v2 w2] = pack&lt;T, 6&gt;
+               | v1 = [w0 w1 w2] |</code></pre>
+  </body>
+</html>

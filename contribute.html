@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -131,12 +130,21 @@ code.</p></li>
 <li><p><code>SVE</code> 2048 bits known at compiled time called <code>SVE2048</code> in source code.</p></li>
 </ul>
 </li>
+<li><p>IBM POWERPC</p><ul>
+<li><p><code>VMX</code> 128 bits as found on POWER6 CPUs called <code>VMX</code> in source code.</p></li>
+<li><p><code>VSX</code> 128 bits as found on POWER7/8 CPUs called <code>VSX</code> in source code.</p></li>
+</ul>
+</li>
 <li><p>NVIDIA</p><ul>
 <li><p><code>CUDA</code> called <code>CUDA</code> in source code</p></li>
 </ul>
 </li>
 <li><p>AMD</p><ul>
 <li><p><code>ROCm</code> called <code>ROCM</code> in source code</p></li>
+</ul>
+</li>
+<li><p>Intel oneAPI</p><ul>
+<li><p><code>oneAPI</code> called <code>ONEAPI</code> in source code</p></li>
 </ul>
 </li>
 </ul>
@@ -200,12 +208,21 @@ intrinsics for <code>double</code>s.</p></li>
 <code>float16</code>s, <code>float</code>s and <code>double</code>s.</p></li>
 </ul>
 </li>
+<li><p>IBM POWERPC</p><ul>
+<li><p><code>VMX</code>: <code>vec_foo</code> for <code>float</code>s and no intrinsics for <code>double</code>s.</p></li>
+<li><p><code>VSX</code>: <code>vec_foo</code> for <code>float</code>s and <code>double</code>s.</p></li>
+</ul>
+</li>
 <li><p>NVIDIA</p><ul>
 <li><p><code>CUDA</code>: no intrinsics is provided.</p></li>
 </ul>
 </li>
 <li><p>AMD</p><ul>
 <li><p><code>ROCM</code>: no intrinsics is provided.</p></li>
+</ul>
+</li>
+<li><p>Intel oneAPI</p><ul>
+<li><p><code>ONEAPI</code>: no intrinsics is provided.</p></li>
 </ul>
 </li>
 </ul>
@@ -332,7 +349,7 @@ implementation.</p></li>
 <h3>Implementing the operator</h3>
 <p>Now that the operator is registered, all signatures will be generated but
 the implemenatations will be missing. Type</p>
-<pre class="sh"><code>python3 egg/hatch.py -Af</code></pre>
+<pre class="sh"><code>python3 egg/hatch.py -lf</code></pre>
 <p>and the following files (among many other) should appear:</p>
 <ul>
 <li><p><code>include/nsimd/cpu/cpu/foo.h</code></p></li>
@@ -350,6 +367,8 @@ the implemenatations will be missing. Type</p>
 <li><p><code>include/nsimd/arm/sve512/foo.h</code></p></li>
 <li><p><code>include/nsimd/arm/sve1024/foo.h</code></p></li>
 <li><p><code>include/nsimd/arm/sve2048/foo.h</code></p></li>
+<li><p><code>include/nsimd/ppc/vmx/foo.h</code></p></li>
+<li><p><code>include/nsimd/ppc/vsx/foo.h</code></p></li>
 </ul>
 <p>They each correspond to the implementations of the operator for each supported
 architectures. When openening one of these files the implementations in plain
@@ -364,9 +383,11 @@ files:</p>
 <li><p><code>egg/platform_cpu.py</code></p></li>
 <li><p><code>egg/platform_x86.py</code></p></li>
 <li><p><code>egg/platform_arm.py</code></p></li>
+<li><p><code>egg/platform_ppc.py</code></p></li>
 <li><p><code>egg/scalar.py</code></p></li>
 <li><p><code>egg/cuda.py</code></p></li>
 <li><p><code>egg/hip.py</code></p></li>
+<li><p><code>egg/oneapi.py</code></p></li>
 </ul>
 <p>The idea is to produce plain C (not C++) code using Python string format. Each
 of the Python files provides some helper functions to ease as much as
@@ -522,6 +543,24 @@ is compiled with native <code>float16</code> support. This also affect SIMD type
 <li><p>Do not forget to add the <code>foo</code> entry to the <code>impls</code> dictionary in the
 <code>get_impl</code> Python function.</p></li>
 </ol>
+<h3>For IBM POWERPC</h3>
+<pre class="python"><code>def foo1(simd_ext, typ):
+    if has_to_be_emulated(simd_ext, typ):
+        return emulation_code(op, simd_ext, typ, [&apos;v&apos;, &apos;v&apos;])
+    else:
+        return &apos;return vec_foo({in0});&apos;.format(**fmtspec)</code></pre>
+<p>Here are some notes concerning the PPC implementation:</p>
+<ol>
+<li><p>For VMX, intrinsics on <code>double</code> almost never exist.</p></li>
+<li><p>The Python helper function <code>has_to_be_emulated</code> returns <code>True</code> when the
+implementation of <code>foo</code> concerns float16 or <code>double</code>s for <code>VMX</code>. When this
+function returns True you can then use <code>emulation_code</code>.</p></li>
+<li><p>The <code>emulation_code</code> function returns a generic implementation of an
+operator. However this iplementation is not suitable for any operator
+and the programmer has to take care of that.</p></li>
+<li><p>Do not forget to add the <code>foo</code> entry to the <code>impls</code> dictionary in the
+<code>get_impl</code> Python function.</p></li>
+</ol>
 <h3>The scalar CPU version</h3>
 <pre class="python"><code>def foo1(func, typ):
     normal = \
@@ -542,15 +581,15 @@ correctly. The easiest way to do is to have the same implementation as float32
 but replacing <code>{in0}</code>&apos;s by <code>nsimd_f16_to_f32({in0})</code>&apos;s and converting back
 the float32 result to a float16.</p>
 <h3>The GPU versions</h3>
-<p>The GPU generator Python files <code>cuda.py</code> and <code>rocm.py</code> are a bit different
-from the other files but it is easy to find where to add the relevant
-pieces of code as ROCm syntax is fully compatible with CUDA&apos;s one only needs
-to modify the <code>cuda.py</code> file.</p>
+<p>The GPU generator Python files <code>cuda.py</code>, <code>rocm.py</code> and <code>oneapi.py</code> are a bit
+different from the other files but it is easy to find where to add the relevant
+pieces of code. Note that ROCm syntax is fully compatible with CUDA&apos;s one only
+needs to modify the <code>cuda.py</code> file while it easy to understand <code>oneapi.py</code>.</p>
 <p>The code to add for float32&apos;s is as follows to be added inside the <code>get_impl</code>
 Python function.</p>
 <pre class="python"><code>return &apos;1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}))&apos;.format(**fmtspec)</code></pre>
-<p>The code to add for float16&apos;s is as follows to be added inside the
-<code>get_impl_f16</code> Python function.</p>
+<p>The code for CUDA and ROCm to add for float16&apos;s is as follows. It has to be
+added inside the <code>get_impl_f16</code> Python function.</p>
 <pre class="python"><code>arch53_code = &apos;&apos;&apos;__half one = __float2half(1.0f);
                  return __hadd(
                                __hdiv(one, __hsub(one, {in0})),
@@ -559,6 +598,9 @@ Python function.</p>
                                       __hdiv(one, __hsub(one, {in0}))
                                      )
                               );&apos;&apos;&apos;.format(**fmtspec)</code></pre>
+<p>As Intel oneAPI natively support float16&apos;s the code is the same as the one
+for floats:</p>
+<pre class="python"><code>return &apos;1 / (1 - {in0}) + 1 / ((1 - {in0}) * (1 - {in0}))&apos;.format(**fmtspec)</code></pre>
 <h3>Implementing the test for the operator</h3>
 <p>Now that we have written the implementations for the <code>foo</code> operator we must
 write the corresponding tests. For tests all generations are done by
@@ -596,6 +638,53 @@ for other kind of shuffles.</p></li>
 some computations. This is the kind of tests that can handle our <code>foo</code>
 operator and therefore nothing has to be done on our part.</p></li>
 </ul>
+<h2>Not all tests are to be done</h2>
+<p>As explained in <a href="how_tests_are_done.html">how_tests_are_done.md</a> doing all tests is not recommanded.
+Take for example the <code>cvt</code> operator. Testing <code>cvt</code> from say <code>f32</code> to <code>i32</code>
+is complicated as the result depends on how NaN, infinities are handled and
+on the current round mode. In turn these prameters depends on the vendor, the
+chip, the bugs in the chip, the chosen rounding mode by users or other
+softwares...</p>
+<p>The function <code>should_i_do_the_test</code> gives an hint on whether to implement the
+test or not. Its code is really simple and you may need to modify it. The
+listing below is a possible implementation that takes care of the case
+described in the previous paragraph.</p>
+<pre class="python"><code>def should_i_do_the_test(operator, tt=&apos;&apos;, t=&apos;&apos;):
+    if operator.name == &apos;cvt&apos; and t in common.ftypes and tt in common.iutypes:
+        # When converting from float to int to float then we may not
+        # get the initial result because of roundings. As tests are usually
+        # done by going back and forth then both directions get tested in the
+        # end
+        return False
+    if operator.name == &apos;reinterpret&apos; and t in common.iutypes and \
+       tt in common.ftypes:
+        # When reinterpreting from int to float we may get NaN or infinities
+        # and no ones knows what this will give when going back to ints
+        # especially when float16 are emulated. Again as tests are done by
+        # going back and forth both directions get tested in the end.
+        return False
+    if operator.name in [&apos;notb&apos;, &apos;andb&apos;, &apos;andnotb&apos;, &apos;xorb&apos;, &apos;orb&apos;] and \
+       t == &apos;f16&apos;:
+        # Bit operations on float16 are hard to check because they are
+        # emulated in most cases. Therefore going back and forth with
+        # reinterprets for doing bitwise operations make the bit in the last
+        # place to wrong. This is normal but makes testing real hard. So for
+        # now we do not test them on float16.
+        return False
+    if operator.name in [&apos;len&apos;, &apos;set1&apos;, &apos;set1l&apos;, &apos;mask_for_loop_tail&apos;,
+                         &apos;loadu&apos;, &apos;loada&apos;, &apos;storeu&apos;, &apos;storea&apos;, &apos;loadla&apos;,
+                         &apos;loadlu&apos;, &apos;storela&apos;, &apos;storelu&apos;, &apos;if_else1&apos;]:
+        # These functions are used in almost every tests so we consider
+        # that they are extensively tested.
+        return False
+    if operator.name in [&apos;store2a&apos;, &apos;store2u&apos;, &apos;store3a&apos;, &apos;store3u&apos;,
+                         &apos;store4a&apos;, &apos;store4u&apos;, &apos;scatter&apos;, &apos;scatter_linear&apos;,
+                         &apos;downcvt&apos;, &apos;to_logical&apos;]:
+        # These functions are tested along with their load counterparts.
+        # downcvt is tested along with upcvt and to_logical is tested with
+        # to_mask
+        return False
+    return True</code></pre>
 <h3>Conclusion</h3>
 <p>At first sight the implementation of <code>foo</code> seems complicated because intrinsics
 for all types and all architectures are not provided by vendors. But <code>nsimd</code>
@@ -664,5 +753,62 @@ write this function as follows.</p><pre class="python"><code>def doit(opts):
         gen_doc(opts)</code></pre></li>
 </ul>
 <p>Tests for the module have to be put into the <code>nsimd/tests/mymod</code> directory.</p>
+<h2>How to I add a new platform?</h2>
+<p>The list of supported platforms is determined by looking in the <code>egg</code>
+directory and listing all <code>platform_*.py</code> files. Each file must contain all
+SIMD extensions for a given platform. For example the default (no SIMD) is
+given by <code>platform_cpu.py</code>. All the Intel SIMD extensions are given by
+<code>platform_x86.py</code>.</p>
+<p>Each Python file that implements a platform must be named
+<code>platform_[name for platform].py</code> and must export at least the following
+functions:</p>
+<ul>
+<li><p><code>def get_simd_exts()</code><br>
+Return the list of SIMD extensions implemented by this file as a Python
+list.</p></li>
+<li><p><code>def get_prev_simd_ext(simd_ext)</code><br>
+Usually SIMD extensions are added over time by vendors and a chip
+implementing  a SIMD extension supports previous SIMD extension. This
+function must return the previous SIMD extension supported by the vendor if
+it exists otherwise it must return the empty string. Note that <code>cpu</code> is the
+only SIMD extensions that has no previous SIMD extensions. Every other SIMD
+extension has at least <code>cpu</code> as previous SIMD extension.</p></li>
+<li><p><code>def get_native_typ(simd_ext, typ)</code><br>
+Return the native SIMD type corresponding of the SIMD extension <code>simd_ext</code>
+whose elements are of type <code>typ</code>. If <code>typ</code> or <code>simd_ext</code> is not known then a
+ValueError exception must be raised.</p></li>
+<li><p><code>def get_type(simd_ext, typ)</code><br>
+Returns the &quot;intrinsic&quot; SIMD type corresponding to the given
+arithmetic type. If <code>typ</code> or <code>simd_ext</code> is not known then a ValueError
+exception must be raised.</p></li>
+<li><p><code>def get_additional_include(func, simd_ext, typ)</code><br>
+Returns additional include if need be for the implementation of <code>func</code> for
+the given <code>simd_ext</code> and <code>typ</code>.</p></li>
+<li><p><code>def get_logical_type(simd_ext, typ)</code><br>
+Returns the &quot;intrinsic&quot; logical SIMD type corresponding to the given
+arithmetic type. If <code>typ</code> or <code>simd_ext</code> is not known then a ValueError
+exception must be raised.</p></li>
+<li><p><code>def get_nb_registers(simd_ext)</code><br>
+Returns the number of registers for this SIMD extension.</p></li>
+<li><p><code>def get_impl(func, simd_ext, from_typ, to_typ)</code><br>
+Returns the implementation (C code) for <code>func</code> on type <code>typ</code> for <code>simd_ext</code>.
+If <code>typ</code> or <code>simd_ext</code> is not known then a ValueError exception must be
+raised. Any <code>func</code> given satisfies <code>S func(T a0, T a1, ... T an)</code>.</p></li>
+<li><p><code>def has_compatible_SoA_types(simd_ext)</code><br>
+Returns True iff the given <code>simd_ext</code> has structure of arrays types
+compatible with NSIMD i.e. whose members are v1, v2, ... Returns False
+otherwise. If <code>simd_ext</code> is not known then a ValueError exception must be
+raised.</p></li>
+<li><p><code>def get_SoA_type(simd_ext, typ, deg)</code><br>
+Returns the structure of arrays types for the given <code>typ</code>, <code>simd_ext</code> and
+<code>deg</code>. If <code>simd_ext</code> is not known or does not name a type whose
+corresponding SoA types are compatible with NSIMD then a ValueError
+exception must be raised.</p></li>
+<li><p><code>def emulate_fp16(simd_ext)</code>
+Returns True iff the given SIMD extension has to emulate FP16&apos;s with
+two FP32&apos;s.</p></li>
+</ul>
+<p>Then you are free to implement the SIMd extensions for the platform. See above
+on how to add the implementations of operators.</p>
   </body>
 </html>

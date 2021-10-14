@@ -1,6 +1,6 @@
 <!--
 
-Copyright (c) 2020 Agenium Scale
+Copyright (c) 2021 Agenium Scale
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,8 +58,7 @@ SOFTWARE.
     </style>
     <!-- https://www.mathjax.org/#gettingstarted -->
     <script src="assets/polyfill.min.js"></script>
-    <script id="MathJax-script" async src="assets/tex-mml-chtml.js">
-    </script>
+    <script id="MathJax-script" async src="assets/tex-svg.js"></script>
     <!-- Highlight.js -->
     <link rel="stylesheet" href= "assets/highlight.js.default.min.css">
     <script src="assets/highlight.min.js"></script>
@@ -343,6 +342,14 @@ following defines.</p>
 <tr>
 <td style="text-align: left;"><code>NSIMD_ROCM</code></td>
 <td style="text-align: left;">AMD ROCm architectures</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_VMX</code></td>
+<td style="text-align: left;">IBM POWERPC VMX (Altivec)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>NSIMD_VSX</code></td>
+<td style="text-align: left;">IBM POWERPC VSX (Altivec)</td>
 </tr>
 <tr>
 <td style="text-align: left;"><code>NSIMD_FP16</code></td>
