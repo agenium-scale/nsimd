@@ -46,7 +46,8 @@ include/nsimd/modules/fixed_point/
 include/nsimd/scalar_utilities.h
 
 ## Doc
-doc/html
+doc/html/*
+!doc/html/assets/
 doc/markdown/overview.md
 doc/markdown/api.md
 doc/markdown/api_*.md
