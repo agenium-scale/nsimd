@@ -102,33 +102,6 @@ template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&g
 template &lt;NSIMD_CONCEPT_VALUE_TYPE T, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt; pack&lt;T, 1, SimdExt&gt; operator&gt;&gt;(pack&lt;T, 1, SimdExt&gt; const&amp; a0, int a1);
 template &lt;NSIMD_CONCEPT_VALUE_TYPE T, int N, NSIMD_CONCEPT_SIMD_EXT SimdExt&gt; pack&lt;T, N, SimdExt&gt; operator&gt;&gt;(pack&lt;T, N, SimdExt&gt; const&amp; a0, int a1);</code></pre>
 <h2>C base API (architecture specifics)</h2>
-<h3>SVE</h3>
-<pre class="c"><code>nsimd_sve_vi64 NSIMD_VECTORCALL nsimd_shr_sve_i64(nsimd_sve_vi64 a0, int a1);
-nsimd_sve_vi32 NSIMD_VECTORCALL nsimd_shr_sve_i32(nsimd_sve_vi32 a0, int a1);
-nsimd_sve_vi16 NSIMD_VECTORCALL nsimd_shr_sve_i16(nsimd_sve_vi16 a0, int a1);
-nsimd_sve_vi8 NSIMD_VECTORCALL nsimd_shr_sve_i8(nsimd_sve_vi8 a0, int a1);
-nsimd_sve_vu64 NSIMD_VECTORCALL nsimd_shr_sve_u64(nsimd_sve_vu64 a0, int a1);
-nsimd_sve_vu32 NSIMD_VECTORCALL nsimd_shr_sve_u32(nsimd_sve_vu32 a0, int a1);
-nsimd_sve_vu16 NSIMD_VECTORCALL nsimd_shr_sve_u16(nsimd_sve_vu16 a0, int a1);
-nsimd_sve_vu8 NSIMD_VECTORCALL nsimd_shr_sve_u8(nsimd_sve_vu8 a0, int a1);</code></pre>
-<h3>AVX</h3>
-<pre class="c"><code>nsimd_avx_vi64 NSIMD_VECTORCALL nsimd_shr_avx_i64(nsimd_avx_vi64 a0, int a1);
-nsimd_avx_vi32 NSIMD_VECTORCALL nsimd_shr_avx_i32(nsimd_avx_vi32 a0, int a1);
-nsimd_avx_vi16 NSIMD_VECTORCALL nsimd_shr_avx_i16(nsimd_avx_vi16 a0, int a1);
-nsimd_avx_vi8 NSIMD_VECTORCALL nsimd_shr_avx_i8(nsimd_avx_vi8 a0, int a1);
-nsimd_avx_vu64 NSIMD_VECTORCALL nsimd_shr_avx_u64(nsimd_avx_vu64 a0, int a1);
-nsimd_avx_vu32 NSIMD_VECTORCALL nsimd_shr_avx_u32(nsimd_avx_vu32 a0, int a1);
-nsimd_avx_vu16 NSIMD_VECTORCALL nsimd_shr_avx_u16(nsimd_avx_vu16 a0, int a1);
-nsimd_avx_vu8 NSIMD_VECTORCALL nsimd_shr_avx_u8(nsimd_avx_vu8 a0, int a1);</code></pre>
-<h3>SVE2048</h3>
-<pre class="c"><code>nsimd_sve2048_vi64 NSIMD_VECTORCALL nsimd_shr_sve2048_i64(nsimd_sve2048_vi64 a0, int a1);
-nsimd_sve2048_vi32 NSIMD_VECTORCALL nsimd_shr_sve2048_i32(nsimd_sve2048_vi32 a0, int a1);
-nsimd_sve2048_vi16 NSIMD_VECTORCALL nsimd_shr_sve2048_i16(nsimd_sve2048_vi16 a0, int a1);
-nsimd_sve2048_vi8 NSIMD_VECTORCALL nsimd_shr_sve2048_i8(nsimd_sve2048_vi8 a0, int a1);
-nsimd_sve2048_vu64 NSIMD_VECTORCALL nsimd_shr_sve2048_u64(nsimd_sve2048_vu64 a0, int a1);
-nsimd_sve2048_vu32 NSIMD_VECTORCALL nsimd_shr_sve2048_u32(nsimd_sve2048_vu32 a0, int a1);
-nsimd_sve2048_vu16 NSIMD_VECTORCALL nsimd_shr_sve2048_u16(nsimd_sve2048_vu16 a0, int a1);
-nsimd_sve2048_vu8 NSIMD_VECTORCALL nsimd_shr_sve2048_u8(nsimd_sve2048_vu8 a0, int a1);</code></pre>
 <h3>SSE2</h3>
 <pre class="c"><code>nsimd_sse2_vi64 NSIMD_VECTORCALL nsimd_shr_sse2_i64(nsimd_sse2_vi64 a0, int a1);
 nsimd_sse2_vi32 NSIMD_VECTORCALL nsimd_shr_sse2_i32(nsimd_sse2_vi32 a0, int a1);
@@ -138,87 +111,6 @@ nsimd_sse2_vu64 NSIMD_VECTORCALL nsimd_shr_sse2_u64(nsimd_sse2_vu64 a0, int a1);
 nsimd_sse2_vu32 NSIMD_VECTORCALL nsimd_shr_sse2_u32(nsimd_sse2_vu32 a0, int a1);
 nsimd_sse2_vu16 NSIMD_VECTORCALL nsimd_shr_sse2_u16(nsimd_sse2_vu16 a0, int a1);
 nsimd_sse2_vu8 NSIMD_VECTORCALL nsimd_shr_sse2_u8(nsimd_sse2_vu8 a0, int a1);</code></pre>
-<h3>SSE42</h3>
-<pre class="c"><code>nsimd_sse42_vi64 NSIMD_VECTORCALL nsimd_shr_sse42_i64(nsimd_sse42_vi64 a0, int a1);
-nsimd_sse42_vi32 NSIMD_VECTORCALL nsimd_shr_sse42_i32(nsimd_sse42_vi32 a0, int a1);
-nsimd_sse42_vi16 NSIMD_VECTORCALL nsimd_shr_sse42_i16(nsimd_sse42_vi16 a0, int a1);
-nsimd_sse42_vi8 NSIMD_VECTORCALL nsimd_shr_sse42_i8(nsimd_sse42_vi8 a0, int a1);
-nsimd_sse42_vu64 NSIMD_VECTORCALL nsimd_shr_sse42_u64(nsimd_sse42_vu64 a0, int a1);
-nsimd_sse42_vu32 NSIMD_VECTORCALL nsimd_shr_sse42_u32(nsimd_sse42_vu32 a0, int a1);
-nsimd_sse42_vu16 NSIMD_VECTORCALL nsimd_shr_sse42_u16(nsimd_sse42_vu16 a0, int a1);
-nsimd_sse42_vu8 NSIMD_VECTORCALL nsimd_shr_sse42_u8(nsimd_sse42_vu8 a0, int a1);</code></pre>
-<h3>AARCH64</h3>
-<pre class="c"><code>nsimd_aarch64_vi64 NSIMD_VECTORCALL nsimd_shr_aarch64_i64(nsimd_aarch64_vi64 a0, int a1);
-nsimd_aarch64_vi32 NSIMD_VECTORCALL nsimd_shr_aarch64_i32(nsimd_aarch64_vi32 a0, int a1);
-nsimd_aarch64_vi16 NSIMD_VECTORCALL nsimd_shr_aarch64_i16(nsimd_aarch64_vi16 a0, int a1);
-nsimd_aarch64_vi8 NSIMD_VECTORCALL nsimd_shr_aarch64_i8(nsimd_aarch64_vi8 a0, int a1);
-nsimd_aarch64_vu64 NSIMD_VECTORCALL nsimd_shr_aarch64_u64(nsimd_aarch64_vu64 a0, int a1);
-nsimd_aarch64_vu32 NSIMD_VECTORCALL nsimd_shr_aarch64_u32(nsimd_aarch64_vu32 a0, int a1);
-nsimd_aarch64_vu16 NSIMD_VECTORCALL nsimd_shr_aarch64_u16(nsimd_aarch64_vu16 a0, int a1);
-nsimd_aarch64_vu8 NSIMD_VECTORCALL nsimd_shr_aarch64_u8(nsimd_aarch64_vu8 a0, int a1);</code></pre>
-<h3>SVE128</h3>
-<pre class="c"><code>nsimd_sve128_vi64 NSIMD_VECTORCALL nsimd_shr_sve128_i64(nsimd_sve128_vi64 a0, int a1);
-nsimd_sve128_vi32 NSIMD_VECTORCALL nsimd_shr_sve128_i32(nsimd_sve128_vi32 a0, int a1);
-nsimd_sve128_vi16 NSIMD_VECTORCALL nsimd_shr_sve128_i16(nsimd_sve128_vi16 a0, int a1);
-nsimd_sve128_vi8 NSIMD_VECTORCALL nsimd_shr_sve128_i8(nsimd_sve128_vi8 a0, int a1);
-nsimd_sve128_vu64 NSIMD_VECTORCALL nsimd_shr_sve128_u64(nsimd_sve128_vu64 a0, int a1);
-nsimd_sve128_vu32 NSIMD_VECTORCALL nsimd_shr_sve128_u32(nsimd_sve128_vu32 a0, int a1);
-nsimd_sve128_vu16 NSIMD_VECTORCALL nsimd_shr_sve128_u16(nsimd_sve128_vu16 a0, int a1);
-nsimd_sve128_vu8 NSIMD_VECTORCALL nsimd_shr_sve128_u8(nsimd_sve128_vu8 a0, int a1);</code></pre>
-<h3>SVE512</h3>
-<pre class="c"><code>nsimd_sve512_vi64 NSIMD_VECTORCALL nsimd_shr_sve512_i64(nsimd_sve512_vi64 a0, int a1);
-nsimd_sve512_vi32 NSIMD_VECTORCALL nsimd_shr_sve512_i32(nsimd_sve512_vi32 a0, int a1);
-nsimd_sve512_vi16 NSIMD_VECTORCALL nsimd_shr_sve512_i16(nsimd_sve512_vi16 a0, int a1);
-nsimd_sve512_vi8 NSIMD_VECTORCALL nsimd_shr_sve512_i8(nsimd_sve512_vi8 a0, int a1);
-nsimd_sve512_vu64 NSIMD_VECTORCALL nsimd_shr_sve512_u64(nsimd_sve512_vu64 a0, int a1);
-nsimd_sve512_vu32 NSIMD_VECTORCALL nsimd_shr_sve512_u32(nsimd_sve512_vu32 a0, int a1);
-nsimd_sve512_vu16 NSIMD_VECTORCALL nsimd_shr_sve512_u16(nsimd_sve512_vu16 a0, int a1);
-nsimd_sve512_vu8 NSIMD_VECTORCALL nsimd_shr_sve512_u8(nsimd_sve512_vu8 a0, int a1);</code></pre>
-<h3>CPU</h3>
-<pre class="c"><code>nsimd_cpu_vi64 NSIMD_VECTORCALL nsimd_shr_cpu_i64(nsimd_cpu_vi64 a0, int a1);
-nsimd_cpu_vi32 NSIMD_VECTORCALL nsimd_shr_cpu_i32(nsimd_cpu_vi32 a0, int a1);
-nsimd_cpu_vi16 NSIMD_VECTORCALL nsimd_shr_cpu_i16(nsimd_cpu_vi16 a0, int a1);
-nsimd_cpu_vi8 NSIMD_VECTORCALL nsimd_shr_cpu_i8(nsimd_cpu_vi8 a0, int a1);
-nsimd_cpu_vu64 NSIMD_VECTORCALL nsimd_shr_cpu_u64(nsimd_cpu_vu64 a0, int a1);
-nsimd_cpu_vu32 NSIMD_VECTORCALL nsimd_shr_cpu_u32(nsimd_cpu_vu32 a0, int a1);
-nsimd_cpu_vu16 NSIMD_VECTORCALL nsimd_shr_cpu_u16(nsimd_cpu_vu16 a0, int a1);
-nsimd_cpu_vu8 NSIMD_VECTORCALL nsimd_shr_cpu_u8(nsimd_cpu_vu8 a0, int a1);</code></pre>
-<h3>VSX</h3>
-<pre class="c"><code>nsimd_vsx_vi64 NSIMD_VECTORCALL nsimd_shr_vsx_i64(nsimd_vsx_vi64 a0, int a1);
-nsimd_vsx_vi32 NSIMD_VECTORCALL nsimd_shr_vsx_i32(nsimd_vsx_vi32 a0, int a1);
-nsimd_vsx_vi16 NSIMD_VECTORCALL nsimd_shr_vsx_i16(nsimd_vsx_vi16 a0, int a1);
-nsimd_vsx_vi8 NSIMD_VECTORCALL nsimd_shr_vsx_i8(nsimd_vsx_vi8 a0, int a1);
-nsimd_vsx_vu64 NSIMD_VECTORCALL nsimd_shr_vsx_u64(nsimd_vsx_vu64 a0, int a1);
-nsimd_vsx_vu32 NSIMD_VECTORCALL nsimd_shr_vsx_u32(nsimd_vsx_vu32 a0, int a1);
-nsimd_vsx_vu16 NSIMD_VECTORCALL nsimd_shr_vsx_u16(nsimd_vsx_vu16 a0, int a1);
-nsimd_vsx_vu8 NSIMD_VECTORCALL nsimd_shr_vsx_u8(nsimd_vsx_vu8 a0, int a1);</code></pre>
-<h3>SVE1024</h3>
-<pre class="c"><code>nsimd_sve1024_vi64 NSIMD_VECTORCALL nsimd_shr_sve1024_i64(nsimd_sve1024_vi64 a0, int a1);
-nsimd_sve1024_vi32 NSIMD_VECTORCALL nsimd_shr_sve1024_i32(nsimd_sve1024_vi32 a0, int a1);
-nsimd_sve1024_vi16 NSIMD_VECTORCALL nsimd_shr_sve1024_i16(nsimd_sve1024_vi16 a0, int a1);
-nsimd_sve1024_vi8 NSIMD_VECTORCALL nsimd_shr_sve1024_i8(nsimd_sve1024_vi8 a0, int a1);
-nsimd_sve1024_vu64 NSIMD_VECTORCALL nsimd_shr_sve1024_u64(nsimd_sve1024_vu64 a0, int a1);
-nsimd_sve1024_vu32 NSIMD_VECTORCALL nsimd_shr_sve1024_u32(nsimd_sve1024_vu32 a0, int a1);
-nsimd_sve1024_vu16 NSIMD_VECTORCALL nsimd_shr_sve1024_u16(nsimd_sve1024_vu16 a0, int a1);
-nsimd_sve1024_vu8 NSIMD_VECTORCALL nsimd_shr_sve1024_u8(nsimd_sve1024_vu8 a0, int a1);</code></pre>
-<h3>AVX2</h3>
-<pre class="c"><code>nsimd_avx2_vi64 NSIMD_VECTORCALL nsimd_shr_avx2_i64(nsimd_avx2_vi64 a0, int a1);
-nsimd_avx2_vi32 NSIMD_VECTORCALL nsimd_shr_avx2_i32(nsimd_avx2_vi32 a0, int a1);
-nsimd_avx2_vi16 NSIMD_VECTORCALL nsimd_shr_avx2_i16(nsimd_avx2_vi16 a0, int a1);
-nsimd_avx2_vi8 NSIMD_VECTORCALL nsimd_shr_avx2_i8(nsimd_avx2_vi8 a0, int a1);
-nsimd_avx2_vu64 NSIMD_VECTORCALL nsimd_shr_avx2_u64(nsimd_avx2_vu64 a0, int a1);
-nsimd_avx2_vu32 NSIMD_VECTORCALL nsimd_shr_avx2_u32(nsimd_avx2_vu32 a0, int a1);
-nsimd_avx2_vu16 NSIMD_VECTORCALL nsimd_shr_avx2_u16(nsimd_avx2_vu16 a0, int a1);
-nsimd_avx2_vu8 NSIMD_VECTORCALL nsimd_shr_avx2_u8(nsimd_avx2_vu8 a0, int a1);</code></pre>
-<h3>NEON128</h3>
-<pre class="c"><code>nsimd_neon128_vi64 NSIMD_VECTORCALL nsimd_shr_neon128_i64(nsimd_neon128_vi64 a0, int a1);
-nsimd_neon128_vi32 NSIMD_VECTORCALL nsimd_shr_neon128_i32(nsimd_neon128_vi32 a0, int a1);
-nsimd_neon128_vi16 NSIMD_VECTORCALL nsimd_shr_neon128_i16(nsimd_neon128_vi16 a0, int a1);
-nsimd_neon128_vi8 NSIMD_VECTORCALL nsimd_shr_neon128_i8(nsimd_neon128_vi8 a0, int a1);
-nsimd_neon128_vu64 NSIMD_VECTORCALL nsimd_shr_neon128_u64(nsimd_neon128_vu64 a0, int a1);
-nsimd_neon128_vu32 NSIMD_VECTORCALL nsimd_shr_neon128_u32(nsimd_neon128_vu32 a0, int a1);
-nsimd_neon128_vu16 NSIMD_VECTORCALL nsimd_shr_neon128_u16(nsimd_neon128_vu16 a0, int a1);
-nsimd_neon128_vu8 NSIMD_VECTORCALL nsimd_shr_neon128_u8(nsimd_neon128_vu8 a0, int a1);</code></pre>
 <h3>AVX512_SKYLAKE</h3>
 <pre class="c"><code>nsimd_avx512_skylake_vi64 NSIMD_VECTORCALL nsimd_shr_avx512_skylake_i64(nsimd_avx512_skylake_vi64 a0, int a1);
 nsimd_avx512_skylake_vi32 NSIMD_VECTORCALL nsimd_shr_avx512_skylake_i32(nsimd_avx512_skylake_vi32 a0, int a1);
@@ -228,24 +120,24 @@ nsimd_avx512_skylake_vu64 NSIMD_VECTORCALL nsimd_shr_avx512_skylake_u64(nsimd_av
 nsimd_avx512_skylake_vu32 NSIMD_VECTORCALL nsimd_shr_avx512_skylake_u32(nsimd_avx512_skylake_vu32 a0, int a1);
 nsimd_avx512_skylake_vu16 NSIMD_VECTORCALL nsimd_shr_avx512_skylake_u16(nsimd_avx512_skylake_vu16 a0, int a1);
 nsimd_avx512_skylake_vu8 NSIMD_VECTORCALL nsimd_shr_avx512_skylake_u8(nsimd_avx512_skylake_vu8 a0, int a1);</code></pre>
-<h3>VMX</h3>
-<pre class="c"><code>nsimd_vmx_vi64 NSIMD_VECTORCALL nsimd_shr_vmx_i64(nsimd_vmx_vi64 a0, int a1);
-nsimd_vmx_vi32 NSIMD_VECTORCALL nsimd_shr_vmx_i32(nsimd_vmx_vi32 a0, int a1);
-nsimd_vmx_vi16 NSIMD_VECTORCALL nsimd_shr_vmx_i16(nsimd_vmx_vi16 a0, int a1);
-nsimd_vmx_vi8 NSIMD_VECTORCALL nsimd_shr_vmx_i8(nsimd_vmx_vi8 a0, int a1);
-nsimd_vmx_vu64 NSIMD_VECTORCALL nsimd_shr_vmx_u64(nsimd_vmx_vu64 a0, int a1);
-nsimd_vmx_vu32 NSIMD_VECTORCALL nsimd_shr_vmx_u32(nsimd_vmx_vu32 a0, int a1);
-nsimd_vmx_vu16 NSIMD_VECTORCALL nsimd_shr_vmx_u16(nsimd_vmx_vu16 a0, int a1);
-nsimd_vmx_vu8 NSIMD_VECTORCALL nsimd_shr_vmx_u8(nsimd_vmx_vu8 a0, int a1);</code></pre>
-<h3>SVE256</h3>
-<pre class="c"><code>nsimd_sve256_vi64 NSIMD_VECTORCALL nsimd_shr_sve256_i64(nsimd_sve256_vi64 a0, int a1);
-nsimd_sve256_vi32 NSIMD_VECTORCALL nsimd_shr_sve256_i32(nsimd_sve256_vi32 a0, int a1);
-nsimd_sve256_vi16 NSIMD_VECTORCALL nsimd_shr_sve256_i16(nsimd_sve256_vi16 a0, int a1);
-nsimd_sve256_vi8 NSIMD_VECTORCALL nsimd_shr_sve256_i8(nsimd_sve256_vi8 a0, int a1);
-nsimd_sve256_vu64 NSIMD_VECTORCALL nsimd_shr_sve256_u64(nsimd_sve256_vu64 a0, int a1);
-nsimd_sve256_vu32 NSIMD_VECTORCALL nsimd_shr_sve256_u32(nsimd_sve256_vu32 a0, int a1);
-nsimd_sve256_vu16 NSIMD_VECTORCALL nsimd_shr_sve256_u16(nsimd_sve256_vu16 a0, int a1);
-nsimd_sve256_vu8 NSIMD_VECTORCALL nsimd_shr_sve256_u8(nsimd_sve256_vu8 a0, int a1);</code></pre>
+<h3>VSX</h3>
+<pre class="c"><code>nsimd_vsx_vi64 NSIMD_VECTORCALL nsimd_shr_vsx_i64(nsimd_vsx_vi64 a0, int a1);
+nsimd_vsx_vi32 NSIMD_VECTORCALL nsimd_shr_vsx_i32(nsimd_vsx_vi32 a0, int a1);
+nsimd_vsx_vi16 NSIMD_VECTORCALL nsimd_shr_vsx_i16(nsimd_vsx_vi16 a0, int a1);
+nsimd_vsx_vi8 NSIMD_VECTORCALL nsimd_shr_vsx_i8(nsimd_vsx_vi8 a0, int a1);
+nsimd_vsx_vu64 NSIMD_VECTORCALL nsimd_shr_vsx_u64(nsimd_vsx_vu64 a0, int a1);
+nsimd_vsx_vu32 NSIMD_VECTORCALL nsimd_shr_vsx_u32(nsimd_vsx_vu32 a0, int a1);
+nsimd_vsx_vu16 NSIMD_VECTORCALL nsimd_shr_vsx_u16(nsimd_vsx_vu16 a0, int a1);
+nsimd_vsx_vu8 NSIMD_VECTORCALL nsimd_shr_vsx_u8(nsimd_vsx_vu8 a0, int a1);</code></pre>
+<h3>SVE512</h3>
+<pre class="c"><code>nsimd_sve512_vi64 NSIMD_VECTORCALL nsimd_shr_sve512_i64(nsimd_sve512_vi64 a0, int a1);
+nsimd_sve512_vi32 NSIMD_VECTORCALL nsimd_shr_sve512_i32(nsimd_sve512_vi32 a0, int a1);
+nsimd_sve512_vi16 NSIMD_VECTORCALL nsimd_shr_sve512_i16(nsimd_sve512_vi16 a0, int a1);
+nsimd_sve512_vi8 NSIMD_VECTORCALL nsimd_shr_sve512_i8(nsimd_sve512_vi8 a0, int a1);
+nsimd_sve512_vu64 NSIMD_VECTORCALL nsimd_shr_sve512_u64(nsimd_sve512_vu64 a0, int a1);
+nsimd_sve512_vu32 NSIMD_VECTORCALL nsimd_shr_sve512_u32(nsimd_sve512_vu32 a0, int a1);
+nsimd_sve512_vu16 NSIMD_VECTORCALL nsimd_shr_sve512_u16(nsimd_sve512_vu16 a0, int a1);
+nsimd_sve512_vu8 NSIMD_VECTORCALL nsimd_shr_sve512_u8(nsimd_sve512_vu8 a0, int a1);</code></pre>
 <h3>AVX512_KNL</h3>
 <pre class="c"><code>nsimd_avx512_knl_vi64 NSIMD_VECTORCALL nsimd_shr_avx512_knl_i64(nsimd_avx512_knl_vi64 a0, int a1);
 nsimd_avx512_knl_vi32 NSIMD_VECTORCALL nsimd_shr_avx512_knl_i32(nsimd_avx512_knl_vi32 a0, int a1);
@@ -255,34 +147,115 @@ nsimd_avx512_knl_vu64 NSIMD_VECTORCALL nsimd_shr_avx512_knl_u64(nsimd_avx512_knl
 nsimd_avx512_knl_vu32 NSIMD_VECTORCALL nsimd_shr_avx512_knl_u32(nsimd_avx512_knl_vu32 a0, int a1);
 nsimd_avx512_knl_vu16 NSIMD_VECTORCALL nsimd_shr_avx512_knl_u16(nsimd_avx512_knl_vu16 a0, int a1);
 nsimd_avx512_knl_vu8 NSIMD_VECTORCALL nsimd_shr_avx512_knl_u8(nsimd_avx512_knl_vu8 a0, int a1);</code></pre>
-<h2>C++ base API (architecture specifics)</h2>
-<h3>SVE</h3>
-<pre class="c"><code>nsimd_sve_vi64 NSIMD_VECTORCALL shr(nsimd_sve_vi64 a0, int a1, i64, sve);
-nsimd_sve_vi32 NSIMD_VECTORCALL shr(nsimd_sve_vi32 a0, int a1, i32, sve);
-nsimd_sve_vi16 NSIMD_VECTORCALL shr(nsimd_sve_vi16 a0, int a1, i16, sve);
-nsimd_sve_vi8 NSIMD_VECTORCALL shr(nsimd_sve_vi8 a0, int a1, i8, sve);
-nsimd_sve_vu64 NSIMD_VECTORCALL shr(nsimd_sve_vu64 a0, int a1, u64, sve);
-nsimd_sve_vu32 NSIMD_VECTORCALL shr(nsimd_sve_vu32 a0, int a1, u32, sve);
-nsimd_sve_vu16 NSIMD_VECTORCALL shr(nsimd_sve_vu16 a0, int a1, u16, sve);
-nsimd_sve_vu8 NSIMD_VECTORCALL shr(nsimd_sve_vu8 a0, int a1, u8, sve);</code></pre>
-<h3>AVX</h3>
-<pre class="c"><code>nsimd_avx_vi64 NSIMD_VECTORCALL shr(nsimd_avx_vi64 a0, int a1, i64, avx);
-nsimd_avx_vi32 NSIMD_VECTORCALL shr(nsimd_avx_vi32 a0, int a1, i32, avx);
-nsimd_avx_vi16 NSIMD_VECTORCALL shr(nsimd_avx_vi16 a0, int a1, i16, avx);
-nsimd_avx_vi8 NSIMD_VECTORCALL shr(nsimd_avx_vi8 a0, int a1, i8, avx);
-nsimd_avx_vu64 NSIMD_VECTORCALL shr(nsimd_avx_vu64 a0, int a1, u64, avx);
-nsimd_avx_vu32 NSIMD_VECTORCALL shr(nsimd_avx_vu32 a0, int a1, u32, avx);
-nsimd_avx_vu16 NSIMD_VECTORCALL shr(nsimd_avx_vu16 a0, int a1, u16, avx);
-nsimd_avx_vu8 NSIMD_VECTORCALL shr(nsimd_avx_vu8 a0, int a1, u8, avx);</code></pre>
+<h3>VMX</h3>
+<pre class="c"><code>nsimd_vmx_vi64 NSIMD_VECTORCALL nsimd_shr_vmx_i64(nsimd_vmx_vi64 a0, int a1);
+nsimd_vmx_vi32 NSIMD_VECTORCALL nsimd_shr_vmx_i32(nsimd_vmx_vi32 a0, int a1);
+nsimd_vmx_vi16 NSIMD_VECTORCALL nsimd_shr_vmx_i16(nsimd_vmx_vi16 a0, int a1);
+nsimd_vmx_vi8 NSIMD_VECTORCALL nsimd_shr_vmx_i8(nsimd_vmx_vi8 a0, int a1);
+nsimd_vmx_vu64 NSIMD_VECTORCALL nsimd_shr_vmx_u64(nsimd_vmx_vu64 a0, int a1);
+nsimd_vmx_vu32 NSIMD_VECTORCALL nsimd_shr_vmx_u32(nsimd_vmx_vu32 a0, int a1);
+nsimd_vmx_vu16 NSIMD_VECTORCALL nsimd_shr_vmx_u16(nsimd_vmx_vu16 a0, int a1);
+nsimd_vmx_vu8 NSIMD_VECTORCALL nsimd_shr_vmx_u8(nsimd_vmx_vu8 a0, int a1);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vi64 NSIMD_VECTORCALL nsimd_shr_neon128_i64(nsimd_neon128_vi64 a0, int a1);
+nsimd_neon128_vi32 NSIMD_VECTORCALL nsimd_shr_neon128_i32(nsimd_neon128_vi32 a0, int a1);
+nsimd_neon128_vi16 NSIMD_VECTORCALL nsimd_shr_neon128_i16(nsimd_neon128_vi16 a0, int a1);
+nsimd_neon128_vi8 NSIMD_VECTORCALL nsimd_shr_neon128_i8(nsimd_neon128_vi8 a0, int a1);
+nsimd_neon128_vu64 NSIMD_VECTORCALL nsimd_shr_neon128_u64(nsimd_neon128_vu64 a0, int a1);
+nsimd_neon128_vu32 NSIMD_VECTORCALL nsimd_shr_neon128_u32(nsimd_neon128_vu32 a0, int a1);
+nsimd_neon128_vu16 NSIMD_VECTORCALL nsimd_shr_neon128_u16(nsimd_neon128_vu16 a0, int a1);
+nsimd_neon128_vu8 NSIMD_VECTORCALL nsimd_shr_neon128_u8(nsimd_neon128_vu8 a0, int a1);</code></pre>
+<h3>SVE256</h3>
+<pre class="c"><code>nsimd_sve256_vi64 NSIMD_VECTORCALL nsimd_shr_sve256_i64(nsimd_sve256_vi64 a0, int a1);
+nsimd_sve256_vi32 NSIMD_VECTORCALL nsimd_shr_sve256_i32(nsimd_sve256_vi32 a0, int a1);
+nsimd_sve256_vi16 NSIMD_VECTORCALL nsimd_shr_sve256_i16(nsimd_sve256_vi16 a0, int a1);
+nsimd_sve256_vi8 NSIMD_VECTORCALL nsimd_shr_sve256_i8(nsimd_sve256_vi8 a0, int a1);
+nsimd_sve256_vu64 NSIMD_VECTORCALL nsimd_shr_sve256_u64(nsimd_sve256_vu64 a0, int a1);
+nsimd_sve256_vu32 NSIMD_VECTORCALL nsimd_shr_sve256_u32(nsimd_sve256_vu32 a0, int a1);
+nsimd_sve256_vu16 NSIMD_VECTORCALL nsimd_shr_sve256_u16(nsimd_sve256_vu16 a0, int a1);
+nsimd_sve256_vu8 NSIMD_VECTORCALL nsimd_shr_sve256_u8(nsimd_sve256_vu8 a0, int a1);</code></pre>
 <h3>SVE2048</h3>
-<pre class="c"><code>nsimd_sve2048_vi64 NSIMD_VECTORCALL shr(nsimd_sve2048_vi64 a0, int a1, i64, sve2048);
-nsimd_sve2048_vi32 NSIMD_VECTORCALL shr(nsimd_sve2048_vi32 a0, int a1, i32, sve2048);
-nsimd_sve2048_vi16 NSIMD_VECTORCALL shr(nsimd_sve2048_vi16 a0, int a1, i16, sve2048);
-nsimd_sve2048_vi8 NSIMD_VECTORCALL shr(nsimd_sve2048_vi8 a0, int a1, i8, sve2048);
-nsimd_sve2048_vu64 NSIMD_VECTORCALL shr(nsimd_sve2048_vu64 a0, int a1, u64, sve2048);
-nsimd_sve2048_vu32 NSIMD_VECTORCALL shr(nsimd_sve2048_vu32 a0, int a1, u32, sve2048);
-nsimd_sve2048_vu16 NSIMD_VECTORCALL shr(nsimd_sve2048_vu16 a0, int a1, u16, sve2048);
-nsimd_sve2048_vu8 NSIMD_VECTORCALL shr(nsimd_sve2048_vu8 a0, int a1, u8, sve2048);</code></pre>
+<pre class="c"><code>nsimd_sve2048_vi64 NSIMD_VECTORCALL nsimd_shr_sve2048_i64(nsimd_sve2048_vi64 a0, int a1);
+nsimd_sve2048_vi32 NSIMD_VECTORCALL nsimd_shr_sve2048_i32(nsimd_sve2048_vi32 a0, int a1);
+nsimd_sve2048_vi16 NSIMD_VECTORCALL nsimd_shr_sve2048_i16(nsimd_sve2048_vi16 a0, int a1);
+nsimd_sve2048_vi8 NSIMD_VECTORCALL nsimd_shr_sve2048_i8(nsimd_sve2048_vi8 a0, int a1);
+nsimd_sve2048_vu64 NSIMD_VECTORCALL nsimd_shr_sve2048_u64(nsimd_sve2048_vu64 a0, int a1);
+nsimd_sve2048_vu32 NSIMD_VECTORCALL nsimd_shr_sve2048_u32(nsimd_sve2048_vu32 a0, int a1);
+nsimd_sve2048_vu16 NSIMD_VECTORCALL nsimd_shr_sve2048_u16(nsimd_sve2048_vu16 a0, int a1);
+nsimd_sve2048_vu8 NSIMD_VECTORCALL nsimd_shr_sve2048_u8(nsimd_sve2048_vu8 a0, int a1);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>nsimd_avx2_vi64 NSIMD_VECTORCALL nsimd_shr_avx2_i64(nsimd_avx2_vi64 a0, int a1);
+nsimd_avx2_vi32 NSIMD_VECTORCALL nsimd_shr_avx2_i32(nsimd_avx2_vi32 a0, int a1);
+nsimd_avx2_vi16 NSIMD_VECTORCALL nsimd_shr_avx2_i16(nsimd_avx2_vi16 a0, int a1);
+nsimd_avx2_vi8 NSIMD_VECTORCALL nsimd_shr_avx2_i8(nsimd_avx2_vi8 a0, int a1);
+nsimd_avx2_vu64 NSIMD_VECTORCALL nsimd_shr_avx2_u64(nsimd_avx2_vu64 a0, int a1);
+nsimd_avx2_vu32 NSIMD_VECTORCALL nsimd_shr_avx2_u32(nsimd_avx2_vu32 a0, int a1);
+nsimd_avx2_vu16 NSIMD_VECTORCALL nsimd_shr_avx2_u16(nsimd_avx2_vu16 a0, int a1);
+nsimd_avx2_vu8 NSIMD_VECTORCALL nsimd_shr_avx2_u8(nsimd_avx2_vu8 a0, int a1);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vi64 NSIMD_VECTORCALL nsimd_shr_avx_i64(nsimd_avx_vi64 a0, int a1);
+nsimd_avx_vi32 NSIMD_VECTORCALL nsimd_shr_avx_i32(nsimd_avx_vi32 a0, int a1);
+nsimd_avx_vi16 NSIMD_VECTORCALL nsimd_shr_avx_i16(nsimd_avx_vi16 a0, int a1);
+nsimd_avx_vi8 NSIMD_VECTORCALL nsimd_shr_avx_i8(nsimd_avx_vi8 a0, int a1);
+nsimd_avx_vu64 NSIMD_VECTORCALL nsimd_shr_avx_u64(nsimd_avx_vu64 a0, int a1);
+nsimd_avx_vu32 NSIMD_VECTORCALL nsimd_shr_avx_u32(nsimd_avx_vu32 a0, int a1);
+nsimd_avx_vu16 NSIMD_VECTORCALL nsimd_shr_avx_u16(nsimd_avx_vu16 a0, int a1);
+nsimd_avx_vu8 NSIMD_VECTORCALL nsimd_shr_avx_u8(nsimd_avx_vu8 a0, int a1);</code></pre>
+<h3>SVE1024</h3>
+<pre class="c"><code>nsimd_sve1024_vi64 NSIMD_VECTORCALL nsimd_shr_sve1024_i64(nsimd_sve1024_vi64 a0, int a1);
+nsimd_sve1024_vi32 NSIMD_VECTORCALL nsimd_shr_sve1024_i32(nsimd_sve1024_vi32 a0, int a1);
+nsimd_sve1024_vi16 NSIMD_VECTORCALL nsimd_shr_sve1024_i16(nsimd_sve1024_vi16 a0, int a1);
+nsimd_sve1024_vi8 NSIMD_VECTORCALL nsimd_shr_sve1024_i8(nsimd_sve1024_vi8 a0, int a1);
+nsimd_sve1024_vu64 NSIMD_VECTORCALL nsimd_shr_sve1024_u64(nsimd_sve1024_vu64 a0, int a1);
+nsimd_sve1024_vu32 NSIMD_VECTORCALL nsimd_shr_sve1024_u32(nsimd_sve1024_vu32 a0, int a1);
+nsimd_sve1024_vu16 NSIMD_VECTORCALL nsimd_shr_sve1024_u16(nsimd_sve1024_vu16 a0, int a1);
+nsimd_sve1024_vu8 NSIMD_VECTORCALL nsimd_shr_sve1024_u8(nsimd_sve1024_vu8 a0, int a1);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>nsimd_sve_vi64 NSIMD_VECTORCALL nsimd_shr_sve_i64(nsimd_sve_vi64 a0, int a1);
+nsimd_sve_vi32 NSIMD_VECTORCALL nsimd_shr_sve_i32(nsimd_sve_vi32 a0, int a1);
+nsimd_sve_vi16 NSIMD_VECTORCALL nsimd_shr_sve_i16(nsimd_sve_vi16 a0, int a1);
+nsimd_sve_vi8 NSIMD_VECTORCALL nsimd_shr_sve_i8(nsimd_sve_vi8 a0, int a1);
+nsimd_sve_vu64 NSIMD_VECTORCALL nsimd_shr_sve_u64(nsimd_sve_vu64 a0, int a1);
+nsimd_sve_vu32 NSIMD_VECTORCALL nsimd_shr_sve_u32(nsimd_sve_vu32 a0, int a1);
+nsimd_sve_vu16 NSIMD_VECTORCALL nsimd_shr_sve_u16(nsimd_sve_vu16 a0, int a1);
+nsimd_sve_vu8 NSIMD_VECTORCALL nsimd_shr_sve_u8(nsimd_sve_vu8 a0, int a1);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vi64 NSIMD_VECTORCALL nsimd_shr_aarch64_i64(nsimd_aarch64_vi64 a0, int a1);
+nsimd_aarch64_vi32 NSIMD_VECTORCALL nsimd_shr_aarch64_i32(nsimd_aarch64_vi32 a0, int a1);
+nsimd_aarch64_vi16 NSIMD_VECTORCALL nsimd_shr_aarch64_i16(nsimd_aarch64_vi16 a0, int a1);
+nsimd_aarch64_vi8 NSIMD_VECTORCALL nsimd_shr_aarch64_i8(nsimd_aarch64_vi8 a0, int a1);
+nsimd_aarch64_vu64 NSIMD_VECTORCALL nsimd_shr_aarch64_u64(nsimd_aarch64_vu64 a0, int a1);
+nsimd_aarch64_vu32 NSIMD_VECTORCALL nsimd_shr_aarch64_u32(nsimd_aarch64_vu32 a0, int a1);
+nsimd_aarch64_vu16 NSIMD_VECTORCALL nsimd_shr_aarch64_u16(nsimd_aarch64_vu16 a0, int a1);
+nsimd_aarch64_vu8 NSIMD_VECTORCALL nsimd_shr_aarch64_u8(nsimd_aarch64_vu8 a0, int a1);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vi64 NSIMD_VECTORCALL nsimd_shr_cpu_i64(nsimd_cpu_vi64 a0, int a1);
+nsimd_cpu_vi32 NSIMD_VECTORCALL nsimd_shr_cpu_i32(nsimd_cpu_vi32 a0, int a1);
+nsimd_cpu_vi16 NSIMD_VECTORCALL nsimd_shr_cpu_i16(nsimd_cpu_vi16 a0, int a1);
+nsimd_cpu_vi8 NSIMD_VECTORCALL nsimd_shr_cpu_i8(nsimd_cpu_vi8 a0, int a1);
+nsimd_cpu_vu64 NSIMD_VECTORCALL nsimd_shr_cpu_u64(nsimd_cpu_vu64 a0, int a1);
+nsimd_cpu_vu32 NSIMD_VECTORCALL nsimd_shr_cpu_u32(nsimd_cpu_vu32 a0, int a1);
+nsimd_cpu_vu16 NSIMD_VECTORCALL nsimd_shr_cpu_u16(nsimd_cpu_vu16 a0, int a1);
+nsimd_cpu_vu8 NSIMD_VECTORCALL nsimd_shr_cpu_u8(nsimd_cpu_vu8 a0, int a1);</code></pre>
+<h3>SVE128</h3>
+<pre class="c"><code>nsimd_sve128_vi64 NSIMD_VECTORCALL nsimd_shr_sve128_i64(nsimd_sve128_vi64 a0, int a1);
+nsimd_sve128_vi32 NSIMD_VECTORCALL nsimd_shr_sve128_i32(nsimd_sve128_vi32 a0, int a1);
+nsimd_sve128_vi16 NSIMD_VECTORCALL nsimd_shr_sve128_i16(nsimd_sve128_vi16 a0, int a1);
+nsimd_sve128_vi8 NSIMD_VECTORCALL nsimd_shr_sve128_i8(nsimd_sve128_vi8 a0, int a1);
+nsimd_sve128_vu64 NSIMD_VECTORCALL nsimd_shr_sve128_u64(nsimd_sve128_vu64 a0, int a1);
+nsimd_sve128_vu32 NSIMD_VECTORCALL nsimd_shr_sve128_u32(nsimd_sve128_vu32 a0, int a1);
+nsimd_sve128_vu16 NSIMD_VECTORCALL nsimd_shr_sve128_u16(nsimd_sve128_vu16 a0, int a1);
+nsimd_sve128_vu8 NSIMD_VECTORCALL nsimd_shr_sve128_u8(nsimd_sve128_vu8 a0, int a1);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vi64 NSIMD_VECTORCALL nsimd_shr_sse42_i64(nsimd_sse42_vi64 a0, int a1);
+nsimd_sse42_vi32 NSIMD_VECTORCALL nsimd_shr_sse42_i32(nsimd_sse42_vi32 a0, int a1);
+nsimd_sse42_vi16 NSIMD_VECTORCALL nsimd_shr_sse42_i16(nsimd_sse42_vi16 a0, int a1);
+nsimd_sse42_vi8 NSIMD_VECTORCALL nsimd_shr_sse42_i8(nsimd_sse42_vi8 a0, int a1);
+nsimd_sse42_vu64 NSIMD_VECTORCALL nsimd_shr_sse42_u64(nsimd_sse42_vu64 a0, int a1);
+nsimd_sse42_vu32 NSIMD_VECTORCALL nsimd_shr_sse42_u32(nsimd_sse42_vu32 a0, int a1);
+nsimd_sse42_vu16 NSIMD_VECTORCALL nsimd_shr_sse42_u16(nsimd_sse42_vu16 a0, int a1);
+nsimd_sse42_vu8 NSIMD_VECTORCALL nsimd_shr_sse42_u8(nsimd_sse42_vu8 a0, int a1);</code></pre>
+<h2>C++ base API (architecture specifics)</h2>
 <h3>SSE2</h3>
 <pre class="c"><code>nsimd_sse2_vi64 NSIMD_VECTORCALL shr(nsimd_sse2_vi64 a0, int a1, i64, sse2);
 nsimd_sse2_vi32 NSIMD_VECTORCALL shr(nsimd_sse2_vi32 a0, int a1, i32, sse2);
@@ -292,87 +265,6 @@ nsimd_sse2_vu64 NSIMD_VECTORCALL shr(nsimd_sse2_vu64 a0, int a1, u64, sse2);
 nsimd_sse2_vu32 NSIMD_VECTORCALL shr(nsimd_sse2_vu32 a0, int a1, u32, sse2);
 nsimd_sse2_vu16 NSIMD_VECTORCALL shr(nsimd_sse2_vu16 a0, int a1, u16, sse2);
 nsimd_sse2_vu8 NSIMD_VECTORCALL shr(nsimd_sse2_vu8 a0, int a1, u8, sse2);</code></pre>
-<h3>SSE42</h3>
-<pre class="c"><code>nsimd_sse42_vi64 NSIMD_VECTORCALL shr(nsimd_sse42_vi64 a0, int a1, i64, sse42);
-nsimd_sse42_vi32 NSIMD_VECTORCALL shr(nsimd_sse42_vi32 a0, int a1, i32, sse42);
-nsimd_sse42_vi16 NSIMD_VECTORCALL shr(nsimd_sse42_vi16 a0, int a1, i16, sse42);
-nsimd_sse42_vi8 NSIMD_VECTORCALL shr(nsimd_sse42_vi8 a0, int a1, i8, sse42);
-nsimd_sse42_vu64 NSIMD_VECTORCALL shr(nsimd_sse42_vu64 a0, int a1, u64, sse42);
-nsimd_sse42_vu32 NSIMD_VECTORCALL shr(nsimd_sse42_vu32 a0, int a1, u32, sse42);
-nsimd_sse42_vu16 NSIMD_VECTORCALL shr(nsimd_sse42_vu16 a0, int a1, u16, sse42);
-nsimd_sse42_vu8 NSIMD_VECTORCALL shr(nsimd_sse42_vu8 a0, int a1, u8, sse42);</code></pre>
-<h3>AARCH64</h3>
-<pre class="c"><code>nsimd_aarch64_vi64 NSIMD_VECTORCALL shr(nsimd_aarch64_vi64 a0, int a1, i64, aarch64);
-nsimd_aarch64_vi32 NSIMD_VECTORCALL shr(nsimd_aarch64_vi32 a0, int a1, i32, aarch64);
-nsimd_aarch64_vi16 NSIMD_VECTORCALL shr(nsimd_aarch64_vi16 a0, int a1, i16, aarch64);
-nsimd_aarch64_vi8 NSIMD_VECTORCALL shr(nsimd_aarch64_vi8 a0, int a1, i8, aarch64);
-nsimd_aarch64_vu64 NSIMD_VECTORCALL shr(nsimd_aarch64_vu64 a0, int a1, u64, aarch64);
-nsimd_aarch64_vu32 NSIMD_VECTORCALL shr(nsimd_aarch64_vu32 a0, int a1, u32, aarch64);
-nsimd_aarch64_vu16 NSIMD_VECTORCALL shr(nsimd_aarch64_vu16 a0, int a1, u16, aarch64);
-nsimd_aarch64_vu8 NSIMD_VECTORCALL shr(nsimd_aarch64_vu8 a0, int a1, u8, aarch64);</code></pre>
-<h3>SVE128</h3>
-<pre class="c"><code>nsimd_sve128_vi64 NSIMD_VECTORCALL shr(nsimd_sve128_vi64 a0, int a1, i64, sve128);
-nsimd_sve128_vi32 NSIMD_VECTORCALL shr(nsimd_sve128_vi32 a0, int a1, i32, sve128);
-nsimd_sve128_vi16 NSIMD_VECTORCALL shr(nsimd_sve128_vi16 a0, int a1, i16, sve128);
-nsimd_sve128_vi8 NSIMD_VECTORCALL shr(nsimd_sve128_vi8 a0, int a1, i8, sve128);
-nsimd_sve128_vu64 NSIMD_VECTORCALL shr(nsimd_sve128_vu64 a0, int a1, u64, sve128);
-nsimd_sve128_vu32 NSIMD_VECTORCALL shr(nsimd_sve128_vu32 a0, int a1, u32, sve128);
-nsimd_sve128_vu16 NSIMD_VECTORCALL shr(nsimd_sve128_vu16 a0, int a1, u16, sve128);
-nsimd_sve128_vu8 NSIMD_VECTORCALL shr(nsimd_sve128_vu8 a0, int a1, u8, sve128);</code></pre>
-<h3>SVE512</h3>
-<pre class="c"><code>nsimd_sve512_vi64 NSIMD_VECTORCALL shr(nsimd_sve512_vi64 a0, int a1, i64, sve512);
-nsimd_sve512_vi32 NSIMD_VECTORCALL shr(nsimd_sve512_vi32 a0, int a1, i32, sve512);
-nsimd_sve512_vi16 NSIMD_VECTORCALL shr(nsimd_sve512_vi16 a0, int a1, i16, sve512);
-nsimd_sve512_vi8 NSIMD_VECTORCALL shr(nsimd_sve512_vi8 a0, int a1, i8, sve512);
-nsimd_sve512_vu64 NSIMD_VECTORCALL shr(nsimd_sve512_vu64 a0, int a1, u64, sve512);
-nsimd_sve512_vu32 NSIMD_VECTORCALL shr(nsimd_sve512_vu32 a0, int a1, u32, sve512);
-nsimd_sve512_vu16 NSIMD_VECTORCALL shr(nsimd_sve512_vu16 a0, int a1, u16, sve512);
-nsimd_sve512_vu8 NSIMD_VECTORCALL shr(nsimd_sve512_vu8 a0, int a1, u8, sve512);</code></pre>
-<h3>CPU</h3>
-<pre class="c"><code>nsimd_cpu_vi64 NSIMD_VECTORCALL shr(nsimd_cpu_vi64 a0, int a1, i64, cpu);
-nsimd_cpu_vi32 NSIMD_VECTORCALL shr(nsimd_cpu_vi32 a0, int a1, i32, cpu);
-nsimd_cpu_vi16 NSIMD_VECTORCALL shr(nsimd_cpu_vi16 a0, int a1, i16, cpu);
-nsimd_cpu_vi8 NSIMD_VECTORCALL shr(nsimd_cpu_vi8 a0, int a1, i8, cpu);
-nsimd_cpu_vu64 NSIMD_VECTORCALL shr(nsimd_cpu_vu64 a0, int a1, u64, cpu);
-nsimd_cpu_vu32 NSIMD_VECTORCALL shr(nsimd_cpu_vu32 a0, int a1, u32, cpu);
-nsimd_cpu_vu16 NSIMD_VECTORCALL shr(nsimd_cpu_vu16 a0, int a1, u16, cpu);
-nsimd_cpu_vu8 NSIMD_VECTORCALL shr(nsimd_cpu_vu8 a0, int a1, u8, cpu);</code></pre>
-<h3>VSX</h3>
-<pre class="c"><code>nsimd_vsx_vi64 NSIMD_VECTORCALL shr(nsimd_vsx_vi64 a0, int a1, i64, vsx);
-nsimd_vsx_vi32 NSIMD_VECTORCALL shr(nsimd_vsx_vi32 a0, int a1, i32, vsx);
-nsimd_vsx_vi16 NSIMD_VECTORCALL shr(nsimd_vsx_vi16 a0, int a1, i16, vsx);
-nsimd_vsx_vi8 NSIMD_VECTORCALL shr(nsimd_vsx_vi8 a0, int a1, i8, vsx);
-nsimd_vsx_vu64 NSIMD_VECTORCALL shr(nsimd_vsx_vu64 a0, int a1, u64, vsx);
-nsimd_vsx_vu32 NSIMD_VECTORCALL shr(nsimd_vsx_vu32 a0, int a1, u32, vsx);
-nsimd_vsx_vu16 NSIMD_VECTORCALL shr(nsimd_vsx_vu16 a0, int a1, u16, vsx);
-nsimd_vsx_vu8 NSIMD_VECTORCALL shr(nsimd_vsx_vu8 a0, int a1, u8, vsx);</code></pre>
-<h3>SVE1024</h3>
-<pre class="c"><code>nsimd_sve1024_vi64 NSIMD_VECTORCALL shr(nsimd_sve1024_vi64 a0, int a1, i64, sve1024);
-nsimd_sve1024_vi32 NSIMD_VECTORCALL shr(nsimd_sve1024_vi32 a0, int a1, i32, sve1024);
-nsimd_sve1024_vi16 NSIMD_VECTORCALL shr(nsimd_sve1024_vi16 a0, int a1, i16, sve1024);
-nsimd_sve1024_vi8 NSIMD_VECTORCALL shr(nsimd_sve1024_vi8 a0, int a1, i8, sve1024);
-nsimd_sve1024_vu64 NSIMD_VECTORCALL shr(nsimd_sve1024_vu64 a0, int a1, u64, sve1024);
-nsimd_sve1024_vu32 NSIMD_VECTORCALL shr(nsimd_sve1024_vu32 a0, int a1, u32, sve1024);
-nsimd_sve1024_vu16 NSIMD_VECTORCALL shr(nsimd_sve1024_vu16 a0, int a1, u16, sve1024);
-nsimd_sve1024_vu8 NSIMD_VECTORCALL shr(nsimd_sve1024_vu8 a0, int a1, u8, sve1024);</code></pre>
-<h3>AVX2</h3>
-<pre class="c"><code>nsimd_avx2_vi64 NSIMD_VECTORCALL shr(nsimd_avx2_vi64 a0, int a1, i64, avx2);
-nsimd_avx2_vi32 NSIMD_VECTORCALL shr(nsimd_avx2_vi32 a0, int a1, i32, avx2);
-nsimd_avx2_vi16 NSIMD_VECTORCALL shr(nsimd_avx2_vi16 a0, int a1, i16, avx2);
-nsimd_avx2_vi8 NSIMD_VECTORCALL shr(nsimd_avx2_vi8 a0, int a1, i8, avx2);
-nsimd_avx2_vu64 NSIMD_VECTORCALL shr(nsimd_avx2_vu64 a0, int a1, u64, avx2);
-nsimd_avx2_vu32 NSIMD_VECTORCALL shr(nsimd_avx2_vu32 a0, int a1, u32, avx2);
-nsimd_avx2_vu16 NSIMD_VECTORCALL shr(nsimd_avx2_vu16 a0, int a1, u16, avx2);
-nsimd_avx2_vu8 NSIMD_VECTORCALL shr(nsimd_avx2_vu8 a0, int a1, u8, avx2);</code></pre>
-<h3>NEON128</h3>
-<pre class="c"><code>nsimd_neon128_vi64 NSIMD_VECTORCALL shr(nsimd_neon128_vi64 a0, int a1, i64, neon128);
-nsimd_neon128_vi32 NSIMD_VECTORCALL shr(nsimd_neon128_vi32 a0, int a1, i32, neon128);
-nsimd_neon128_vi16 NSIMD_VECTORCALL shr(nsimd_neon128_vi16 a0, int a1, i16, neon128);
-nsimd_neon128_vi8 NSIMD_VECTORCALL shr(nsimd_neon128_vi8 a0, int a1, i8, neon128);
-nsimd_neon128_vu64 NSIMD_VECTORCALL shr(nsimd_neon128_vu64 a0, int a1, u64, neon128);
-nsimd_neon128_vu32 NSIMD_VECTORCALL shr(nsimd_neon128_vu32 a0, int a1, u32, neon128);
-nsimd_neon128_vu16 NSIMD_VECTORCALL shr(nsimd_neon128_vu16 a0, int a1, u16, neon128);
-nsimd_neon128_vu8 NSIMD_VECTORCALL shr(nsimd_neon128_vu8 a0, int a1, u8, neon128);</code></pre>
 <h3>AVX512_SKYLAKE</h3>
 <pre class="c"><code>nsimd_avx512_skylake_vi64 NSIMD_VECTORCALL shr(nsimd_avx512_skylake_vi64 a0, int a1, i64, avx512_skylake);
 nsimd_avx512_skylake_vi32 NSIMD_VECTORCALL shr(nsimd_avx512_skylake_vi32 a0, int a1, i32, avx512_skylake);
@@ -382,24 +274,24 @@ nsimd_avx512_skylake_vu64 NSIMD_VECTORCALL shr(nsimd_avx512_skylake_vu64 a0, int
 nsimd_avx512_skylake_vu32 NSIMD_VECTORCALL shr(nsimd_avx512_skylake_vu32 a0, int a1, u32, avx512_skylake);
 nsimd_avx512_skylake_vu16 NSIMD_VECTORCALL shr(nsimd_avx512_skylake_vu16 a0, int a1, u16, avx512_skylake);
 nsimd_avx512_skylake_vu8 NSIMD_VECTORCALL shr(nsimd_avx512_skylake_vu8 a0, int a1, u8, avx512_skylake);</code></pre>
-<h3>VMX</h3>
-<pre class="c"><code>nsimd_vmx_vi64 NSIMD_VECTORCALL shr(nsimd_vmx_vi64 a0, int a1, i64, vmx);
-nsimd_vmx_vi32 NSIMD_VECTORCALL shr(nsimd_vmx_vi32 a0, int a1, i32, vmx);
-nsimd_vmx_vi16 NSIMD_VECTORCALL shr(nsimd_vmx_vi16 a0, int a1, i16, vmx);
-nsimd_vmx_vi8 NSIMD_VECTORCALL shr(nsimd_vmx_vi8 a0, int a1, i8, vmx);
-nsimd_vmx_vu64 NSIMD_VECTORCALL shr(nsimd_vmx_vu64 a0, int a1, u64, vmx);
-nsimd_vmx_vu32 NSIMD_VECTORCALL shr(nsimd_vmx_vu32 a0, int a1, u32, vmx);
-nsimd_vmx_vu16 NSIMD_VECTORCALL shr(nsimd_vmx_vu16 a0, int a1, u16, vmx);
-nsimd_vmx_vu8 NSIMD_VECTORCALL shr(nsimd_vmx_vu8 a0, int a1, u8, vmx);</code></pre>
-<h3>SVE256</h3>
-<pre class="c"><code>nsimd_sve256_vi64 NSIMD_VECTORCALL shr(nsimd_sve256_vi64 a0, int a1, i64, sve256);
-nsimd_sve256_vi32 NSIMD_VECTORCALL shr(nsimd_sve256_vi32 a0, int a1, i32, sve256);
-nsimd_sve256_vi16 NSIMD_VECTORCALL shr(nsimd_sve256_vi16 a0, int a1, i16, sve256);
-nsimd_sve256_vi8 NSIMD_VECTORCALL shr(nsimd_sve256_vi8 a0, int a1, i8, sve256);
-nsimd_sve256_vu64 NSIMD_VECTORCALL shr(nsimd_sve256_vu64 a0, int a1, u64, sve256);
-nsimd_sve256_vu32 NSIMD_VECTORCALL shr(nsimd_sve256_vu32 a0, int a1, u32, sve256);
-nsimd_sve256_vu16 NSIMD_VECTORCALL shr(nsimd_sve256_vu16 a0, int a1, u16, sve256);
-nsimd_sve256_vu8 NSIMD_VECTORCALL shr(nsimd_sve256_vu8 a0, int a1, u8, sve256);</code></pre>
+<h3>VSX</h3>
+<pre class="c"><code>nsimd_vsx_vi64 NSIMD_VECTORCALL shr(nsimd_vsx_vi64 a0, int a1, i64, vsx);
+nsimd_vsx_vi32 NSIMD_VECTORCALL shr(nsimd_vsx_vi32 a0, int a1, i32, vsx);
+nsimd_vsx_vi16 NSIMD_VECTORCALL shr(nsimd_vsx_vi16 a0, int a1, i16, vsx);
+nsimd_vsx_vi8 NSIMD_VECTORCALL shr(nsimd_vsx_vi8 a0, int a1, i8, vsx);
+nsimd_vsx_vu64 NSIMD_VECTORCALL shr(nsimd_vsx_vu64 a0, int a1, u64, vsx);
+nsimd_vsx_vu32 NSIMD_VECTORCALL shr(nsimd_vsx_vu32 a0, int a1, u32, vsx);
+nsimd_vsx_vu16 NSIMD_VECTORCALL shr(nsimd_vsx_vu16 a0, int a1, u16, vsx);
+nsimd_vsx_vu8 NSIMD_VECTORCALL shr(nsimd_vsx_vu8 a0, int a1, u8, vsx);</code></pre>
+<h3>SVE512</h3>
+<pre class="c"><code>nsimd_sve512_vi64 NSIMD_VECTORCALL shr(nsimd_sve512_vi64 a0, int a1, i64, sve512);
+nsimd_sve512_vi32 NSIMD_VECTORCALL shr(nsimd_sve512_vi32 a0, int a1, i32, sve512);
+nsimd_sve512_vi16 NSIMD_VECTORCALL shr(nsimd_sve512_vi16 a0, int a1, i16, sve512);
+nsimd_sve512_vi8 NSIMD_VECTORCALL shr(nsimd_sve512_vi8 a0, int a1, i8, sve512);
+nsimd_sve512_vu64 NSIMD_VECTORCALL shr(nsimd_sve512_vu64 a0, int a1, u64, sve512);
+nsimd_sve512_vu32 NSIMD_VECTORCALL shr(nsimd_sve512_vu32 a0, int a1, u32, sve512);
+nsimd_sve512_vu16 NSIMD_VECTORCALL shr(nsimd_sve512_vu16 a0, int a1, u16, sve512);
+nsimd_sve512_vu8 NSIMD_VECTORCALL shr(nsimd_sve512_vu8 a0, int a1, u8, sve512);</code></pre>
 <h3>AVX512_KNL</h3>
 <pre class="c"><code>nsimd_avx512_knl_vi64 NSIMD_VECTORCALL shr(nsimd_avx512_knl_vi64 a0, int a1, i64, avx512_knl);
 nsimd_avx512_knl_vi32 NSIMD_VECTORCALL shr(nsimd_avx512_knl_vi32 a0, int a1, i32, avx512_knl);
@@ -409,5 +301,113 @@ nsimd_avx512_knl_vu64 NSIMD_VECTORCALL shr(nsimd_avx512_knl_vu64 a0, int a1, u64
 nsimd_avx512_knl_vu32 NSIMD_VECTORCALL shr(nsimd_avx512_knl_vu32 a0, int a1, u32, avx512_knl);
 nsimd_avx512_knl_vu16 NSIMD_VECTORCALL shr(nsimd_avx512_knl_vu16 a0, int a1, u16, avx512_knl);
 nsimd_avx512_knl_vu8 NSIMD_VECTORCALL shr(nsimd_avx512_knl_vu8 a0, int a1, u8, avx512_knl);</code></pre>
+<h3>VMX</h3>
+<pre class="c"><code>nsimd_vmx_vi64 NSIMD_VECTORCALL shr(nsimd_vmx_vi64 a0, int a1, i64, vmx);
+nsimd_vmx_vi32 NSIMD_VECTORCALL shr(nsimd_vmx_vi32 a0, int a1, i32, vmx);
+nsimd_vmx_vi16 NSIMD_VECTORCALL shr(nsimd_vmx_vi16 a0, int a1, i16, vmx);
+nsimd_vmx_vi8 NSIMD_VECTORCALL shr(nsimd_vmx_vi8 a0, int a1, i8, vmx);
+nsimd_vmx_vu64 NSIMD_VECTORCALL shr(nsimd_vmx_vu64 a0, int a1, u64, vmx);
+nsimd_vmx_vu32 NSIMD_VECTORCALL shr(nsimd_vmx_vu32 a0, int a1, u32, vmx);
+nsimd_vmx_vu16 NSIMD_VECTORCALL shr(nsimd_vmx_vu16 a0, int a1, u16, vmx);
+nsimd_vmx_vu8 NSIMD_VECTORCALL shr(nsimd_vmx_vu8 a0, int a1, u8, vmx);</code></pre>
+<h3>NEON128</h3>
+<pre class="c"><code>nsimd_neon128_vi64 NSIMD_VECTORCALL shr(nsimd_neon128_vi64 a0, int a1, i64, neon128);
+nsimd_neon128_vi32 NSIMD_VECTORCALL shr(nsimd_neon128_vi32 a0, int a1, i32, neon128);
+nsimd_neon128_vi16 NSIMD_VECTORCALL shr(nsimd_neon128_vi16 a0, int a1, i16, neon128);
+nsimd_neon128_vi8 NSIMD_VECTORCALL shr(nsimd_neon128_vi8 a0, int a1, i8, neon128);
+nsimd_neon128_vu64 NSIMD_VECTORCALL shr(nsimd_neon128_vu64 a0, int a1, u64, neon128);
+nsimd_neon128_vu32 NSIMD_VECTORCALL shr(nsimd_neon128_vu32 a0, int a1, u32, neon128);
+nsimd_neon128_vu16 NSIMD_VECTORCALL shr(nsimd_neon128_vu16 a0, int a1, u16, neon128);
+nsimd_neon128_vu8 NSIMD_VECTORCALL shr(nsimd_neon128_vu8 a0, int a1, u8, neon128);</code></pre>
+<h3>SVE256</h3>
+<pre class="c"><code>nsimd_sve256_vi64 NSIMD_VECTORCALL shr(nsimd_sve256_vi64 a0, int a1, i64, sve256);
+nsimd_sve256_vi32 NSIMD_VECTORCALL shr(nsimd_sve256_vi32 a0, int a1, i32, sve256);
+nsimd_sve256_vi16 NSIMD_VECTORCALL shr(nsimd_sve256_vi16 a0, int a1, i16, sve256);
+nsimd_sve256_vi8 NSIMD_VECTORCALL shr(nsimd_sve256_vi8 a0, int a1, i8, sve256);
+nsimd_sve256_vu64 NSIMD_VECTORCALL shr(nsimd_sve256_vu64 a0, int a1, u64, sve256);
+nsimd_sve256_vu32 NSIMD_VECTORCALL shr(nsimd_sve256_vu32 a0, int a1, u32, sve256);
+nsimd_sve256_vu16 NSIMD_VECTORCALL shr(nsimd_sve256_vu16 a0, int a1, u16, sve256);
+nsimd_sve256_vu8 NSIMD_VECTORCALL shr(nsimd_sve256_vu8 a0, int a1, u8, sve256);</code></pre>
+<h3>SVE2048</h3>
+<pre class="c"><code>nsimd_sve2048_vi64 NSIMD_VECTORCALL shr(nsimd_sve2048_vi64 a0, int a1, i64, sve2048);
+nsimd_sve2048_vi32 NSIMD_VECTORCALL shr(nsimd_sve2048_vi32 a0, int a1, i32, sve2048);
+nsimd_sve2048_vi16 NSIMD_VECTORCALL shr(nsimd_sve2048_vi16 a0, int a1, i16, sve2048);
+nsimd_sve2048_vi8 NSIMD_VECTORCALL shr(nsimd_sve2048_vi8 a0, int a1, i8, sve2048);
+nsimd_sve2048_vu64 NSIMD_VECTORCALL shr(nsimd_sve2048_vu64 a0, int a1, u64, sve2048);
+nsimd_sve2048_vu32 NSIMD_VECTORCALL shr(nsimd_sve2048_vu32 a0, int a1, u32, sve2048);
+nsimd_sve2048_vu16 NSIMD_VECTORCALL shr(nsimd_sve2048_vu16 a0, int a1, u16, sve2048);
+nsimd_sve2048_vu8 NSIMD_VECTORCALL shr(nsimd_sve2048_vu8 a0, int a1, u8, sve2048);</code></pre>
+<h3>AVX2</h3>
+<pre class="c"><code>nsimd_avx2_vi64 NSIMD_VECTORCALL shr(nsimd_avx2_vi64 a0, int a1, i64, avx2);
+nsimd_avx2_vi32 NSIMD_VECTORCALL shr(nsimd_avx2_vi32 a0, int a1, i32, avx2);
+nsimd_avx2_vi16 NSIMD_VECTORCALL shr(nsimd_avx2_vi16 a0, int a1, i16, avx2);
+nsimd_avx2_vi8 NSIMD_VECTORCALL shr(nsimd_avx2_vi8 a0, int a1, i8, avx2);
+nsimd_avx2_vu64 NSIMD_VECTORCALL shr(nsimd_avx2_vu64 a0, int a1, u64, avx2);
+nsimd_avx2_vu32 NSIMD_VECTORCALL shr(nsimd_avx2_vu32 a0, int a1, u32, avx2);
+nsimd_avx2_vu16 NSIMD_VECTORCALL shr(nsimd_avx2_vu16 a0, int a1, u16, avx2);
+nsimd_avx2_vu8 NSIMD_VECTORCALL shr(nsimd_avx2_vu8 a0, int a1, u8, avx2);</code></pre>
+<h3>AVX</h3>
+<pre class="c"><code>nsimd_avx_vi64 NSIMD_VECTORCALL shr(nsimd_avx_vi64 a0, int a1, i64, avx);
+nsimd_avx_vi32 NSIMD_VECTORCALL shr(nsimd_avx_vi32 a0, int a1, i32, avx);
+nsimd_avx_vi16 NSIMD_VECTORCALL shr(nsimd_avx_vi16 a0, int a1, i16, avx);
+nsimd_avx_vi8 NSIMD_VECTORCALL shr(nsimd_avx_vi8 a0, int a1, i8, avx);
+nsimd_avx_vu64 NSIMD_VECTORCALL shr(nsimd_avx_vu64 a0, int a1, u64, avx);
+nsimd_avx_vu32 NSIMD_VECTORCALL shr(nsimd_avx_vu32 a0, int a1, u32, avx);
+nsimd_avx_vu16 NSIMD_VECTORCALL shr(nsimd_avx_vu16 a0, int a1, u16, avx);
+nsimd_avx_vu8 NSIMD_VECTORCALL shr(nsimd_avx_vu8 a0, int a1, u8, avx);</code></pre>
+<h3>SVE1024</h3>
+<pre class="c"><code>nsimd_sve1024_vi64 NSIMD_VECTORCALL shr(nsimd_sve1024_vi64 a0, int a1, i64, sve1024);
+nsimd_sve1024_vi32 NSIMD_VECTORCALL shr(nsimd_sve1024_vi32 a0, int a1, i32, sve1024);
+nsimd_sve1024_vi16 NSIMD_VECTORCALL shr(nsimd_sve1024_vi16 a0, int a1, i16, sve1024);
+nsimd_sve1024_vi8 NSIMD_VECTORCALL shr(nsimd_sve1024_vi8 a0, int a1, i8, sve1024);
+nsimd_sve1024_vu64 NSIMD_VECTORCALL shr(nsimd_sve1024_vu64 a0, int a1, u64, sve1024);
+nsimd_sve1024_vu32 NSIMD_VECTORCALL shr(nsimd_sve1024_vu32 a0, int a1, u32, sve1024);
+nsimd_sve1024_vu16 NSIMD_VECTORCALL shr(nsimd_sve1024_vu16 a0, int a1, u16, sve1024);
+nsimd_sve1024_vu8 NSIMD_VECTORCALL shr(nsimd_sve1024_vu8 a0, int a1, u8, sve1024);</code></pre>
+<h3>SVE</h3>
+<pre class="c"><code>nsimd_sve_vi64 NSIMD_VECTORCALL shr(nsimd_sve_vi64 a0, int a1, i64, sve);
+nsimd_sve_vi32 NSIMD_VECTORCALL shr(nsimd_sve_vi32 a0, int a1, i32, sve);
+nsimd_sve_vi16 NSIMD_VECTORCALL shr(nsimd_sve_vi16 a0, int a1, i16, sve);
+nsimd_sve_vi8 NSIMD_VECTORCALL shr(nsimd_sve_vi8 a0, int a1, i8, sve);
+nsimd_sve_vu64 NSIMD_VECTORCALL shr(nsimd_sve_vu64 a0, int a1, u64, sve);
+nsimd_sve_vu32 NSIMD_VECTORCALL shr(nsimd_sve_vu32 a0, int a1, u32, sve);
+nsimd_sve_vu16 NSIMD_VECTORCALL shr(nsimd_sve_vu16 a0, int a1, u16, sve);
+nsimd_sve_vu8 NSIMD_VECTORCALL shr(nsimd_sve_vu8 a0, int a1, u8, sve);</code></pre>
+<h3>AARCH64</h3>
+<pre class="c"><code>nsimd_aarch64_vi64 NSIMD_VECTORCALL shr(nsimd_aarch64_vi64 a0, int a1, i64, aarch64);
+nsimd_aarch64_vi32 NSIMD_VECTORCALL shr(nsimd_aarch64_vi32 a0, int a1, i32, aarch64);
+nsimd_aarch64_vi16 NSIMD_VECTORCALL shr(nsimd_aarch64_vi16 a0, int a1, i16, aarch64);
+nsimd_aarch64_vi8 NSIMD_VECTORCALL shr(nsimd_aarch64_vi8 a0, int a1, i8, aarch64);
+nsimd_aarch64_vu64 NSIMD_VECTORCALL shr(nsimd_aarch64_vu64 a0, int a1, u64, aarch64);
+nsimd_aarch64_vu32 NSIMD_VECTORCALL shr(nsimd_aarch64_vu32 a0, int a1, u32, aarch64);
+nsimd_aarch64_vu16 NSIMD_VECTORCALL shr(nsimd_aarch64_vu16 a0, int a1, u16, aarch64);
+nsimd_aarch64_vu8 NSIMD_VECTORCALL shr(nsimd_aarch64_vu8 a0, int a1, u8, aarch64);</code></pre>
+<h3>CPU</h3>
+<pre class="c"><code>nsimd_cpu_vi64 NSIMD_VECTORCALL shr(nsimd_cpu_vi64 a0, int a1, i64, cpu);
+nsimd_cpu_vi32 NSIMD_VECTORCALL shr(nsimd_cpu_vi32 a0, int a1, i32, cpu);
+nsimd_cpu_vi16 NSIMD_VECTORCALL shr(nsimd_cpu_vi16 a0, int a1, i16, cpu);
+nsimd_cpu_vi8 NSIMD_VECTORCALL shr(nsimd_cpu_vi8 a0, int a1, i8, cpu);
+nsimd_cpu_vu64 NSIMD_VECTORCALL shr(nsimd_cpu_vu64 a0, int a1, u64, cpu);
+nsimd_cpu_vu32 NSIMD_VECTORCALL shr(nsimd_cpu_vu32 a0, int a1, u32, cpu);
+nsimd_cpu_vu16 NSIMD_VECTORCALL shr(nsimd_cpu_vu16 a0, int a1, u16, cpu);
+nsimd_cpu_vu8 NSIMD_VECTORCALL shr(nsimd_cpu_vu8 a0, int a1, u8, cpu);</code></pre>
+<h3>SVE128</h3>
+<pre class="c"><code>nsimd_sve128_vi64 NSIMD_VECTORCALL shr(nsimd_sve128_vi64 a0, int a1, i64, sve128);
+nsimd_sve128_vi32 NSIMD_VECTORCALL shr(nsimd_sve128_vi32 a0, int a1, i32, sve128);
+nsimd_sve128_vi16 NSIMD_VECTORCALL shr(nsimd_sve128_vi16 a0, int a1, i16, sve128);
+nsimd_sve128_vi8 NSIMD_VECTORCALL shr(nsimd_sve128_vi8 a0, int a1, i8, sve128);
+nsimd_sve128_vu64 NSIMD_VECTORCALL shr(nsimd_sve128_vu64 a0, int a1, u64, sve128);
+nsimd_sve128_vu32 NSIMD_VECTORCALL shr(nsimd_sve128_vu32 a0, int a1, u32, sve128);
+nsimd_sve128_vu16 NSIMD_VECTORCALL shr(nsimd_sve128_vu16 a0, int a1, u16, sve128);
+nsimd_sve128_vu8 NSIMD_VECTORCALL shr(nsimd_sve128_vu8 a0, int a1, u8, sve128);</code></pre>
+<h3>SSE42</h3>
+<pre class="c"><code>nsimd_sse42_vi64 NSIMD_VECTORCALL shr(nsimd_sse42_vi64 a0, int a1, i64, sse42);
+nsimd_sse42_vi32 NSIMD_VECTORCALL shr(nsimd_sse42_vi32 a0, int a1, i32, sse42);
+nsimd_sse42_vi16 NSIMD_VECTORCALL shr(nsimd_sse42_vi16 a0, int a1, i16, sse42);
+nsimd_sse42_vi8 NSIMD_VECTORCALL shr(nsimd_sse42_vi8 a0, int a1, i8, sse42);
+nsimd_sse42_vu64 NSIMD_VECTORCALL shr(nsimd_sse42_vu64 a0, int a1, u64, sse42);
+nsimd_sse42_vu32 NSIMD_VECTORCALL shr(nsimd_sse42_vu32 a0, int a1, u32, sse42);
+nsimd_sse42_vu16 NSIMD_VECTORCALL shr(nsimd_sse42_vu16 a0, int a1, u16, sse42);
+nsimd_sse42_vu8 NSIMD_VECTORCALL shr(nsimd_sse42_vu8 a0, int a1, u8, sse42);</code></pre>
   </body>
 </html>
