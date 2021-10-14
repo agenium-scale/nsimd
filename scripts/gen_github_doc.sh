@@ -46,7 +46,10 @@ git clone git@github.com:agenium-scale/nsimd.git "${GH_PAGES_DIR}"
 git -C "${GH_PAGES_DIR}" checkout gh-pages
 git -C "${GH_PAGES_DIR}" rm -f '*.html'
 cp ${HTML_DOC_DIR}/*.html ${GH_PAGES_DIR}
+mkdir -p ${GH_PAGES_DIR}/assets
+cp ${HTML_DOC_DIR}/assets/*.js ${GH_PAGES_DIR}/assets
 git -C "${GH_PAGES_DIR}" add '*.html'
+git -C "${GH_PAGES_DIR}" add 'assets/*.js'
 git -C "${GH_PAGES_DIR}" commit -m "Documentation auto-generated on `date`"
 git -C "${GH_PAGES_DIR}" push
 rm -rf "${GH_PAGES_DIR}"

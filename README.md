@@ -1,5 +1,6 @@
-Documentation can be found [here](https://agenium-scale.github.io/nsimd/).  
-We put a lot of effort into [testing](how_tests_are_done.md).
+Documentation can be found [here](https://agenium-scale.github.io/nsimd/).
+We put a lot of effort into
+[testing](https://agenium-scale.github.io/nsimd/how_tests_are_done.html).
 
 # What is NSIMD?
 
