@@ -244,9 +244,9 @@ void device_cmp_blocks(T *const src1, const T *const src2, const size_t n,
 
   // other approach: see book p 345
   if (tid == 0) {
-    sycl::ONEAPI::sub_group sg = item.get_sub_group();
-    src1[i] = sycl::ONEAPI::reduce(sg, local_buffer[0],
-                                   sycl::ONEAPI::multiplies<T>());
+    sycl::ext::oneapi::sub_group sg = item.get_sub_group();
+    src1[i] = sycl::ext::oneapi::reduce_over_group(
+        sg, local_buffer[0], sycl::ext::oneapi::multiplies<T>());
   }
 }
 
