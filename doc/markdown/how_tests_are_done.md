@@ -30,7 +30,7 @@ our best to have serious testing of the library.
 We can also state our conclusion on testing: we are not and never will be
 satisfied with our tests, there are not enough of them, we want more.
 
-The current system has on average 10000 tests by SIMD extensions. Thanks to
+The current system has on average 15000 tests by SIMD extensions. Thanks to
 our "Python" approach we can automatically generate tests for all operators
 and for all types. This has greatly helped us in finding bugs. But, as you
 know, bugs are always there.
