@@ -42,9 +42,9 @@ for simd_ext in "$@"; do
       C_COMP="${NSIMD_CMAKE}/scripts/powerpc64le-linux-gnu-clang.sh"
       CXX_COMP="${NSIMD_CMAKE}/scripts/powerpc64le-linux-gnu-clang++.sh"
       ;;
-    cuda)
+    oneapi)
       C_COMP="gcc"
-      CXX_COMP="nvcc"
+      CXX_COMP="dpcpp"
       ;;
     rocm)
       C_COMP="gcc"
