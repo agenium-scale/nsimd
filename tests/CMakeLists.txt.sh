@@ -28,6 +28,38 @@ NSIMD_CMAKE=`realpath ${BUF}`
 
 for simd_ext in "$@"; do
 
+  # Take care of cross compilation here
+  case ${simd_ext} in
+    aarch64 | sve | sve128 | sve256 | sve512 | sve1024 | sve2048)
+      C_COMP="aarch64-linux-gnu-gcc"
+      CXX_COMP="aarch64-linux-gnu-g++"
+      ;;
+    neon128)
+      C_COMP="arm-linux-gnueabi-gcc"
+      CXX_COMP="arm-linux-gnueabi-g++"
+      ;;
+    vmx | vsx)
+      C_COMP="${NSIMD_CMAKE}/scripts/powerpc64le-linux-gnu-clang.sh"
+      CXX_COMP="${NSIMD_CMAKE}/scripts/powerpc64le-linux-gnu-clang++.sh"
+      ;;
+    cuda)
+      C_COMP="gcc"
+      CXX_COMP="nvcc"
+      ;;
+    rocm)
+      C_COMP="gcc"
+      CXX_COMP="${NSIMD_CMAKE}/scripts/hipcc.sh"
+      ;;
+    cuda)
+      C_COMP="gcc"
+      CXX_COMP="nvcc"
+      ;;
+    *)
+      C_COMP="gcc"
+      CXX_COMP="g++"
+      ;;
+  esac
+
   # First case: find a specific component
   ROOT_DIR="${PWD}/nsimd_cmake_tests/${simd_ext}"
   rm -rf ${ROOT_DIR}
@@ -35,7 +67,9 @@ for simd_ext in "$@"; do
   (cd ${ROOT_DIR} && \
    cmake ${NSIMD_CMAKE} \
          -Dsimd=${simd_ext} \
-         -DCMAKE_INSTALL_PREFIX=${ROOT_DIR}/root && \
+         -DCMAKE_INSTALL_PREFIX=${ROOT_DIR}/root \
+         -DCMAKE_C_COMPILER="${C_COMP}" \
+         -DCMAKE_CXX_COMPILER="${CXX_COMP}" && \
    make VERBOSE=1 && \
    make install)
 

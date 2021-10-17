@@ -185,7 +185,7 @@ elseif ("${simd}" STREQUAL "vmx")
   set(NSIMD_OBJS "${NSIMD_OBJS};api_vmx;sleef_vmx_f32;sleef_vmx_f64")
 elseif ("${simd}" STREQUAL "vsx")
   set(NSIMD_OBJS "${NSIMD_OBJS};api_vmx;api_vsx;sleef_vmx_f32;sleef_vmx_f64;"
-                 "sleef_vsx_f32;sleef_vmx_f64")
+                 "sleef_vsx_f32;sleef_vsx_f64")
 endif()
 
 # -----------------------------------------------------------------------------
@@ -316,7 +316,6 @@ foreach(o ${NSIMD_OBJS})
   else()
     set(buf "")
   endif()
-  message(STATUS "DEBUG: ${o} --> ${buf}")
   if (NOT "${buf}" STREQUAL "")
     target_compile_options(${o} PUBLIC "${buf}")
   endif()
