@@ -54,7 +54,7 @@ if exist "%NSTOOLS_DIR%\README.md" (
 )
 
 if "%NSTOOLS_CHECKOUT_LAST_COMMIT%" == "" (
-  git -C %NSTOOLS_DIR% checkout v2.2
+  git -C %NSTOOLS_DIR% checkout v3.0
 ) else (
   git -C %NSTOOLS_DIR% checkout master
 )
