@@ -85,6 +85,7 @@ set o_for_sve2048        = $o_for_aarch64 api_sve2048$o sleef_sve2048_f32$o \
                            sleef_sve2048_f64$o
 set o_for_vmx            = $o_for_cpu api_vmx$o sleef_vmx_f32$o sleef_vmx_f64$o
 set o_for_vsx            = $o_for_vmx api_vsx$o sleef_vsx_f32$o sleef_vsx_f64$o
+set o_for_wasm           = $o_for_cpu api_wasm$o
 
 ## ----------------------------------------------------------------------------
 ## SIMD compiler flags
@@ -116,6 +117,7 @@ set cflags_for_sve1024        = -DSVE1024 -msve1024
 set cflags_for_sve2048        = -DSVE2048 -msve2048
 set cflags_for_vmx            = -DVMX -mvmx
 set cflags_for_vsx            = -DVSX -mvsx
+set cflags_for_wasm           = -DWASM -mwasm_simd128
 
 ## ----------------------------------------------------------------------------
 ## std default flag
@@ -346,6 +348,12 @@ build_file sleef_vsx_f32$o autodeps $root$/src/sleefsimdsp.c
 
 build_file sleef_vsx_f64$o autodeps $root$/src/sleefsimddp.c
 	cc $sleef_cflags$ -c -mvsx -DNSIMD_VSX -DENABLE_VSX=1 @in -o @out
+
+## ----------------------------------------------------------------------------
+## WASM rules for building
+
+build_file api_wasm$o autodeps $root$/src/api_wasm.cpp
+	c++ $cflags$ -c $cflags_for_wasm @in -o @out
 
 ## ----------------------------------------------------------------------------
 ## Installation and packaging

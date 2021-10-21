@@ -333,7 +333,7 @@ typedef union {
 
 #endif // #elif defined(_MSC_VER) // #if (defined (__GNUC__) || defined (__clang__) || defined(__INTEL_COMPILER)) && !defined(_MSC_VER)
 
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__wasm32__) && !defined(__wasm64__)
 #define isinff(x) ((x) == SLEEF_INFINITYf || (x) == -SLEEF_INFINITYf)
 #define isinfl(x) ((x) == SLEEF_INFINITYl || (x) == -SLEEF_INFINITYl)
 #define isnanf(x) ((x) != (x))

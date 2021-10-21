@@ -344,6 +344,12 @@ namespace nsimd {
 #define NSIMD_VSX
 #endif
 
+/* WASM */
+
+#if defined(WASM) && !defined(NSIMD_WASM)
+  #define NSIMD_WASM
+#endif
+
 /* CUDA */
 
 #if defined(CUDA) && !defined(NSIMD_CUDA)
@@ -776,6 +782,25 @@ namespace nsimd {
                              std::is_same_v<T, nsimd::vmx> ||
                              std::is_same_v<T, nsimd::vsx>;
         #define NSIMD_LIST_SIMD_EXT cpu, vsx
+      #endif
+    } // namespace nsimd
+  #endif
+
+#elif defined(NSIMD_WASM)
+
+  #define NSIMD_PLATFORM wasm
+  #define NSIMD_SIMD wasm
+  #include <wasm_simd128.h>
+
+  #if NSIMD_CXX > 0
+    namespace nsimd {
+      struct cpu {};
+      struct wasm {};
+      #if NSIMD_CXX >= 2020
+        template <typename T>
+        concept simd_ext_c = std::is_same_v<T, nsimd::cpu> ||
+                             std::is_same_v<T, nsimd::wasm>;
+        #define NSIMD_LIST_SIMD_EXT cpu, wasm
       #endif
     } // namespace nsimd
   #endif

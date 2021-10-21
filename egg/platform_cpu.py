@@ -106,7 +106,10 @@ def get_additional_include(func, platform, simd_ext):
     elif func == 'unzip':
          return '''#include <nsimd/cpu/cpu/unziplo.h>
                    #include <nsimd/cpu/cpu/unziphi.h>
-                  '''
+                   '''
+    elif func == 'to_logical':
+         return '''#include <nsimd/cpu/cpu/reinterpret.h>
+                   '''
     return ''
 
 # -----------------------------------------------------------------------------
